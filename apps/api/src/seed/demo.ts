@@ -1,0 +1,78 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { z } from 'zod';
+
+const EXAMPLE_ORG = /^[^@\s]+@example\.org$/i;
+const Email = z.string().max(254).regex(EXAMPLE_ORG, 'demo emails must be on example.org (RFC 2606): nothing here is real (R-10)');
+
+const Key = z.string().min(1).max(40);
+const Locale = z.enum(['es', 'fr']);
+
+const DemoMember = z.strictObject({
+  key: Key,
+  email: Email,
+  displayName: z.string().trim().min(1).max(120),
+  locale: Locale,
+  role: z.enum(['admin', 'coordinator', 'rescuer']),
+});
+
+const DemoApplicant = z.strictObject({ key: Key, email: Email, displayName: z.string().trim().min(1).max(120), locale: Locale });
+
+const DemoTeam = z.strictObject({
+  name: z.string().trim().min(1).max(120),
+  locality: z.string().trim().min(1).max(120),
+  /** Keys of rescuers (INV-23: a team has a locality; members are rescuers of the organization). */
+  members: z.array(Key),
+});
+
+/**
+ * `data/seed/demo.json` (D-H0-17, D-H0-18). It holds no hash and no secret: the single fictitious demo password is
+ * public on purpose (data/seed/README.md) and is hashed with Argon2id when the seed runs.
+ */
+export const Demo = z
+  .strictObject({
+    notice: z.string().min(1),
+    demoPassword: z.string().min(12).max(200),
+    organization: z.strictObject({ name: z.string().trim().min(2).max(120), country: z.string().length(2), validationMaxAgeDays: z.number().int().min(1).max(3650) }),
+    members: z.array(DemoMember).min(1),
+    applicants: z.array(DemoApplicant),
+    teams: z.array(DemoTeam),
+  })
+  .superRefine((demo, ctx) => {
+    const keys = new Set<string>();
+    const emails = new Set<string>();
+    for (const [index, person] of [...demo.members, ...demo.applicants].entries()) {
+      if (keys.has(person.key)) ctx.addIssue({ code: 'custom', message: `duplicate key ${person.key}`, path: ['members', index] });
+      if (emails.has(person.email.toLowerCase())) ctx.addIssue({ code: 'custom', message: `duplicate email ${person.email}`, path: ['members', index] });
+      keys.add(person.key);
+      emails.add(person.email.toLowerCase());
+    }
+    const rescuers = new Set(demo.members.filter((m) => m.role === 'rescuer').map((m) => m.key));
+    for (const [index, team] of demo.teams.entries()) {
+      for (const member of team.members) {
+        if (!rescuers.has(member)) ctx.addIssue({ code: 'custom', message: `team member ${member} is not a rescuer of the demo`, path: ['teams', index, 'members'] });
+      }
+      if (new Set(team.members).size !== team.members.length) ctx.addIssue({ code: 'custom', message: 'a rescuer is listed twice in a team', path: ['teams', index, 'members'] });
+    }
+  });
+export type Demo = z.infer<typeof Demo>;
+
+const SEED_FILE = join('data', 'seed', 'demo.json');
+
+/** `SEED_FILE`, or the first `data/seed/demo.json` found walking up from this file. */
+export function resolveSeedFile(env: Record<string, string | undefined> = process.env): string {
+  if (env.SEED_FILE) return resolve(env.SEED_FILE);
+  let dir = dirname(fileURLToPath(import.meta.url));
+  for (;;) {
+    const candidate = join(dir, SEED_FILE);
+    if (existsSync(candidate)) return candidate;
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error('data/seed/demo.json not found; set SEED_FILE');
+    dir = parent;
+  }
+}
+
+export function loadDemo(file = resolveSeedFile()): Demo {
+  return Demo.parse(JSON.parse(readFileSync(file, 'utf8')));
+}
