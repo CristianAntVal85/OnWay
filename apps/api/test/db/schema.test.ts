@@ -25,9 +25,9 @@ afterAll(async () => {
 });
 
 describe('migrations (D-H0-04)', () => {
-  it('apply 0002-0009 on an empty PostGIS database', async () => {
+  it('apply 0002-0010 on an empty PostGIS database', async () => {
     const rows = await query<{ n: string }>(db.owner, 'SELECT count(*) AS n FROM drizzle.__drizzle_migrations');
-    expect(Number(rows[0]?.n)).toBe(8);
+    expect(Number(rows[0]?.n)).toBe(9);
     const postgis = await query<{ v: string }>(db.owner, 'SELECT postgis_version() AS v');
     expect(postgis[0]?.v).toMatch(/^3\.4/);
   });

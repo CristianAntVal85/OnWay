@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 0.4 (borrador) · Fecha: 2026-10-30 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
+Versión: 0.5 (borrador) · Fecha: 2026-10-30 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -420,7 +420,9 @@ Además del filtro de organización, que se aplica siempre. C = lectura, E = esc
 | `routes`, `route_versions`, `route_segments` | C, E | C, E | C (solo las fijadas y validadas de misiones visibles) |
 | `mission_routes` | C, E | C, E | C (versión fijada validada, misión visible) |
 | `calculation_jobs`, `avoid_zones` | C, E | C, E | — |
-| `audit_log` | C (toda la organización) | — | C (los accesos a sus datos) |
+| `audit_log` | C (toda la organización) | C (solo las filas `entity_type = 'mission'`, migración 0010) | C (los accesos a sus datos) |
+
+`audit_log` y el coordinador (H1, P3): `audit_select` (0008) no le deja leer la auditoría, pero `listMissionHistory` es del personal. La migración 0010 añade `audit_mission_staff`, una política permisiva de solo lectura (`FOR SELECT TO onway_app USING (app_is_staff() AND entity_type = 'mission')`): el coordinador lee el historial de las misiones de su organización y nada más (ni accesos a datos sensibles, ni certificados, ni cambios de cuenta). El filtro de organización sigue encima. No cambia lo que ve el rescatista ni el administrador.
 
 El administrador puede hacer lo del coordinador en las tablas de misiones y rutas porque `app_is_staff()` agrupa a ambos. Si Q-14 resuelve que el administrador **no** trabaja con misiones, basta cambiar `app_is_staff()` en esas políticas por una función que solo acepte `coordinator`.
 
@@ -591,10 +593,11 @@ Las migraciones son aditivas y se ejecutan en orden. Cada entrega solo estrena l
 | 0007 | 1 | Disparadores de invariantes | Pruebas de la sección 11 |
 | 0008 | 1 | Funciones de identidad, concesiones y RLS | Pruebas de la sección 11 |
 | 0009 | 1 | Recuperar contraseña: `password_resets` y dos funciones (Q-33) | Pedir, usar, caducar, límite por hora |
-| 0010+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
+| 0010 | 1 (H1) | Política `audit_mission_staff`: el personal lee las filas `entity_type = 'mission'` de `audit_log` de su organización (§6.3) | `apps/api/test/db/audit-policy.test.ts` |
+| 0011+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
 
 Orden de ejecución y responsabilidades:
-- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0009** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
+- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0010** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
 - Las contraseñas de `onway_owner`, `onway_app` y `onway_platform` se fijan en el despliegue con `ALTER ROLE ... PASSWORD`, leídas de archivos de secretos, nunca del repositorio. En local las genera al azar el servicio `secrets` de `docker compose`.
 - Las tablas internas de la cola (pg-boss) las crea la propia biblioteca en su esquema `pgboss`. `onway_app` recibe permisos sobre ese esquema en el despliegue.
 - Cada migración debe poder aplicarse sobre una base vacía en CI con la imagen de PostGIS, y las pruebas de la sección 11 deben pasar después de la última.
@@ -620,7 +623,7 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 
 La base de datos tiene su propio juego de pruebas, independiente de la API, porque las invariantes viven aquí. En el repositorio están en `apps/api/test/db/`: una prueba de Vitest levanta PostGIS con Testcontainers (`postgis/postgis:16-3.4`), aplica las migraciones con el migrador de Drizzle y ejecuta los SQL de `db/tests/` (`seed_and_tests.sql` y `run_tests.sql`, que no se editan) (documento 04, sección 12).
 
-**Cobertura actual: 118 comprobaciones, todas correctas, sobre PostgreSQL 16 con PostGIS real.** Las 21 últimas son de la recuperación de contraseña (0009).
+**Cobertura actual: 118 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** Las 21 últimas son de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 13: las 4 del migrador y los roles, la que lanza las 118 y las 8 de la política de la migración 0010 en `audit-policy.test.ts`).
 
 | Grupo | Qué se comprueba |
 |---|---|
@@ -629,7 +632,7 @@ La base de datos tiene su propio juego de pruebas, independiente de la API, porq
 | Participación | Ofrecerse solo a misión activa y con perfil completo. No se puede ofrecer a otro, ni autoaceptarse, ni crearse como aceptado. Retirar y volver a ofrecerse |
 | Cierre | Marcar "participó" solo en aceptados. Cerrar bloquea puntos, rutas, participaciones y la propia misión. Reabrir. Al quitar a un aceptado, se limpia la asistencia. No se vuelve a planificación |
 | Rutas | Una versión validada no se edita ni se borra. Un borrador solo cambia a validada. Validada exige quién y cuándo. Versión de otra ruta, misma ruta dos veces, archivar una ruta en uso, origen que no es de tipo origen |
-| Datos sensibles y auditoría | Lectura por el administrador solo por función, con auditoría en la misma transacción. El rescatista ve quién consultó sus datos. La auditoría no se puede modificar ni borrar |
+| Datos sensibles y auditoría | Lectura por el administrador solo por función, con auditoría en la misma transacción. El rescatista ve quién consultó sus datos. La auditoría no se puede modificar ni borrar. Política de 0010 (Vitest): el coordinador lee solo las filas `mission` de su organización; el rescatista, ninguna; las demás `entity_type`, ninguna; el administrador sigue leyéndolo todo |
 | Registro y aprobación | Código válido e inválido, correo repetido, aprobar con rol, rechazar, no decidir dos veces, perfil que no puede completarse sin datos, un coordinador no puede aprobar |
 | Eliminación | Las participaciones se conservan, el perfil queda anónimo, desaparecen contacto y datos sensibles |
 | Plataforma y roles | La plataforma no lee perfiles, sensibles ni archivos. Ningún rol de aplicación es superusuario ni `BYPASSRLS`. Todas las tablas de negocio tienen RLS |
@@ -641,7 +644,7 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 
 ## 12. Qué no está verificado
 
-**Verificado en H0 (2026-10-30):** las migraciones 0001–0009 aplican en base vacía sobre `postgis/postgis:16-3.4` (la 0001 como superusuario en el arranque; 0002–0009 con el migrador de Drizzle y su diario); las 118 comprobaciones pasan; la columna generada `geog` (`ST_Force2D(geom)::geography`) es admitida por PostgreSQL; el migrador de Drizzle aplica estas migraciones personalizadas y es idempotente.
+**Verificado en H0 (2026-10-30):** las migraciones 0001–0009 aplican en base vacía sobre `postgis/postgis:16-3.4` (la 0001 como superusuario en el arranque; 0002–0009 con el migrador de Drizzle y su diario; la 0010 se añade en H1); las 118 comprobaciones pasan; la columna generada `geog` (`ST_Force2D(geom)::geography`) es admitida por PostgreSQL; el migrador de Drizzle aplica estas migraciones personalizadas y es idempotente.
 
 | Qué | Estado | Cómo se cierra |
 |---|---|---|
@@ -674,6 +677,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**0.5 (2026-10-30)** H1-T2. Migración 0010: política permisiva `audit_mission_staff` en `audit_log` para que el personal lea el historial de las misiones de su organización (`listMissionHistory`, P3 del plan de H1). §6.3 (matriz y nota), §9 (plan de migraciones, 0010 en la primera entrega), §11 (pruebas de la política) y §12 al día. Las 118 comprobaciones SQL no cambian.
 
 **0.4 (2026-10-30)** Cierre de H0. PostGIS real verificado (118 comprobaciones sobre `postgis/postgis:16-3.4`) y migrador de Drizzle verificado; se quita de «no verificado» lo que ya lo está. DB-01: las migraciones son SQL a mano aplicadas por el migrador de Drizzle con su diario, sin `drizzle-kit`. §9: la 0001 la ejecuta un superusuario en el arranque de la base; 0002–0009, `onway_owner` con el migrador. §10: la demostración lleva una organización (la segunda, para el aislamiento, la crean las pruebas), seis rescatistas con perfil incompleto hasta H5 y una cuenta pendiente. §11: las pruebas corren desde `apps/api/test/db/` sobre los SQL de `db/tests/`; comprobación de roles en el humo del stack.
 

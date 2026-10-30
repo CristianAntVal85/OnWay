@@ -7,8 +7,23 @@ import { mountedRoutes, mustLogin, startApp, withSession, type TestApp } from '.
 import { TEST_PASSWORD } from '../support/fixtures.js';
 import { TestOnlyController } from '../support/test-controllers.js';
 
-/** Operations built so far in H0. H0 has exactly these five. */
-const BUILT = ['getHealth', 'login', 'logout', 'getMe', 'getOrganization'];
+/**
+ * Operations built so far: the five of H0 plus those of H1 that earlier tasks have mounted. AC-02 compares the routes
+ * Express mounts with this list; each H1 task appends its operations here until T5 leaves exactly the 23 of the milestone.
+ */
+const BUILT = [
+  'getHealth',
+  'login',
+  'logout',
+  'getMe',
+  'getOrganization', // H0
+  'listCoordinators',
+  'listMissions',
+  'createMission',
+  'getMission',
+  'updateMission',
+  'listMissionHistory', // H1-T2
+];
 
 let real: TestApp;
 let stubbed: TestApp;
@@ -38,16 +53,16 @@ async function expectError(response: Response, code: keyof typeof ERROR_HTTP) {
 }
 
 describe('routes come from the registry (AC-02, rule 7)', () => {
-  it('mounts exactly the H0 operations built so far, and all of them are in the registry', () => {
+  it('mounts exactly the operations built so far, and all of them are in the registry', () => {
     const expected = ENDPOINTS.filter((e) => BUILT.includes(e.id)).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
     expect(expected).toHaveLength(BUILT.length);
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing that belongs to a later milestone, test controllers included', () => {
-    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H0')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
+  it('mounts nothing that belongs to a later milestone than H1, test controllers included', () => {
+    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H1')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
-    expect(later.length).toBeGreaterThan(80);
+    expect(later.length).toBeGreaterThan(70);
     expect(later.filter((route) => mounted.has(route))).toEqual([]);
   });
 
@@ -65,7 +80,7 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
   });
 
   it('answers a registry route that is not mounted yet with 404 NOT_FOUND in the error format', async () => {
-    await expectError(await fetch(`${real.baseUrl}/missions`), 'NOT_FOUND');
+    await expectError(await fetch(`${real.baseUrl}/teams`), 'NOT_FOUND');
     await expectError(await fetch(`${real.baseUrl}/nothing-here`), 'NOT_FOUND');
     await expectError(await fetch(`${real.baseUrl}/health`, { method: 'POST' }), 'NOT_FOUND');
   });

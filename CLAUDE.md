@@ -51,15 +51,15 @@ pnpm format:check | typecheck | test | build   # recursivos sobre todo el monore
 pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
 pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
-pnpm --filter @onway/api test:db            # 118 pruebas del esquema sobre PostGIS (Testcontainers, necesita Docker)
-pnpm --filter @onway/api test:api           # 92 pruebas del API sobre PostGIS (Testcontainers)
+pnpm --filter @onway/api test:db            # 13 pruebas de Vitest sobre PostGIS: las 118 comprobaciones SQL del esquema + 8 de la política de la 0010 (Testcontainers, necesita Docker)
+pnpm --filter @onway/api test:api           # 123 pruebas del API sobre PostGIS (Testcontainers)
 pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME
 pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT
 pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (3000)
 db/tests/run-postgis.sh                     # las 118 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-Recuentos de `pnpm -r test`: contratos 83 (74 de contrato y 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web 73. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
+Recuentos de `pnpm -r test`: contratos 84 (75 de contrato y 9 del cliente generado), i18n 8, geo 3, api unitarias 45, web 73. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
 
 `docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen. Los recuentos y el estado al día los anota `docs/estado.md`.
 

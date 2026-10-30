@@ -253,3 +253,11 @@ test('un endpoint no depende de otro de un hito posterior (el MVP es autosuficie
   ];
   for (const [a, b] of needs) assert.ok(h(b) <= h(a), `${a} (${C.MILESTONE_OF[a]}) necesita ${b} (${C.MILESTONE_OF[b]})`);
 });
+
+test('toda escritura que calcula una altitud en el servidor declara OUTSIDE_COVERAGE (H1, AC-10)', () => {
+  // La altitud nunca la envía el cliente (RN-07): si ninguna fuente cubre el punto, la escritura responde 422.
+  for (const id of ['createMission', 'updateMission', 'createMissionPoint', 'updateMissionPoint']) {
+    const endpoint = C.ENDPOINTS.find((e) => e.id === id)!;
+    assert.ok(endpoint.errors?.includes('OUTSIDE_COVERAGE'), `${id} debe declarar OUTSIDE_COVERAGE`);
+  }
+});

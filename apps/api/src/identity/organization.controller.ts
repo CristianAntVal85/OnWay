@@ -17,4 +17,9 @@ export class OrganizationController {
     response.setHeader('Cache-Control', 'no-store');
     return this.organizations.describe(this.database.current(), request.principal!);
   }
+
+  @Operation('listCoordinators')
+  async listCoordinators(@Req() request: OnwayRequest): Promise<OperationOutput<'listCoordinators'>> {
+    return this.organizations.listCoordinators(this.database.current(), request.principal!);
+  }
 }

@@ -3,7 +3,7 @@
 # Orden: secrets -> db -> migrate -> seed -> api -> web. Cada paso espera al anterior.
 #   secrets  genera al azar, solo la primera vez, las contraseñas y el secreto CSRF (volumen `secrets`).
 #   db       PostgreSQL 16 + PostGIS; el primer arranque aplica la 0001 y los roles como superusuario.
-#   migrate  migraciones 0002-0009 como onway_owner.
+#   migrate  migraciones 0002-0010 como onway_owner.
 #   seed     datos de demostración ficticios (R-10), idempotente.
 #   api      NestJS como onway_app (se niega a arrancar con un rol que salte la seguridad por filas).
 #   web      Caddy: sirve la web y hace de proxy de /api. Único puerto publicado: 127.0.0.1:8080.
