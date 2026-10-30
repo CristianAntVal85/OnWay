@@ -13,7 +13,7 @@ Cada cierre: solo con todo en verde, archivos añadidos por nombre, marca de la 
 - Hecho cuando: `pnpm --filter @onway/api test:db` informa 118 PASS y 0 FAIL sobre PostGIS real; una prueba comprueba que `onway_app` no es superusuario, ni `BYPASSRLS`, ni propietario de ninguna tabla; aplicar `migrate` dos veces no hace nada la segunda; `db/tests/run-postgis.sh` sigue dando 118/118.
 - Cierre: commit `test(H0): T2 apply migrations with drizzle and run schema tests on postgis` + push a la rama del hito.
 
-- [ ] **T3. Integración continua.** Salida de H0 («CI en verde»), doc 04 §10 y §11.3; D-H0-23
+- [x] **T3. Integración continua.** Salida de H0 («CI en verde»), doc 04 §10 y §11.3; D-H0-23
   `.github/workflows/ci.yml`: instalación congelada, formato, `typecheck`, `test`, `gen:openapi`, `gen:doc`, `gen:client`, `test:db`, `pnpm audit --prod`. Los trabajos de API, imágenes y E2E se añaden en T4, T9 y T10.
 - Hecho cuando: el push de esta tarea a `hito/H0-cimientos` deja el flujo en verde en GitHub Actions con las 118 pruebas de esquema y las de contrato ejecutadas en el registro del trabajo.
 - Cierre: commit `chore(H0): T3 add ci workflow` + push a la rama del hito.
