@@ -1,0 +1,85 @@
+{
+  "_comment": "Pinned sources of the geodata job (H1 plan P2, R-04). Box: lon -2..4, lat 42..44 (the Pyrenees). Licences: Copernicus GLO-30 free of charge with the notice 'produced using Copernicus WorldDEM-30 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved' (https://spacedata.copernicus.eu/collections/copernicus-digital-elevation-model, read 2026-10-30); OpenStreetMap data ODbL via the Protomaps daily builds (Produced Work, attribution OpenStreetMap required; the bucket keeps only the last week and the latest of each patch version, so the build is chosen at run time and the extract is kept in our own volume; https://docs.protomaps.com/basemaps/downloads, read 2026-10-30); Protomaps fonts SIL OFL 1.1 and sprites derived from MIT tangrams/icons.",
+  "maxTotalBytes": 2147483648,
+  "dem": {
+    "baseUrl": "https://copernicus-dem-30m.s3.amazonaws.com",
+    "tiles": [
+      {
+        "name": "Copernicus_DSM_COG_10_N42_00_W002_00_DEM",
+        "bytes": 42442580,
+        "sha256": "a8c1f26cf08718f65a632170e1c06779bb8ea0d24a63668a50ad46d793a5653a"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N42_00_W001_00_DEM",
+        "bytes": 42439698,
+        "sha256": "8de22cc0acebb4d203bca3cdfe3735a201cae9f95bbc4b264f6da423c7dba130"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N42_00_E000_00_DEM",
+        "bytes": 42815280,
+        "sha256": "5eaed2f61e759d502b945e1f01a130eb88dd4d047ffa1d44dac6f49c0fc00c8f"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N42_00_E001_00_DEM",
+        "bytes": 42615978,
+        "sha256": "dc92fae94fa1e78dedd5da1ec4864763baeeae67d6e11c7d5d3d26d1d2fe2bad"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N42_00_E002_00_DEM",
+        "bytes": 44889825,
+        "sha256": "327c8c5fc6c630a89df61b17e84003b5fda1e169aff83824f1eece1509e0524d"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N42_00_E003_00_DEM",
+        "bytes": 6046009,
+        "sha256": "a808ba2a90cffe8465d700fff6b6accf1381b099e7c7b2eadba8ee99aa0701f2"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N43_00_W002_00_DEM",
+        "bytes": 32420100,
+        "sha256": "444fdce878427b8b2c81f7345f11b9d8bab72254f0c7ad34d14ea77643e026c5"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N43_00_W001_00_DEM",
+        "bytes": 46338184,
+        "sha256": "445fee30e4abea597eb9d3fbdaf6514d8aae1d41a6c075bbc49bfd3ae9fc2247"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N43_00_E000_00_DEM",
+        "bytes": 44889944,
+        "sha256": "a1cf59303e1a69be1c701cf34382845b82432c782565a006bd97a45aa665df0c"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N43_00_E001_00_DEM",
+        "bytes": 44264875,
+        "sha256": "4d29425ec0632eacf5446044c434e6ef69a1dcc2e13018714d77b1099bd49a03"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N43_00_E002_00_DEM",
+        "bytes": 44917011,
+        "sha256": "a8c8d52fb2727dcb100eb2a8d975b617aa83ed5f03bf37e65d43fd411701e0c5"
+      },
+      {
+        "name": "Copernicus_DSM_COG_10_N43_00_E003_00_DEM",
+        "bytes": 32070160,
+        "sha256": "8b077dabb58ae1503325bd243eaa7c13f804599d1c403c4d38cc518b62292d0e"
+      }
+    ]
+  },
+  "assets": {
+    "url": "https://github.com/protomaps/basemaps-assets/archive/028c18f713baecad011301ff7a69acc39bcc2ae7.tar.gz",
+    "commit": "028c18f713baecad011301ff7a69acc39bcc2ae7",
+    "maxBytes": 52428800,
+    "treeSha256": "7fb5f9875767d60dfe1b875983af36638461abaccb91ff87552045ae3d20c691",
+    "include": ["fonts/Noto Sans Regular", "fonts/Noto Sans Medium", "fonts/Noto Sans Italic", "fonts/OFL.txt", "sprites/v4"]
+  },
+  "tiles": {
+    "index": "https://build-metadata.protomaps.dev/builds.json",
+    "base": "https://build.protomaps.com/",
+    "schemaMajor": 4,
+    "file": "pyrenees.pmtiles",
+    "bbox": [-2, 42, 4, 44],
+    "maxzoom": 14,
+    "maxBytes": 1073741824
+  }
+}

@@ -32,6 +32,8 @@ const BUILT = [
   'deleteMissionPoint',
   'listMyMissions',
   'getMyMission', // H1-T3
+  'geocode',
+  'getElevation', // H1-T4
 ];
 
 let real: TestApp;

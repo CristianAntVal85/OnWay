@@ -604,9 +604,9 @@ Orden de ejecución y responsabilidades:
 
 ## 10. Datos de ejemplo
 
-Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api seed`), siempre ficticios (R-10). Se cargan como `onway_owner`, no por la API. Cada hito añade los datos que su demostración necesita; la tabla es el objetivo de v1 y la columna «H0» dice lo que existe hoy.
+Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api seed`), siempre ficticios (R-10). Se cargan como `onway_owner`, no por la API. Cada hito añade los datos que su demostración necesita; la tabla es el objetivo de v1 y la columna «Hecho» dice lo que existe hoy y en qué hito se hizo.
 
-| Dato | Cantidad | H0 |
+| Dato | Cantidad | Hecho |
 |---|---|---|
 | Organizaciones | 1 en la demostración. El aislamiento se prueba con una segunda que **crean las propias pruebas** (el fixture de `test:api` y la preparación del E2E) y que no forma parte de `demo.json` (D-H0-18) | 1 |
 | Administrador y coordinadores | 1 y 2 | 1 y 2 (uno con interfaz en francés) |
@@ -615,9 +615,9 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 | Equipos | 4, con localidades distintas, y rescatistas en 0, 1 y 2 equipos | 4 |
 | Datos sensibles | Documentos y direcciones inventados, con letra de DNI válida, cifrados | H5 |
 | Cursos y habilidades | 20, algunos con certificado ficticio (un PDF de una página) | H5 |
-| Misiones | 6: dos en planificación, dos activas, dos cerradas. Las cerradas con participación confirmada y alguna desmarcada | H2 |
+| Misiones | 6: dos en planificación, dos activas, dos cerradas. Las cerradas con participación confirmada y alguna desmarcada. **H1 siembra 3 (una por estado, ficticias; la activa con origen, intermedio y reunión; la cerrada sin participaciones, que llegan en H6)**, cada una con sus filas de `audit_log` y la altitud calculada por el `ElevationProvider`; las 6 completas, con participaciones, son de H6 | H1 (3 de 6) |
 | Rutas | 8 en la biblioteca, con 1 a 3 versiones. Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada | H3 |
-| Objetivos | En el Pirineo, escogidos con la prueba técnica del motor de rutas (documento 04, sección 7.3); la geometría de las rutas de ejemplo sale de esa prueba | H1 |
+| Objetivos | En el Pirineo, escogidos con la prueba técnica del motor de rutas (documento 04, sección 7.3); la geometría de las rutas de ejemplo sale de esa prueba. Los 3 objetivos de H1 son inventados y caen dentro de la caja de `geodata` (lon −2…4, lat 42…44) | H1 (inventados) |
 
 ## 11. Pruebas de la base de datos
 
@@ -678,7 +678,7 @@ El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las 
 
 ## 15. Registro de cambios
 
-**0.5 (2026-10-30)** H1-T2. Migración 0010: política permisiva `audit_mission_staff` en `audit_log` para que el personal lea el historial de las misiones de su organización (`listMissionHistory`, P3 del plan de H1). §6.3 (matriz y nota), §9 (plan de migraciones, 0010 en la primera entrega), §11 (pruebas de la política) y §12 al día. Las 118 comprobaciones SQL no cambian.
+**0.5 (2026-10-30)** H1-T4: §10 con las 3 misiones de demostración de H1 (P4 b; las 6 completas, en H6). H1-T2. Migración 0010: política permisiva `audit_mission_staff` en `audit_log` para que el personal lea el historial de las misiones de su organización (`listMissionHistory`, P3 del plan de H1). §6.3 (matriz y nota), §9 (plan de migraciones, 0010 en la primera entrega), §11 (pruebas de la política) y §12 al día. Las 118 comprobaciones SQL no cambian.
 
 **0.4 (2026-10-30)** Cierre de H0. PostGIS real verificado (118 comprobaciones sobre `postgis/postgis:16-3.4`) y migrador de Drizzle verificado; se quita de «no verificado» lo que ya lo está. DB-01: las migraciones son SQL a mano aplicadas por el migrador de Drizzle con su diario, sin `drizzle-kit`. §9: la 0001 la ejecuta un superusuario en el arranque de la base; 0002–0009, `onway_owner` con el migrador. §10: la demostración lleva una organización (la segunda, para el aislamiento, la crean las pruebas), seis rescatistas con perfil incompleto hasta H5 y una cuenta pendiente. §11: las pruebas corren desde `apps/api/test/db/` sobre los SQL de `db/tests/`; comprobación de roles en el humo del stack.
 

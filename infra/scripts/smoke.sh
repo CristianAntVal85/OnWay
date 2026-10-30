@@ -44,6 +44,19 @@ check_account coordinador@example.org coordinator home
 check_account rescatista1@example.org rescuer complete-profile
 check_account pendiente@example.org "" awaiting-approval
 
+# Altitud del servidor (H1-T4): un punto de los Pirineos lo resuelve el DEM local (Copernicus o el sintético del E2E); es solo para el personal.
+check_elevation() {
+  : >"$jar"
+  curl -s -c "$jar" -b "$jar" -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"$password\"}" "$base/api/v1/auth/login" >/dev/null
+  code="$(status -b "$jar" "$base/api/v1/geo/elevation?lat=42.63&lon=-0.1")"
+  [ "$code" = "$2" ] || fail "getElevation as $1 must be $2, got $code"
+}
+check_elevation coordinador@example.org 200
+body="$(curl -s -b "$jar" "$base/api/v1/geo/elevation?lat=42.63&lon=-0.1")"
+echo "$body" | grep -Eq '"elevationM":-?[0-9]+(\.[0-9]+)?' || fail "getElevation returned no altitude: $body"
+check_elevation rescatista1@example.org 403
+echo "ok  getElevation: coordinator 200 with an altitude, rescuer 403"
+
 wrong="$(status -H 'Content-Type: application/json' -d '{"email":"admin@example.org","password":"incorrecta-incorrecta"}' "$base/api/v1/auth/login")"
 [ "$wrong" = 401 ] || fail "wrong credentials must be 401, got $wrong"
 echo "ok  wrong credentials -> 401"

@@ -1,0 +1,9 @@
+[
+  {
+    "place_id": 3,
+    "lat": "42.7333",
+    "lon": "-0.0167",
+    "display_name": "Gavarnie (ficticio), Hautes-Pyrénées, Occitanie, France",
+    "address": { "village": "Gavarnie", "country": "France", "country_code": "fr" }
+  }
+]

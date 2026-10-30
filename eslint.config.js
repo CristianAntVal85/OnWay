@@ -59,6 +59,22 @@ export default defineConfig([
     },
   },
   {
+    // Scripts de Node sin transpilar (infra/): los globales de Node que usan, declarados a mano (sin añadir el paquete `globals`).
+    files: ['infra/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+        console: 'readonly',
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
+        setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        clearTimeout: 'readonly',
+      },
+    },
+  },
+  {
     // Límite del mapa: todo `apps/web/src` salvo el módulo `src/map/` (que no existe hasta T6).
     files: ['apps/web/src/**/*.{ts,tsx}'],
     ignores: ['apps/web/src/map/**'],

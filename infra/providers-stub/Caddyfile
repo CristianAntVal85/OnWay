@@ -1,0 +1,37 @@
+# providers-stub: respuestas fijas de Nominatim y Open-Meteo para el E2E y el CI (D-H1-15). Nada sale a Internet:
+# los adaptadores reales de la `api` apuntan aquí por URL. Todo es ficticio (R-10). No es parte de la pila de demostración.
+# Las respuestas están en responses/*.json (JSON dentro del Caddyfile choca con los marcadores `{...}` de Caddy).
+{
+	admin off
+	auto_https off
+}
+
+:8081 {
+	root * /srv/stub
+
+	# `route` fija el orden: primero el User-Agent, luego los casos, al final el archivo.
+	route {
+		# La política de Nominatim exige identificar la aplicación: el adaptador real lo cumple y la prueba lo vigila.
+		@noagent not header User-Agent *OnWay*
+		respond @noagent "missing User-Agent" 400
+
+		# ---- Nominatim: GET /search?q=... (jsonv2, addressdetails=1) ----
+		@fail expression path('/search') && {http.request.uri.query.q}.matches('(?i)caida503')
+		respond @fail "upstream down" 503
+
+		@torla expression path('/search') && {http.request.uri.query.q}.matches('(?i)torla')
+		rewrite @torla /nominatim-torla.json
+
+		@gavarnie expression path('/search') && {http.request.uri.query.q}.matches('(?i)gavarnie')
+		rewrite @gavarnie /nominatim-gavarnie.json
+
+		@other path /search
+		rewrite @other /nominatim-empty.json
+
+		# ---- Open-Meteo: GET /v1/elevation?latitude=..&longitude=.. (fuera de la caja del DEM local) ----
+		@elevation path /v1/elevation
+		rewrite @elevation /openmeteo-elevation.json
+
+		file_server
+	}
+}

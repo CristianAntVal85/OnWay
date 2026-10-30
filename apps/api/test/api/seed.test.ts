@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
-import { MeResponse } from '@onway/contracts';
+import { MeResponse, MissionDetail, MissionHistoryPage, MissionsPage, MyMissionsPage } from '@onway/contracts';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { loadDemo } from '../../src/seed/demo.js';
+import type { ElevationProvider } from '../../src/geo/elevation.js';
+import { SyntheticElevationProvider } from '../../src/geo/synthetic-elevation.js';
 import { seedDemo } from '../../src/seed/seed.js';
 import { verifyPassword } from '../../src/identity/password.js';
 import { login, mustLogin, startApp, withSession, type TestApp } from '../support/app.js';
@@ -12,6 +14,9 @@ const demo = loadDemo();
 let fixtures: Fixtures;
 let app: TestApp;
 let orgId: string;
+const elevation = new SyntheticElevationProvider();
+const warnings: string[] = [];
+const options = { elevation, warn: (message: string) => warnings.push(message) };
 
 const count = async (sql: string, values: unknown[] = []) => Number((await fixtures.query<{ n: string }>(sql, values))[0]!.n);
 
@@ -26,6 +31,9 @@ async function fingerprint(): Promise<string> {
       `SELECT * FROM signup_requests ORDER BY id`,
       `SELECT * FROM teams ORDER BY id`,
       `SELECT * FROM team_members ORDER BY team_id, user_id`,
+      `SELECT id, name, status, ST_AsEWKT(target) target, created_at, updated_at, activated_at, closed_at FROM missions ORDER BY id`,
+      `SELECT id, kind, name, ST_AsEWKT(geom) geom, position FROM mission_points ORDER BY id`,
+      `SELECT * FROM audit_log ORDER BY id`,
     ].map(async (query) => JSON.stringify(await fixtures.query(query))),
   );
   return createHash('sha256').update(parts.join('\n')).digest('hex');
@@ -45,18 +53,21 @@ afterAll(async () => {
 describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
   it('loads the agreed demo and a second run changes nothing', async () => {
     const { owner } = inject('database');
-    const first = await seedDemo(owner, demo);
-    expect(first.seeded).toBe(true);
+    const first = await seedDemo(owner, demo, options);
+    expect(first).toMatchObject({ seeded: true, missions: 3 });
     orgId = first.organizationId;
     const before = await fingerprint();
 
-    const second = await seedDemo(owner, demo);
-    expect(second).toEqual({ seeded: false, organizationId: orgId });
+    const second = await seedDemo(owner, demo, options);
+    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0 });
     expect(await fingerprint()).toBe(before);
 
     // Two runs at once also end with a single organization.
-    await Promise.all([seedDemo(owner, demo), seedDemo(owner, demo)]);
+    await Promise.all([seedDemo(owner, demo, options), seedDemo(owner, demo, options)]);
     expect(await count(`SELECT count(*) n FROM organizations WHERE name = $1`, [demo.organization.name])).toBe(1);
+    expect(await fingerprint()).toBe(before);
+    expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [orgId])).toBe(3);
+    expect(warnings).toEqual([]);
   });
 
   it('has the agreed counts, one organization only (D-H0-18)', async () => {
@@ -149,5 +160,106 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
     // demo.json names one organization; the seed never creates a second one.
     expect(Object.keys(demo)).not.toContain('organizations');
     expect(await count(`SELECT count(*) n FROM organizations WHERE id = $1 AND name = $2`, [orgB, demo.organization.name])).toBe(0);
+  });
+
+  describe('demo missions (P4 b, RN-07, INV-16)', () => {
+    const missionRows = () =>
+      fixtures.query<{ id: string; name: string; status: string; elevation: number; activated_at: Date | null; closed_at: Date | null; coordinator_email: string }>(
+        `SELECT m.id, m.name, m.status::text, ST_Z(m.target) elevation, m.activated_at, m.closed_at, u.email coordinator_email
+           FROM missions m JOIN users u ON u.id = m.coordinator_id WHERE m.organization_id = $1 ORDER BY m.name`,
+        [orgId],
+      );
+
+    it('has one fictitious mission per state, each in its place, with the altitude of the configured ElevationProvider', async () => {
+      const rows = await missionRows();
+      expect(rows.map((r) => r.status).sort()).toEqual(['active', 'closed', 'planning']);
+      for (const row of rows) {
+        const wanted = demo.missions.find((m) => m.name === row.name)!;
+        expect(row.name).toMatch(/ficticio/i);
+        expect(row.status).toBe(wanted.status);
+        expect(row.elevation).toBe(await elevation.elevationAt(wanted.target));
+        expect(row.coordinator_email).toBe(demo.members.find((m) => m.key === wanted.coordinator)!.email);
+        expect(row.activated_at !== null).toBe(wanted.status !== 'planning');
+        expect(row.closed_at !== null).toBe(wanted.status === 'closed');
+      }
+      // Participations arrive with H6: the closed one has none.
+      expect(await count(`SELECT count(*) n FROM participations WHERE organization_id = $1`, [orgId])).toBe(0);
+    });
+
+    it('the active one has an origin, an intermediate and a rendezvous point, each with its altitude and position', async () => {
+      const active = demo.missions.find((m) => m.status === 'active')!;
+      const points = await fixtures.query<{ kind: string; name: string; elevation: number; position: number }>(
+        `SELECT p.kind::text, p.name, ST_Z(p.geom) elevation, p.position FROM mission_points p JOIN missions m ON m.id = p.mission_id WHERE m.organization_id = $1 AND m.name = $2 ORDER BY p.kind`,
+        [orgId, active.name],
+      );
+      expect(points.map((p) => p.kind).sort()).toEqual(['origin', 'rendezvous', 'waypoint']);
+      for (const point of points) {
+        expect(point.position).toBe(0);
+        expect(point.elevation).toBe(await elevation.elevationAt(active.points.find((p) => p.name === point.name)!));
+      }
+    });
+
+    it('every mission has its mission_created row in the history, written by its coordinator (INV-16)', async () => {
+      const rows = await fixtures.query<{ name: string; action: string; actor_email: string }>(
+        `SELECT m.name, a.action, u.email actor_email FROM audit_log a JOIN missions m ON m.id = a.entity_id JOIN users u ON u.id = a.actor_user_id
+          WHERE a.organization_id = $1 AND a.entity_type = 'mission' ORDER BY a.id`,
+        [orgId],
+      );
+      for (const mission of demo.missions) {
+        const own = rows.filter((r) => r.name === mission.name);
+        expect(own.filter((r) => r.action === 'mission_created')).toHaveLength(1);
+        expect(own[0]!.action).toBe('mission_created');
+        expect(own.some((r) => r.action === 'mission_activated')).toBe(mission.status !== 'planning');
+        expect(own.some((r) => r.action === 'mission_closed')).toBe(mission.status === 'closed');
+        expect(new Set(own.map((r) => r.actor_email))).toEqual(new Set([demo.members.find((m) => m.key === mission.coordinator)!.email]));
+      }
+    });
+
+    it('shows through the API: the coordinator lists and reads them, with a history; the rescuer sees only the active and the closed (RN-16)', async () => {
+      const coordinator = demo.members.find((m) => m.key === 'coordinator-es')!;
+      const staff = await mustLogin(app, coordinator.email, demo.demoPassword);
+      const list = MissionsPage.parse(await (await fetch(`${app.baseUrl}/missions?pageSize=50`, { headers: withSession(staff, false) })).json());
+      expect(list.items.map((m) => m.name).sort()).toEqual(demo.missions.map((m) => m.name).sort());
+
+      const active = demo.missions.find((m) => m.status === 'active')!;
+      const id = list.items.find((m) => m.name === active.name)!.id;
+      const detail = MissionDetail.parse(await (await fetch(`${app.baseUrl}/missions/${id}`, { headers: withSession(staff, false) })).json());
+      expect(detail.points.map((p) => p.kind).sort()).toEqual(['origin', 'rendezvous', 'waypoint']);
+      expect(detail.target.elevationM).toBe(await elevation.elevationAt(active.target));
+      const history = MissionHistoryPage.parse(await (await fetch(`${app.baseUrl}/missions/${id}/history`, { headers: withSession(staff, false) })).json());
+      expect(history.items.map((h) => h.action)).toContain('mission_created');
+
+      const rescuer = demo.members.find((m) => m.role === 'rescuer')!;
+      const rescuerSession = await mustLogin(app, rescuer.email, demo.demoPassword);
+      const mine = MyMissionsPage.parse(await (await fetch(`${app.baseUrl}/my/missions`, { headers: withSession(rescuerSession, false) })).json());
+      expect(mine.items.map((m) => m.name).sort()).toEqual(
+        demo.missions
+          .filter((m) => m.status !== 'planning')
+          .map((m) => m.name)
+          .sort(),
+      );
+    });
+
+    it('a stack seeded before the missions existed gains them on the next run, and a mission with no elevation source is skipped with a warning until it has one', async () => {
+      const { owner } = inject('database');
+      const other = {
+        ...demo,
+        organization: { ...demo.organization, name: 'Servicio de prueba del catch-up' },
+        members: demo.members.map((m) => ({ ...m, email: `catchup-${m.email}` })),
+        applicants: demo.applicants.map((a) => ({ ...a, email: `catchup-${a.email}` })),
+        missions: demo.missions.map((m) => ({ ...m, name: `${m.name} (catch-up)` })),
+      };
+      const nothing: ElevationProvider = { elevationAt: async () => null };
+      const messages: string[] = [];
+      const first = await seedDemo(owner, other, { elevation: nothing, warn: (m) => messages.push(m) });
+      expect(first).toMatchObject({ seeded: true, missions: 0 });
+      expect(messages).toHaveLength(3);
+      expect(messages[0]).toMatch(/skipped/);
+      expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(0);
+
+      const second = await seedDemo(owner, other, options);
+      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3 });
+      expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(3);
+    });
   });
 });
