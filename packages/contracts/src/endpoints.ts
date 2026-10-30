@@ -86,7 +86,7 @@ const Items = <T extends z.ZodType>(t: T) => z.strictObject({ items: z.array(t) 
 const RAW = [
   // ================= Sistema =================
   { id: 'getHealth', method: 'GET', path: '/health', tag: 'Sistema', summary: 'Estado del servicio y de sus dependencias', roles: ['public'], response: { status: 200, schema: Health }, delivery: 1,
-    notes: 'Lo consulta el comprobador externo. 200 aunque una dependencia falle (status "degraded"): la degradación es controlada.' },
+    notes: 'Lo consulta el comprobador externo. 200 aunque una dependencia falle (status "degraded"): la degradación es controlada. En H0 solo se comprueba la base de datos (SELECT 1 sin contexto de usuario); routingEngine y weatherProvider valen false mientras no exista su adaptador (puertos RoutingProvider y WeatherProvider) y no degradan status hasta que lo haya.' },
 
   // ================= Acceso =================
   { id: 'register', method: 'POST', path: '/auth/register', tag: 'Acceso', summary: 'Solicitar el alta con código de invitación', roles: ['public'],

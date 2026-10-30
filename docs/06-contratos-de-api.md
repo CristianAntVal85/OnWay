@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 0.3 · **Estado:** borrador para revisión · **Fecha:** 29 de octubre de 2026
+**Versión:** 0.4 · **Estado:** borrador para revisión · **Fecha:** 29 de octubre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -119,6 +119,8 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | Operación | Petición | Quién | Entrada | Respuesta | Errores propios |
 |---|---|---|---|---|---|
 | `getHealth` · **H0**<br>Estado del servicio y de sus dependencias | `GET /health` | Público | — | 200: status, checks | — |
+
+**Nota sobre `getHealth` (H0).** Responde siempre 200: si una dependencia falla, `status` pasa a `degraded` y `checks` dice cuál. En H0 solo se comprueba la base de datos (`SELECT 1` sin contexto de usuario, como `onway_app`). `routingEngine` y `weatherProvider` valen `false` mientras no exista el adaptador de su puerto (`RoutingProvider`, `WeatherProvider`) y **no degradan `status`** hasta entonces: un `degraded` permanente dejaría de ser una señal útil para el comprobador externo. La nota está también en el `description` de la operación del OpenAPI.
 
 ### Acceso
 
@@ -832,6 +834,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.4 | 2026-10-30 | Nota de `getHealth` (H0): solo comprueba la base de datos; `routingEngine` y `weatherProvider` son `false` sin degradar `status` hasta que exista su adaptador. Se escribe en el registro de endpoints y de ahí al OpenAPI (decisión D-H0-12). Sin cambios de esquema |
 | 0.3 | 2026-10-30 | Cada operación tiene hito de construcción (H0–H9, documento 07) en `src/milestones.ts`, con 3 pruebas nuevas (74 en total) y `x-milestone` en el OpenAPI |
 | 0.2 | 2026-10-29 | Q-33, Q-34 y Q-35 resueltas. Recuperar contraseña entra en el contrato (95 operaciones en el OpenAPI, 93 de primera entrega) con la migración 0009 y 21 pruebas nuevas de base de datos (118 en total). Error `INVALID_RESET_TOKEN` y acción de auditoría `password_reset` |
 | 0.1 | 2026-10-29 | Primera versión: 18 decisiones, 95 endpoints (91 de primera entrega, 2 de segunda, 2 pendientes), 70 pruebas de contrato, OpenAPI generado. Añadidos `calculation_jobs.result` y `organizations.validation_max_age_days` a la base de datos. Resuelta la incoherencia del boceto 13 (Q-34) |

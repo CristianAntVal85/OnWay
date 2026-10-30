@@ -18,7 +18,7 @@ Cada cierre: solo con todo en verde, archivos añadidos por nombre, marca de la 
 - Hecho cuando: el push de esta tarea a `hito/H0-cimientos` deja el flujo en verde en GitHub Actions con las 118 pruebas de esquema y las de contrato ejecutadas en el registro del trabajo.
 - Cierre: commit `chore(H0): T3 add ci workflow` + push a la rama del hito.
 
-- [ ] **T4. Esqueleto del API: contexto de transacción, errores y salud.** `getHealth`; INV-01 (base), RF-103 (base); AC-02, AC-05, AC-16; puerto `Clock`; D-H0-01, 02, 06, 12, 13
+- [x] **T4. Esqueleto del API: contexto de transacción, errores y salud.** `getHealth`; INV-01 (base), RF-103 (base); AC-02, AC-05, AC-16; puerto `Clock`; D-H0-01, 02, 06, 12, 13
   NestJS (Express) con módulos `database` (`withContext` y `withAnonymous` sobre `AsyncLocalStorage`, conexión `onway_app`), `common` (`@Operation` desde el registro, tubería de validación Zod, filtro de errores desde `ERROR_HTTP`, `requestId`) y `health`; esquema Drizzle de las tablas de H0; `Clock`. Añadir el trabajo `test:api` al CI.
 - Hecho cuando: `pnpm --filter @onway/api test:api` en verde sobre PostGIS real con: rutas montadas = solo las operaciones H0 implementadas hasta ahora y todas del registro (AC-02); `GET /api/v1/health` 200 y valida contra su esquema; un cuerpo inválido da 400 `VALIDATION_FAILED` con `issues`; todo error valida contra `ErrorResponse` y lleva `requestId`; sin contexto una consulta de `memberships` devuelve 0 filas; el esquema Drizzle coincide con `information_schema`.
 - Cierre: commit `feat(H0): T4 add api skeleton with transaction context, errors and health` + push a la rama del hito.
