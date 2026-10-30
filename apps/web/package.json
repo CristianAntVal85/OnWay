@@ -9,7 +9,7 @@
     "test": "pnpm --filter @onway/contracts gen:client && vitest run",
     "build": "pnpm --filter @onway/contracts gen:client && tsc --noEmit && vite build",
     "preview": "vite preview",
-    "e2e": "pnpm --filter @onway/i18n build && playwright test -c e2e"
+    "e2e": "pnpm --filter @onway/i18n... build && playwright test -c e2e"
   },
   "dependencies": {
     "@onway/contracts": "workspace:*",
