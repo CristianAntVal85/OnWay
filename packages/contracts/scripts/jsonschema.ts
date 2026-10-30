@@ -2,8 +2,7 @@ import { z } from 'zod';
 
 type J = Record<string, any>;
 
-export const toJson = (s: z.ZodType, io: 'input' | 'output'): J =>
-  z.toJSONSchema(s, { io, unrepresentable: 'any', target: 'draft-2020-12', reused: 'inline' }) as J;
+export const toJson = (s: z.ZodType, io: 'input' | 'output'): J => z.toJSONSchema(s, { io, unrepresentable: 'any', target: 'draft-2020-12', reused: 'inline' }) as J;
 
 /** Tipo legible de un nodo JSON Schema: uuid, string, int, enum(a|b), array<…>, objeto{…}. */
 export function typeOf(n: J): string {
@@ -25,17 +24,29 @@ export function typeOf(n: J): string {
       if (n.format === 'email') return 'correo';
       if (n.format === 'uri') return 'url';
       return 'texto';
-    case 'integer': return 'entero';
-    case 'number': return 'número';
-    case 'boolean': return 'booleano';
-    case 'array': return n.prefixItems ? `[${n.prefixItems.map(typeOf).join(', ')}]` : `lista de ${typeOf(n.items)}`;
-    case 'object': return n.properties ? 'objeto' : 'objeto libre';
-    case 'null': return 'null';
-    default: return n.type ?? 'any';
+    case 'integer':
+      return 'entero';
+    case 'number':
+      return 'número';
+    case 'boolean':
+      return 'booleano';
+    case 'array':
+      return n.prefixItems ? `[${n.prefixItems.map(typeOf).join(', ')}]` : `lista de ${typeOf(n.items)}`;
+    case 'object':
+      return n.properties ? 'objeto' : 'objeto libre';
+    case 'null':
+      return 'null';
+    default:
+      return n.type ?? 'any';
   }
 }
 
-export interface Row { path: string; type: string; required: boolean; note: string }
+export interface Row {
+  path: string;
+  type: string;
+  required: boolean;
+  note: string;
+}
 
 /** Aplana las propiedades de un esquema hasta `depth` niveles de objetos anidados. */
 export function flatten(n: J, prefix = '', depth = 2, required = true): Row[] {
@@ -52,7 +63,15 @@ export function flatten(n: J, prefix = '', depth = 2, required = true): Row[] {
     const path = prefix ? `${prefix}.${k}` : k;
     const isReq = required && req.has(k);
     const lim = (x: number | undefined) => (x === undefined || Math.abs(x) > 1e15 ? undefined : x);
-    const note = [lim(v.minimum) !== undefined ? `≥${v.minimum}` : '', lim(v.maximum) !== undefined ? `≤${v.maximum}` : '', v.minLength ? `min ${v.minLength}` : '', v.maxLength ? `máx ${v.maxLength}` : '', v.default !== undefined ? `por defecto ${JSON.stringify(v.default)}` : ''].filter(Boolean).join(', ');
+    const note = [
+      lim(v.minimum) !== undefined ? `≥${v.minimum}` : '',
+      lim(v.maximum) !== undefined ? `≤${v.maximum}` : '',
+      v.minLength ? `min ${v.minLength}` : '',
+      v.maxLength ? `máx ${v.maxLength}` : '',
+      v.default !== undefined ? `por defecto ${JSON.stringify(v.default)}` : '',
+    ]
+      .filter(Boolean)
+      .join(', ');
     rows.push({ path, type: typeOf(v), required: isReq, note });
     const arr = v.type === 'array' ? v : v.anyOf?.find((p: J) => p.type === 'array' && p.items?.type === 'object');
     const obj = v.type === 'object' ? v : v.anyOf?.find((p: J) => p.type === 'object' && p.properties);
@@ -61,4 +80,7 @@ export function flatten(n: J, prefix = '', depth = 2, required = true): Row[] {
   }
   return dedupe(rows);
 }
-const dedupe = (rows: Row[]) => { const seen = new Set<string>(); return rows.filter((r) => (seen.has(r.path) ? false : (seen.add(r.path), true))); };
+const dedupe = (rows: Row[]) => {
+  const seen = new Set<string>();
+  return rows.filter((r) => (seen.has(r.path) ? false : (seen.add(r.path), true)));
+};

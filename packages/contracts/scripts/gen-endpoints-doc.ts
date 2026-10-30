@@ -7,7 +7,12 @@ const outDir = process.argv[2] ?? 'gen';
 mkdirSync(outDir, { recursive: true });
 
 const ROLE: Record<Role, string> = { public: 'Público', pending: 'Pendiente', rescuer: 'Rescatista', coordinator: 'Coordinador', admin: 'Admin' };
-const roles = (r: readonly Role[]) => (r.length >= 4 && r.includes('rescuer') && r.includes('coordinator') && r.includes('admin') ? (r.includes('pending') ? 'Todos con sesión' : 'Rescatista, coordinador, admin') : r.map((x) => ROLE[x]).join(', '));
+const roles = (r: readonly Role[]) =>
+  r.length >= 4 && r.includes('rescuer') && r.includes('coordinator') && r.includes('admin')
+    ? r.includes('pending')
+      ? 'Todos con sesión'
+      : 'Rescatista, coordinador, admin'
+    : r.map((x) => ROLE[x]).join(', ');
 
 function keys(schema: Endpoint['body'] | Endpoint['query'], io: 'input' | 'output'): string {
   if (!schema) return '—';
@@ -27,7 +32,15 @@ let md = '';
 for (const tag of tags) {
   md += `### ${tag}\n\n| Operación | Petición | Quién | Entrada | Respuesta | Errores propios |\n|---|---|---|---|---|---|\n`;
   for (const e of ENDPOINTS.filter((x) => x.tag === tag)) {
-    const input = [e.params ? `ruta: ${Object.keys(e.params.shape).join(', ')}` : '', e.query ? `consulta: ${keys(e.query, 'input')}` : '', e.body ? `cuerpo: ${keys(e.body, 'input')}` : '', e.multipart ? `formulario: ${keys(e.multipart, 'input')} + file` : ''].filter(Boolean).join('<br>') || '—';
+    const input =
+      [
+        e.params ? `ruta: ${Object.keys(e.params.shape).join(', ')}` : '',
+        e.query ? `consulta: ${keys(e.query, 'input')}` : '',
+        e.body ? `cuerpo: ${keys(e.body, 'input')}` : '',
+        e.multipart ? `formulario: ${keys(e.multipart, 'input')} + file` : '',
+      ]
+        .filter(Boolean)
+        .join('<br>') || '—';
     const resp = e.response.status === 204 ? '204' : e.response.file ? `${e.response.status} archivo` : `${e.response.status}: ${keys(e.response.schema, 'output')}`;
     const errs = (e.errors ?? []).map((c) => `\`${c}\``).join(' ') || '—';
     md += `| \`${e.id}\` ${delivery(e)}<br>${e.summary}${e.audited ? ' *(auditado)*' : ''} | ${methodPath(e)} | ${roles(e.roles)} | ${input} | ${resp} | ${errs} |\n`;
@@ -73,6 +86,8 @@ for (const [s, cs] of [...byStatus].sort((a, b) => a[0] - b[0])) er += `| ${s} |
 writeFileSync(`${outDir}/errors.md`, er);
 
 const n = ENDPOINTS.length;
-console.log(`porHito=${MILESTONES.map((m) => `${m}:${ENDPOINTS.filter((e) => e.milestone === m).length}`).join(' ')}\nendpoints=${n} primera=${ENDPOINTS.filter((e) => e.delivery === 1).length} segunda=${ENDPOINTS.filter((e) => e.delivery === 2).length} pendiente=${ENDPOINTS.filter((e) => e.delivery === 'pendiente').length}`);
+console.log(
+  `porHito=${MILESTONES.map((m) => `${m}:${ENDPOINTS.filter((e) => e.milestone === m).length}`).join(' ')}\nendpoints=${n} primera=${ENDPOINTS.filter((e) => e.delivery === 1).length} segunda=${ENDPOINTS.filter((e) => e.delivery === 2).length} pendiente=${ENDPOINTS.filter((e) => e.delivery === 'pendiente').length}`,
+);
 console.log(`implícitos ejemplo (login): ${implicitErrors(ENDPOINTS.find((e) => e.id === 'login')!).join(' ')}`);
 void allErrors;

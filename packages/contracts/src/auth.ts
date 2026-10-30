@@ -4,7 +4,10 @@ import { AccountStatus, Locale, MemberRole, ProfileStatus } from './enums.js';
 import { Id } from './common.js';
 import { PASSWORD_MIN } from './validators.js';
 
-export const Email = z.email().max(254).transform((e) => e.toLowerCase());
+export const Email = z
+  .email()
+  .max(254)
+  .transform((e) => e.toLowerCase());
 export const Password = z.string().min(PASSWORD_MIN).max(200);
 
 /** Registro (RF-104). Nunca concede rol (RN-25). `passwordConfirm` lo comprueba la web y la API por igual. */

@@ -81,7 +81,9 @@ const Health = z.strictObject({
 
 const Items = <T extends z.ZodType>(t: T) => z.strictObject({ items: z.array(t) });
 
-const RAW: readonly Omit<Endpoint, 'milestone'>[] = [
+// Una operación por línea, como en el documento 06.
+// prettier-ignore
+const RAW = [
   // ================= Sistema =================
   { id: 'getHealth', method: 'GET', path: '/health', tag: 'Sistema', summary: 'Estado del servicio y de sus dependencias', roles: ['public'], response: { status: 200, schema: Health }, delivery: 1,
     notes: 'Lo consulta el comprobador externo. 200 aunque una dependencia falle (status "degraded"): la degradación es controlada.' },
@@ -327,13 +329,29 @@ const RAW: readonly Omit<Endpoint, 'milestone'>[] = [
     response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1 },
   { id: 'rotateInviteCode', method: 'POST', path: '/admin/invite-code/rotate', tag: 'Administración', summary: 'Regenerar el código de invitación', roles: ['admin'],
     body: Empty, response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1, audited: true },
-];
+] as const satisfies readonly Omit<Endpoint, 'milestone'>[];
 
 export const ENDPOINTS: readonly Endpoint[] = RAW.map((e) => {
   const milestone = MILESTONE_OF[e.id];
   if (!milestone) throw new Error(`Falta el hito del endpoint ${e.id} en milestones.ts`);
   return { ...e, milestone };
 });
+
+// ---------- Tipos derivados del registro (los usa el cliente generado) ----------
+type RawEndpoint = (typeof RAW)[number];
+export type OperationId = RawEndpoint['id'];
+type OperationOf<I extends OperationId> = Extract<RawEndpoint, { id: I }>;
+type InputOf<S> = S extends z.ZodType ? z.input<S> : never;
+
+/** Entrada de una operación: `params`, `query` y `body` según declare el registro. */
+export type OperationInput<I extends OperationId> = (OperationOf<I> extends { params: infer P } ? { params: InputOf<P> } : unknown) &
+  (OperationOf<I> extends { query: infer Q } ? ({} extends InputOf<Q> ? { query?: InputOf<Q> } : { query: InputOf<Q> }) : unknown) &
+  (OperationOf<I> extends { body: infer B } ? { body: InputOf<B> } : unknown) &
+  (OperationOf<I> extends { multipart: z.ZodType } ? { body: FormData } : unknown);
+
+/** Respuesta correcta de una operación: el esquema, un `Blob` si es una descarga o `void` si no hay cuerpo. */
+export type OperationOutput<I extends OperationId> =
+  OperationOf<I> extends { response: { schema: infer S } } ? (S extends z.ZodType ? z.output<S> : never) : OperationOf<I> extends { response: { file: string } } ? Blob : void;
 
 // ---------- Utilidades ----------
 export const endpointKey = (e: Pick<Endpoint, 'method' | 'path'>) => `${e.method} ${e.path}`;

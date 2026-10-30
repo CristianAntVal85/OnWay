@@ -77,8 +77,19 @@ test('el listado del rescatista nunca muestra «planning»', () => {
 
 // Separación de roles por ruta.
 const SHARED_WITH_RESCUER = new Set([
-  'getHealth', 'register', 'login', 'logout', 'getMe', 'updateMe', 'changePassword', 'forgotPassword', 'resetPassword',
-  'getOrganization', 'getEnvironment', 'uploadFile', 'getCertificateLink',
+  'getHealth',
+  'register',
+  'login',
+  'logout',
+  'getMe',
+  'updateMe',
+  'changePassword',
+  'forgotPassword',
+  'resetPassword',
+  'getOrganization',
+  'getEnvironment',
+  'uploadFile',
+  'getCertificateLink',
 ]);
 
 test('los endpoints /my/ son solo del rescatista y el resto del API no los incluye', () => {
@@ -101,12 +112,16 @@ test('nada que escriba sobre misiones o rutas está abierto al rescatista ni al 
 });
 
 test('solo login, registro, salud y recuperación son públicos', () => {
-  const pub = C.ENDPOINTS.filter((e) => e.roles.includes('public')).map((e) => e.id).sort();
+  const pub = C.ENDPOINTS.filter((e) => e.roles.includes('public'))
+    .map((e) => e.id)
+    .sort();
   assert.deepEqual(pub, ['forgotPassword', 'getHealth', 'login', 'register', 'resetPassword']);
 });
 
 test('una cuenta pendiente solo puede llamar a logout y me', () => {
-  const ids = C.ENDPOINTS.filter((e) => e.roles.includes('pending')).map((e) => e.id).sort();
+  const ids = C.ENDPOINTS.filter((e) => e.roles.includes('pending'))
+    .map((e) => e.id)
+    .sort();
   assert.deepEqual(ids, ['getMe', 'logout']);
 });
 
@@ -116,7 +131,10 @@ test('lecturas con efecto de auditoría son POST', () => {
 
 test('no existe ningún DELETE de rutas ni de misiones (RN-14)', () => {
   const bad = C.ENDPOINTS.filter((e) => e.method === 'DELETE' && /^\/(routes|missions)\/\{[a-zA-Z]+\}$/.test(e.path));
-  assert.deepEqual(bad.map((e) => e.id), []);
+  assert.deepEqual(
+    bad.map((e) => e.id),
+    [],
+  );
 });
 
 test('una misión se crea sin estado: el cliente no puede fijarlo', () => {

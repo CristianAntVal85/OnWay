@@ -11,10 +11,16 @@ const here = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS = join(here, '../../../db/migrations');
 
 test('los enums de Zod coinciden con los ENUM de db/migrations (valores y orden)', () => {
-  const sql = readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql')).map((f) => readFileSync(join(MIGRATIONS, f), 'utf8')).join('\n');
+  const sql = readdirSync(MIGRATIONS)
+    .filter((f) => f.endsWith('.sql'))
+    .map((f) => readFileSync(join(MIGRATIONS, f), 'utf8'))
+    .join('\n');
   const found = new Map<string, string[]>();
   for (const m of sql.matchAll(/CREATE TYPE\s+(\w+)\s+AS ENUM\s*\(([^)]*)\)/g)) {
-    found.set(m[1]!, [...m[2]!.matchAll(/'([^']+)'/g)].map((x) => x[1]!));
+    found.set(
+      m[1]!,
+      [...m[2]!.matchAll(/'([^']+)'/g)].map((x) => x[1]!),
+    );
   }
   assert.ok(found.size >= 20, 'no se leyeron los tipos de las migraciones');
   for (const [name, values] of found) {
@@ -28,7 +34,10 @@ test('los enums de Zod coinciden con los ENUM de db/migrations (valores y orden)
 test('los límites del archivo coinciden con el CHECK de files', () => {
   const sql = readFileSync(join(MIGRATIONS, '0003_profiles_files_teams.sql'), 'utf8');
   assert.match(sql, new RegExp(`size_bytes <= ${C.MAX_FILE_BYTES}`));
-  const types = [...sql.matchAll(/content_type IN \(([^)]*)\)/g)][0]![1]!.match(/'([^']+)'/g)!.map((s) => s.slice(1, -1)).sort();
+  const types = [...sql.matchAll(/content_type IN \(([^)]*)\)/g)][0]![1]!
+    .match(/'([^']+)'/g)!
+    .map((s) => s.slice(1, -1))
+    .sort();
   const mine = [...C.CONTENT_TYPES_BY_PURPOSE.certificate, ...C.CONTENT_TYPES_BY_PURPOSE.route_import].sort();
   assert.deepEqual(mine, types);
 });
@@ -39,11 +48,14 @@ test('el patrón de teléfono es el del CHECK de rescuer_contact', () => {
 });
 
 test('id único y método+ruta únicos', () => {
-  const ids = new Set<string>(), keys = new Set<string>();
+  const ids = new Set<string>(),
+    keys = new Set<string>();
   for (const e of C.ENDPOINTS) {
-    assert.ok(!ids.has(e.id), `id repetido ${e.id}`); ids.add(e.id);
+    assert.ok(!ids.has(e.id), `id repetido ${e.id}`);
+    ids.add(e.id);
     const k = C.endpointKey({ method: e.method, path: e.path.replace(/\{[^}]+\}/g, '{}') });
-    assert.ok(!keys.has(k), `ruta repetida ${k}`); keys.add(k);
+    assert.ok(!keys.has(k), `ruta repetida ${k}`);
+    keys.add(k);
   }
 });
 
@@ -87,10 +99,11 @@ test('el estado de respuesta es coherente con el esquema', () => {
 });
 
 test('todos los errores citados existen y tienen estado HTTP válido', () => {
-  for (const e of C.ENDPOINTS) for (const c of C.allErrors(e)) {
-    const s = C.ERROR_HTTP[c];
-    assert.ok(s >= 400 && s < 600, `${e.id}: ${c}`);
-  }
+  for (const e of C.ENDPOINTS)
+    for (const c of C.allErrors(e)) {
+      const s = C.ERROR_HTTP[c];
+      assert.ok(s >= 400 && s < 600, `${e.id}: ${c}`);
+    }
   for (const [c, s] of Object.entries(C.ERROR_HTTP)) assert.ok(Number.isInteger(s) && s >= 400 && s < 600, c);
 });
 
@@ -99,7 +112,10 @@ test('cada código de error se usa al menos en un endpoint o es transversal', ()
   const orphan = C.ERROR_CODES.filter((c) => !used.has(c));
   // Estos solo llegan por el trabajo en segundo plano (job.errorCode) o por guardas transversales.
   assert.deepEqual(orphan.sort(), ['INVALID_STATE_TRANSITION'].filter((c) => orphan.includes(c as any)).sort());
-  assert.ok(C.ENDPOINTS.every((e) => e.delivery !== 'pendiente'), 'queda algún endpoint pendiente de decisión');
+  assert.ok(
+    C.ENDPOINTS.every((e) => e.delivery !== 'pendiente'),
+    'queda algún endpoint pendiente de decisión',
+  );
 });
 
 test('los errores con detalles tienen su esquema', () => {
@@ -108,7 +124,12 @@ test('los errores con detalles tienen su esquema', () => {
 
 test('todo esquema del registro se convierte a JSON Schema (para OpenAPI)', () => {
   for (const e of C.ENDPOINTS) {
-    for (const [k, s] of [['params', e.params], ['query', e.query], ['body', e.body], ['multipart', e.multipart]] as const) {
+    for (const [k, s] of [
+      ['params', e.params],
+      ['query', e.query],
+      ['body', e.body],
+      ['multipart', e.multipart],
+    ] as const) {
       if (s) assert.doesNotThrow(() => z.toJSONSchema(s, { io: 'input', unrepresentable: 'any' }), `${e.id}.${k}`);
     }
     if (e.response.schema) assert.doesNotThrow(() => z.toJSONSchema(e.response.schema!, { io: 'output', unrepresentable: 'any' }), `${e.id}.response`);
@@ -118,7 +139,11 @@ test('todo esquema del registro se convierte a JSON Schema (para OpenAPI)', () =
 test('las peticiones son estrictas: un campo desconocido se rechaza', () => {
   const lenient: string[] = [];
   for (const e of C.ENDPOINTS) {
-    for (const [k, s] of [['body', e.body], ['query', e.query], ['params', e.params]] as const) {
+    for (const [k, s] of [
+      ['body', e.body],
+      ['query', e.query],
+      ['params', e.params],
+    ] as const) {
       if (!s) continue;
       const js = z.toJSONSchema(s, { io: 'input', unrepresentable: 'any' }) as any;
       const walk = (n: any): void => {
@@ -152,11 +177,44 @@ test('las respuestas también son estrictas (no se cuelan campos)', () => {
 test('hay cobertura de requisitos: cada vista del documento 02 tiene endpoints', () => {
   const have = new Set(C.ENDPOINTS.map((e) => e.id));
   const needed = [
-    'login', 'register', 'getMe', 'getEnvironment', 'listMissions', 'createMission', 'getMission', 'activateMission', 'closeMission', 'reopenMission',
-    'listParticipations', 'getParticipationCard', 'bulkParticipations', 'addParticipants', 'addMissionTeams', 'listTeams', 'createTeam',
-    'getMyProfile', 'updateMyProfile', 'createMySkill', 'listMyHistory', 'deleteMyData', 'listSignupRequests', 'decideSignupRequests',
-    'readUserSensitive', 'listAuditLog', 'rotateInviteCode', 'listRoutes', 'generateRoutes', 'getJob', 'validateRouteVersion', 'addMissionRoutes',
-    'updateMissionRoute', 'exportRoute', 'listMyMissions', 'offerToMission', 'withdrawOffer', 'listMyMissionRoutes',
+    'login',
+    'register',
+    'getMe',
+    'getEnvironment',
+    'listMissions',
+    'createMission',
+    'getMission',
+    'activateMission',
+    'closeMission',
+    'reopenMission',
+    'listParticipations',
+    'getParticipationCard',
+    'bulkParticipations',
+    'addParticipants',
+    'addMissionTeams',
+    'listTeams',
+    'createTeam',
+    'getMyProfile',
+    'updateMyProfile',
+    'createMySkill',
+    'listMyHistory',
+    'deleteMyData',
+    'listSignupRequests',
+    'decideSignupRequests',
+    'readUserSensitive',
+    'listAuditLog',
+    'rotateInviteCode',
+    'listRoutes',
+    'generateRoutes',
+    'getJob',
+    'validateRouteVersion',
+    'addMissionRoutes',
+    'updateMissionRoute',
+    'exportRoute',
+    'listMyMissions',
+    'offerToMission',
+    'withdrawOffer',
+    'listMyMissionRoutes',
   ];
   for (const n of needed) assert.ok(have.has(n), `falta ${n}`);
 });
@@ -180,10 +238,17 @@ test('un endpoint no depende de otro de un hito posterior (el MVP es autosuficie
   // Comprobaciones de dependencia conocidas: lo que usa cada hito debe existir en ese hito o antes.
   const h = (id: string) => C.MILESTONES.indexOf(C.ENDPOINTS.find((e) => e.id === id)!.milestone);
   const needs: [string, string][] = [
-    ['createRoute', 'uploadFile'], ['previewRouteImport', 'uploadFile'], ['importMissionPoints', 'uploadFile'],
-    ['generateRoutes', 'getJob'], ['addMissionRoutes', 'getRoute'], ['listMyMissionRoutes', 'getMyMission'],
-    ['closeMission', 'getMission'], ['updateMissionRoute', 'validateRouteVersion'], ['getCertificateLink', 'createMySkill'],
-    ['bulkParticipations', 'listParticipations'], ['getParticipationCard', 'listParticipations'],
+    ['createRoute', 'uploadFile'],
+    ['previewRouteImport', 'uploadFile'],
+    ['importMissionPoints', 'uploadFile'],
+    ['generateRoutes', 'getJob'],
+    ['addMissionRoutes', 'getRoute'],
+    ['listMyMissionRoutes', 'getMyMission'],
+    ['closeMission', 'getMission'],
+    ['updateMissionRoute', 'validateRouteVersion'],
+    ['getCertificateLink', 'createMySkill'],
+    ['bulkParticipations', 'listParticipations'],
+    ['getParticipationCard', 'listParticipations'],
   ];
   for (const [a, b] of needs) assert.ok(h(b) <= h(a), `${a} (${C.MILESTONE_OF[a]}) necesita ${b} (${C.MILESTONE_OF[b]})`);
 });

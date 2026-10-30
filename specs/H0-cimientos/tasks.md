@@ -3,7 +3,7 @@
 Plan: `specs/H0-cimientos/plan.md` · Rama: `hito/H0-cimientos` · Primer push: `git push -u origin hito/H0-cimientos`.
 Cada cierre: solo con todo en verde, archivos añadidos por nombre, marca de la tarea y `docs/estado.md` en el mismo commit, línea `Co-Authored-By` vigente. Dependencias fuera de los documentos aprobadas por el usuario (2026-10-30): `pg`, `react-router`, `prettier`, `eslint`, `typescript-eslint`. `@node-rs/argon2` no está aprobada.
 
-- [ ] **T1. Monorepo y paquetes compartidos.** RF-702 (textos de la barra), doc 06 AC-05 (texto por `code`), D-H0-05, D-H0-14, D-H0-15, D-H0-22; formato
+- [x] **T1. Monorepo y paquetes compartidos.** RF-702 (textos de la barra), doc 06 AC-05 (texto por `code`), D-H0-05, D-H0-14, D-H0-15, D-H0-22; formato
   `tsconfig.base.json`, scripts recursivos, `engines.node >=24.7`; `packages/i18n` (es/fr: acceso, espera, navegación, estados, «sin acceso», un texto por cada código de `ERROR_HTTP`); `packages/geo` (esqueleto + prueba de dependencias); `packages/contracts`: `build` a `dist/`, `exports` y `gen:client` (cliente tipado desde `ENDPOINTS`, en `gen/`).
 - Hecho cuando: `pnpm -r typecheck` y `pnpm -r test` en verde; las 74 pruebas de contrato siguen pasando y las nuevas comprueban que el cliente expone exactamente las operaciones del registro, añade `X-CSRF-Token` fuera de `GET` y convierte el cuerpo de error en `ApiError`; las pruebas de i18n fallan si es y fr no tienen las mismas claves o si falta un `ErrorCode`; la de `geo` falla si importa `apps/*`, React o NestJS.
 - Cierre: commit `chore(H0): T1 set up monorepo, i18n, geo and generated client` + push a la rama del hito.

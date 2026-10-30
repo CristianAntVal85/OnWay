@@ -86,9 +86,17 @@ export const UserHistoryPage = Paged(UserHistoryItem);
 
 // ----- Registro de accesos -----
 export const AuditAction = z.enum([
-  'sensitive_data_read', 'certificate_opened', 'personal_data_deleted',
-  'signup_requested', 'signup_approved', 'signup_rejected', 'account_active', 'account_disabled', 'role_changed',
-  'invite_code_rotated', 'password_reset',
+  'sensitive_data_read',
+  'certificate_opened',
+  'personal_data_deleted',
+  'signup_requested',
+  'signup_approved',
+  'signup_rejected',
+  'account_active',
+  'account_disabled',
+  'role_changed',
+  'invite_code_rotated',
+  'password_reset',
 ]);
 export const AuditLogItem = z.strictObject({
   id: z.number().int(),

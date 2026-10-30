@@ -3,10 +3,11 @@
 Memoria entre sesiones. Máximo ~50 líneas: resume o elimina lo que ya no aporte. Última actualización: 2026-10-30.
 
 ## Dónde estamos
-- **Hito en curso:** H0 · Cimientos y acceso. Plan y 10 tareas aprobados (`specs/H0-cimientos/`), rama `hito/H0-cimientos`. Tareas hechas: 0 de 10.
+- **Hito en curso:** H0 · Cimientos y acceso. Plan y 10 tareas aprobados (`specs/H0-cimientos/`), rama `hito/H0-cimientos`. Tareas hechas: 1 de 10 (T1 monorepo y paquetes compartidos).
 - Documentos 01–07 en borrador, coherentes. Repositorio: https://github.com/CristianAntVal85/OnWay.git (sin primer commit todavía).
-- Existe: `packages/contracts` (Zod, 95 operaciones, 74 pruebas) y `db/` (migraciones 0001–0009).
-- No existe aún: `apps/api`, `apps/web`, `packages/geo`, `packages/i18n`, `infra/`, `data/seed`, CI.
+- Existe: `packages/contracts` (Zod, 95 operaciones, 83 pruebas: 74 de contrato + 9 del cliente generado), `packages/i18n` (es/fr, 8 pruebas), `packages/geo` (esqueleto + regla de dependencias, 3 pruebas), `db/` (migraciones 0001–0009), `tsconfig.base.json`, Prettier.
+- No existe aún: `apps/api`, `apps/web`, `infra/`, `data/seed`, CI.
+- Comandos nuevos (T1): `pnpm -r typecheck|test|build`, `pnpm format:check`, `pnpm --filter @onway/contracts gen:client` (cliente en `gen/`, no versionado). Los paquetes se consumen con la condición de exportación `source` (Vite, `tsc`, Vitest) o desde `dist/` (Node).
 
 ## Verificado (2026-10-30, primera ejecución con dependencias reales)
 - `pnpm install` OK (pnpm 9.12 vía corepack, Node 24, zod 4.6.7).

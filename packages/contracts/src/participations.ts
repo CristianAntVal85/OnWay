@@ -19,7 +19,6 @@ export const ParticipationListItem = z.strictObject({
   decidedAt: Timestamp.nullable(),
 });
 
-
 export const ParticipationFilter = z.strictObject({
   status: ParticipationListStatus.default('pending'),
   teamId: Id.optional(),

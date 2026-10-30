@@ -1,0 +1,12 @@
+node_modules
+dist
+gen
+openapi.json
+pnpm-lock.yaml
+*.md
+*.sql
+docs
+specs
+db
+data
+.claude

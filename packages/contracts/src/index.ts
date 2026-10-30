@@ -13,3 +13,4 @@ export * from './environment.js';
 export * from './admin.js';
 export * from './endpoints.js';
 export * from './milestones.js';
+export * from './http-client.js';
