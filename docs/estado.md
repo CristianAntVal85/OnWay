@@ -3,8 +3,8 @@
 Memoria entre sesiones. Máximo ~50 líneas: resume o elimina lo que ya no aporte. Última actualización: 2026-10-30.
 
 ## Dónde estamos
-- **H0 · Cimientos y acceso: terminado a falta de validación.** Tareas 10 de 10 (T1 monorepo, T2 migraciones con Drizzle, T3 CI, T4 esqueleto del API, T5 sesión/CSRF/guards, T6 organización y aislamiento, T7 datos de demostración, T8 web, T9 `docker compose up`, T10 E2E y documentos). Rama `hito/H0-cimientos`; `main` aún sin tocar. Repositorio: https://github.com/CristianAntVal85/OnWay.git
-- **Siguiente:** (1) validar H0 con `/sdd-validate` (criterios del doc 07 §4); (2) si aprueba, el usuario decide la fusión a `main`; (3) `/sdd-plan H1-misiones-y-mapa`; (4) lanzar durante H1 la prueba técnica del motor de rutas (R-01, GraphHopper) para llegar a H3 con la decisión tomada.
+- **H0 · Cimientos y acceso: validado (APROBADO, 2026-10-30).** Tareas 10 de 10 (T1 monorepo, T2 migraciones con Drizzle, T3 CI, T4 esqueleto del API, T5 sesión/CSRF/guards, T6 organización y aislamiento, T7 datos de demostración, T8 web, T9 `docker compose up`, T10 E2E y documentos). Validado por el `reviewer` contra los 12 criterios del doc 07 §4 (recuentos y E2E reejecutados; vistas con Chromium, no DevTools). Rama `hito/H0-cimientos`, fusionada a `main` por PR con commit de fusión. Repositorio: https://github.com/CristianAntVal85/OnWay.git
+- **Siguiente:** (1) confirmar el criterio 12 con el CI de `main`; (2) `/sdd-plan H1-misiones-y-mapa`; (3) lanzar durante H1 la prueba técnica del motor de rutas (R-01, GraphHopper) para llegar a H3 con la decisión tomada.
 
 ## Recuentos reales (verificados en un clon limpio de la rama)
 Contratos 83 (74 + 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web 62, `test:api` 92, `test:db` 118 sobre PostGIS, E2E 21 (14 escritorio + 7 móvil 375 px). Comandos en `CLAUDE.md`. `docker compose up --wait` en un clon limpio: ~55 s, todo sano, sin copiar archivos; `down`/`up` conserva datos y no resiembra; `pnpm audit --prod` limpio.
@@ -23,7 +23,7 @@ Contratos 83 (74 + 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web
 | 9 | Cumple | Solo códigos de `ERROR_HTTP`, formato único validado contra `ErrorResponse` en `test:api` |
 | 10 | Cumple | Datos `@example.org`, secretos generados por el servicio `secrets`; `git grep` solo encuentra constantes ficticias de prueba |
 | 11 | Cumple | Docs 04 (0.6), 05 (0.4), 06 (0.5), 07 (0.2) y `CLAUDE.md` al día con su registro; «PostGIS real» marcado resuelto |
-| 12 | Cumple en la rama | La rama compila, pasa todo y arranca desde un clon limpio. Se confirmará en `main` al fusionar |
+| 12 | Cumple en la rama | La rama compila, pasa todo y arranca desde un clon limpio. Falta confirmarlo en el CI de `main` tras la fusión |
 
 ## Hechos que conviene recordar
 - **Una sola organización en la demostración** (D-H0-18). La B del aislamiento la crean las pruebas: el fixture en `test:api` y `apps/web/e2e/global-setup.ts` (SQL como `onway_owner` dentro del contenedor `db`, la retira al terminar).
@@ -34,6 +34,7 @@ Contratos 83 (74 + 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web
 - `pnpm.overrides.multer = ^2.5.0` (raíz) por un aviso de `pnpm audit`; quitar cuando NestJS 11.x lo traiga.
 - **Pendiente para H5:** la actualización parcial de una habilidad no aplica las reglas cruzadas de `SkillInput` (Zod 4 no permite `.partial()` con refinamientos); validarlas en el servidor al combinar con lo guardado. El código de invitación se genera al azar al sembrar y no se imprime.
 - La revisión visual de T8 se hizo con Chromium real (el MCP de Chrome DevTools no estaba disponible); desde T10 la repite el E2E.
+- **Pendientes menores de la validación:** el `message` de los errores repite el `code` (cumple el formato; valorar textos fijos por código en el servidor); auditoría de contraste y de lector de pantalla (H1 o H7).
 - ESLint (aprobado) no se ha incorporado: el plan de H0 solo exigía formato. Decidir en H1 si entra.
 - **CI** (`.github/workflows/ci.yml`): `verify`, `api`, `audit`, `stack` y, desde T10, `e2e` (sube informe y trazas solo si falla). Resultado en GitHub: último `gh run list`.
 
