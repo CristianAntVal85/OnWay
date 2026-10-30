@@ -42,7 +42,7 @@ Cada cierre: solo con todo en verde, archivos añadidos por nombre, marca de la 
 - Hecho cuando: `pnpm --filter @onway/web typecheck`, `test` y `build` en verde; las pruebas de la configuración de navegación comprueban los enlaces de cada rol (RF-702) y que cada ruta rechaza los roles no permitidos; ningún texto fijo en componentes (todo por `packages/i18n`); comprobado a mano con la API local en vista móvil y solo con teclado (anotado en `docs/estado.md`).
 - Cierre: commit `feat(H0): T8 add web login, waiting screen and role-based shell` + push a la rama del hito.
 
-- [ ] **T9. Todo con `docker compose up`.** Doc 04 §11.2; doc 07 §4 criterio 1; D-H0-16
+- [x] **T9. Todo con `docker compose up`.** Doc 04 §11.2; doc 07 §4 criterio 1; D-H0-16
   `compose.yml` raíz con `include`, `infra/compose.yml` (`secrets`, `db`, `migrate`, `seed`, `api`, `web`), Dockerfiles de api y web, `infra/Caddyfile` local, `.env.example` sin valores. Construcción de imágenes en CI.
 - Hecho cuando: en un clon limpio, `docker compose up --wait` termina con todos los servicios sanos sin copiar ningún archivo antes; `http://localhost:8080` muestra el acceso y se entra con las cuentas de `data/seed/README.md`; `curl http://localhost:8080/api/v1/health` da 200; `docker compose down && docker compose up --wait` conserva los datos y no vuelve a sembrar; `git grep` no encuentra contraseñas ni secretos en el repositorio; el trabajo de imágenes del CI en verde.
 - Cierre: commit `chore(H0): T9 run the whole stack with docker compose` + push a la rama del hito.

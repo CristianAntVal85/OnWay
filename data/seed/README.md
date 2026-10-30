@@ -34,4 +34,4 @@ La organización B que usan las pruebas de aislamiento **no** forma parte de la 
 pnpm --filter @onway/api seed   # necesita DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME, como migrate
 ```
 
-Con `docker compose up` (T9) lo hace el servicio `seed`. `SEED_FILE` apunta a otro archivo con el mismo formato.
+Con `docker compose up` lo hace el servicio `seed`, después de `migrate`; si la organización ya existe, no cambia nada. `SEED_FILE` apunta a otro archivo con el mismo formato.

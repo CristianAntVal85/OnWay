@@ -95,3 +95,37 @@ jobs:
 
       - name: Audit production dependencies
         run: pnpm audit --prod
+
+  stack:
+    name: images and docker compose up
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the images (api, web)
+        run: docker compose build
+
+      # Sin copiar ningún archivo antes: las contraseñas y el secreto CSRF los genera el servicio `secrets`.
+      - name: Start the whole stack and wait until every service is healthy
+        run: docker compose up --wait --no-build
+
+      - name: Smoke test (health, web shell, login, getMe and logout with cookie and CSRF)
+        run: infra/scripts/smoke.sh
+
+      - name: Restart keeps the data and does not seed again
+        run: |
+          docker compose down
+          docker compose up --wait --no-build
+          docker compose logs seed | grep -q "demo data already present: nothing changed"
+          infra/scripts/smoke.sh
+
+      - name: Service logs (on failure)
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color
+
+      - name: Clean up
+        if: always()
+        run: docker compose down -v

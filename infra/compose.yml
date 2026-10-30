@@ -1,0 +1,181 @@
+# Pila local completa (doc 04 §11.2, D-H0-16). Se arranca desde la raíz: `docker compose up --wait`.
+#
+# Orden: secrets -> db -> migrate -> seed -> api -> web. Cada paso espera al anterior.
+#   secrets  genera al azar, solo la primera vez, las contraseñas y el secreto CSRF (volumen `secrets`).
+#   db       PostgreSQL 16 + PostGIS; el primer arranque aplica la 0001 y los roles como superusuario.
+#   migrate  migraciones 0002-0009 como onway_owner.
+#   seed     datos de demostración ficticios (R-10), idempotente.
+#   api      NestJS como onway_app (se niega a arrancar con un rol que salte la seguridad por filas).
+#   web      Caddy: sirve la web y hace de proxy de /api. Único puerto publicado: 127.0.0.1:8080.
+#
+# Si borras uno de los volúmenes `secrets` o `db-data`, borra también el otro (`docker compose down -v`):
+# las contraseñas de la base de datos se fijan en su primer arranque.
+
+x-hardened: &hardened
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+
+x-node-job: &node-job
+  <<: *hardened
+  build: &api-build
+    context: ..
+    dockerfile: infra/docker/api.Dockerfile
+  image: onway/api:local
+  read_only: true
+  restart: 'no'
+  mem_limit: 384m
+  networks: [data]
+  environment: &db-env
+    DB_HOST: db
+    DB_PORT: '5432'
+    DB_NAME: onway
+
+services:
+  secrets:
+    <<: *hardened
+    image: node:24.22.2-alpine3.24
+    entrypoint: ['/bin/sh', '/scripts/gen-secrets.sh']
+    read_only: true
+    restart: 'no'
+    mem_limit: 32m
+    network_mode: none
+    volumes:
+      - secrets:/secrets
+      - ./scripts/gen-secrets.sh:/scripts/gen-secrets.sh:ro
+
+  db:
+    <<: *hardened
+    image: postgis/postgis:16-3.4
+    # Solo lo imprescindible para arrancar PostgreSQL (cambio de propietario y de usuario).
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    restart: unless-stopped
+    mem_limit: 768m
+    shm_size: 128m
+    networks: [data]
+    # Sin `ports`: la base de datos no se publica; solo la ven los servicios de la red `data`.
+    command: ['postgres', '-c', 'shared_buffers=128MB', '-c', 'max_connections=40', '-c', 'work_mem=8MB']
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: onway
+      POSTGRES_PASSWORD_FILE: /run/onway/admin/password
+      ONWAY_MIGRATION_0001: /onway/0001_extensions_roles.sql
+      ONWAY_OWNER_PASSWORD_FILE: /run/onway/owner/password
+      ONWAY_APP_PASSWORD_FILE: /run/onway/app/password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./db/init/10-onway-roles.sh:/docker-entrypoint-initdb.d/20-onway-roles.sh:ro
+      - ../db/migrations/0001_extensions_roles.sql:/onway/0001_extensions_roles.sql:ro
+      - { type: volume, source: secrets, target: /run/onway/admin, read_only: true, volume: { subpath: admin } }
+      - { type: volume, source: secrets, target: /run/onway/owner, read_only: true, volume: { subpath: owner } }
+      - { type: volume, source: secrets, target: /run/onway/app, read_only: true, volume: { subpath: app } }
+    tmpfs:
+      - /run/postgresql
+      - /tmp
+    read_only: true
+    depends_on:
+      secrets:
+        condition: service_completed_successfully
+    healthcheck:
+      # Por TCP y no por el socket: durante el arranque inicial el servidor temporal solo escucha en el socket.
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U postgres -d onway']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  migrate:
+    <<: *node-job
+    command: ['node', 'dist/src/cli/migrate.js']
+    environment:
+      <<: *db-env
+      DB_OWNER_PASSWORD_FILE: /run/onway/owner/password
+    volumes:
+      - { type: volume, source: secrets, target: /run/onway/owner, read_only: true, volume: { subpath: owner } }
+    depends_on:
+      db:
+        condition: service_healthy
+
+  seed:
+    <<: *node-job
+    command: ['node', 'dist/src/cli/seed.js']
+    environment:
+      <<: *db-env
+      DB_OWNER_PASSWORD_FILE: /run/onway/owner/password
+    volumes:
+      - { type: volume, source: secrets, target: /run/onway/owner, read_only: true, volume: { subpath: owner } }
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api:
+    <<: *hardened
+    build: *api-build
+    image: onway/api:local
+    read_only: true
+    restart: unless-stopped
+    mem_limit: 512m
+    networks: [data, edge]
+    environment:
+      <<: *db-env
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: '3000'
+      NODE_OPTIONS: --max-old-space-size=384
+      DB_APP_PASSWORD_FILE: /run/onway/app/password
+      CSRF_SECRET_FILE: /run/onway/csrf/secret
+    volumes:
+      - { type: volume, source: secrets, target: /run/onway/app, read_only: true, volume: { subpath: app } }
+      - { type: volume, source: secrets, target: /run/onway/csrf, read_only: true, volume: { subpath: csrf } }
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  web:
+    <<: *hardened
+    # Caddy necesita su capacidad de red al arrancar aunque 8080 no sea un puerto privilegiado.
+    cap_add: [NET_BIND_SERVICE]
+    build:
+      context: ..
+      dockerfile: infra/docker/web.Dockerfile
+    image: onway/web:local
+    read_only: true
+    restart: unless-stopped
+    mem_limit: 128m
+    networks: [edge]
+    tmpfs:
+      - /tmp
+    ports:
+      # Solo tu equipo (HTTP, contraseña de demostración pública). `ONWAY_HTTP_BIND`/`ONWAY_HTTP_PORT` en .env.example.
+      - '${ONWAY_HTTP_BIND:-127.0.0.1}:${ONWAY_HTTP_PORT:-8080}:8080'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      # Atraviesa el proxy: comprueba a la vez Caddy y la API.
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://127.0.0.1:8080/api/v1/health']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+
+networks:
+  # Base de datos, migraciones y semilla: sin salida a Internet.
+  data:
+    internal: true
+  edge: {}
+
+volumes:
+  secrets: {}
+  db-data: {}

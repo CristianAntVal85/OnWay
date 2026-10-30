@@ -39,18 +39,25 @@ PostgreSQL 16 + PostGIS, Drizzle (SQL propio para lo espacial), pg-boss para tra
 
 ## Comandos
 
-Existen hoy (paquete de contratos):
-
 ```
-pnpm --filter @onway/contracts typecheck    # tsc estricto
-pnpm --filter @onway/contracts test         # 74 pruebas, sin base de datos
+docker compose up --wait                    # todo en local: http://localhost:8080 (cuentas en data/seed/README.md)
+docker compose down                         # para; conserva datos (con -v los borra, también las contraseñas generadas)
+infra/scripts/smoke.sh                      # salud, acceso y login/getMe/logout contra la pila en marcha
+
+pnpm install                                # pnpm 9.12 vía corepack, Node >= 24.7
+pnpm format:check | typecheck | test | build   # recursivos sobre todo el monorepo
 pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
-db/tests/run-postgis.sh                     # 118 pruebas del esquema sobre PostGIS real (Docker)
-db/tests/run.sh                             # variante sin PostGIS (sustituto de texto); solo respaldo
+pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
+pnpm --filter @onway/api test:db            # pruebas del esquema sobre PostGIS (Testcontainers, necesita Docker)
+pnpm --filter @onway/api test:api           # pruebas del API sobre PostGIS (Testcontainers)
+pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME
+pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT
+pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (3000)
+db/tests/run-postgis.sh                     # las 118 pruebas del esquema con un PostGIS en Docker
 ```
 
-`docker compose up` (todo en local con datos de demostración) y los comandos de `apps/*` se añaden en H0. Cuando existan, anótalos aquí.
+`docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen. El E2E de Playwright llega en T10 de H0. Los recuentos de pruebas actualizados los anota `docs/estado.md`.
 
 ## Reglas inviolables
 

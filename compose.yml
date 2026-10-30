@@ -1,0 +1,7 @@
+# `docker compose up --wait` arranca todo en local con datos de demostración ficticios (R-10):
+# http://localhost:8080. No hace falta copiar ni crear ningún archivo antes (D-H0-16).
+# Los servicios están en infra/compose.yml.
+name: onway
+
+include:
+  - infra/compose.yml
