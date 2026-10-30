@@ -2,8 +2,8 @@ import type { ErrorCode } from '@onway/contracts';
 
 /** Forma común de es y fr: si falta una clave en cualquiera de las dos, no compila. */
 export interface Messages {
-  app: { name: string };
-  login: { title: string; email: string; password: string; submit: string; submitting: string; demoNotice: string };
+  app: { name: string; tagline: string };
+  login: { title: string; email: string; password: string; submit: string; submitting: string; demoNotice: string; emailRequired: string; passwordRequired: string };
   waiting: { title: string; body: string; logout: string };
   nav: {
     label: string;
@@ -16,13 +16,15 @@ export interface Messages {
     administration: string;
     myProfile: string;
     account: string;
+    menu: string;
+    closeMenu: string;
   };
-  state: { loading: string; emptyTitle: string; emptyBody: string; errorTitle: string; retry: string };
+  state: { loading: string; offline: string; emptyTitle: string; emptyBody: string; errorTitle: string; retry: string };
   forbidden: { title: string; body: string; goHome: string };
-  notFound: { title: string; body: string };
+  notFound: { title: string; body: string; goHome: string };
   later: { title: string; body: string };
   profile: { completeTitle: string; completeBody: string };
-  home: { title: string; organization: string };
+  home: { title: string; organization: string; country: string };
   account: {
     title: string;
     language: string;
@@ -30,6 +32,9 @@ export interface Messages {
     languageFr: string;
     logout: string;
     signedInAs: string;
+    email: string;
+    role: string;
+    organization: string;
     roleAdmin: string;
     roleCoordinator: string;
     roleRescuer: string;

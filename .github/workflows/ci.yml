@@ -38,8 +38,11 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Unit and contract tests
+      - name: Unit and contract tests (web included)
         run: pnpm test
+
+      - name: Build (contracts, packages, API and web)
+        run: pnpm build
 
       - name: Generate OpenAPI
         run: pnpm --filter @onway/contracts gen:openapi

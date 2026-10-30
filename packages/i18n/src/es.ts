@@ -1,7 +1,7 @@
 import type { Messages } from './types.js';
 
 export const es: Messages = {
-  app: { name: 'OnWay' },
+  app: { name: 'OnWay', tagline: 'Rutas para equipos de rescate en montaña' },
   login: {
     title: 'Iniciar sesión',
     email: 'Correo electrónico',
@@ -9,6 +9,8 @@ export const es: Messages = {
     submit: 'Entrar',
     submitting: 'Entrando…',
     demoNotice: 'Entorno de demostración: todos los datos son ficticios.',
+    emailRequired: 'Escribe tu correo electrónico.',
+    passwordRequired: 'Escribe tu contraseña.',
   },
   waiting: {
     title: 'Tu cuenta está pendiente de aprobación',
@@ -26,9 +28,12 @@ export const es: Messages = {
     administration: 'Administración',
     myProfile: 'Mi perfil',
     account: 'Cuenta',
+    menu: 'Menú',
+    closeMenu: 'Cerrar menú',
   },
   state: {
     loading: 'Cargando…',
+    offline: 'Sin conexión. OnWay necesita conexión a internet para funcionar.',
     emptyTitle: 'Nada que mostrar',
     emptyBody: 'Todavía no hay elementos aquí.',
     errorTitle: 'No se ha podido cargar',
@@ -42,6 +47,7 @@ export const es: Messages = {
   notFound: {
     title: 'Página no encontrada',
     body: 'La dirección no existe.',
+    goHome: 'Ir al inicio',
   },
   later: {
     title: 'Llega en un hito posterior',
@@ -54,6 +60,7 @@ export const es: Messages = {
   home: {
     title: 'Inicio',
     organization: 'Organización',
+    country: 'País',
   },
   account: {
     title: 'Cuenta',
@@ -62,6 +69,9 @@ export const es: Messages = {
     languageFr: 'Français',
     logout: 'Cerrar sesión',
     signedInAs: 'Sesión iniciada como {{name}}',
+    email: 'Correo electrónico',
+    role: 'Rol',
+    organization: 'Organización',
     roleAdmin: 'Administrador',
     roleCoordinator: 'Coordinador',
     roleRescuer: 'Rescatista',

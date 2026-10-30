@@ -1,7 +1,7 @@
 import type { Messages } from './types.js';
 
 export const fr: Messages = {
-  app: { name: 'OnWay' },
+  app: { name: 'OnWay', tagline: 'Itinéraires pour les équipes de secours en montagne' },
   login: {
     title: 'Se connecter',
     email: 'Adresse e-mail',
@@ -9,6 +9,8 @@ export const fr: Messages = {
     submit: 'Entrer',
     submitting: 'Connexion…',
     demoNotice: 'Environnement de démonstration : toutes les données sont fictives.',
+    emailRequired: 'Saisissez votre adresse e-mail.',
+    passwordRequired: 'Saisissez votre mot de passe.',
   },
   waiting: {
     title: 'Votre compte est en attente d’approbation',
@@ -26,9 +28,12 @@ export const fr: Messages = {
     administration: 'Administration',
     myProfile: 'Mon profil',
     account: 'Compte',
+    menu: 'Menu',
+    closeMenu: 'Fermer le menu',
   },
   state: {
     loading: 'Chargement…',
+    offline: 'Hors connexion. OnWay a besoin d’une connexion internet pour fonctionner.',
     emptyTitle: 'Rien à afficher',
     emptyBody: 'Il n’y a encore aucun élément ici.',
     errorTitle: 'Chargement impossible',
@@ -42,6 +47,7 @@ export const fr: Messages = {
   notFound: {
     title: 'Page introuvable',
     body: 'Cette adresse n’existe pas.',
+    goHome: 'Aller à l’accueil',
   },
   later: {
     title: 'Disponible dans une prochaine étape',
@@ -54,6 +60,7 @@ export const fr: Messages = {
   home: {
     title: 'Accueil',
     organization: 'Organisation',
+    country: 'Pays',
   },
   account: {
     title: 'Compte',
@@ -62,6 +69,9 @@ export const fr: Messages = {
     languageFr: 'Français',
     logout: 'Se déconnecter',
     signedInAs: 'Connecté en tant que {{name}}',
+    email: 'Adresse e-mail',
+    role: 'Rôle',
+    organization: 'Organisation',
     roleAdmin: 'Administrateur',
     roleCoordinator: 'Coordinateur',
     roleRescuer: 'Secouriste',

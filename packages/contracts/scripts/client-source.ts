@@ -22,11 +22,15 @@ export function renderClient(contractsImport = '../src/index.js'): string {
       impl: `    ${e.id}: (${kind === 'none' ? 'options' : 'input, options'}) => request(OPERATIONS.${e.id}, ${kind === 'none' ? 'undefined' : 'input'}, options) as Promise<OperationOutput<'${e.id}'>>,`,
     };
   });
+  // Lo que se ejecuta viene de `http-client`; el resto son tipos (se borran al compilar). Así un empaquetador (Vite) no arrastra
+  // todos los esquemas Zod del API a la web.
+  const runtimeImport = contractsImport.replace(/index\.js$/, 'http-client.js');
   return `// GENERADO por \`pnpm --filter @onway/contracts gen:client\` desde ENDPOINTS. No editar ni versionar.
-import { createRequester, type ClientOptions, type OperationInput, type OperationOutput, type RequestOptions } from '${contractsImport}';
+import { createRequester, ApiError, type ClientOptions, type RequestOptions } from '${runtimeImport}';
+import type { OperationInput, OperationOutput } from '${contractsImport}';
 
-export { ApiError } from '${contractsImport}';
-export type { ClientOptions, OperationInput, OperationOutput, RequestOptions } from '${contractsImport}';
+export { ApiError };
+export type { ClientOptions, OperationInput, OperationOutput, RequestOptions };
 
 /** Método, ruta y forma de cada operación. */
 export const OPERATIONS = {
