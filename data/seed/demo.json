@@ -1,0 +1,23 @@
+{
+  "notice": "DATOS FICTICIOS. Personas, correos y lugares de equipo inventados para demostraciones y pruebas (R-10). Prohibido usar con datos reales o en rescates reales.",
+  "demoPassword": "OnWay-demo-ficticia-2026",
+  "organization": { "name": "Servicio de Rescate Valle Demo", "country": "ES", "validationMaxAgeDays": 90 },
+  "members": [
+    { "key": "admin", "email": "admin@example.org", "displayName": "Marta Soler Vidal", "locale": "es", "role": "admin" },
+    { "key": "coordinator-es", "email": "coordinador@example.org", "displayName": "Íñigo Bernat Ruiz", "locale": "es", "role": "coordinator" },
+    { "key": "coordinator-fr", "email": "coordinatrice@example.org", "displayName": "Camille Laborde", "locale": "fr", "role": "coordinator" },
+    { "key": "rescuer-1", "email": "rescatista1@example.org", "displayName": "Aitor Lasierra Gil", "locale": "es", "role": "rescuer" },
+    { "key": "rescuer-2", "email": "rescatista2@example.org", "displayName": "Pilar Ezquerra Mur", "locale": "es", "role": "rescuer" },
+    { "key": "rescuer-3", "email": "rescatista3@example.org", "displayName": "Joan Castells Ferrer", "locale": "es", "role": "rescuer" },
+    { "key": "rescuer-4", "email": "rescatista4@example.org", "displayName": "Elena Pardo Sanz", "locale": "es", "role": "rescuer" },
+    { "key": "rescuer-5", "email": "rescatista5@example.org", "displayName": "Mateo Abadía Lacasa", "locale": "es", "role": "rescuer" },
+    { "key": "rescuer-6", "email": "rescatista6@example.org", "displayName": "Lucía Navarro Bielsa", "locale": "es", "role": "rescuer" }
+  ],
+  "applicants": [{ "key": "applicant-1", "email": "pendiente@example.org", "displayName": "Nuria Casals Roca", "locale": "es" }],
+  "teams": [
+    { "name": "Equipo Valle de Tena", "locality": "Biescas", "members": ["rescuer-2", "rescuer-4"] },
+    { "name": "Grupo Ribagorza", "locality": "Benasque", "members": ["rescuer-3", "rescuer-5"] },
+    { "name": "Equipo Ordesa", "locality": "Torla", "members": ["rescuer-4", "rescuer-5"] },
+    { "name": "Grupo Alto Gállego", "locality": "Sabiñánigo", "members": ["rescuer-6"] }
+  ]
+}

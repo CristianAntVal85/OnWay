@@ -3,26 +3,41 @@
 Memoria entre sesiones. Máximo ~50 líneas: resume o elimina lo que ya no aporte. Última actualización: 2026-10-30.
 
 ## Dónde estamos
-- **Hito en curso:** H0 · Cimientos y acceso (aún sin plan: falta `specs/H0-cimientos/`).
-- Documentos 01–07 en borrador, coherentes. Repositorio: https://github.com/CristianAntVal85/OnWay.git (sin primer commit todavía).
-- Existe: `packages/contracts` (Zod, 95 operaciones, 74 pruebas) y `db/` (migraciones 0001–0009).
-- No existe aún: `apps/api`, `apps/web`, `packages/geo`, `packages/i18n`, `infra/`, `data/seed`, CI.
+- **H0 · Cimientos y acceso: validado (APROBADO, 2026-10-30).** Tareas 10 de 10 (T1 monorepo, T2 migraciones con Drizzle, T3 CI, T4 esqueleto del API, T5 sesión/CSRF/guards, T6 organización y aislamiento, T7 datos de demostración, T8 web, T9 `docker compose up`, T10 E2E y documentos). Validado por el `reviewer` contra los 12 criterios del doc 07 §4 (recuentos y E2E reejecutados; vistas con Chromium, no DevTools). Rama `hito/H0-cimientos`, fusionada a `main` por PR con commit de fusión. Repositorio: https://github.com/CristianAntVal85/OnWay.git
+- **Siguiente:** (1) confirmar el criterio 12 con el CI de `main`; (2) `/sdd-plan H1-misiones-y-mapa`; (3) lanzar durante H1 la prueba técnica del motor de rutas (R-01, GraphHopper) para llegar a H3 con la decisión tomada.
 
-## Verificado (2026-10-30, primera ejecución con dependencias reales)
-- `pnpm install` OK (pnpm 9.12 vía corepack, Node 24, zod 4.6.7).
-- Contratos: typecheck limpio y 74/74 pruebas.
-- Esquema sobre **PostGIS real** (`postgis/postgis:16-3.4`, `db/tests/run-postgis.sh`): migraciones 0001–0009 aplican en base vacía y 118/118 pruebas pasan. Es la primera tarea de H0 del doc 07, ya cumplida.
+## Recuentos reales (verificados en un clon limpio de la rama)
+Contratos 83 (74 + 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web 62, `test:api` 92, `test:db` 118 sobre PostGIS, E2E 21 (14 escritorio + 7 móvil 375 px). Comandos en `CLAUDE.md`. `docker compose up --wait` en un clon limpio: ~55 s, todo sano, sin copiar archivos; `down`/`up` conserva datos y no resiembra; `pnpm audit --prod` limpio.
 
-## Arreglos hechos al instalar las dependencias reales
-- `packages/contracts/tsconfig.json` tenía un `typeRoots` fijo a una ruta del entorno anterior: eliminado.
-- Zod 4.6 no permite `.partial()` sobre objetos con refinamientos: `SkillFields` (objeto base) + `SkillInput` (con `superRefine`); el endpoint de actualización usa `SkillFields.partial()`. **Pendiente de decidir en H5:** la actualización parcial de una habilidad no aplica hoy las reglas cruzadas (solo un curso lleva certificado; caducidad ≥ emisión) — validarlas en el servidor al combinar con el valor guardado.
-- Pruebas del esquema: la siembra usaba marcadores de texto para la geometría; ahora usa WKT válido (sigue funcionando con el sustituto sin PostGIS). La comprobación de RLS excluye `spatial_ref_sys` (tabla de PostGIS).
+## Los 12 criterios del doc 07 §4 para H0
+| # | Veredicto | Evidencia |
+|---|---|---|
+| 1 | Cumple | `docker compose up --wait` + `smoke.sh` + E2E (21) en clon limpio; la demostración está escrita como prueba (`apps/web/e2e`) |
+| 2 | Cumple | Solo las 5 operaciones H0 montadas (prueba AC-02); OpenAPI y tablas del doc 06 regeneradas sin cambios de esquema. Solo `createRoute` y `getJob` (H2/H3) y los nombres de tipo traducidos difieren a mano en el doc 06 (el generador no describe uniones); anotado en doc 06 §11 |
+| 3 | Cumple | INV-01 e INV-25 por el API y en el contexto real de B (`test:api`); 118 pruebas del esquema sobre PostGIS |
+| 4 | Cumple con matiz | Contexto `app.*` en cada petición, RLS probada, `smoke.sh` comprueba en `pg_roles` que ningún rol onway es superusuario ni `BYPASSRLS` y que `onway_app` no posee nada. En H0 no hay recursos por id, así que el «404 de otra organización» no se puede mostrar por API todavía: se prueba como 0 filas visibles (RLS) y entra con H1 |
+| 5 | Cumple (alcance H0) | Ningún listado en H0; la semilla no lleva contacto ni datos sensibles; la función auditada se prueba en las 118; contratos verdes |
+| 6 | Cumple | Solo existe el puerto `Clock`; el dominio no llama a nada externo |
+| 7 | Cumple | La web no contiene geometría (navegación en módulo puro, sin mapa aún); `packages/geo` con su regla de dependencias |
+| 8 | Cumple | Carga/vacío/error, es y fr (prueba AST de «sin texto fijo»), E2E a 375 px sin desbordes, E2E de teclado. No se ha hecho auditoría de contraste ni lector de pantalla |
+| 9 | Cumple | Solo códigos de `ERROR_HTTP`, formato único validado contra `ErrorResponse` en `test:api` |
+| 10 | Cumple | Datos `@example.org`, secretos generados por el servicio `secrets`; `git grep` solo encuentra constantes ficticias de prueba |
+| 11 | Cumple | Docs 04 (0.6), 05 (0.4), 06 (0.5), 07 (0.2) y `CLAUDE.md` al día con su registro; «PostGIS real» marcado resuelto |
+| 12 | Cumple en la rama | La rama compila, pasa todo y arranca desde un clon limpio. Falta confirmarlo en el CI de `main` tras la fusión |
 
-## Decisiones de organización (2026-10-30)
-- SDD **ligero**: por hito, `specs/Hn-nombre/plan.md` + `tasks.md`; no hay spec por hito porque el qué ya está en los docs 01–06 (ver `AGENTS.md` y skill `sdd`).
-- Git: rama `hito/Hn-nombre` desde `main`; un commit y un push por tarea con todo en verde (autorizado por el usuario; regla en la skill `sdd`); `main` solo recibe hitos validados.
-- `docs/constitution.md`, `AGENTS.md` y `.claude/` reescritos desde OnCourse (Angular, `backend/`, fases) a OnWay.
+## Hechos que conviene recordar
+- **Una sola organización en la demostración** (D-H0-18). La B del aislamiento la crean las pruebas: el fixture en `test:api` y `apps/web/e2e/global-setup.ts` (SQL como `onway_owner` dentro del contenedor `db`, la retira al terminar).
+- **Roles de la base (revisado en T10):** `onway_owner`, `onway_app` y `onway_platform` tienen `rolsuper = f` y `rolbypassrls = f`. El único objeto de `postgres` es `spatial_ref_sys` (PostGIS). El informe previo ambiguo no se reproduce: `smoke.sh` lo comprueba cada vez y la API se niega a arrancar con un rol que salte RLS.
+- **API** (NestJS 11/Express 5): `withContext`/`withAnonymous` sobre `AsyncLocalStorage`; `@Operation(id)` se niega a montar operaciones de hitos posteriores; `mountEndpoint` (solo pruebas) monta endpoints sintéticos para RF-103. Argon2id con `crypto.argon2` de Node (m=19456, t=2, p=1). Sesión de 12 h, cookie `onway_session` (`HttpOnly; Secure; SameSite=Strict; Path=/api`, funciona en `http://localhost`), CSRF = HMAC con `CSRF_SECRET_FILE`. 5.º fallo → 423. Pendiente → 403 `ACCOUNT_PENDING` salvo `login`/`getMe`/`logout`.
+- **Pila** (`compose.yml` + `infra/compose.yml`): `secrets` → `db` → `migrate` → `seed` → `api` → `web` (Caddy, único puerto `127.0.0.1:8080`). 0001 y los roles los aplica el arranque de la base como superusuario; 0002–0009 el migrador de Drizzle. Si borras `secrets` o `db-data`, borra también el otro (`down -v`).
+- **Web:** React 19, Vite 7, TanStack Query, react-i18next, react-router 7, sin librería de UI. La barra por rol vive en `src/nav/navigation.ts`. El idioma elegido en el navegador gana al del perfil (D-H0-21): un usuario `fr` ve francés aunque el navegador esté en español.
+- `pnpm.overrides.multer = ^2.5.0` (raíz) por un aviso de `pnpm audit`; quitar cuando NestJS 11.x lo traiga.
+- **Pendiente para H5:** la actualización parcial de una habilidad no aplica las reglas cruzadas de `SkillInput` (Zod 4 no permite `.partial()` con refinamientos); validarlas en el servidor al combinar con lo guardado. El código de invitación se genera al azar al sembrar y no se imprime.
+- La revisión visual de T8 se hizo con Chromium real (el MCP de Chrome DevTools no estaba disponible); desde T10 la repite el E2E.
+- **Pendientes menores de la validación:** el `message` de los errores repite el `code` (cumple el formato; valorar textos fijos por código en el servidor); auditoría de contraste y de lector de pantalla (H1 o H7).
+- ESLint (aprobado) no se ha incorporado: el plan de H0 solo exigía formato. Decidir en H1 si entra.
+- **CI** (`.github/workflows/ci.yml`): `verify`, `api`, `audit`, `stack` y, desde T10, `e2e` (sube informe y trazas solo si falla). Resultado en GitHub: último `gh run list`.
 
-## Siguiente
-1. `/sdd-plan H0-cimientos` → plan, tareas, aprobación.
-2. Lanzar durante H1 la prueba técnica del motor de rutas (R-01, GraphHopper) para llegar a H3 con la decisión tomada.
+## Decisiones de organización
+- SDD **ligero**: por hito, `specs/Hn-nombre/plan.md` + `tasks.md`; el qué está en los docs 01–06 (ver `AGENTS.md` y skill `sdd`).
+- Git: rama `hito/Hn-nombre` desde `main`; un commit y un push por tarea con todo en verde; `main` solo recibe hitos validados.

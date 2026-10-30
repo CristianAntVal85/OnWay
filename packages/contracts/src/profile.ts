@@ -6,13 +6,11 @@ import { isValidDocument, PHONE_PATTERN } from './validators.js';
 
 export const Phone = z.string().trim().regex(PHONE_PATTERN, 'Teléfono no válido');
 
-export const DocumentInput = z
-  .strictObject({ type: DocumentType, number: z.string().trim().min(3).max(40) })
-  .superRefine((d, ctx) => {
-    if (!isValidDocument(d.type, d.number)) {
-      ctx.addIssue({ code: 'custom', path: ['number'], message: 'INVALID_DOCUMENT' });
-    }
-  });
+export const DocumentInput = z.strictObject({ type: DocumentType, number: z.string().trim().min(3).max(40) }).superRefine((d, ctx) => {
+  if (!isValidDocument(d.type, d.number)) {
+    ctx.addIssue({ code: 'custom', path: ['number'], message: 'INVALID_DOCUMENT' });
+  }
+});
 
 export const Address = z.strictObject({
   street: z.string().trim().min(1).max(200),

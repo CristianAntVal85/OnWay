@@ -31,7 +31,10 @@ const Position3D = z.tuple([Lon, Lat, Elevation]);
 /** Trazado enviado por el cliente (dibujo, edición). Las altitudes que traiga se ignoran y se recalculan. */
 export const LineStringInput = z.strictObject({
   type: z.literal('LineString'),
-  coordinates: z.array(z.union([Position3D, Position2D])).min(2).max(20000),
+  coordinates: z
+    .array(z.union([Position3D, Position2D]))
+    .min(2)
+    .max(20000),
 });
 /** Trazado devuelto con altitud. */
 export const LineString3D = z.strictObject({
@@ -50,7 +53,8 @@ export const PolygonInput = z
   })
   .refine((p) => {
     const ring = p.coordinates[0]!;
-    const a = ring[0]!, b = ring[ring.length - 1]!;
+    const a = ring[0]!,
+      b = ring[ring.length - 1]!;
     return a[0] === b[0] && a[1] === b[1];
   }, 'El anillo del polígono debe cerrarse');
 

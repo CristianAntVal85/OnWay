@@ -4,9 +4,11 @@ Fuente de verdad del API de OnWay (documento 06): esquemas Zod, registro de endp
 
 ```
 pnpm typecheck     # tsc --noEmit (estricto)
-pnpm test          # 74 pruebas de contrato (node:test + tsx), sin base de datos
+pnpm test          # 83 pruebas (node:test + tsx): contrato y cliente generado, sin base de datos
+pnpm build         # gen:client + tsc → dist/ (lo que consume Node)
 pnpm gen:openapi   # openapi.json desde el registro
 pnpm gen:doc gen/  # tablas Markdown del documento 06
+pnpm gen:client    # gen/client.ts: cliente tipado (ApiClient) desde el registro
 ```
 
 - `src/endpoints.ts` es el registro: ruta, roles, entrada, respuesta y errores de cada operación.

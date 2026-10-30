@@ -78,8 +78,18 @@ test('misión: objetivo de las tres formas, rangos y etiqueta de dirección', ()
 
 test('cierre: sin repetidos; con cero aceptados vale una lista vacía', () => {
   ok(C.CloseMissionRequest, { attendance: [] });
-  ok(C.CloseMissionRequest, { attendance: [{ participationId: U(1), participated: true }, { participationId: U(2), participated: false }] });
-  bad(C.CloseMissionRequest, { attendance: [{ participationId: U(1), participated: true }, { participationId: U(1), participated: false }] });
+  ok(C.CloseMissionRequest, {
+    attendance: [
+      { participationId: U(1), participated: true },
+      { participationId: U(2), participated: false },
+    ],
+  });
+  bad(C.CloseMissionRequest, {
+    attendance: [
+      { participationId: U(1), participated: true },
+      { participationId: U(1), participated: false },
+    ],
+  });
   bad(C.CloseMissionRequest, { attendance: [{ participationId: U(1) }] });
 });
 
@@ -92,7 +102,10 @@ test('bandeja: quitar exige el número esperado; la selección por filtro lleva 
   bad(C.BulkParticipationRequest, { action: 'accept', selection: { mode: 'ids', ids: [] } });
   const r = C.BulkParticipationRequest.parse({ action: 'accept', selection: { mode: 'filter', filter: {} } });
   assert.equal(r.selection.mode, 'filter');
-  if (r.selection.mode === 'filter') { assert.equal(r.selection.filter.status, 'pending'); assert.deepEqual(r.selection.exceptIds, []); }
+  if (r.selection.mode === 'filter') {
+    assert.equal(r.selection.filter.status, 'pending');
+    assert.deepEqual(r.selection.exceptIds, []);
+  }
 });
 
 test('consulta de bandeja: por defecto Pendientes, página 1, 25 por página; coerción desde texto', () => {
@@ -111,12 +124,50 @@ test('booleano de consulta: "false" es falso', () => {
 });
 
 test('geometría: rangos, mínimo de puntos, polígono cerrado', () => {
-  ok(C.LineStringInput, { type: 'LineString', coordinates: [[0, 42], [0.1, 42.1, 1500]] });
+  ok(C.LineStringInput, {
+    type: 'LineString',
+    coordinates: [
+      [0, 42],
+      [0.1, 42.1, 1500],
+    ],
+  });
   bad(C.LineStringInput, { type: 'LineString', coordinates: [[0, 42]] });
-  bad(C.LineStringInput, { type: 'LineString', coordinates: [[0, 91], [1, 1]] });
-  bad(C.LineStringInput, { type: 'LineString', coordinates: [[200, 0], [1, 1]] });
-  ok(C.PolygonInput, { type: 'Polygon', coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] });
-  bad(C.PolygonInput, { type: 'Polygon', coordinates: [[[0, 0], [1, 0], [1, 1], [2, 2]]] });
+  bad(C.LineStringInput, {
+    type: 'LineString',
+    coordinates: [
+      [0, 91],
+      [1, 1],
+    ],
+  });
+  bad(C.LineStringInput, {
+    type: 'LineString',
+    coordinates: [
+      [200, 0],
+      [1, 1],
+    ],
+  });
+  ok(C.PolygonInput, {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 0],
+      ],
+    ],
+  });
+  bad(C.PolygonInput, {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [2, 2],
+      ],
+    ],
+  });
 });
 
 test('biblioteca: bbox se interpreta; fuera de rango o al revés se rechaza', () => {
@@ -130,10 +181,31 @@ test('biblioteca: bbox se interpreta; fuera de rango o al revés se rechaza', ()
 
 test('crear ruta: importar necesita archivo; dibujar necesita trazado; no se acepta otra procedencia', () => {
   ok(C.CreateRouteRequest, { source: 'import', name: 'GPX', fileId: U(1) });
-  ok(C.CreateRouteRequest, { source: 'drawn', name: 'A mano', geometry: { type: 'LineString', coordinates: [[0, 0], [1, 1]] } });
+  ok(C.CreateRouteRequest, {
+    source: 'drawn',
+    name: 'A mano',
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [0, 0],
+        [1, 1],
+      ],
+    },
+  });
   bad(C.CreateRouteRequest, { source: 'import', name: 'GPX' });
   bad(C.CreateRouteRequest, { source: 'generated', name: 'x', fileId: U(1) });
-  bad(C.CreateRouteRequest, { source: 'drawn', name: 'x', geometry: { type: 'LineString', coordinates: [[0, 0], [1, 1]] }, metrics: {} });
+  bad(C.CreateRouteRequest, {
+    source: 'drawn',
+    name: 'x',
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [0, 0],
+        [1, 1],
+      ],
+    },
+    metrics: {},
+  });
 });
 
 test('validar exige confirmar el aviso (RF-506)', () => {

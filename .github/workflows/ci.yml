@@ -1,0 +1,182 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Actions oficiales fijadas por commit (el comentario indica la versión).
+# Sin secretos: ningún paso usa `secrets.*`; las contraseñas de las pruebas
+# las genera cada ejecución dentro del contenedor de Testcontainers.
+jobs:
+  verify:
+    name: format, types, tests, generators and schema tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit and contract tests (web included)
+        run: pnpm test
+
+      - name: Build (contracts, packages, API and web)
+        run: pnpm build
+
+      - name: Generate OpenAPI
+        run: pnpm --filter @onway/contracts gen:openapi
+
+      - name: Generate API document (06)
+        run: pnpm --filter @onway/contracts gen:doc gen/
+
+      - name: Generate typed client
+        run: pnpm --filter @onway/contracts gen:client
+
+      - name: Schema tests on PostGIS (Testcontainers)
+        run: pnpm --filter @onway/api test:db
+
+  api:
+    name: API tests on PostGIS (Testcontainers)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: API tests (INV-01 through the API, errors, routes = registry)
+        run: pnpm --filter @onway/api test:api
+
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit production dependencies
+        run: pnpm audit --prod
+
+  stack:
+    name: images and docker compose up
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the images (api, web)
+        run: docker compose build
+
+      # Sin copiar ningún archivo antes: las contraseñas y el secreto CSRF los genera el servicio `secrets`.
+      - name: Start the whole stack and wait until every service is healthy
+        run: docker compose up --wait --no-build
+
+      - name: Smoke test (health, web shell, login, getMe and logout with cookie and CSRF)
+        run: infra/scripts/smoke.sh
+
+      - name: Restart keeps the data and does not seed again
+        run: |
+          docker compose down
+          docker compose up --wait --no-build
+          docker compose logs seed | grep -q "demo data already present: nothing changed"
+          infra/scripts/smoke.sh
+
+      - name: Service logs (on failure)
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color
+
+      - name: Clean up
+        if: always()
+        run: docker compose down -v
+
+  e2e:
+    name: end-to-end demo (Playwright against docker compose up)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium for Playwright
+        run: pnpm --filter @onway/web exec playwright install --with-deps chromium
+
+      # Sin copiar ningún archivo antes: las contraseñas y el secreto CSRF los genera el servicio `secrets`.
+      - name: Build and start the whole stack
+        run: |
+          docker compose build
+          docker compose up --wait --no-build
+
+      # Desktop and 375 px mobile projects. Organization B is created (and removed) by the test itself inside the db container.
+      - name: End-to-end demo
+        run: pnpm --filter @onway/web e2e
+
+      - name: Upload report and traces (only on failure)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            apps/web/e2e/report
+            apps/web/e2e/test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Service logs (on failure)
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --no-color
+
+      - name: Clean up
+        if: always()
+        run: docker compose down -v

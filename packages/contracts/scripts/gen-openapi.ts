@@ -18,21 +18,38 @@ for (const e of ENDPOINTS) {
   const ok = e.response;
   responses[String(ok.status)] = ok.schema
     ? { description: 'OK', content: { 'application/json': { schema: toJson(ok.schema, 'output') } } }
-    : ok.file ? { description: 'Archivo', content: Object.fromEntries(ok.file.split(' | ').map((t) => [t, { schema: { type: 'string', format: 'binary' } }])) }
-    : { description: 'Sin contenido' };
+    : ok.file
+      ? { description: 'Archivo', content: Object.fromEntries(ok.file.split(' | ').map((t) => [t, { schema: { type: 'string', format: 'binary' } }])) }
+      : { description: 'Sin contenido' };
   const byStatus = new Map<number, string[]>();
   for (const c of allErrors(e)) byStatus.set(ERROR_HTTP[c], [...(byStatus.get(ERROR_HTTP[c]) ?? []), c]);
   for (const [status, codes] of byStatus) responses[String(status)] = { description: codes.join(' | '), content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } };
 
   const op: Record<string, unknown> = {
-    operationId: e.id, 'x-milestone': e.milestone, tags: [e.tag], summary: e.summary, description: [e.notes, e.delivery === 2 ? 'Segunda entrega: responde 501 hasta entonces.' : '', e.audited ? 'Deja registro en audit_log.' : ''].filter(Boolean).join('\n\n') || undefined,
+    operationId: e.id,
+    'x-milestone': e.milestone,
+    tags: [e.tag],
+    summary: e.summary,
+    description: [e.notes, e.delivery === 2 ? 'Segunda entrega: responde 501 hasta entonces.' : '', e.audited ? 'Deja registro en audit_log.' : ''].filter(Boolean).join('\n\n') || undefined,
     parameters: parameters.length ? parameters : undefined,
     security: e.roles.includes('public') ? [] : [{ cookieAuth: [] }],
     'x-roles': e.roles,
     responses,
   };
   if (e.body) op.requestBody = { required: true, content: { 'application/json': { schema: toJson(e.body, 'input') } } };
-  if (e.multipart) op.requestBody = { required: true, content: { 'multipart/form-data': { schema: { type: 'object', required: ['file', ...Object.keys(toJson(e.multipart, 'input').properties ?? {})], properties: { ...toJson(e.multipart, 'input').properties, file: { type: 'string', format: 'binary' } } } } } };
+  if (e.multipart)
+    op.requestBody = {
+      required: true,
+      content: {
+        'multipart/form-data': {
+          schema: {
+            type: 'object',
+            required: ['file', ...Object.keys(toJson(e.multipart, 'input').properties ?? {})],
+            properties: { ...toJson(e.multipart, 'input').properties, file: { type: 'string', format: 'binary' } },
+          },
+        },
+      },
+    };
   (paths[`/api/v1${e.path}`] ??= {})[e.method.toLowerCase()] = op;
 }
 

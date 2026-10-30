@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.1 · **Estado:** borrador para revisión · **Fecha:** 30 de octubre de 2026
+**Versión:** 0.2 · **Estado:** borrador para revisión · **Fecha:** 30 de octubre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -67,13 +67,13 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 
 | | |
 |---|---|
-| **Demostración** | Clonar, `docker compose up`, iniciar sesión como administrador, coordinador y rescatista de demostración y ver tres menús distintos. Probar a abrir la dirección de otro rol: se rechaza. Un usuario de otra organización no ve nada de la primera |
-| **Alcance** | RF-101, RF-102, RF-103. Migraciones 0001–0009 aplicadas. Boceto 1 (solo inicio de sesión) y barra de navegación por rol (RF-702). Datos de demostración ficticios (R-10): una organización, un administrador, dos coordinadores, seis rescatistas, equipos |
+| **Demostración** | Clonar, `docker compose up`, iniciar sesión como administrador, coordinador y rescatista de demostración y ver tres menús distintos. Probar a abrir la dirección de otro rol: se rechaza (el rescatista que abre `/admin` ve «Sin acceso»). La cuenta pendiente solo ve la pantalla de espera. **Aislamiento:** la demostración lleva una sola organización; una segunda, creada por las pruebas (no forma parte de los datos de demostración), muestra que su administrador solo ve su organización y nada de la primera |
+| **Alcance** | RF-101, RF-102, RF-103. Migraciones 0001–0009 aplicadas. Boceto 1 (solo inicio de sesión) y barra de navegación por rol (RF-702). Datos de demostración ficticios (R-10): **una** organización, un administrador, dos coordinadores, seis rescatistas con perfil incompleto (el perfil llega en H5), cuatro equipos y una cuenta pendiente de aprobación. La organización B del aislamiento la crean las pruebas |
 | **Operaciones (5)** | `getHealth`, `login`, `logout`, `getMe`, `getOrganization` |
 | **Qué se monta** | Monorepo, integración continua, contexto de transacción de la base de datos (`app.org_id`, `app.user_id`, `app.role`), sesión con cookie y CSRF, filtro de errores desde `ERROR_HTTP`, cliente generado desde el OpenAPI, esqueleto web con i18n (es, fr) y estados de carga, vacío y error |
 | **Salida** | Las 118 pruebas de base de datos pasan **sobre PostGIS real** (hoy lo espacial está sustituido). Las 74 de contrato pasan con las dependencias reales. INV-01 e INV-25 comprobadas a través del API. CI en verde |
 | **Fuera** | Registro, recuperar contraseña, perfiles |
-| **Riesgos** | PostGIS sin verificar (**primera tarea del proyecto**). Drizzle con seguridad por filas. Instalar las dependencias reales (hasta ahora zod y el OpenAPI se validaron en local) |
+| **Riesgos** | ~~PostGIS sin verificar~~ (resuelto: 118/118 sobre `postgis/postgis:16-3.4`). ~~Drizzle con seguridad por filas~~ (resuelto: el migrador aplica el SQL a mano y cada petición fija su contexto con `withContext`). ~~Instalar las dependencias reales~~ (resuelto) |
 
 ### H1 · Misiones y mapa · M
 
@@ -215,7 +215,7 @@ Cada bloque tendrá su propio documento de diseño cuando llegue su turno. Aquí
 
 | Pendiente | Bloquea | Mientras tanto |
 |---|---|---|
-| PostGIS real | H0 (primera tarea) | Nada: se verifica con la imagen `postgis/postgis:16` |
+| ~~PostGIS real~~ | ~~H0 (primera tarea)~~ | **Resuelto en H0**: 118/118 sobre `postgis/postgis:16-3.4` |
 | Prueba técnica del motor | H3 | Se hace durante H1 y H2; si falla, ver el riesgo de H3 |
 | Q-26 capas de IGN y licencias | v2.1; mejora de H1 | Mapa base abierto y satélite de servicios abiertos |
 | Q-14 el administrador escribe misiones | H1 | No; cambiarlo es una sola constante (`MISSION_WRITERS`) |
@@ -243,4 +243,5 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.2 | 2026-10-30 | H0 (sección 3) al día tras construirlo: la demostración lleva una sola organización (decisión D-H0-18), con una cuenta pendiente y rescatistas con perfil incompleto hasta H5; el aislamiento entre organizaciones se demuestra con una organización creada por las pruebas. Riesgos de H0 y «PostGIS real» (sección 6) marcados como resueltos |
 | 0.1 | 2026-10-30 | Primera versión: diez hitos de v1 (H0–H9) con MVP en H0–H4, bosquejo de v2 y v3, definición de terminado común. Cada operación del contrato tiene hito (`milestones.ts`, 74 pruebas) |

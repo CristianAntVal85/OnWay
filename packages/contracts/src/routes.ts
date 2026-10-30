@@ -1,9 +1,7 @@
 // Rutas: biblioteca, versiones, cálculo, y rutas dentro de una misión (documento 02, §3.6, 4.3, 4.4).
 // El servidor recalcula SIEMPRE métricas, altitudes y tramos: el cliente envía solo geometría (RN-10).
 import { z } from 'zod';
-import {
-  Id, LatLon, QueryLat, QueryLon, LineString3D, LineStringInput, LineStringPreview, PageQuery, Paged, PersonRef, PolygonInput, TeamRef, Timestamp,
-} from './common.js';
+import { Id, LatLon, QueryLat, QueryLon, LineString3D, LineStringInput, LineStringPreview, PageQuery, Paged, PersonRef, PolygonInput, TeamRef, Timestamp } from './common.js';
 import { JobKind, JobStatus, MissionRouteStatus, MissionStatus, Provenance, RoadType, RouteStatus, VersionStatus } from './enums.js';
 
 // ---------- Métricas ----------
@@ -98,9 +96,7 @@ export const RouteDetail = z.strictObject({
   versions: z.array(RouteVersion), // de la más nueva a la más antigua
   derivedFrom: z.strictObject({ routeId: Id, routeName: z.string(), versionNumber: z.number().int() }).nullable(),
   derivatives: z.array(z.strictObject({ id: Id, name: z.string() })),
-  usedIn: z.array(
-    z.strictObject({ missionId: Id, missionName: z.string(), missionStatus: MissionStatus, pinnedVersionNumber: z.number().int() }),
-  ),
+  usedIn: z.array(z.strictObject({ missionId: Id, missionName: z.string(), missionStatus: MissionStatus, pinnedVersionNumber: z.number().int() })),
   createdAt: Timestamp,
   updatedAt: Timestamp,
 });
@@ -113,7 +109,10 @@ export const RouteSegment = z.strictObject({
   descentM: z.number().min(0),
 });
 /** Pares [distancia acumulada en m, altitud en m], ≤ 500 puntos, para dibujar el perfil. */
-export const ElevationProfile = z.array(z.tuple([z.number().min(0), z.number()])).min(2).max(500);
+export const ElevationProfile = z
+  .array(z.tuple([z.number().min(0), z.number()]))
+  .min(2)
+  .max(500);
 
 export const RouteVersionDetail = RouteVersion.extend({
   geometry: LineString3D,
@@ -326,5 +325,8 @@ export const ExportFormat = z.enum(['gpx', 'kml']);
 export const ExportRouteQuery = z.strictObject({ versionId: Id.optional(), format: ExportFormat.default('gpx') });
 export const ExportMissionRoutesQuery = z.strictObject({
   format: ExportFormat.default('gpx'),
-  ids: z.string().regex(/^[0-9a-f-]{36}(,[0-9a-f-]{36})*$/).optional(), // mission_route ids; sin ellos, todas las exportables
+  ids: z
+    .string()
+    .regex(/^[0-9a-f-]{36}(,[0-9a-f-]{36})*$/)
+    .optional(), // mission_route ids; sin ellos, todas las exportables
 });

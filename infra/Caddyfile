@@ -1,0 +1,38 @@
+# Caddy local: sirve la web ya construida y hace de proxy de /api hacia la API, en el mismo origen
+# (la cookie de sesión es SameSite=Strict, Path=/api). HTTPS y dominio llegan en H7 (doc 04 §11).
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	encode zstd gzip
+
+	header {
+		-Server
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+		Cross-Origin-Opener-Policy same-origin
+		# MapLibre (H3 en adelante) necesita workers y texturas `blob:`/`data:`; las teselas y la API
+		# serán del mismo origen (PMTiles servidos por este Caddy), así que `connect-src` sigue en 'self'.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	}
+
+	handle /api/* {
+		# Nada de lo que devuelve la API se guarda en cachés compartidas (sesión, CSRF, datos de la organización).
+		header ?Cache-Control "no-store"
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@shell not path /assets/*
+		header @shell Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

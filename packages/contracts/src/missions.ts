@@ -61,7 +61,10 @@ export const CreateMissionRequest = z.strictObject({
   teamIds: z.array(Id).max(50).default([]),
   rescuerIds: z.array(Id).max(200).default([]),
   origins: z.array(OriginInput).max(20).default([]),
-  routes: z.array(z.strictObject({ routeId: Id, versionId: Id.optional() })).max(20).default([]),
+  routes: z
+    .array(z.strictObject({ routeId: Id, versionId: Id.optional() }))
+    .max(20)
+    .default([]),
 });
 
 export const UpdateMissionRequest = z
@@ -145,12 +148,28 @@ export const MissionDetail = MissionListItem.extend({
 });
 
 export const MissionHistoryAction = z.enum([
-  'mission_created', 'mission_updated', 'mission_activated', 'mission_closed', 'mission_reopened',
-  'point_added', 'point_updated', 'point_removed',
-  'team_added', 'team_removed',
-  'participation_offered', 'participation_withdrawn', 'participation_accepted', 'participation_rejected',
-  'participation_reconsidered', 'participation_removed', 'participation_added',
-  'route_added', 'route_removed', 'route_version_changed', 'route_marked_unavailable', 'route_reactivated',
+  'mission_created',
+  'mission_updated',
+  'mission_activated',
+  'mission_closed',
+  'mission_reopened',
+  'point_added',
+  'point_updated',
+  'point_removed',
+  'team_added',
+  'team_removed',
+  'participation_offered',
+  'participation_withdrawn',
+  'participation_accepted',
+  'participation_rejected',
+  'participation_reconsidered',
+  'participation_removed',
+  'participation_added',
+  'route_added',
+  'route_removed',
+  'route_version_changed',
+  'route_marked_unavailable',
+  'route_reactivated',
   'route_version_validated',
 ]);
 export const MissionHistoryItem = z.strictObject({

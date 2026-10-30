@@ -1,0 +1,22 @@
+# Contexto de construcción mínimo: sin secretos, sin dependencias ni salidas locales.
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+**/gen
+**/*.tsbuildinfo
+**/openapi.json
+docs
+specs
+db/tests
+AGENTS.md
+CLAUDE.md
+README.md
+data/*
+!data/seed
+data/seed/*
+!data/seed/demo.json

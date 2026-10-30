@@ -1,8 +1,8 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 0.3 (borrador) · Fecha: 2026-10-30 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
+Versión: 0.4 (borrador) · Fecha: 2026-10-30 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
 
-Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en un PostgreSQL 16 real con 97 comprobaciones de invariantes y permisos. Lo espacial (PostGIS) no se ha podido ejecutar en el entorno de trabajo y queda marcado como **por verificar** (sección 12).
+Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
 Los elementos marcados *(propuesto)* los he decidido yo para poder avanzar y están pendientes de confirmar.
 
@@ -41,7 +41,7 @@ Los archivos SQL son la **fuente de verdad** del esquema:
 
 | ID | Decisión | Motivo |
 |---|---|---|
-| DB-01 | **SQL escrito a mano como fuente de verdad** (migraciones numeradas). Drizzle se usa para consultas tipadas y se mantiene su esquema en TypeScript; las migraciones se generan con `drizzle-kit generate --custom` y contienen este SQL | Drizzle no expresa bien RLS, disparadores, columnas generadas ni geometría. Lo importante (seguridad, invariantes) no debe depender de lo que un generador sepa describir |
+| DB-01 | **SQL escrito a mano como fuente de verdad** (migraciones numeradas). Drizzle se usa para consultas tipadas y se mantiene su esquema en TypeScript (`apps/api/src/db/schema.ts`); las migraciones **no se generan**: son estos SQL, y el migrador de Drizzle (`migrate()`) los aplica en orden con su diario `db/migrations/meta/_journal.json` (sin `drizzle-kit`) | Drizzle no expresa bien RLS, disparadores, columnas generadas ni geometría. Lo importante (seguridad, invariantes) no debe depender de lo que un generador sepa describir |
 | DB-02 | **Identificadores `uuid`** generados por la base (`gen_random_uuid()`) | No se pueden adivinar ni contar. Sirven igual en la futura app móvil |
 | DB-03 | **Fechas `timestamptz`** siempre. Las unidades son metros (`_m`) y porcentajes (`_pct`), y se llaman así en el nombre de la columna (INV-17) | Sin ambigüedad de zona horaria ni de unidades |
 | DB-04 | **Enumerados nativos de PostgreSQL** para estados y tipos | Valores validados por la base. Añadir un valor es una migración trivial |
@@ -594,31 +594,33 @@ Las migraciones son aditivas y se ejecutan en orden. Cada entrega solo estrena l
 | 0010+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
 
 Orden de ejecución y responsabilidades:
-- **0001** la ejecuta un superusuario una sola vez (crea extensiones y roles). **0002–0009** las ejecuta `onway_owner`.
-- Las contraseñas de `onway_app` y `onway_platform` se fijan en el despliegue con `ALTER ROLE ... PASSWORD`, nunca en el repositorio.
+- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0009** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
+- Las contraseñas de `onway_owner`, `onway_app` y `onway_platform` se fijan en el despliegue con `ALTER ROLE ... PASSWORD`, leídas de archivos de secretos, nunca del repositorio. En local las genera al azar el servicio `secrets` de `docker compose`.
 - Las tablas internas de la cola (pg-boss) las crea la propia biblioteca en su esquema `pgboss`. `onway_app` recibe permisos sobre ese esquema en el despliegue.
 - Cada migración debe poder aplicarse sobre una base vacía en CI con la imagen de PostGIS, y las pruebas de la sección 11 deben pasar después de la última.
 
 ## 10. Datos de ejemplo
 
-Parte del proyecto (`data/seed/`), siempre ficticios (R-10). Se cargan como `onway_owner`, no por la API.
+Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api seed`), siempre ficticios (R-10). Se cargan como `onway_owner`, no por la API. Cada hito añade los datos que su demostración necesita; la tabla es el objetivo de v1 y la columna «H0» dice lo que existe hoy.
 
-| Dato | Cantidad | Notas |
+| Dato | Cantidad | H0 |
 |---|---|---|
-| Organizaciones | 2 | La segunda sirve para probar el aislamiento |
-| Administrador y coordinadores | 1 y 2 | |
-| Rescatistas | 12, con 2 de ellos con perfil incompleto y 3 con solicitud pendiente | Documentos y direcciones inventados, con letra de DNI válida |
-| Equipos | 4, con localidades distintas, y rescatistas en 0, 1 y 2 equipos | |
-| Cursos y habilidades | 20, algunos con certificado ficticio (un PDF de una página) | |
-| Misiones | 6: dos en planificación, dos activas, dos cerradas | Las cerradas con participación confirmada y alguna desmarcada |
-| Rutas | 8 en la biblioteca, con 1 a 3 versiones | Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada |
-| Objetivos | En el Pirineo, escogidos con la prueba técnica del motor de rutas (documento 04, sección 7.3) | La geometría de las rutas de ejemplo sale de esa prueba |
+| Organizaciones | 1 en la demostración. El aislamiento se prueba con una segunda que **crean las propias pruebas** (el fixture de `test:api` y la preparación del E2E) y que no forma parte de `demo.json` (D-H0-18) | 1 |
+| Administrador y coordinadores | 1 y 2 | 1 y 2 (uno con interfaz en francés) |
+| Rescatistas | 6, con perfil incompleto hasta que H5 traiga el perfil y sus datos; sin contacto ni datos sensibles | 6, todos `incomplete` |
+| Cuentas pendientes | 1, con su solicitud de alta | 1 |
+| Equipos | 4, con localidades distintas, y rescatistas en 0, 1 y 2 equipos | 4 |
+| Datos sensibles | Documentos y direcciones inventados, con letra de DNI válida, cifrados | H5 |
+| Cursos y habilidades | 20, algunos con certificado ficticio (un PDF de una página) | H5 |
+| Misiones | 6: dos en planificación, dos activas, dos cerradas. Las cerradas con participación confirmada y alguna desmarcada | H2 |
+| Rutas | 8 en la biblioteca, con 1 a 3 versiones. Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada | H3 |
+| Objetivos | En el Pirineo, escogidos con la prueba técnica del motor de rutas (documento 04, sección 7.3); la geometría de las rutas de ejemplo sale de esa prueba | H1 |
 
 ## 11. Pruebas de la base de datos
 
-La base de datos tiene su propio juego de pruebas, independiente de la API, porque las invariantes viven aquí. En el repositorio irán en `apps/api/test/db/` y se ejecutan con Testcontainers sobre la imagen de PostGIS (documento 04, sección 12).
+La base de datos tiene su propio juego de pruebas, independiente de la API, porque las invariantes viven aquí. En el repositorio están en `apps/api/test/db/`: una prueba de Vitest levanta PostGIS con Testcontainers (`postgis/postgis:16-3.4`), aplica las migraciones con el migrador de Drizzle y ejecuta los SQL de `db/tests/` (`seed_and_tests.sql` y `run_tests.sql`, que no se editan) (documento 04, sección 12).
 
-**Cobertura actual: 118 comprobaciones, todas correctas, sobre PostgreSQL 16.15.** Las 21 últimas son de la recuperación de contraseña (0009).
+**Cobertura actual: 118 comprobaciones, todas correctas, sobre PostgreSQL 16 con PostGIS real.** Las 21 últimas son de la recuperación de contraseña (0009).
 
 | Grupo | Qué se comprueba |
 |---|---|
@@ -633,18 +635,20 @@ La base de datos tiene su propio juego de pruebas, independiente de la API, porq
 | Plataforma y roles | La plataforma no lee perfiles, sensibles ni archivos. Ningún rol de aplicación es superusuario ni `BYPASSRLS`. Todas las tablas de negocio tienen RLS |
 | Permisos por columna | Un rescatista no puede aprobarse a sí mismo cambiando `account_status` |
 
-Cómo se ejecutan: `db/tests/run.sh` crea una base, aplica las migraciones y ejecuta los casos. Muestra una línea por caso (`PASS` o `FAIL`) y el total.
+Cómo se ejecutan: `pnpm --filter @onway/api test:db` (necesita Docker; es el que usa la integración continua). Además, `db/tests/run-postgis.sh` aplica las migraciones sobre `postgis/postgis` sin pasar por Node y `db/tests/run.sh` usa un PostgreSQL local con PostGIS sustituido por texto (solo para entornos sin PostGIS). Muestran una línea por caso (`PASS` o `FAIL`) y el total.
+
+En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` que `onway_app`, `onway_owner` y `onway_platform` no son superusuario ni `BYPASSRLS`, y que `onway_app` y `onway_platform` no son dueños de ningún objeto ni miembros de otro rol.
 
 ## 12. Qué no está verificado
 
+**Verificado en H0 (2026-10-30):** las migraciones 0001–0009 aplican en base vacía sobre `postgis/postgis:16-3.4` (la 0001 como superusuario en el arranque; 0002–0009 con el migrador de Drizzle y su diario); las 118 comprobaciones pasan; la columna generada `geog` (`ST_Force2D(geom)::geography`) es admitida por PostgreSQL; el migrador de Drizzle aplica estas migraciones personalizadas y es idempotente.
+
 | Qué | Estado | Cómo se cierra |
 |---|---|---|
-| **Columnas y funciones PostGIS** (`geometry`, `geography`, `ST_Force2D`, `ST_MakeEnvelope`, `ST_LineLocatePoint`, `<->` sobre `geography`) | **No ejecutado.** En el entorno de pruebas se sustituyeron por texto para validar todo lo demás. Las líneas espaciales llevan la marca `[GIS]` en el SQL | Aplicar 0001–0008 sobre `postgis/postgis:16` en la primera sesión de implementación y ejecutar las consultas de la sección 8.2 con datos reales |
-| **Columna generada `geog`** con `ST_Force2D(geom)::geography` | Debería ser inmutable y admitida como columna generada; no comprobado | Si PostgreSQL la rechaza, sustituirla por un disparador que la rellene |
+| **Consultas PostGIS de la sección 8.2 con datos reales** (`ST_MakeEnvelope`, `ST_LineLocatePoint`, `<->` sobre `geography`) | Las columnas, índices y funciones del esquema existen y se crean sin error, pero las consultas con geometrías de verdad aún no se han ejecutado | H1 (puntos de misión) y H3 (rutas) con las geometrías de la demostración |
 | **Rendimiento de la búsqueda por punto** con 10.000 rutas (objetivo menos de 2 s) | Sin medir | Prueba con rutas sintéticas en la segunda entrega |
 | **Rendimiento de las políticas RLS** con subconsultas (contacto, rutas del rescatista) | Sin medir. Con los volúmenes del proyecto no debería importar | Medir con `EXPLAIN ANALYZE` con los datos de ejemplo |
-| **Carga de la cola pg-boss** y sus permisos para `onway_app` | Sin probar | Primera fase de implementación |
-| **Integración con Drizzle** de las migraciones personalizadas | Sin probar | Primera fase de implementación |
+| **Carga de la cola pg-boss** y sus permisos para `onway_app` | Sin probar | Primera tarea que use la cola (H3) |
 
 ## 13. Supuestos y preguntas abiertas
 
@@ -670,6 +674,8 @@ Cómo se ejecutan: `db/tests/run.sh` crea una base, aplica las migraciones y eje
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**0.4 (2026-10-30)** Cierre de H0. PostGIS real verificado (118 comprobaciones sobre `postgis/postgis:16-3.4`) y migrador de Drizzle verificado; se quita de «no verificado» lo que ya lo está. DB-01: las migraciones son SQL a mano aplicadas por el migrador de Drizzle con su diario, sin `drizzle-kit`. §9: la 0001 la ejecuta un superusuario en el arranque de la base; 0002–0009, `onway_owner` con el migrador. §10: la demostración lleva una organización (la segunda, para el aislamiento, la crean las pruebas), seis rescatistas con perfil incompleto hasta H5 y una cuenta pendiente. §11: las pruebas corren desde `apps/api/test/db/` sobre los SQL de `db/tests/`; comprobación de roles en el humo del stack.
 
 **0.3 (2026-10-30)** Perfil en tres tablas confirmado por el propietario; documento 03 (v0.4) alineado, con la invariante INV-32. Migración 0009 (`password_resets`, `auth_request_password_reset`, `auth_consume_password_reset`) para recuperar contraseña (Q-33). 118 pruebas en verde.
 

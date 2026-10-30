@@ -1,0 +1,97 @@
+// Navegación por rol (RF-702, doc 02 §2, D-H0-20). Módulo puro: sin React, sin red.
+// Es una ayuda de interfaz: quien decide los permisos es el servidor (RF-103).
+import type { MemberRole } from '@onway/contracts';
+
+export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'teams' | 'admin' | 'profile' | 'account';
+
+export type NextStep = 'home' | 'complete-profile' | 'awaiting-approval';
+
+export const PATHS = {
+  login: '/login',
+  waiting: '/waiting',
+  home: '/home',
+  missions: '/missions',
+  createMission: '/missions/new',
+  routes: '/routes',
+  teams: '/teams',
+  admin: '/admin',
+  profile: '/profile',
+  account: '/account',
+} as const satisfies Record<'login' | 'waiting' | RouteId, string>;
+
+const STAFF: readonly MemberRole[] = ['admin', 'coordinator'];
+const EVERYONE: readonly MemberRole[] = ['admin', 'coordinator', 'rescuer'];
+
+/** Roles que pueden abrir cada ruta. Una ruta fuera de esta lista muestra «sin acceso». */
+export const ROUTE_ROLES: Readonly<Record<RouteId, readonly MemberRole[]>> = {
+  home: STAFF,
+  missions: EVERYONE,
+  createMission: STAFF,
+  routes: STAFF,
+  teams: STAFF,
+  admin: ['admin'],
+  profile: ['rescuer'],
+  account: EVERYONE,
+};
+
+/** Claves de `packages/i18n` de la etiqueta de cada enlace. */
+export type NavLabelKey = `nav.${'home' | 'missions' | 'createMission' | 'routes' | 'teams' | 'administration' | 'myProfile' | 'account'}`;
+
+export interface NavItem {
+  readonly id: RouteId;
+  readonly path: string;
+  readonly labelKey: NavLabelKey;
+}
+
+/** Orden de la barra. La barra de un rol es este orden filtrado por `ROUTE_ROLES`. */
+export const NAV_ITEMS: readonly NavItem[] = [
+  { id: 'home', path: PATHS.home, labelKey: 'nav.home' },
+  { id: 'missions', path: PATHS.missions, labelKey: 'nav.missions' },
+  { id: 'createMission', path: PATHS.createMission, labelKey: 'nav.createMission' },
+  { id: 'routes', path: PATHS.routes, labelKey: 'nav.routes' },
+  { id: 'teams', path: PATHS.teams, labelKey: 'nav.teams' },
+  { id: 'admin', path: PATHS.admin, labelKey: 'nav.administration' },
+  { id: 'profile', path: PATHS.profile, labelKey: 'nav.myProfile' },
+  { id: 'account', path: PATHS.account, labelKey: 'nav.account' },
+];
+
+export function canAccess(role: MemberRole, route: RouteId): boolean {
+  return ROUTE_ROLES[route].includes(role);
+}
+
+export function navItemsFor(role: MemberRole): NavItem[] {
+  return NAV_ITEMS.filter((item) => canAccess(role, item.id));
+}
+
+/** Ruta a la que pertenece una dirección, o `null` si no es ninguna de la barra. */
+export function routeIdForPath(path: string): RouteId | null {
+  const clean = path.length > 1 ? path.replace(/\/+$/, '') : path;
+  return NAV_ITEMS.find((item) => item.path === clean)?.id ?? null;
+}
+
+interface Landing {
+  role: MemberRole | null;
+  nextStep: NextStep;
+}
+
+/** Primera pantalla tras entrar. El rescatista no tiene «Inicio» en su barra (RF-702): entra por su perfil o por Misiones. */
+export function landingPath({ role, nextStep }: Landing): string {
+  if (nextStep === 'awaiting-approval') return PATHS.waiting;
+  if (role === 'rescuer') return nextStep === 'complete-profile' ? PATHS.profile : PATHS.missions;
+  return PATHS.home;
+}
+
+/** Destino tras iniciar sesión: la vista a la que se iba si el rol puede abrirla; si no, la pantalla de entrada del rol. */
+export function postLoginPath(user: Landing, from?: string | null): string {
+  if (user.nextStep === 'awaiting-approval' || !user.role) return PATHS.waiting;
+  const id = from ? routeIdForPath(from) : null;
+  if (from && id && canAccess(user.role, id)) return from;
+  return landingPath(user);
+}
+
+/** Clave de i18n del nombre de cada rol. */
+export const ROLE_LABEL_KEYS = {
+  admin: 'account.roleAdmin',
+  coordinator: 'account.roleCoordinator',
+  rescuer: 'account.roleRescuer',
+} as const satisfies Record<MemberRole, string>;
