@@ -3,7 +3,7 @@
 Memoria entre sesiones. Máximo ~50 líneas: resume o elimina lo que ya no aporte. Última actualización: 2026-10-30.
 
 ## Dónde estamos
-- **Hito en curso:** H0 · Cimientos y acceso (aún sin plan: falta `specs/H0-cimientos/`).
+- **Hito en curso:** H0 · Cimientos y acceso. Plan y 10 tareas aprobados (`specs/H0-cimientos/`), rama `hito/H0-cimientos`. Tareas hechas: 0 de 10.
 - Documentos 01–07 en borrador, coherentes. Repositorio: https://github.com/CristianAntVal85/OnWay.git (sin primer commit todavía).
 - Existe: `packages/contracts` (Zod, 95 operaciones, 74 pruebas) y `db/` (migraciones 0001–0009).
 - No existe aún: `apps/api`, `apps/web`, `packages/geo`, `packages/i18n`, `infra/`, `data/seed`, CI.
