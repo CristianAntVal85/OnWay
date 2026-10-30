@@ -10,6 +10,7 @@ import { HealthModule } from './health/health.module.js';
 import type { IdentityOptions } from './identity/config.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { MissionsModule } from './missions/missions.module.js';
+import { WeatherModule, type WeatherOptions } from './weather/weather.module.js';
 
 export interface AppOptions {
   /** Connection of the API: always `onway_app`. */
@@ -19,6 +20,8 @@ export interface AppOptions {
   clock?: Clock;
   /** Altitude source, address search and the per-user altitude limit. Without them the test implementations answer; `main.ts` passes the real ones. */
   geo?: GeoOptions;
+  /** Weather provider. Without it the test implementation answers; `main.ts` passes the real one. */
+  weather?: WeatherOptions;
   /** Only for tests: controllers of synthetic endpoints (outside the registry) that exercise the guards. */
   extraControllers?: Type<unknown>[];
 }
@@ -35,6 +38,7 @@ export class AppModule {
         AuditModule,
         IdentityModule.register(options.identity),
         MissionsModule,
+        WeatherModule.register(options.weather),
         CommonModule,
         HealthModule,
       ],

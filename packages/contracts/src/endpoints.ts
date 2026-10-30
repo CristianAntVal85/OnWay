@@ -86,7 +86,7 @@ const Items = <T extends z.ZodType>(t: T) => z.strictObject({ items: z.array(t) 
 const RAW = [
   // ================= Sistema =================
   { id: 'getHealth', method: 'GET', path: '/health', tag: 'Sistema', summary: 'Estado del servicio y de sus dependencias', roles: ['public'], response: { status: 200, schema: Health }, delivery: 1,
-    notes: 'Lo consulta el comprobador externo. 200 aunque una dependencia falle (status "degraded"): la degradación es controlada. En H0 solo se comprueba la base de datos (SELECT 1 sin contexto de usuario); routingEngine y weatherProvider valen false mientras no exista su adaptador (puertos RoutingProvider y WeatherProvider) y no degradan status hasta que lo haya.' },
+    notes: 'Lo consulta el comprobador externo. 200 aunque una dependencia falle (status "degraded"): la degradación es controlada. La base de datos se comprueba con SELECT 1 sin contexto de usuario. weatherProvider es pasivo (D-H1-12): refleja la última llamada real al proveedor del tiempo y nunca provoca una llamada solo para la salud; vale false únicamente si esa llamada falló en los últimos 30 minutos, y entonces status pasa a degraded. routingEngine vale false mientras no exista su adaptador (puerto RoutingProvider) y no degrada status hasta que lo haya.' },
 
   // ================= Acceso =================
   { id: 'register', method: 'POST', path: '/auth/register', tag: 'Acceso', summary: 'Solicitar el alta con código de invitación', roles: ['public'],
@@ -122,8 +122,8 @@ const RAW = [
   { id: 'getElevation', method: 'GET', path: '/geo/elevation', tag: 'Geo', summary: 'Altitud de un punto', roles: STAFF,
     query: E.ElevationQuery, response: { status: 200, schema: E.ElevationResponse }, errors: ['OUTSIDE_COVERAGE'], delivery: 1 },
   { id: 'getEnvironment', method: 'GET', path: '/environment', tag: 'Inicio', summary: 'Tiempo, luz y luna para la ubicación del dispositivo o el objetivo de una misión', roles: ALL,
-    query: E.EnvironmentQuery, response: { status: 200, schema: E.EnvironmentResponse }, errors: ['OUTSIDE_COVERAGE'], delivery: 1,
-    notes: 'Si el proveedor falla: 200 con weather.status = stale | unavailable. La posición se redondea a ~1 km y no se guarda (RN-26). Un rescatista solo puede pedir misionId de misiones que ve.' },
+    query: E.EnvironmentQuery, response: { status: 200, schema: E.EnvironmentResponse }, errors: ['OUTSIDE_COVERAGE', 'NOT_FOUND'], delivery: 1,
+    notes: 'Si el proveedor falla: 200 con weather.status = stale | unavailable. La posición se redondea a ~1 km y no se guarda (RN-26). Un rescatista solo puede pedir misionId de misiones que ve: una misión en planificación o de otra organización responde 404 NOT_FOUND, como en getMyMission.' },
 
   // ================= Misiones (personal) =================
   { id: 'listMissions', method: 'GET', path: '/missions', tag: 'Misiones', summary: 'Lista de misiones con pestañas por estado', roles: STAFF,

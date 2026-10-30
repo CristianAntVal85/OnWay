@@ -47,6 +47,7 @@ services:
     environment:
       OPEN_METEO_ELEVATION_URL: http://providers-stub:8081/v1/elevation
       NOMINATIM_URL: http://providers-stub:8081/search
+      OPEN_METEO_FORECAST_URL: http://providers-stub:8081/v1/forecast
     depends_on:
       providers-stub:
         condition: service_healthy

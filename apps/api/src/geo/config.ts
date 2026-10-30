@@ -14,7 +14,7 @@ export const DEFAULT_NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search
 /** A made-up contact on `example.org` (R-10). Whoever runs a real deployment sets `NOMINATIM_CONTACT` to their own. */
 export const DEFAULT_NOMINATIM_CONTACT = 'onway-demo@example.org';
 
-const userAgentOf = (env: Env) => `OnWay/0.1 (portfolio demo; contact: ${env.NOMINATIM_CONTACT || DEFAULT_NOMINATIM_CONTACT})`;
+export const userAgentOf = (env: Env) => `OnWay/0.1 (portfolio demo; contact: ${env.NOMINATIM_CONTACT || DEFAULT_NOMINATIM_CONTACT})`;
 
 export interface ElevationEnvOptions {
   /** `false` for jobs that must not reach the Internet (the seed): only the local DEM answers. */

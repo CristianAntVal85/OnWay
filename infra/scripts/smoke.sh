@@ -57,6 +57,25 @@ echo "$body" | grep -Eq '"elevationM":-?[0-9]+(\.[0-9]+)?' || fail "getElevation
 check_elevation rescatista1@example.org 403
 echo "ok  getElevation: coordinator 200 with an altitude, rescuer 403"
 
+# Entorno (H1-T5): el tiempo puede venir del proveedor real, de la caché o no estar disponible, pero la respuesta es siempre 200 y trae
+# luz y luna calculadas en local. Lo piden también el rescatista y la posición se redondea (la respuesta devuelve la celda de ~1 km).
+check_environment() {
+  : >"$jar"
+  curl -s -c "$jar" -b "$jar" -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"$password\"}" "$base/api/v1/auth/login" >/dev/null
+  code="$(status -b "$jar" "$base/api/v1/environment?lat=42.634567&lon=-0.104321")"
+  [ "$code" = 200 ] || fail "getEnvironment as $1 must be 200, got $code"
+  body="$(curl -s -b "$jar" "$base/api/v1/environment?lat=42.634567&lon=-0.104321")"
+  echo "$body" | grep -Eq '"weather":\{"status":"(ok|stale|unavailable)"' || fail "getEnvironment returned no weather block: $body"
+  echo "$body" | grep -q '"sun":{' || fail "getEnvironment returned no sun: $body"
+  echo "$body" | grep -q '"moon":{' || fail "getEnvironment returned no moon: $body"
+  echo "$body" | grep -q '"lat":42.63,' || fail "getEnvironment did not round the position to its cell: $body"
+  echo "$body" | grep -q '42.634567' && fail "getEnvironment echoed the exact position"
+  return 0
+}
+check_environment coordinador@example.org
+check_environment rescatista1@example.org
+echo "ok  getEnvironment: coordinator and rescuer 200 with weather, sun and moon, position rounded"
+
 wrong="$(status -H 'Content-Type: application/json' -d '{"email":"admin@example.org","password":"incorrecta-incorrecta"}' "$base/api/v1/auth/login")"
 [ "$wrong" = 401 ] || fail "wrong credentials must be 401, got $wrong"
 echo "ok  wrong credentials -> 401"

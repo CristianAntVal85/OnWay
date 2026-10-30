@@ -42,7 +42,7 @@ PostgreSQL 16 + PostGIS, Drizzle (SQL propio para lo espacial), pg-boss para tra
 ```
 docker compose up --wait                    # todo en local: http://localhost:8080 (cuentas en data/seed/README.md). La primera vez `geodata` descarga ~843 MB
 docker compose down                         # para; conserva datos y descargas (con -v los borra, también las contraseñas generadas y los ~843 MB de geodata)
-infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 4 cuentas, altitud del servidor y roles de la base (sin superusuario ni BYPASSRLS)
+infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 4 cuentas, altitud del servidor, entorno (tiempo, luz y luna) y roles de la base (sin superusuario ni BYPASSRLS)
 COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --wait   # pila de pruebas: sin descargas (DEM sintético) y proveedores falsos (providers-stub)
 pnpm --filter @onway/web e2e                # 21 pruebas de Playwright (Chromium; escritorio y móvil 375 px) contra la pila levantada (con la superposición, como en el CI)
 
@@ -53,7 +53,7 @@ pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
 pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
 pnpm --filter @onway/api test:db            # 13 pruebas de Vitest sobre PostGIS: las 118 comprobaciones SQL del esquema + 8 de la política de la 0010 (Testcontainers, necesita Docker)
-pnpm --filter @onway/api test:api           # 167 pruebas del API sobre PostGIS (Testcontainers)
+pnpm --filter @onway/api test:api           # 189 pruebas del API sobre PostGIS (Testcontainers)
 pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME (seed: ELEVATION_DEM_DIR para la altitud de las misiones)
 pnpm --filter @onway/api synthetic-dem      # regenera data/seed/dem (terreno inventado del E2E)
 pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT
@@ -61,7 +61,7 @@ pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (
 db/tests/run-postgis.sh                     # las 118 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-Recuentos de `pnpm -r test`: contratos 84 (75 de contrato y 9 del cliente generado), i18n 8, geo 3, api unitarias 90, web 73. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
+Recuentos de `pnpm -r test`: contratos 84 (75 de contrato y 9 del cliente generado), i18n 8, geo 22, api unitarias 101, web 73. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
 
 `docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen.
 

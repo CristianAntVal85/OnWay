@@ -21,6 +21,7 @@ RUN --mount=type=cache,id=onway-pnpm,target=/root/.local/share/pnpm/store \
 
 COPY tsconfig.base.json ./
 COPY packages/contracts packages/contracts
+COPY packages/geo packages/geo
 COPY apps/api apps/api
 RUN pnpm --filter "@onway/api..." build
 # Solo dependencias de producción y lo compilado (apps/api/package.json "files": ["dist"]).

@@ -151,6 +151,7 @@ services:
       # Altitud: teselas GLO-30 locales y, fuera de ellas, Open-Meteo. Dirección: Nominatim. Las URL y el contacto se pueden cambiar (D-H1-15).
       ELEVATION_DEM_DIR: /geodata/dem
       OPEN_METEO_ELEVATION_URL: ${OPEN_METEO_ELEVATION_URL:-https://api.open-meteo.com/v1/elevation}
+      OPEN_METEO_FORECAST_URL: ${OPEN_METEO_FORECAST_URL:-https://api.open-meteo.com/v1/forecast}
       NOMINATIM_URL: ${NOMINATIM_URL:-https://nominatim.openstreetmap.org/search}
       NOMINATIM_CONTACT: ${NOMINATIM_CONTACT:-onway-demo@example.org}
     volumes:
