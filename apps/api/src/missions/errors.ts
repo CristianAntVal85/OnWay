@@ -19,6 +19,7 @@ export function translateMissionWriteError(error: unknown): never {
   if (failure?.code === '23000') {
     if (failure.message.includes('INV-11')) throw new DomainError('MISSION_CLOSED');
     if (failure.message.includes('INV-03')) throw invalidCoordinator();
+    if (failure.message.includes('Transición de misión no permitida')) throw new DomainError('INVALID_STATE_TRANSITION');
   }
   throw error;
 }

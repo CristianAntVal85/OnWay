@@ -23,6 +23,15 @@ const BUILT = [
   'getMission',
   'updateMission',
   'listMissionHistory', // H1-T2
+  'activateMission',
+  'closeMission',
+  'reopenMission',
+  'duplicateMission',
+  'createMissionPoint',
+  'updateMissionPoint',
+  'deleteMissionPoint',
+  'listMyMissions',
+  'getMyMission', // H1-T3
 ];
 
 let real: TestApp;

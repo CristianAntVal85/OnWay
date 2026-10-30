@@ -41,6 +41,10 @@ describe('translateMissionWriteError (D-H1-01)', () => {
     expect(code(wrapped(driverError('23000', 'INV-03: el responsable debe ser un coordinador activo')))).toBe('VALIDATION_FAILED');
   });
 
+  it('maps the trigger of the lifecycle to INVALID_STATE_TRANSITION', () => {
+    expect(code(wrapped(driverError('23000', 'Transición de misión no permitida: planning → closed')))).toBe('INVALID_STATE_TRANSITION');
+  });
+
   it('lets any other error through untouched', () => {
     const other = wrapped(driverError('23505', 'duplicate', 'some_other_index'));
     expect(code(other)).toBe(other);

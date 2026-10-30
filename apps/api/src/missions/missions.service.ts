@@ -6,22 +6,14 @@ import { AuditWriter } from '../audit/audit.writer.js';
 import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import { DatabaseService, type Tx } from '../db/database.service.js';
-import { memberships, missionPoints, missions } from '../db/schema.js';
+import { missionPoints, missions } from '../db/schema.js';
 import { ELEVATION_PROVIDER, type ElevationProvider, type GroundPoint } from '../geo/elevation.js';
-import { invalidCoordinator, translateMissionWriteError } from './errors.js';
-import { listMissions, missionDetail, missionHistory, type Viewer } from './mission-reads.js';
+import { translateMissionWriteError } from './errors.js';
+import { listMissions, missionDetail, missionHistory } from './mission-reads.js';
+import { assertCoordinator, groundAltitude, pointZ, viewerOf } from './mission-support.js';
 
 type CreateBody = z.infer<typeof CreateMissionRequest>;
 type UpdateBody = z.infer<typeof UpdateMissionRequest>;
-
-/** The principal of a request that reached a staff operation: the guard already refused pending accounts. */
-function viewerOf(principal: Principal): Viewer & { userId: string } {
-  if (!principal.orgId || principal.role === 'pending') throw new DomainError('ACCOUNT_PENDING');
-  return { orgId: principal.orgId, userId: principal.userId, role: principal.role };
-}
-
-/** `ST_MakePoint` with the altitude the server calculated (RN-07, INV-02: always `PointZ`). */
-const pointZ = (lat: number, lon: number, elevationM: number) => sql`ST_SetSRID(ST_MakePoint(${lon}::float8, ${lat}::float8, ${elevationM}::float8), 4326)`;
 
 @Injectable()
 export class MissionsService {
@@ -166,20 +158,11 @@ export class MissionsService {
     if (issues.length > 0) throw new DomainError('VALIDATION_FAILED', 'Request validation failed', { issues });
   }
 
-  /** INV-03: the responsible is an active coordinator of this organization. Row level security hides the others, so they look the same. */
-  private async assertCoordinator(orgId: string, userId: string): Promise<void> {
-    const [member] = await this.tx
-      .select({ id: memberships.id })
-      .from(memberships)
-      .where(and(eq(memberships.organizationId, orgId), eq(memberships.userId, userId), eq(memberships.role, 'coordinator'), eq(memberships.status, 'active')))
-      .limit(1);
-    if (!member) throw invalidCoordinator();
+  private assertCoordinator(orgId: string, userId: string): Promise<void> {
+    return assertCoordinator(this.tx, orgId, userId);
   }
 
-  /** RN-07, AC-10: the altitude comes from the server's source, never from the client. No source → 422 `OUTSIDE_COVERAGE`. */
-  private async altitudeOf(point: GroundPoint): Promise<number> {
-    const elevationM = await this.elevation.elevationAt({ lat: point.lat, lon: point.lon });
-    if (elevationM === null) throw new DomainError('OUTSIDE_COVERAGE');
-    return elevationM;
+  private altitudeOf(point: GroundPoint): Promise<number> {
+    return groundAltitude(this.elevation, point);
   }
 }
