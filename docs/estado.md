@@ -3,10 +3,12 @@
 Memoria entre sesiones. Máximo ~50 líneas: resume o elimina lo que ya no aporte. Última actualización: 2026-10-30.
 
 ## Dónde estamos
-- **Hito en curso:** H0 · Cimientos y acceso. Plan y 10 tareas aprobados (`specs/H0-cimientos/`), rama `hito/H0-cimientos`. Tareas hechas: 1 de 10 (T1 monorepo y paquetes compartidos).
+- **Hito en curso:** H0 · Cimientos y acceso. Plan y 10 tareas aprobados (`specs/H0-cimientos/`), rama `hito/H0-cimientos`. Tareas hechas: 2 de 10 (T1 monorepo y paquetes compartidos; T2 migraciones con Drizzle y pruebas del esquema desde el API).
 - Documentos 01–07 en borrador, coherentes. Repositorio: https://github.com/CristianAntVal85/OnWay.git (sin primer commit todavía).
 - Existe: `packages/contracts` (Zod, 95 operaciones, 83 pruebas: 74 de contrato + 9 del cliente generado), `packages/i18n` (es/fr, 8 pruebas), `packages/geo` (esqueleto + regla de dependencias, 3 pruebas), `db/` (migraciones 0001–0009), `tsconfig.base.json`, Prettier.
-- No existe aún: `apps/api`, `apps/web`, `infra/`, `data/seed`, CI.
+- T2: `apps/api` (solo base de datos: `src/db/migrate.ts`, CLI `migrate`, pruebas en `test/`), `db/migrations/meta/_journal.json` (0002–0009) e `infra/db/init/10-onway-roles.sh` (0001 y roles como superusuario). NestJS llega en T4.
+- No existe aún: NestJS en `apps/api`, `apps/web`, `infra/compose.yml`, `data/seed`, CI.
+- Comandos T2: `pnpm --filter @onway/api test:db` (migra con el migrador de Drizzle sobre PostGIS en Testcontainers y ejecuta las 118 pruebas SQL; necesita Docker), `pnpm --filter @onway/api migrate` (lee `DB_OWNER_PASSWORD_FILE`, `DB_HOST|PORT|NAME`). `db/tests/run-postgis.sh` sigue dando 118/118.
 - Comandos nuevos (T1): `pnpm -r typecheck|test|build`, `pnpm format:check`, `pnpm --filter @onway/contracts gen:client` (cliente en `gen/`, no versionado). Los paquetes se consumen con la condición de exportación `source` (Vite, `tsc`, Vitest) o desde `dist/` (Node).
 
 ## Verificado (2026-10-30, primera ejecución con dependencias reales)

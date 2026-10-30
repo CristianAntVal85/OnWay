@@ -1,0 +1,29 @@
+import { readFileSync } from 'node:fs';
+
+export interface DbConnection {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+}
+
+type Env = Record<string, string | undefined>;
+
+/** Reads a secret from `<name>_FILE`; the repository never holds passwords (rule 10). */
+function readSecret(env: Env, name: string): string {
+  const file = env[`${name}_FILE`];
+  if (!file) throw new Error(`${name}_FILE is not set`);
+  return readFileSync(file, 'utf8').replace(/\r?\n$/, '');
+}
+
+/** Connection as the schema owner (migrations and seed). The API never uses this role. */
+export function ownerConnectionFromEnv(env: Env = process.env): DbConnection {
+  return {
+    host: env.DB_HOST ?? 'localhost',
+    port: Number(env.DB_PORT ?? 5432),
+    database: env.DB_NAME ?? 'onway',
+    user: env.DB_OWNER_USER ?? 'onway_owner',
+    password: readSecret(env, 'DB_OWNER_PASSWORD'),
+  };
+}

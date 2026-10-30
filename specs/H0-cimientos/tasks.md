@@ -8,7 +8,7 @@ Cada cierre: solo con todo en verde, archivos añadidos por nombre, marca de la 
 - Hecho cuando: `pnpm -r typecheck` y `pnpm -r test` en verde; las 74 pruebas de contrato siguen pasando y las nuevas comprueban que el cliente expone exactamente las operaciones del registro, añade `X-CSRF-Token` fuera de `GET` y convierte el cuerpo de error en `ApiError`; las pruebas de i18n fallan si es y fr no tienen las mismas claves o si falta un `ErrorCode`; la de `geo` falla si importa `apps/*`, React o NestJS.
 - Cierre: commit `chore(H0): T1 set up monorepo, i18n, geo and generated client` + push a la rama del hito.
 
-- [ ] **T2. Migraciones con Drizzle y pruebas del esquema desde el API.** Migraciones 0001–0009, doc 05 §6.2, §9, §11; D-H0-04, D-H0-05; driver `pg`
+- [x] **T2. Migraciones con Drizzle y pruebas del esquema desde el API.** Migraciones 0001–0009, doc 05 §6.2, §9, §11; D-H0-04, D-H0-05; driver `pg`
   `apps/api` con lo mínimo de base de datos: CLI `migrate` (drizzle-orm `migrate()` como `onway_owner`), `db/migrations/meta/_journal.json` (0002–0009), `infra/db/init/` (0001 y roles con `LOGIN` como superusuario, contraseñas leídas de archivo); envoltorio Vitest + Testcontainers (`postgis/postgis:16-3.4`) que aplica todo y ejecuta `db/tests/seed_and_tests.sql` y `run_tests.sql`. Ningún `.sql` existente se edita.
 - Hecho cuando: `pnpm --filter @onway/api test:db` informa 118 PASS y 0 FAIL sobre PostGIS real; una prueba comprueba que `onway_app` no es superusuario, ni `BYPASSRLS`, ni propietario de ninguna tabla; aplicar `migrate` dos veces no hace nada la segunda; `db/tests/run-postgis.sh` sigue dando 118/118.
 - Cierre: commit `test(H0): T2 apply migrations with drizzle and run schema tests on postgis` + push a la rama del hito.
