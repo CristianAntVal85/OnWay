@@ -47,7 +47,7 @@ Cada cierre: solo con todo en verde, archivos añadidos por nombre, marca de la 
 - Hecho cuando: en un clon limpio, `docker compose up --wait` termina con todos los servicios sanos sin copiar ningún archivo antes; `http://localhost:8080` muestra el acceso y se entra con las cuentas de `data/seed/README.md`; `curl http://localhost:8080/api/v1/health` da 200; `docker compose down && docker compose up --wait` conserva los datos y no vuelve a sembrar; `git grep` no encuentra contraseñas ni secretos en el repositorio; el trabajo de imágenes del CI en verde.
 - Cierre: commit `chore(H0): T9 run the whole stack with docker compose` + push a la rama del hito.
 
-- [ ] **T10. Demostración E2E y documentos al día.** Demostración de H0 (doc 07 §3); doc 07 §4 criterios 1, 8, 11, 12
+- [x] **T10. Demostración E2E y documentos al día.** Demostración de H0 (doc 07 §3); doc 07 §4 criterios 1, 8, 11, 12
   Playwright contra el stack de compose (Chromium, escritorio y móvil); trabajo E2E en CI; actualizar `CLAUDE.md` (comandos y recuentos), docs 04, 05, 06 y 07 con sus registros de cambios según el plan §8, y `docs/estado.md`.
 - Hecho cuando: `pnpm --filter @onway/web e2e` en verde local y en CI cubriendo: tres barras distintas (administrador, coordinador, rescatista); el rescatista abre `/admin` y ve «sin acceso»; un administrador de una organización B, creada por el fixture de pruebas, solo ve su organización; la cuenta pendiente solo ve la espera y cierra sesión; credenciales erróneas → mensaje genérico; cambio a francés; acceso completado solo con teclado; vista móvil sin desbordes. Todo el flujo de CI en verde en la rama.
 - Cierre: commit `test(H0): T10 add end-to-end demo test and update docs` + push a la rama del hito.

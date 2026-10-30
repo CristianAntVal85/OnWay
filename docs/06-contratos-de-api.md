@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 0.4 · **Estado:** borrador para revisión · **Fecha:** 29 de octubre de 2026
+**Versión:** 0.5 · **Estado:** borrador para revisión · **Fecha:** 30 de octubre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -806,13 +806,14 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 ## 11. Qué está verificado y qué no
 
-**Verificado:** los esquemas compilan con TypeScript estricto (`noUncheckedIndexedAccess`) y pasan las 74 pruebas; el OpenAPI generado (95 operaciones, 78 rutas) tiene ids únicos, todas las `$ref` resuelven y los parámetros de ruta coinciden; los enums coinciden con las migraciones; los cambios en la base de datos pasan las 118 pruebas.
+**Verificado:** los esquemas compilan con TypeScript estricto (`noUncheckedIndexedAccess`) y pasan las 83 pruebas (74 de contrato y 9 del cliente generado); el OpenAPI generado (95 operaciones, 78 rutas) tiene ids únicos, todas las `$ref` resuelven y los parámetros de ruta coinciden; los enums coinciden con las migraciones; las migraciones pasan las 118 pruebas sobre PostGIS real. En H0 las 5 operaciones del hito (`getHealth`, `login`, `logout`, `getMe`, `getOrganization`) están montadas en `apps/api` y sus respuestas se validan contra estos esquemas en `test:api`; la prueba E2E de H0 recorre `login`, `getMe`, `getOrganization` y `logout` contra `docker compose up`.
 
 **No verificado:**
 - El OpenAPI no se ha pasado por un validador oficial (no hay acceso a internet desde el entorno de trabajo; solo comprobaciones propias).
-- Se probó con Zod 4 instalado localmente, no desde el registro de npm. Al hacer `pnpm install` se confirmará que la versión resuelta se comporta igual.
-- `nestjs-zod` y el generador del cliente no se han integrado todavía; las pruebas actuales son sobre los esquemas, no sobre controladores.
-- Nada de lo geoespacial (candidatos, perfiles de elevación, bbox contra PostGIS) se ha ejecutado: son formas de datos.
+- ~~Se probó con Zod 4 instalado localmente.~~ Confirmado con `pnpm install` desde el registro de npm: Zod 4.6.7 se comporta igual.
+- `nestjs-zod` no se usa: la API valida con un interceptor propio sobre los mismos esquemas (H0). El generador del cliente (`gen:client`) sí está integrado y lo consume la web.
+- Nada de lo geoespacial (candidatos, perfiles de elevación, bbox contra PostGIS) se ha ejecutado contra datos reales: son formas de datos. Llega con H1 y H3.
+- Las tablas generadas de `gen:doc` coinciden con este documento salvo dos filas que se mantienen a mano (`createRoute` y `getJob`, cuyo cuerpo y respuesta el generador no sabe describir por ser uniones) y los nombres de tipo traducidos (`texto` por `string`).
 
 ## 12. Preguntas y suposiciones
 
@@ -834,6 +835,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.5 | 2026-10-30 | Cierre de H0: sección 11 al día (83 pruebas del paquete, Zod 4.6.7 desde npm, operaciones de H0 montadas y probadas, E2E, `nestjs-zod` no usado). OpenAPI y tablas regeneradas sin cambios de esquema |
 | 0.4 | 2026-10-30 | Nota de `getHealth` (H0): solo comprueba la base de datos; `routingEngine` y `weatherProvider` son `false` sin degradar `status` hasta que exista su adaptador. Se escribe en el registro de endpoints y de ahí al OpenAPI (decisión D-H0-12). Sin cambios de esquema |
 | 0.3 | 2026-10-30 | Cada operación tiene hito de construcción (H0–H9, documento 07) en `src/milestones.ts`, con 3 pruebas nuevas (74 en total) y `x-milestone` en el OpenAPI |
 | 0.2 | 2026-10-29 | Q-33, Q-34 y Q-35 resueltas. Recuperar contraseña entra en el contrato (95 operaciones en el OpenAPI, 93 de primera entrega) con la migración 0009 y 21 pruebas nuevas de base de datos (118 en total). Error `INVALID_RESET_TOKEN` y acción de auditoría `password_reset` |

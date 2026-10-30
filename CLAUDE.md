@@ -42,22 +42,25 @@ PostgreSQL 16 + PostGIS, Drizzle (SQL propio para lo espacial), pg-boss para tra
 ```
 docker compose up --wait                    # todo en local: http://localhost:8080 (cuentas en data/seed/README.md)
 docker compose down                         # para; conserva datos (con -v los borra, también las contraseñas generadas)
-infra/scripts/smoke.sh                      # salud, acceso y login/getMe/logout contra la pila en marcha
+infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 4 cuentas y roles de la base (sin superusuario ni BYPASSRLS)
+pnpm --filter @onway/web e2e                # 21 pruebas de Playwright (Chromium; escritorio y móvil 375 px) contra la pila levantada
 
 pnpm install                                # pnpm 9.12 vía corepack, Node >= 24.7
 pnpm format:check | typecheck | test | build   # recursivos sobre todo el monorepo
 pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
 pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
-pnpm --filter @onway/api test:db            # pruebas del esquema sobre PostGIS (Testcontainers, necesita Docker)
-pnpm --filter @onway/api test:api           # pruebas del API sobre PostGIS (Testcontainers)
+pnpm --filter @onway/api test:db            # 118 pruebas del esquema sobre PostGIS (Testcontainers, necesita Docker)
+pnpm --filter @onway/api test:api           # 92 pruebas del API sobre PostGIS (Testcontainers)
 pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME
 pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT
 pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (3000)
-db/tests/run-postgis.sh                     # las 118 pruebas del esquema con un PostGIS en Docker
+db/tests/run-postgis.sh                     # las 118 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-`docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen. El E2E de Playwright llega en T10 de H0. Los recuentos de pruebas actualizados los anota `docs/estado.md`.
+Recuentos de `pnpm -r test`: contratos 83 (74 de contrato y 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web 62. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
+
+`docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen. Los recuentos y el estado al día los anota `docs/estado.md`.
 
 ## Reglas inviolables
 

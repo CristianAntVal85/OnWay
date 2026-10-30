@@ -26,7 +26,7 @@ Una sola organización («Servicio de Rescate Valle Demo»). Todos los correos s
 
 Equipos: Valle de Tena (Biescas), Ribagorza (Benasque), Ordesa (Torla) y Alto Gállego (Sabiñánigo). Los rescatistas están en 0 (`rescatista1`), 1 y 2 equipos (`rescatista4` y `rescatista5`).
 
-La organización B que usan las pruebas de aislamiento **no** forma parte de la demostración: la crean las propias pruebas.
+La organización B que usan las pruebas de aislamiento **no** forma parte de la demostración: la crean las propias pruebas (el fixture de `test:api` y la preparación del E2E, que la retira al terminar).
 
 ## Cómo cargarlos
 

@@ -7,3 +7,5 @@ openapi.json
 !.env.example
 __pycache__/
 gen/
+apps/web/e2e/test-results/
+apps/web/e2e/report/

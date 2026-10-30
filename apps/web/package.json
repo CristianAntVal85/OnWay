@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --filter @onway/contracts gen:client && vite",
-    "typecheck": "pnpm --filter @onway/contracts gen:client && tsc --noEmit",
+    "typecheck": "pnpm --filter @onway/contracts gen:client && tsc --noEmit && tsc --noEmit -p e2e/tsconfig.json",
     "test": "pnpm --filter @onway/contracts gen:client && vitest run",
     "build": "pnpm --filter @onway/contracts gen:client && tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "e2e": "pnpm --filter @onway/i18n build && playwright test -c e2e"
   },
   "dependencies": {
     "@onway/contracts": "workspace:*",
@@ -21,6 +22,7 @@
     "react-router": "^7.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.0.0",

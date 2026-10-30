@@ -1,6 +1,6 @@
 # OnWay — Documento 04: Arquitectura y stack
 
-Versión: 0.5 (borrador) · Fecha: 2026-10-29 · Depende de: documentos 01 (v0.7), 02 (v0.5) y 03 (v0.4)
+Versión: 0.6 (borrador) · Fecha: 2026-10-30 · Depende de: documentos 01 (v0.7), 02 (v0.5) y 03 (v0.4)
 
 Este documento decide **con qué y cómo** se construye OnWay: lenguaje, frameworks, base de datos, despliegue, proveedores externos, seguridad y estrategia para la futura app móvil. Parte de las restricciones de un proyecto didáctico (documento 03, sección 14).
 
@@ -84,23 +84,26 @@ Puntos clave:
 | Lenguaje | TypeScript en modo estricto | Un solo lenguaje para API, worker, web y paquetes compartidos |
 | Gestor de paquetes y repositorio | pnpm con workspaces (monorepo) | Estructura en la sección 4 |
 | Backend | NestJS | Módulos, inyección de dependencias, guards para roles |
-| Validación y contratos | Zod (con nestjs-zod) | Un mismo esquema valida en la API y genera tipos en la web |
+| Validación y contratos | Zod 4 (`strictObject`) | Un mismo esquema valida en la API y genera tipos en la web. En H0 la API valida con un interceptor propio sobre los esquemas, sin `nestjs-zod` |
 | Documentación de API | OpenAPI generado | Cliente tipado generado para la web y, más adelante, para móvil |
 | Base de datos | PostgreSQL 16 con PostGIS | Geometría 3D (con altitud), índices espaciales GiST |
-| Acceso a datos | Drizzle ORM, con SQL propio para lo espacial | Prisma no maneja bien PostGIS |
-| Migraciones | Las de Drizzle, versionadas en el repositorio | Aislamiento por organización desde la primera migración (R-05) |
+| Acceso a datos | Drizzle ORM sobre el driver `pg` (node-postgres), con SQL propio para lo espacial | Prisma no maneja bien PostGIS. El driver `pg` y su `Pool` permiten fijar `app.org_id`, `app.user_id` y `app.role` al abrir cada transacción |
+| Migraciones | SQL escrito a mano en `db/migrations/`, aplicado por el migrador de Drizzle (`migrate()`) con su diario `meta/_journal.json`; la 0001 (extensiones y roles) la ejecuta un superusuario en el arranque de la base | Aislamiento por organización desde la primera migración (R-05). No se usa `drizzle-kit` |
 | Cola de trabajos | pg-boss | Usa la propia base de datos, con progreso y reintentos |
-| Autenticación | Propia: Argon2id, sesión en base de datos con cookie segura | Endpoint de tokens para móvil cuando llegue |
-| Frontend | React + Vite + TypeScript | |
+| Autenticación | Propia: Argon2id, sesión en base de datos con cookie segura y CSRF por HMAC | Argon2id con `crypto.argon2` de Node (≥ 24.7, sin dependencia nativa; parámetros m=19 MiB, t=2, p=1). Endpoint de tokens para móvil cuando llegue |
+| Frontend | React 19 + Vite 7 + TypeScript, con `react-router` 7 como enrutador | Rutas por rol en un módulo puro (`apps/web/src/nav`) |
 | Mapas en el navegador | MapLibre GL JS (con react-map-gl como envoltorio) | Sin claves ni cuotas |
 | Estado del servidor | TanStack Query | Caché, reintentos, estado de los trabajos de cálculo |
-| Interfaz | Componentes accesibles (Radix o similar) con controles grandes y alto contraste | Uso con guantes y luz solar |
+| Interfaz | Componentes accesibles con controles grandes y alto contraste | Uso con guantes y luz solar. En H0 son componentes propios, sin librería de interfaz (objetivos de 48 px, foco visible, teclado); Radix u otra se valorará si un hito lo pide |
 | Internacionalización | react-i18next, español y francés desde el primer día | Sin textos fijos en el código |
 | Motor de rutas | GraphHopper (candidato) en contenedor propio | Sección 7 |
 | Mapa base | Protomaps (PMTiles) extraído para los Pirineos | Sección 8 |
-| Pruebas | Vitest, Testcontainers con PostGIS real, Playwright | Sección 12 |
+| Pruebas | Vitest (`jsdom` y Testing Library en la web), Testcontainers con PostGIS real, Playwright (Chromium) | Sección 12 |
+| Formato | Prettier (`pnpm format:check` en la integración continua) | ESLint con `typescript-eslint` está aprobado pero no se ha incorporado todavía: el plan de H0 solo exigía formato |
 | Integración continua | GitHub Actions | |
-| Servidor web | Caddy | HTTPS automático, sirve la web y los archivos PMTiles |
+| Servidor web | Caddy | HTTPS automático, sirve la web y los archivos PMTiles. En local, `docker compose up` lo publica en `http://localhost:8080` con proxy a `/api` |
+
+**Versiones reales tras H0** (2026-10-30): Node 24 (imágenes `node:24.22.2-alpine3.24`), pnpm 9.12, TypeScript 5.9, NestJS 11 (Express 5), Drizzle ORM 0.45, `pg` 8.23, Zod 4.6, React 19.3, Vite 7.3, TanStack Query 5.105, react-router 7.18, react-i18next 17, Vitest 3.2, Testing Library 16, Testcontainers 12, Playwright 1.64, Prettier 3.9, PostGIS `postgis/postgis:16-3.4`, Caddy 2.11.
 
 ---
 
@@ -375,7 +378,7 @@ Registros estructurados, endpoint de salud para API, worker y motor de rutas, y 
 | Invariantes | Una prueba por cada INV-xx del documento 03, especialmente las de aislamiento, inmutabilidad de versiones y visibilidad de datos | Vitest + base real |
 | Integración | Consultas espaciales, RLS, cola de trabajos | Testcontainers con PostGIS |
 | Contrato | El API respeta los esquemas Zod y el OpenAPI | Generado desde los esquemas |
-| Extremo a extremo | Flujos de las vistas: crear misión, ofrecerse, aceptar, cerrar con asistencia, aprobar cuenta | Playwright |
+| Extremo a extremo | Flujos de las vistas: crear misión, ofrecerse, aceptar, cerrar con asistencia, aprobar cuenta. En H0: la demostración completa contra `docker compose up`, en escritorio y a 375 px | Playwright |
 | Motor de rutas | Casos de la prueba técnica, guardados como regresión | Vitest con el contenedor |
 
 ---
@@ -429,6 +432,7 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 0.6 | 2026-10-30 | Cierre de H0: sección 3 con lo realmente elegido (driver `pg`, `react-router`, Prettier, Argon2id de `crypto.argon2` de Node, migrador de Drizzle sobre SQL a mano sin `drizzle-kit`, validación sin `nestjs-zod`, componentes propios, jsdom y Testing Library, Testcontainers 12) y versiones reales. Sección 12: la prueba E2E de H0 |
 | 0.5 | 2026-10-29 | Recuperar contraseña: puerto `Mailer` con Resend (sección 9). Referencias a 01 (v0.7) y 05 (v0.3) |
 | 0.4 | 2026-10-29 | Árbol del repositorio con `db/`. Documento 06 escrito; referencias actualizadas a 01 (v0.6) y 02 (v0.5) |
 | 0.3 | 2026-10-29 | El producto pasa a llamarse OnWay. Referencias actualizadas a los documentos 01 (v0.5), 02 (v0.4) y 03 (v0.3), ya reconciliados. Retirada la nota de pendiente de sincronizar |
