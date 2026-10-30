@@ -13,9 +13,9 @@
     "migrate": "pnpm build && node dist/src/cli/migrate.js"
   },
   "dependencies": {
-    "@nestjs/common": "^11",
-    "@nestjs/core": "^11",
-    "@nestjs/platform-express": "^11",
+    "@nestjs/common": "^11.2.8",
+    "@nestjs/core": "^11.2.8",
+    "@nestjs/platform-express": "^11.2.8",
     "@onway/contracts": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "pg": "^8.13.0",
