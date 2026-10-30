@@ -7,8 +7,8 @@ import { mountedRoutes, mustLogin, startApp, withSession, type TestApp } from '.
 import { TEST_PASSWORD } from '../support/fixtures.js';
 import { TestOnlyController } from '../support/test-controllers.js';
 
-/** Operations built so far in H0. T6 adds getOrganization (then it must equal all five). */
-const BUILT = ['getHealth', 'login', 'logout', 'getMe'];
+/** Operations built so far in H0. H0 has exactly these five. */
+const BUILT = ['getHealth', 'login', 'logout', 'getMe', 'getOrganization'];
 
 let real: TestApp;
 let stubbed: TestApp;
