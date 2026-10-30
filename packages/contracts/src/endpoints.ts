@@ -345,6 +345,7 @@ type InputOf<S> = S extends z.ZodType ? z.input<S> : never;
 
 /** Entrada de una operación: `params`, `query` y `body` según declare el registro. */
 export type OperationInput<I extends OperationId> = (OperationOf<I> extends { params: infer P } ? { params: InputOf<P> } : unknown) &
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- `{}` comprueba que todos los campos de la consulta son opcionales
   (OperationOf<I> extends { query: infer Q } ? ({} extends InputOf<Q> ? { query?: InputOf<Q> } : { query: InputOf<Q> }) : unknown) &
   (OperationOf<I> extends { body: infer B } ? { body: InputOf<B> } : unknown) &
   (OperationOf<I> extends { multipart: z.ZodType } ? { body: FormData } : unknown);

@@ -35,6 +35,9 @@ jobs:
       - name: Format
         run: pnpm format:check
 
+      - name: Lint (ESLint, including the map boundary rule)
+        run: pnpm lint
+
       - name: Typecheck
         run: pnpm typecheck
 

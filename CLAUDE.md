@@ -46,6 +46,7 @@ infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout 
 pnpm --filter @onway/web e2e                # 21 pruebas de Playwright (Chromium; escritorio y móvil 375 px) contra la pila levantada
 
 pnpm install                                # pnpm 9.12 vía corepack, Node >= 24.7
+pnpm lint                                  # ESLint plano en la raíz; incluye la regla de límites del mapa (apps/web/src fuera de src/map/)
 pnpm format:check | typecheck | test | build   # recursivos sobre todo el monorepo
 pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
@@ -58,7 +59,7 @@ pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (
 db/tests/run-postgis.sh                     # las 118 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-Recuentos de `pnpm -r test`: contratos 83 (74 de contrato y 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web 62. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
+Recuentos de `pnpm -r test`: contratos 83 (74 de contrato y 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web 73. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
 
 `docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen. Los recuentos y el estado al día los anota `docs/estado.md`.
 

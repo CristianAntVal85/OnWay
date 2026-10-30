@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- las pruebas recorren JSON Schema y objetos de Zod sin tipo estático */
 // Coherencia del registro de endpoints y paridad con la base de datos.
 import test from 'node:test';
 import assert from 'node:assert/strict';

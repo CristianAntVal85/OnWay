@@ -1,11 +1,13 @@
 {
   "name": "onway",
   "private": true,
+  "type": "module",
   "packageManager": "pnpm@9.12.0",
   "engines": {
     "node": ">=24.7"
   },
   "scripts": {
+    "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
@@ -13,7 +15,10 @@
     "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "prettier": "^3.0.0"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "prettier": "^3.0.0",
+    "typescript-eslint": "^8.72.1"
   },
   "pnpm": {
     "overrides": {

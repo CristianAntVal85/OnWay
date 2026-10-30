@@ -2,7 +2,6 @@
 import type { ErrorCode } from '@onway/contracts';
 import { es } from './es.js';
 import { fr } from './fr.js';
-import type { Messages } from './types.js';
 
 export type { Messages } from './types.js';
 export { es, fr };

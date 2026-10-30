@@ -17,6 +17,7 @@ const roles = (r: readonly Role[]) =>
 function keys(schema: Endpoint['body'] | Endpoint['query'], io: 'input' | 'output'): string {
   if (!schema) return '—';
   const js = toJson(schema, io);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- nodo de JSON Schema dinámico
   const props = js.properties ?? (js.anyOf ? Object.assign({}, ...js.anyOf.map((a: any) => a.properties ?? {})) : undefined);
   if (!props) return '—';
   const req = new Set<string>(js.required ?? []);
