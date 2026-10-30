@@ -3,11 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inject } from 'vitest';
 import { nestPath } from '../../src/common/operation.js';
 import { Fixtures } from '../support/fixtures.js';
-import { asPrincipal, mountedRoutes, startApp, type TestApp } from '../support/app.js';
-import { probe, StubController } from '../support/stub-controllers.js';
+import { mountedRoutes, mustLogin, startApp, withSession, type TestApp } from '../support/app.js';
+import { TEST_PASSWORD } from '../support/fixtures.js';
+import { TestOnlyController } from '../support/test-controllers.js';
 
-/** Operations built so far in H0. T5 adds login, logout and getMe; T6 adds getOrganization (then it must equal all five). */
-const BUILT = ['getHealth'];
+/** Operations built so far in H0. T6 adds getOrganization (then it must equal all five). */
+const BUILT = ['getHealth', 'login', 'logout', 'getMe'];
 
 let real: TestApp;
 let stubbed: TestApp;
@@ -17,7 +18,7 @@ beforeAll(async () => {
   const { owner, app } = inject('database');
   fixtures = new Fixtures(owner);
   real = await startApp({ database: app });
-  stubbed = await startApp({ database: app, extraControllers: [StubController] });
+  stubbed = await startApp({ database: app, extraControllers: [TestOnlyController] });
 });
 
 afterAll(async () => {
@@ -43,7 +44,7 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing that belongs to a later milestone', () => {
+  it('mounts nothing that belongs to a later milestone, test controllers included', () => {
     const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H0')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
     expect(later.length).toBeGreaterThan(80);
@@ -102,7 +103,7 @@ describe('request id', () => {
 });
 
 describe('validation from the registry (D-H0-06, AC-16)', () => {
-  const post = (body: string, headers: Record<string, string> = {}) => fetch(`${stubbed.baseUrl}/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body });
+  const post = (body: string, headers: Record<string, string> = {}) => fetch(`${real.baseUrl}/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body });
 
   it('rejects an invalid body with 400 VALIDATION_FAILED and issues', async () => {
     const parsed = await expectError(await post(JSON.stringify({ email: 'not-an-email' })), 'VALIDATION_FAILED');
@@ -113,7 +114,7 @@ describe('validation from the registry (D-H0-06, AC-16)', () => {
     for (const issue of issues) expect(Object.keys(issue).sort()).toEqual(['code', 'message', 'path']);
   });
 
-  it('rejects an unknown field in the request (strict objects)', async () => {
+  it('rejects an unknown field in the request (strict objects): a client cannot ask for a role', async () => {
     const parsed = await expectError(await post(JSON.stringify({ email: 'a@example.org', password: 'x', role: 'admin' })), 'VALIDATION_FAILED');
     expect(JSON.stringify(parsed.error.details)).toContain('role');
   });
@@ -126,37 +127,35 @@ describe('validation from the registry (D-H0-06, AC-16)', () => {
     await expectError(await post(JSON.stringify({ email: 'a@example.org', password: 'x'.repeat(200_000) })), 'FILE_TOO_LARGE');
   });
 
-  it('hands the handler the parsed body when it is valid', async () => {
-    probe.bodies.length = 0;
-    const response = await post(JSON.stringify({ email: 'person@example.org', password: 'a-password' }));
+  it('hands the handler the parsed body when it is valid (the email arrives lower-cased)', async () => {
+    const org = await fixtures.organization('Parsed');
+    const member = await fixtures.member(org, 'coordinator', 'active', { password: TEST_PASSWORD });
+    const response = await post(JSON.stringify({ email: member.email.toUpperCase(), password: TEST_PASSWORD }));
     expect(response.status).toBe(200);
-    expect(probe.bodies).toHaveLength(1);
-    expect(probe.bodies[0]).toMatchObject({ email: 'person@example.org' });
   });
 });
 
 describe('guard and response checks (RF-103 base, AC-16)', () => {
-  it('refuses a non-public operation with no principal: 401 UNAUTHENTICATED', async () => {
+  it('refuses a non-public operation with no session: 401 UNAUTHENTICATED', async () => {
     await expectError(await fetch(`${stubbed.baseUrl}/auth/me`), 'UNAUTHENTICATED');
+    await expectError(await fetch(`${stubbed.baseUrl}/test-only/staff`), 'UNAUTHENTICATED');
   });
 
-  it('runs the handler inside the principal’s transaction with app.org_id, app.user_id and app.role fixed', async () => {
+  it('runs the handler inside the session’s transaction with app.org_id, app.user_id and app.role fixed', async () => {
     const org = await fixtures.fullOrganization('Context');
-    probe.seen.length = 0;
-    const response = await fetch(`${stubbed.baseUrl}/auth/me`, { headers: asPrincipal({ orgId: org.orgId, userId: org.coordinator.userId, role: 'coordinator' }) });
+    const coordinator = await fixtures.member(org.orgId, 'coordinator', 'active', { password: TEST_PASSWORD });
+    const session = await mustLogin(stubbed, coordinator.email, TEST_PASSWORD);
+    const response = await fetch(`${stubbed.baseUrl}/test-only/context`, { headers: withSession(session) });
     expect(response.status).toBe(200);
-    expect(probe.seen).toEqual([{ orgId: org.orgId, userId: org.coordinator.userId, role: 'coordinator', visibleMemberships: 3 }]);
+    expect(await response.json()).toEqual({ orgId: org.orgId, userId: coordinator.userId, role: 'coordinator', visibleMemberships: 4, visibleUsers: 4 });
   });
 
   it('turns a response that does not match its contract into 500 INTERNAL with no details', async () => {
-    const org = await fixtures.fullOrganization('BadResponse');
-    probe.badResponse = true;
-    try {
-      const parsed = await expectError(await fetch(`${stubbed.baseUrl}/auth/me`, { headers: asPrincipal({ orgId: org.orgId, userId: org.admin.userId, role: 'admin' }) }), 'INTERNAL');
-      expect(parsed.error.details).toBeUndefined();
-      expect(JSON.stringify(parsed)).not.toContain('not in the contract');
-    } finally {
-      probe.badResponse = false;
-    }
+    const org = await fixtures.organization('BadResponse');
+    const admin = await fixtures.member(org, 'admin', 'active', { password: TEST_PASSWORD });
+    const session = await mustLogin(stubbed, admin.email, TEST_PASSWORD);
+    const parsed = await expectError(await fetch(`${stubbed.baseUrl}/test-only/bad-response`, { headers: withSession(session) }), 'INTERNAL');
+    expect(parsed.error.details).toBeUndefined();
+    expect(JSON.stringify(parsed)).not.toContain('not in the contract');
   });
 });

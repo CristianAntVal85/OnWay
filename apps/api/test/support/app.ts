@@ -1,31 +1,61 @@
+import { randomBytes } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { NextFunction, Response } from 'express';
 import { createApp, API_PREFIX, type CreateAppOptions } from '../../src/app.js';
-import type { OnwayRequest, Principal } from '../../src/common/operation.js';
+import type { IdentityOptions } from '../../src/identity/config.js';
 
 export interface TestApp {
   app: NestExpressApplication;
+  identity: IdentityOptions;
   baseUrl: string;
   close(): Promise<void>;
 }
 
-/** Test-only authenticator: a JSON `Principal` in `x-test-principal` stands for the session middleware of T5. */
-function fakePrincipal(req: OnwayRequest, _res: Response, next: NextFunction): void {
-  const header = req.header('x-test-principal');
-  if (header) req.principal = JSON.parse(header) as Principal;
-  next();
-}
+export type StartOptions = Omit<CreateAppOptions, 'identity'> & { identity?: Partial<IdentityOptions> };
 
-export async function startApp(options: CreateAppOptions): Promise<TestApp> {
-  const app = await createApp({ logger: false, ...options });
-  app.use(fakePrincipal);
+/** A fresh random secret per run: tests never carry one (rule 10). */
+export const testIdentity = (overrides: Partial<IdentityOptions> = {}): IdentityOptions => ({
+  csrfSecret: randomBytes(32),
+  sessionTtlMs: 12 * 3_600_000,
+  ...overrides,
+});
+
+export async function startApp(options: StartOptions): Promise<TestApp> {
+  const identity = testIdentity(options.identity);
+  const app = await createApp({ logger: process.env.TEST_LOGS ? ['error', 'warn'] : false, ...options, identity });
   await app.listen(0, '127.0.0.1');
   const { port } = app.getHttpServer().address() as AddressInfo;
-  return { app, baseUrl: `http://127.0.0.1:${port}/${API_PREFIX}`, close: () => app.close() };
+  return { app, identity, baseUrl: `http://127.0.0.1:${port}/${API_PREFIX}`, close: () => app.close() };
 }
 
-export const asPrincipal = (principal: Principal) => ({ 'x-test-principal': JSON.stringify(principal) });
+/** What a browser would keep after `login`: the session cookie (sent by hand: fetch has no cookie jar) and the CSRF token. */
+export interface Session {
+  cookie: string;
+  csrf: string;
+  setCookie: string;
+  body: { user: Record<string, unknown>; csrfToken: string };
+}
+
+export async function login(app: TestApp, email: string, password: string): Promise<{ response: Response; session?: Session }> {
+  const response = await fetch(`${app.baseUrl}/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (response.status !== 200) return { response };
+  const setCookie = response.headers.getSetCookie()[0]!;
+  const body = (await response.clone().json()) as Session['body'];
+  return { response, session: { cookie: setCookie.split(';')[0]!, csrf: body.csrfToken, setCookie, body } };
+}
+
+/** Logs in and fails the test if it does not work. */
+export async function mustLogin(app: TestApp, email: string, password: string): Promise<Session> {
+  const { response, session } = await login(app, email, password);
+  if (!session) throw new Error(`login failed with ${response.status}: ${await response.text()}`);
+  return session;
+}
+
+export const withSession = (session: Session, csrf = true): Record<string, string> => ({ cookie: session.cookie, ...(csrf ? { 'x-csrf-token': session.csrf } : {}) });
 
 /** Every route Express has mounted, as `METHOD /path` (Nest registers them directly on the Express router). */
 export function mountedRoutes(app: NestExpressApplication): string[] {

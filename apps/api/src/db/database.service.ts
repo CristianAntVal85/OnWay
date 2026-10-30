@@ -73,6 +73,24 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Transaction that knows only who is asking (`app.user_id`): for a user with no organization yet, i.e. an
+   * account waiting for approval (INV-25). The organization and the role stay unset, so every organization
+   * policy keeps its tables closed; only the user's own row is visible.
+   */
+  async withUser<T>(userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+    if (!UUID.test(userId)) throw new Error('invalid database context');
+    return this.run(fn, async (tx) => {
+      await tx.execute(sql`SELECT set_config('app.user_id', ${userId}, true)`);
+    });
+  }
+
+  /** The right transaction for an authenticated principal: full context, or only the user while pending. */
+  async withPrincipal<T>(principal: { userId: string; orgId: string | null; role: ContextRole | 'pending' }, fn: (tx: Tx) => Promise<T>): Promise<T> {
+    if (principal.orgId && principal.role !== 'pending') return this.withContext({ orgId: principal.orgId, userId: principal.userId, role: principal.role }, fn);
+    return this.withUser(principal.userId, fn);
+  }
+
+  /**
    * Transaction with no context, for what happens before a session exists: SECURITY DEFINER functions
    * (`auth_*`), the `sessions` table (no RLS) and `SELECT 1`. Business tables return zero rows here.
    */

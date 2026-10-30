@@ -2,6 +2,7 @@
 // test files do not collide on the shared database.
 import { randomBytes, randomUUID } from 'node:crypto';
 import pg from 'pg';
+import { hashPassword } from '../../src/identity/password.js';
 import type { DbConnection } from '../../src/db/config.js';
 
 export type Role = 'admin' | 'coordinator' | 'rescuer';
@@ -11,6 +12,22 @@ export interface Member {
   orgId: string;
   role: Role;
   email: string;
+  /** Fictitious password, set only when the account was created able to log in. */
+  password?: string;
+}
+
+/** One fictitious password for the tests that log in (rule 10: nothing real). */
+export const TEST_PASSWORD = 'fictitious-test-password-1';
+const hashes = new Map<string, Promise<string>>();
+const hashOf = (password: string) => {
+  if (!hashes.has(password)) hashes.set(password, hashPassword(password));
+  return hashes.get(password)!;
+};
+
+export interface MemberOptions {
+  /** Gives the account a real Argon2id hash of this password so it can log in. */
+  password?: string;
+  profile?: 'incomplete' | 'complete';
 }
 
 export class Fixtures {
@@ -36,16 +53,38 @@ export class Fixtures {
     return row!.id;
   }
 
-  async member(orgId: string, role: Role, accountStatus: 'pending' | 'active' | 'rejected' | 'disabled' = 'active'): Promise<Member> {
+  async member(orgId: string, role: Role, accountStatus: 'pending' | 'active' | 'rejected' | 'disabled' = 'active', options: MemberOptions = {}): Promise<Member> {
     const email = `${role}-${randomUUID()}@example.org`;
-    const [user] = await this.query<{ id: string }>(`INSERT INTO users (email, password_hash, display_name, account_status) VALUES ($1, 'not-a-real-hash', $2, $3) RETURNING id`, [
+    const hash = options.password ? await hashOf(options.password) : 'not-a-real-hash';
+    const [user] = await this.query<{ id: string }>(`INSERT INTO users (email, password_hash, display_name, account_status) VALUES ($1, $2, $3, $4) RETURNING id`, [
       email,
+      hash,
       `Fictitious ${role}`,
       accountStatus,
     ]);
-    await this.query(`INSERT INTO memberships (organization_id, user_id, role) VALUES ($1, $2, $3)`, [orgId, user!.id, role]);
-    if (role === 'rescuer') await this.query(`INSERT INTO rescuer_profiles (organization_id, user_id, full_name) VALUES ($1, $2, 'Fictitious Rescuer')`, [orgId, user!.id]);
-    return { userId: user!.id, orgId, role, email };
+    await this.query(`INSERT INTO memberships (organization_id, user_id, role, status) VALUES ($1, $2, $3, $4)`, [orgId, user!.id, role, accountStatus === 'active' ? 'active' : 'disabled']);
+    if (role === 'rescuer') {
+      const complete = options.profile === 'complete';
+      await this.query(`INSERT INTO rescuer_profiles (organization_id, user_id, full_name, status, completed_at) VALUES ($1, $2, 'Fictitious Rescuer', $3, ${complete ? 'now()' : 'NULL'})`, [
+        orgId,
+        user!.id,
+        complete ? 'complete' : 'incomplete',
+      ]);
+    }
+    return { userId: user!.id, orgId, role, email, ...(options.password ? { password: options.password } : {}) };
+  }
+
+  /** An account that asked to join (or was turned down): it has a signup request and no membership (INV-25). */
+  async applicant(orgId: string, status: 'pending' | 'rejected' = 'pending', options: MemberOptions = {}): Promise<Member> {
+    const email = `applicant-${randomUUID()}@example.org`;
+    const hash = options.password ? await hashOf(options.password) : 'not-a-real-hash';
+    const [user] = await this.query<{ id: string }>(`INSERT INTO users (email, password_hash, display_name, account_status) VALUES ($1, $2, 'Fictitious applicant', $3) RETURNING id`, [
+      email,
+      hash,
+      status,
+    ]);
+    await this.query(`INSERT INTO signup_requests (organization_id, user_id, status, decided_at) VALUES ($1, $2, $3, ${status === 'pending' ? 'NULL' : 'now()'})`, [orgId, user!.id, status]);
+    return { userId: user!.id, orgId, role: 'rescuer', email, ...(options.password ? { password: options.password } : {}) };
   }
 
   async team(orgId: string, name = 'Team'): Promise<string> {

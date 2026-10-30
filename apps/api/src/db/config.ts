@@ -8,10 +8,10 @@ export interface DbConnection {
   password: string;
 }
 
-type Env = Record<string, string | undefined>;
+export type Env = Record<string, string | undefined>;
 
 /** Reads a secret from `<name>_FILE`; the repository never holds passwords (rule 10). */
-function readSecret(env: Env, name: string): string {
+export function readSecret(env: Env, name: string): string {
   const file = env[`${name}_FILE`];
   if (!file) throw new Error(`${name}_FILE is not set`);
   return readFileSync(file, 'utf8').replace(/\r?\n$/, '');

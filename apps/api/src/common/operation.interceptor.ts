@@ -34,7 +34,7 @@ export class OperationInterceptor implements NestInterceptor {
     request.input = this.parse(endpoint, request);
 
     const run = () => lastValueFrom(next.handle(), { defaultValue: undefined });
-    const value = request.principal ? await this.database.withContext(request.principal, run) : await run();
+    const value = request.principal ? await this.database.withPrincipal(request.principal, run) : await run();
     return this.check(endpoint, value, request);
   }
 
