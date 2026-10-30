@@ -1,0 +1,80 @@
+# OnWay
+
+Aplicación web para equipos de rescate en montaña. Un **coordinador** prepara *misiones* (objetivo, orígenes, puntos intermedios y de reunión) y la app propone **varias rutas** hasta el objetivo por carreteras, pistas y senderos. Un **rescatista** consulta en solo lectura las rutas validadas y se ofrece como voluntario. Un **administrador** gestiona usuarios y datos sensibles. v1 es web; la arquitectura debe servir después a iOS y Android. Proyecto didáctico y de portfolio: **solo datos ficticios**, sin usuarios reales, presupuesto de 10–20 €/mes.
+
+Lee la fuente de verdad antes de decidir nada: este archivo es un índice, no copia los documentos.
+
+## Dónde está cada cosa
+
+| Necesitas… | Mira |
+|---|---|
+| Qué se construye, requisitos (RF), reglas de negocio (RN), decisiones (D) y preguntas abiertas (Q) | `docs/01-vision-y-requisitos.md` |
+| Pantallas, flujos y permisos por acción | `docs/02-flujo-coordinador-y-vistas.md` |
+| Entidades, estados e invariantes (INV) | `docs/03-modelo-de-dominio.md` |
+| Stack, módulos, puertos, motor de rutas, seguridad, despliegue | `docs/04-arquitectura-y-stack.md` |
+| Tablas, seguridad por filas, cifrado, índices | `docs/05-modelo-de-datos.md` y `db/migrations/` |
+| Contrato del API | `docs/06-contratos-de-api.md` y `packages/contracts/` |
+| **En qué orden se construye y cuándo está terminado un hito** | `docs/07-plan-de-implementacion.md` |
+| Estado actual y decisiones por el camino | `docs/estado.md` |
+| Principios innegociables y flujo de trabajo (SDD ligero) | `docs/constitution.md`, `AGENTS.md`, `.claude/` |
+
+Si dos documentos se contradicen, manda el de número más bajo para el *qué* (01–03) y el más alto para el *cómo* (04–06). Ante la duda real, para y pregunta.
+
+## Estructura y stack
+
+TypeScript en todo. Monorepo pnpm:
+
+```
+apps/api         NestJS: API http + worker (monolito modular)
+apps/web         React + Vite + MapLibre
+packages/contracts  Esquemas Zod = fuente de verdad del API (OpenAPI y cliente se generan de aquí)
+packages/geo     Geometría pura (distancias, perfiles, GPX), sin React ni NestJS
+packages/i18n    Textos es / fr
+infra/           compose.yml, Caddyfile, motor de rutas
+db/              Migraciones SQL escritas a mano + pruebas del esquema
+data/seed        Datos de demostración ficticios
+```
+
+PostgreSQL 16 + PostGIS, Drizzle (SQL propio para lo espacial), pg-boss para trabajos largos, Argon2id, sesión por cookie + CSRF, Caddy. Lo externo va detrás de puertos: `FileStorage`, `GeocodingProvider`, `WeatherProvider`, `ElevationProvider`, `RoutingProvider`, `Mailer`, `Clock`.
+
+## Comandos
+
+Existen hoy (paquete de contratos):
+
+```
+pnpm --filter @onway/contracts typecheck    # tsc estricto
+pnpm --filter @onway/contracts test         # 74 pruebas, sin base de datos
+pnpm --filter @onway/contracts gen:openapi  # openapi.json
+pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
+db/tests/run-postgis.sh                     # 118 pruebas del esquema sobre PostGIS real (Docker)
+db/tests/run.sh                             # variante sin PostGIS (sustituto de texto); solo respaldo
+```
+
+`docker compose up` (todo en local con datos de demostración) y los comandos de `apps/*` se añaden en H0. Cuando existan, anótalos aquí.
+
+## Reglas inviolables
+
+1. **Aislamiento por organización.** Cada petición abre su transacción fijando `app.org_id`, `app.user_id` y `app.role`; la seguridad por filas de la base de datos es la defensa real, el filtro de la aplicación es la segunda. Un recurso de otra organización responde **404**, nunca 403. La aplicación no usa superusuario ni `BYPASSRLS`.
+2. **Los permisos los decide el servidor.** El rescatista nunca escribe en misiones, rutas ni equipos; solo se ofrece y retira su oferta. Una cuenta pendiente, rechazada o desactivada no accede a datos.
+3. **Datos personales mínimos.** Ningún listado devuelve datos personales. Nombre, contacto y datos sensibles (documento, dirección) son **tres entidades separadas**. Documento y dirección van cifrados y solo salen por la función auditada. La ubicación del dispositivo no se guarda.
+4. **Las versiones de ruta son inmutables.** Editar crea una versión nueva; la misión fija una versión; un rescatista solo ve versiones **validadas y fijadas**. Las rutas se archivan, no se borran.
+5. **Una misión cerrada es de solo lectura** (salvo reabrir). Participar solo se confirma al cerrar.
+6. **El servidor calcula** elevación, métricas y tramos. Nunca se fía de lo que traiga el cliente ni de un GPX.
+7. **Contrato primero.** Todo cambio de API empieza en `packages/contracts` y en el mismo cambio se regeneran OpenAPI y documento 06. No se monta una operación fuera del hito en curso.
+8. **Una prueba por cada invariante** (INV-xx) que toques, contra base real.
+9. **Nada de lógica de rutas o geometría en componentes de React.** Vive en `packages/geo` o en el servidor (portabilidad a móvil).
+10. **Cero secretos y cero datos reales** en el repositorio, las pruebas o las demostraciones.
+
+## Convenciones
+
+- Idioma: documentos y textos de interfaz en español; código, identificadores y commits en inglés. Interfaz con `packages/i18n` (es, fr), nunca texto fijo en componentes.
+- Unidades: metros y kilómetros; altitudes en metros. Fechas en ISO 8601 con zona.
+- API REST bajo `/api/v1`, errores con el formato único `{error:{code,message,requestId,details?}}` y solo códigos de `ERROR_HTTP`. Los cambios de estado son verbos (`/activate`, `/close`…). Las lecturas que dejan auditoría son `POST`.
+- Esquemas Zod estrictos (`strictObject`); los tipos TypeScript se derivan de ellos.
+- Migraciones SQL: aditivas, numeradas, aplicables sobre base vacía con PostGIS. No se edita una migración ya aplicada: se añade otra.
+- Cada vista: estados de carga, vacío y error; usable en móvil; manejable con teclado.
+- Cambiar una decisión de los documentos implica editar el documento y anotarlo en su registro de cambios.
+
+## Cómo trabajar
+
+Lee `docs/estado.md` al empezar. Se construye **por hitos pequeños** (H0–H9 de v1; el MVP es H0–H4). Cada hito acaba en algo demostrable. Antes de empezar uno, lee su sección en `docs/07-plan-de-implementacion.md`: alcance (identificadores), demostración, criterio de salida y la definición de terminado de la sección 4. Las operaciones de cada hito son las que llevan `x-milestone` con su valor en el OpenAPI. No se adelanta trabajo de hitos posteriores.

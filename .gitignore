@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tsbuildinfo
+openapi.json
+.env
+.env.*
+!.env.example
+__pycache__/
+gen/

@@ -1,0 +1,28 @@
+# OnWay — Estado del proyecto
+
+Memoria entre sesiones. Máximo ~50 líneas: resume o elimina lo que ya no aporte. Última actualización: 2026-10-30.
+
+## Dónde estamos
+- **Hito en curso:** H0 · Cimientos y acceso (aún sin plan: falta `specs/H0-cimientos/`).
+- Documentos 01–07 en borrador, coherentes. Repositorio: https://github.com/CristianAntVal85/OnWay.git (sin primer commit todavía).
+- Existe: `packages/contracts` (Zod, 95 operaciones, 74 pruebas) y `db/` (migraciones 0001–0009).
+- No existe aún: `apps/api`, `apps/web`, `packages/geo`, `packages/i18n`, `infra/`, `data/seed`, CI.
+
+## Verificado (2026-10-30, primera ejecución con dependencias reales)
+- `pnpm install` OK (pnpm 9.12 vía corepack, Node 24, zod 4.6.7).
+- Contratos: typecheck limpio y 74/74 pruebas.
+- Esquema sobre **PostGIS real** (`postgis/postgis:16-3.4`, `db/tests/run-postgis.sh`): migraciones 0001–0009 aplican en base vacía y 118/118 pruebas pasan. Es la primera tarea de H0 del doc 07, ya cumplida.
+
+## Arreglos hechos al instalar las dependencias reales
+- `packages/contracts/tsconfig.json` tenía un `typeRoots` fijo a una ruta del entorno anterior: eliminado.
+- Zod 4.6 no permite `.partial()` sobre objetos con refinamientos: `SkillFields` (objeto base) + `SkillInput` (con `superRefine`); el endpoint de actualización usa `SkillFields.partial()`. **Pendiente de decidir en H5:** la actualización parcial de una habilidad no aplica hoy las reglas cruzadas (solo un curso lleva certificado; caducidad ≥ emisión) — validarlas en el servidor al combinar con el valor guardado.
+- Pruebas del esquema: la siembra usaba marcadores de texto para la geometría; ahora usa WKT válido (sigue funcionando con el sustituto sin PostGIS). La comprobación de RLS excluye `spatial_ref_sys` (tabla de PostGIS).
+
+## Decisiones de organización (2026-10-30)
+- SDD **ligero**: por hito, `specs/Hn-nombre/plan.md` + `tasks.md`; no hay spec por hito porque el qué ya está en los docs 01–06 (ver `AGENTS.md` y skill `sdd`).
+- Git: rama `hito/Hn-nombre` desde `main`; un commit y un push por tarea con todo en verde (autorizado por el usuario; regla en la skill `sdd`); `main` solo recibe hitos validados.
+- `docs/constitution.md`, `AGENTS.md` y `.claude/` reescritos desde OnCourse (Angular, `backend/`, fases) a OnWay.
+
+## Siguiente
+1. `/sdd-plan H0-cimientos` → plan, tareas, aprobación.
+2. Lanzar durante H1 la prueba técnica del motor de rutas (R-01, GraphHopper) para llegar a H3 con la decisión tomada.
