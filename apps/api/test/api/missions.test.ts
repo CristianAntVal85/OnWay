@@ -455,6 +455,36 @@ describe('updateMission', () => {
   });
 });
 
+describe('Q-14 = no: the administrator reads missions and never writes them, in the API and in the database (migration 0011)', () => {
+  it('answers 403 to createMission and 200 to listMissions, getMission and listMissionHistory for the administrator; the coordinator creates and edits', async () => {
+    const mission = await createMission(a.coordinator);
+    const missions = await call(a.admin, 'GET', '/missions');
+    expect(missions.status).toBe(200);
+    expect(MissionsPage.parse(await missions.json()).items.map((m) => m.id)).toContain(mission.id);
+    expect((await call(a.admin, 'GET', `/missions/${mission.id}`)).status).toBe(200);
+    expect((await call(a.admin, 'GET', `/missions/${mission.id}/history`)).status).toBe(200);
+    await expectError(await call(a.admin, 'POST', '/missions', newMission()), 'FORBIDDEN');
+
+    const renamed = uniq('Renamed');
+    expect((await call(a.coordinator, 'PATCH', `/missions/${mission.id}`, { name: renamed })).status).toBe(200);
+    expect(MissionDetail.parse(await (await call(a.admin, 'GET', `/missions/${mission.id}`)).json()).name).toBe(renamed);
+  });
+
+  it('even with the server check out of the way, the database refuses the administrator: no write reaches missions', async () => {
+    const mission = await createMission(a.coordinator);
+    const asAdmin = (statement: ReturnType<typeof sql>) => database.withContext({ orgId: a.orgId, userId: a.admin.userId, role: 'admin' }, (tx) => tx.execute(statement));
+    await expect(asAdmin(sql`UPDATE missions SET name = 'Hijacked' WHERE id = ${mission.id}`)).resolves.toMatchObject({ rowCount: 0 });
+    await expect(asAdmin(sql`DELETE FROM missions WHERE id = ${mission.id}`)).resolves.toMatchObject({ rowCount: 0 });
+    await expect(
+      asAdmin(
+        sql`INSERT INTO missions (organization_id, name, coordinator_id, target, target_source, created_by) VALUES (${a.orgId}, ${uniq('Admin')}, ${a.coordinator.userId}, 'POINT Z (0 0 0)', 'map', ${a.admin.userId})`,
+      ),
+    ).rejects.toThrow();
+    const [row] = await fixtures.query<{ name: string }>(`SELECT name FROM missions WHERE id = $1`, [mission.id]);
+    expect(row).toMatchObject({ name: mission.name });
+  });
+});
+
 describe('getMission and listMissions', () => {
   it('the administrator reads everything and can do nothing (all actions false), the coordinator can', async () => {
     const mission = await createMission(a.coordinator, newMission({ origins: [{ name: 'Base', lat: 42.7, lon: 0.4 }] }));

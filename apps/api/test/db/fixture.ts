@@ -21,7 +21,7 @@ export interface TestDatabase {
 
 /**
  * Real PostGIS, started the same way as `docker compose` will: 0001 and the role passwords are applied
- * by infra/db/init/10-onway-roles.sh as superuser at first start. Migrations 0002-0010 are NOT applied here.
+ * by infra/db/init/10-onway-roles.sh as superuser at first start. Migrations 0002-0011 are NOT applied here.
  */
 export async function startDatabase(): Promise<TestDatabase> {
   const database = 'onway';

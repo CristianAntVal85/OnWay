@@ -22,7 +22,7 @@ export function resolveMigrationsFolder(env: Record<string, string | undefined> 
 }
 
 /**
- * Applies 0002-0010 as `onway_owner` with the Drizzle migrator. 0001 (extensions and roles) needs a
+ * Applies 0002-0011 as `onway_owner` with the Drizzle migrator. 0001 (extensions and roles) needs a
  * superuser and runs at database start-up (infra/db/init).
  */
 export async function runMigrations(connection: DbConnection, migrationsFolder = resolveMigrationsFolder()): Promise<void> {

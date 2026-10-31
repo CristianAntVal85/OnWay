@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 0.5 (borrador) · Fecha: 2026-10-30 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
+Versión: 0.6 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -342,7 +342,7 @@ Las 32 invariantes del documento 03, sección 7. "Restricción" es una restricci
 |---|---|---|
 | INV-01 | **RLS + claves compuestas** | Política restrictiva `org_isolation` en 20 tablas. Claves foráneas compuestas (DB-05) |
 | INV-02 | Restricción | `missions.coordinator_id NOT NULL`, `target NOT NULL`, clave foránea a la membresía |
-| INV-03 | Disparador | `missions_guard`: el responsable es un miembro activo con rol coordinador o administrador (Q-14) |
+| INV-03 | Disparador | `missions_guard` (reemplazada en la 0011): el responsable es un miembro activo con rol `coordinator`; un administrador no puede serlo (Q-14 = no) |
 | INV-04 | Disparador | `route_versions_guard`: solo se permite Borrador → Validada; una validada no se edita ni se borra. `route_segments_immutable` |
 | INV-05 | RLS | `versions_rescuer`, `mroutes_rescuer` con `version_is_validated()` |
 | INV-06 | Restricción | Clave foránea compuesta `(pinned_version_id, route_id)` → `route_versions (id, route_id)` |
@@ -413,18 +413,19 @@ Además del filtro de organización, que se aplica siempre. C = lectura, E = esc
 | `skills` | C | C | C, E (las suyas) |
 | `files` | C | C | C, E (los suyos) |
 | `teams`, `team_members` | C, E | C, E | C (los suyos) |
-| `missions` | C, E | C, E | C (solo activas y cerradas) |
-| `mission_points` | C, E | C, E | C (de misiones visibles) |
-| `mission_team_assignments` | C, E | C, E | — |
-| `participations` | C, E | C, E | C (las suyas); crear oferta; retirarla |
-| `routes`, `route_versions`, `route_segments` | C, E | C, E | C (solo las fijadas y validadas de misiones visibles) |
-| `mission_routes` | C, E | C, E | C (versión fijada validada, misión visible) |
-| `calculation_jobs`, `avoid_zones` | C, E | C, E | — |
+| `missions` | C | C, E | C (solo activas y cerradas) |
+| `mission_points` | C | C, E | C (de misiones visibles) |
+| `mission_team_assignments` | C | C, E | — |
+| `participations` | C | C, E | C (las suyas); crear oferta; retirarla |
+| `routes`, `route_versions`, `route_segments` | C | C, E | C (solo las fijadas y validadas de misiones visibles) |
+| `mission_routes` | C | C, E | C (versión fijada validada, misión visible) |
+| `calculation_jobs` | C, E | C, E | — |
+| `avoid_zones` | C | C, E | — |
 | `audit_log` | C (toda la organización) | C (solo las filas `entity_type = 'mission'`, migración 0010) | C (los accesos a sus datos) |
 
 `audit_log` y el coordinador (H1, P3): `audit_select` (0008) no le deja leer la auditoría, pero `listMissionHistory` es del personal. La migración 0010 añade `audit_mission_staff`, una política permisiva de solo lectura (`FOR SELECT TO onway_app USING (app_is_staff() AND entity_type = 'mission')`): el coordinador lee el historial de las misiones de su organización y nada más (ni accesos a datos sensibles, ni certificados, ni cambios de cuenta). El filtro de organización sigue encima. No cambia lo que ve el rescatista ni el administrador.
 
-El administrador puede hacer lo del coordinador en las tablas de misiones y rutas porque `app_is_staff()` agrupa a ambos. Si Q-14 resuelve que el administrador **no** trabaja con misiones, basta cambiar `app_is_staff()` en esas políticas por una función que solo acepte `coordinator`.
+**Q-14 = no (resuelta el 2026-10-31, migración 0011).** El administrador **lee** misiones y rutas, pero no las escribe: lo decide el servidor (`MISSION_WRITERS = ['coordinator']` en el contrato) y, en profundidad, también la base de datos, de modo que un fallo del servidor no baste para que el administrador escriba. Hasta la 0010 las políticas de estas tablas eran `FOR ALL USING (app_is_staff())` y `app_is_staff()` agrupa a coordinador y administrador. La 0011 añade `app_is_coordinator()` (el rol de la sesión es `coordinator`) y, en `missions`, `mission_points`, `mission_team_assignments`, `participations`, `mission_routes`, `routes`, `route_versions`, `route_segments` y `avoid_zones`, sustituye la política `FOR ALL` por una de lectura para `app_is_staff()` (donde ya había otra de lectura, como `missions_select`, `points_select` o `part_select`, se conserva) y tres de escritura (`INSERT`, `UPDATE`, `DELETE`) para `app_is_coordinator()`, de nombre `<prefijo>_coordinator_insert|update|delete`. No cambian: la restrictiva `org_isolation`; las lecturas del rescatista; su oferta y retirada (`part_offer`, `part_withdraw`); `teams` y `team_members` (el administrador sigue gestionando equipos, Q-12); `calculation_jobs`; `files`; `audit_log` (el administrador sigue leyendo el historial de las misiones por `audit_select`, y el coordinador por `audit_mission_staff`); `users`, `memberships` y el resto. INV-03 también cambia: `missions_guard` acepta como responsable solo a un miembro activo con rol `coordinator`.
 
 ### 6.4 Funciones `SECURITY DEFINER`
 
@@ -594,10 +595,11 @@ Las migraciones son aditivas y se ejecutan en orden. Cada entrega solo estrena l
 | 0008 | 1 | Funciones de identidad, concesiones y RLS | Pruebas de la sección 11 |
 | 0009 | 1 | Recuperar contraseña: `password_resets` y dos funciones (Q-33) | Pedir, usar, caducar, límite por hora |
 | 0010 | 1 (H1) | Política `audit_mission_staff`: el personal lee las filas `entity_type = 'mission'` de `audit_log` de su organización (§6.3) | `apps/api/test/db/audit-policy.test.ts` |
-| 0011+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
+| 0011 | 1 (H1) | Q-14 = no: función `app_is_coordinator()`; en las nueve tablas de misión y ruta, lectura para el personal y escritura solo para el coordinador (§6.3); `missions_guard` solo acepta a un coordinador como responsable (INV-03) | `db/tests/run_tests.sql` (sección Q-14) y `apps/api/test/db/mission-writers-policy.test.ts` |
+| 0012+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
 
 Orden de ejecución y responsabilidades:
-- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0010** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
+- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0011** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
 - Las contraseñas de `onway_owner`, `onway_app` y `onway_platform` se fijan en el despliegue con `ALTER ROLE ... PASSWORD`, leídas de archivos de secretos, nunca del repositorio. En local las genera al azar el servicio `secrets` de `docker compose`.
 - Las tablas internas de la cola (pg-boss) las crea la propia biblioteca en su esquema `pgboss`. `onway_app` recibe permisos sobre ese esquema en el despliegue.
 - Cada migración debe poder aplicarse sobre una base vacía en CI con la imagen de PostGIS, y las pruebas de la sección 11 deben pasar después de la última.
@@ -623,7 +625,7 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 
 La base de datos tiene su propio juego de pruebas, independiente de la API, porque las invariantes viven aquí. En el repositorio están en `apps/api/test/db/`: una prueba de Vitest levanta PostGIS con Testcontainers (`postgis/postgis:16-3.4`), aplica las migraciones con el migrador de Drizzle y ejecuta los SQL de `db/tests/` (`seed_and_tests.sql` y `run_tests.sql`, que no se editan) (documento 04, sección 12).
 
-**Cobertura actual: 118 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** Las 21 últimas son de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 13: las 4 del migrador y los roles, la que lanza las 118 y las 8 de la política de la migración 0010 en `audit-policy.test.ts`).
+**Cobertura actual: 194 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** De ellas, 76 son de Q-14 (migración 0011) y 21 de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 19: las 4 del migrador y los roles, la que lanza las 194, las 8 de la política de la migración 0010 en `audit-policy.test.ts` y las 6 de la 0011 en `mission-writers-policy.test.ts`, con el inicio de sesión real de `onway_app`).
 
 | Grupo | Qué se comprueba |
 |---|---|
@@ -637,6 +639,7 @@ La base de datos tiene su propio juego de pruebas, independiente de la API, porq
 | Eliminación | Las participaciones se conservan, el perfil queda anónimo, desaparecen contacto y datos sensibles |
 | Plataforma y roles | La plataforma no lee perfiles, sensibles ni archivos. Ningún rol de aplicación es superusuario ni `BYPASSRLS`. Todas las tablas de negocio tienen RLS |
 | Permisos por columna | Un rescatista no puede aprobarse a sí mismo cambiando `account_status` |
+| Q-14 (0011) | Sobre las nueve tablas de misión y ruta, con las mismas sentencias: el administrador lee lo mismo que antes y no escribe (el `INSERT` falla, el `UPDATE` y el `DELETE` afectan 0 filas); el coordinador sigue haciendo las tres cosas; el rescatista no escribe y su oferta y retirada siguen funcionando; el administrador sigue gestionando equipos y leyendo el historial; INV-03 rechaza a un administrador como responsable en `INSERT` y `UPDATE`; ninguna política de escritura de esas tablas (salvo `org_isolation`) nombra a `app_is_staff()` |
 
 Cómo se ejecutan: `pnpm --filter @onway/api test:db` (necesita Docker; es el que usa la integración continua). Además, `db/tests/run-postgis.sh` aplica las migraciones sobre `postgis/postgis` sin pasar por Node y `db/tests/run.sh` usa un PostgreSQL local con PostGIS sustituido por texto (solo para entornos sin PostGIS). Muestran una línea por caso (`PASS` o `FAIL`) y el total.
 
@@ -667,16 +670,18 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 | Un certificado pertenece a un curso; no se permite certificado en una habilidad | Permitirlo también en habilidades |
 | El código de invitación se guarda en claro y se puede regenerar | Guardarlo como hash. Complica mostrarlo al administrador |
 | Un rescatista puede volver a ofrecerse tras retirar su oferta; un coordinador puede readmitir a un quitado | Estados terminales |
-| El administrador puede hacer lo mismo que el coordinador en misiones y rutas (Q-14) | Solo gestionar usuarios y datos |
+| ~~El administrador puede hacer lo mismo que el coordinador en misiones y rutas (Q-14)~~ Resuelto el 2026-10-31: **no**; el administrador lee y no escribe, también en la base (0011) | Dejar que el administrador escriba cambiando el contrato, las políticas y INV-03 a la vez |
 | Una cuenta rechazada no puede registrarse otra vez con el mismo correo | Permitir reintentar tras un plazo |
 
-**Preguntas abiertas que afectan a este documento:** Q-05, Q-14, Q-21 (documento 01, sección 9) y Q-26 (capas de IGN y licencias de teselas sin conexión, que condicionará la v2, no el esquema).
+**Preguntas abiertas que afectan a este documento:** Q-05, Q-21 (documento 01, sección 9) y Q-26 (capas de IGN y licencias de teselas sin conexión, que condicionará la v2, no el esquema).
 
 ## 14. Siguiente documento
 
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**0.6 (2026-10-31)** Q-14 resuelta (no) y cerrada también en la base de datos. Migración 0011: función `app_is_coordinator()`; en `missions`, `mission_points`, `mission_team_assignments`, `participations`, `mission_routes`, `routes`, `route_versions`, `route_segments` y `avoid_zones` la lectura es del personal y la escritura solo del coordinador; `missions_guard` (INV-03) acepta como responsable solo a un coordinador. §5 (INV-03), §6.3 (matriz y nota), §9, §11 (194 comprobaciones SQL y 19 pruebas de Vitest) y §13 al día. Motivo: defensa en profundidad (regla 2): lo decide el servidor y también la base.
 
 **0.5 (2026-10-30)** H1-T4: §10 con las 3 misiones de demostración de H1 (P4 b; las 6 completas, en H6). H1-T2. Migración 0010: política permisiva `audit_mission_staff` en `audit_log` para que el personal lea el historial de las misiones de su organización (`listMissionHistory`, P3 del plan de H1). §6.3 (matriz y nota), §9 (plan de migraciones, 0010 en la primera entrega), §11 (pruebas de la política) y §12 al día. Las 118 comprobaciones SQL no cambian.
 

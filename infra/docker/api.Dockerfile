@@ -31,7 +31,7 @@ FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out/ ./
-# Migraciones 0002-0010 (la 0001 la aplica el arranque de la base de datos como superusuario)
+# Migraciones 0002-0011 (la 0001 la aplica el arranque de la base de datos como superusuario)
 # y datos de demostración ficticios (R-10): sin secretos ni hashes.
 COPY --chown=node:node db/migrations db/migrations
 COPY --chown=node:node data/seed/demo.json data/seed/demo.json

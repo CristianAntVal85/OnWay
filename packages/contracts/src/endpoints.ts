@@ -48,7 +48,7 @@ export interface Endpoint {
 const ALL: Role[] = ['rescuer', 'coordinator', 'admin'];
 const SESSION: Role[] = ['pending', ...ALL];
 const STAFF: Role[] = ['coordinator', 'admin'];
-/** Q-14: si el administrador puede además trabajar con misiones y rutas, basta añadir 'admin' aquí. */
+/** Q-14 = no (resuelta 2026-10-31): el administrador lee misiones y rutas pero no las escribe. Cambiarlo exige también las políticas de la base (migración 0011) y INV-03, no solo esta constante. */
 const MISSION_WRITERS: Role[] = ['coordinator'];
 /** Q-12 (propuesto): administrador y coordinador gestionan equipos. */
 const TEAM_MANAGERS: Role[] = ['coordinator', 'admin'];

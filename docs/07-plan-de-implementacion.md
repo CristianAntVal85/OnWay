@@ -219,7 +219,7 @@ Cada bloque tendrá su propio documento de diseño cuando llegue su turno. Aquí
 | ~~PostGIS real~~ | ~~H0 (primera tarea)~~ | **Resuelto en H0**: 118/118 sobre `postgis/postgis:16-3.4` |
 | Prueba técnica del motor | H3 | Se hace durante H1 y H2; si falla, ver el riesgo de H3 |
 | ~~Q-26 capas de IGN y licencias~~ | ~~mejora de H1~~ | **Resuelto en H1 (2026-10-31):** capas, formatos y licencias verificados (doc 04 §8.2). Abierta solo la parte de teselas sin conexión (v2.1) |
-| ~~Q-14 el administrador escribe misiones~~ | ~~H1~~ | **Resuelto (2026-10-31): no.** Cambiarlo es una sola constante (`MISSION_WRITERS`) |
+| ~~Q-14 el administrador escribe misiones~~ | ~~H1~~ | **Resuelto (2026-10-31): no.** Lo decide el servidor (`MISSION_WRITERS`) y, en profundidad, la base de datos (migración 0011) |
 | Q-31 qué misiones ve el rescatista | H1 | Todas las activas de su organización |
 | Q-32 punto base para el tiempo | H1 | Sin punto base: si deniega la ubicación, se pide elegir un punto |
 | Q-28 dominio | H7 | Desarrollo con Mailpit y sin HTTPS público |

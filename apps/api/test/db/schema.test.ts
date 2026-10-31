@@ -25,9 +25,9 @@ afterAll(async () => {
 });
 
 describe('migrations (D-H0-04)', () => {
-  it('apply 0002-0010 on an empty PostGIS database', async () => {
+  it('apply 0002-0011 on an empty PostGIS database', async () => {
     const rows = await query<{ n: string }>(db.owner, 'SELECT count(*) AS n FROM drizzle.__drizzle_migrations');
-    expect(Number(rows[0]?.n)).toBe(9);
+    expect(Number(rows[0]?.n)).toBe(10);
     const postgis = await query<{ v: string }>(db.owner, 'SELECT postgis_version() AS v');
     expect(postgis[0]?.v).toMatch(/^3\.4/);
   });
@@ -71,7 +71,7 @@ describe('roles (doc 05 §6.2, rule 1)', () => {
 });
 
 describe('schema tests of doc 05 §11 on real PostGIS', () => {
-  it('118 checks pass and none fail', async () => {
+  it('194 checks pass and none fail', async () => {
     const seed = await db.psqlFile('/onway/tests/seed_and_tests.sql');
     expect(seed.match(/ERROR/gi) ?? []).toEqual([]);
 
@@ -82,6 +82,6 @@ describe('schema tests of doc 05 §11 on real PostGIS', () => {
     console.info(`schema tests: ${passed} PASS, ${failed.length} FAIL`);
     expect(output.match(/ERROR.*/g) ?? []).toEqual([]);
     expect(failed).toEqual([]);
-    expect(results.filter((r) => r.status === 'PASS')).toHaveLength(118);
+    expect(results.filter((r) => r.status === 'PASS')).toHaveLength(194);
   });
 });

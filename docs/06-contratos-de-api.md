@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 0.7 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
+**Versión:** 0.8 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -112,7 +112,7 @@ El registro tiene **95 operaciones**, cada una asignada a un **hito de construcc
 |---|---|---|---|---|---|---|---|---|---|---|
 | Operaciones | 5 | 18 | 12 | 6 | 9 | 26 | 17 | 0 | 1 | 1 |
 
-Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesión pero sin aprobar. En entrada, `campo?` es opcional. **Q-14:** hoy las operaciones que escriben sobre misiones y rutas solo admiten *Coordinador*; si se decide que el administrador también trabaja con misiones, se añade `admin` en una sola constante (`MISSION_WRITERS`) y el resto sigue igual.
+Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesión pero sin aprobar. En entrada, `campo?` es opcional. **Q-14 (resuelta, 2026-10-31: no):** las operaciones que escriben sobre misiones y rutas solo admiten *Coordinador* (constante `MISSION_WRITERS`); el administrador las lee. La base de datos lo repite en sus políticas de seguridad por filas y en INV-03 (migración 0011, doc. 05 §6.3), así que ya no basta cambiar la constante: habría que cambiar también la base.
 
 ### Sistema
 
@@ -806,7 +806,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 ## 11. Qué está verificado y qué no
 
-**Verificado:** los esquemas compilan con TypeScript estricto (`noUncheckedIndexedAccess`) y pasan las 84 pruebas (75 de contrato y 9 del cliente generado); el OpenAPI generado (95 operaciones, 78 rutas) tiene ids únicos, todas las `$ref` resuelven y los parámetros de ruta coinciden; los enums coinciden con las migraciones; las migraciones pasan las 118 pruebas sobre PostGIS real (más 13 de Vitest sobre la política 0010 y el migrador). En H0 las 5 operaciones del hito (`getHealth`, `login`, `logout`, `getMe`, `getOrganization`) están montadas en `apps/api` y sus respuestas se validan contra estos esquemas en `test:api`. **En H1 las 18 operaciones del hito (23 con las de H0) están montadas y cada una se prueba en `test:api` (189 pruebas) sobre PostGIS real**, con la respuesta validada contra su esquema y cada error contra `ErrorResponse`: `listCoordinators`, `listMissions`, `createMission`, `getMission`, `updateMission`, `duplicateMission`, `activateMission`, `closeMission`, `reopenMission`, `listMissionHistory`, `createMissionPoint`, `updateMissionPoint`, `deleteMissionPoint`, `listMyMissions`, `getMyMission`, `geocode`, `getElevation` y `getEnvironment`; una prueba (AC-02) compara las rutas montadas con las 23 exactas. La prueba de extremo a extremo recorre H0 (`login`, `getMe`, `getOrganization`, `logout`) y la demostración de H1 contra `docker compose up` con la superposición E2E (`apps/web/e2e/h1-demo.spec.ts`, 22 pruebas entre escritorio y 375 px, ver doc. 04 §12).
+**Verificado:** los esquemas compilan con TypeScript estricto (`noUncheckedIndexedAccess`) y pasan las 84 pruebas (75 de contrato y 9 del cliente generado); el OpenAPI generado (95 operaciones, 78 rutas) tiene ids únicos, todas las `$ref` resuelven y los parámetros de ruta coinciden; los enums coinciden con las migraciones; las migraciones pasan las 194 pruebas sobre PostGIS real (más 19 de Vitest sobre las políticas 0010 y 0011 y el migrador). En H0 las 5 operaciones del hito (`getHealth`, `login`, `logout`, `getMe`, `getOrganization`) están montadas en `apps/api` y sus respuestas se validan contra estos esquemas en `test:api`. **En H1 las 18 operaciones del hito (23 con las de H0) están montadas y cada una se prueba en `test:api` (191 pruebas) sobre PostGIS real**, con la respuesta validada contra su esquema y cada error contra `ErrorResponse`: `listCoordinators`, `listMissions`, `createMission`, `getMission`, `updateMission`, `duplicateMission`, `activateMission`, `closeMission`, `reopenMission`, `listMissionHistory`, `createMissionPoint`, `updateMissionPoint`, `deleteMissionPoint`, `listMyMissions`, `getMyMission`, `geocode`, `getElevation` y `getEnvironment`; una prueba (AC-02) compara las rutas montadas con las 23 exactas. La prueba de extremo a extremo recorre H0 (`login`, `getMe`, `getOrganization`, `logout`) y la demostración de H1 contra `docker compose up` con la superposición E2E (`apps/web/e2e/h1-demo.spec.ts`, 22 pruebas entre escritorio y 375 px, ver doc. 04 §12).
 
 **No verificado:**
 - El OpenAPI no se ha pasado por un validador oficial (no hay acceso a internet desde el entorno de trabajo; solo comprobaciones propias).
@@ -822,7 +822,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 | Q-33 | Recuperar contraseña por correo transaccional (Resend tras el puerto `Mailer`) | **Resuelta** (§10.2). Falta el dominio (Q-28) para enviar a terceros |
 | Q-34 | Solicitudes de alta sin «equipo indicado» ni «datos completos» (§5) | **Confirmada** |
 | Q-35 | N días de la validación antigua (RF-519): 90 por organización | **Confirmada** |
-| Q-14 | Si el administrador escribe sobre misiones y rutas | Abierta; está aislada en `MISSION_WRITERS` |
+| ~~Q-14~~ | Si el administrador escribe sobre misiones y rutas | **Resuelta (2026-10-31): no.** `MISSION_WRITERS = ['coordinator']` y, en profundidad, las políticas de la base (migración 0011) |
 | Q-12 | Quién gestiona equipos: administrador y coordinador | Propuesta; aislada en `TEAM_MANAGERS` |
 | Q-10 | Edición simultánea: `expectedUpdatedAt` opcional en `updateMission` | Propuesta |
 | S-01 | Tras un rechazo, el rescatista no puede ofrecerse otra vez; solo el coordinador puede reconsiderar. Tras retirar su oferta, sí | Suposición coherente con el ciclo de vida del doc. 02 §5 |
@@ -835,6 +835,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.8 | 2026-10-31 | Q-14 resuelta (no): el administrador lee misiones y rutas y no las escribe; `MISSION_WRITERS` y la base de datos lo reflejan (migración 0011, doc. 05). Solo cambia un comentario del registro de endpoints; sin cambios de esquema: OpenAPI, tablas y cliente regenerados sin diferencias. Pruebas al día: `test:api` 191, base de datos 194 comprobaciones SQL + 19 de Vitest |
 | 0.7 | 2026-10-31 | Cierre de H1 (T10): sección 11 al día (84 pruebas del paquete; las 18 operaciones de H1 montadas y probadas en `test:api` con 189 pruebas; la demostración de H1 como prueba de extremo a extremo; lo geoespacial de puntos y altitud verificado, no el de rutas). OpenAPI, tablas y cliente regenerados sin diferencias: ningún cambio de esquema en esta tarea |
 | 0.6 | 2026-10-30 | H1-T2. `OUTSIDE_COVERAGE` en `createMission`, `updateMission`, `createMissionPoint` y `updateMissionPoint` (la altitud la calcula el servidor y puede no haber fuente que cubra el punto, P1). Notas de `createMission` (equipos, rescatistas y rutas llegan vacíos hasta H4/H6; un coordinador no válido da `VALIDATION_FAILED` en `coordinatorId`), `updateMission` y `updateMissionPoint`. Montadas y probadas en `test:api`: `listCoordinators`, `listMissions`, `createMission`, `getMission`, `updateMission`, `listMissionHistory`. H1-T3: montadas y probadas `activateMission`, `closeMission`, `reopenMission`, `duplicateMission`, `createMissionPoint`, `updateMissionPoint`, `deleteMissionPoint`, `listMyMissions` y `getMyMission` (un `attendance` con una participación que no es un aceptado de la misión da `VALIDATION_FAILED` en `attendance.N.participationId`). H1-T4: montadas y probadas `getElevation` y `geocode`. H1-T5: `getEnvironment` declara `NOT_FOUND` (un rescatista que pide el `missionId` de una misión en planificación o de otra organización, igual que `getMyMission`) y su nota lo dice; la nota de `getHealth` pasa de «`weatherProvider` es `false` fijo» a salud pasiva del proveedor del tiempo (D-H1-12); montada y probada `getEnvironment`, con lo que las 18 operaciones de H1 quedan montadas. Sin cambios de esquema |
 | 0.5 | 2026-10-30 | Cierre de H0: sección 11 al día (83 pruebas del paquete, Zod 4.6.7 desde npm, operaciones de H0 montadas y probadas, E2E, `nestjs-zod` no usado). OpenAPI y tablas regeneradas sin cambios de esquema |
