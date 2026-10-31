@@ -1,5 +1,6 @@
-import { removeOrganizationB } from './support/stack';
+import { closeLeftoverE2eMissions, removeOrganizationB } from './support/stack';
 
 export default async function globalTeardown(): Promise<void> {
   await removeOrganizationB();
+  await closeLeftoverE2eMissions();
 }

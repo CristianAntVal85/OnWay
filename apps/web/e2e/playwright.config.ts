@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Demostración de H0 (doc 07 §3) contra la pila real de `docker compose up --wait` (T9). No arranca nada:
+// Demostración de H0 y H1 (doc 07 §3) contra la pila real de `docker compose up --wait` (T9). No arranca nada:
 // se espera que la pila ya esté en pie en E2E_BASE_URL (http://localhost:8080 por defecto).
 export default defineConfig({
   testDir: '.',
@@ -23,6 +23,6 @@ export default defineConfig({
   projects: [
     { name: 'desktop', testIgnore: /mobile\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
     // Móvil de 375 px de ancho (iPhone SE/mini); Chromium con pantalla táctil.
-    { name: 'mobile', testMatch: /mobile\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } },
+    { name: 'mobile', testMatch: /(mobile|h1-demo)\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } },
   ],
 });

@@ -88,6 +88,7 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 | **Fuera** | Rutas, voluntariado, importar puntos (H2), curvas de nivel (H9) |
 | **Dependencias** | Q-26 (capas de IGN): si no se resuelve, se arranca con el mapa base abierto y se añade IGN después. Valores por defecto: Q-14 no (el administrador no escribe misiones), Q-31 el rescatista ve todas las activas de su organización, Q-32 sin punto base |
 | **Riesgos** | R-06 (tiempo a la altitud del punto), servir el modelo de elevación de forma barata, R-04 (licencias) |
+| **Tal como se construyó** | Las 18 operaciones montadas y probadas (`test:api`); mapa propio en `apps/web/src/map/` con tres capas (carreteras: PMTiles de los Pirineos servido por Caddy; satélite: PNOA e IGN Francia compuestos por tesela en el navegador porque IGN Francia responde teselas blancas fuera de su país; topográfico: mapas de IGN España y Plan IGN apilados), atribuciones siempre a la vista y el hueco de Andorra documentado (doc 04 §8). Altitud: GLO-30 de Copernicus local (servicio `geodata`, ~843 MB, caja lon −2…4 / lat 42…44) y Open-Meteo fuera de ella. Tiempo, luz y luna con Open-Meteo, SunCalc y caché por celda; la ubicación del dispositivo se redondea en el cliente y no se guarda. La demostración lleva 3 misiones ficticias (una por estado). Dependencias aprobadas: ESLint, typescript-eslint, maplibre-gl, react-map-gl, pmtiles, @protomaps/basemaps, geotiff y suncalc. Demostración como prueba E2E: `apps/web/e2e/h1-demo.spec.ts`, en escritorio y a 375 px, con la superposición `infra/compose.e2e.yml` (sin salir a Internet) |
 
 ### H2 · Biblioteca de rutas, sin motor · M
 
@@ -217,7 +218,7 @@ Cada bloque tendrá su propio documento de diseño cuando llegue su turno. Aquí
 |---|---|---|
 | ~~PostGIS real~~ | ~~H0 (primera tarea)~~ | **Resuelto en H0**: 118/118 sobre `postgis/postgis:16-3.4` |
 | Prueba técnica del motor | H3 | Se hace durante H1 y H2; si falla, ver el riesgo de H3 |
-| Q-26 capas de IGN y licencias | v2.1; mejora de H1 | Mapa base abierto y satélite de servicios abiertos |
+| ~~Q-26 capas de IGN y licencias~~ | ~~mejora de H1~~ | **Resuelto en H1 (2026-10-31):** capas, formatos y licencias verificados (doc 04 §8.2). Abierta solo la parte de teselas sin conexión (v2.1) |
 | ~~Q-14 el administrador escribe misiones~~ | ~~H1~~ | **Resuelto (2026-10-31): no.** Cambiarlo es una sola constante (`MISSION_WRITERS`) |
 | Q-31 qué misiones ve el rescatista | H1 | Todas las activas de su organización |
 | Q-32 punto base para el tiempo | H1 | Sin punto base: si deniega la ubicación, se pide elegir un punto |
@@ -243,6 +244,6 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
-| 0.3 | 2026-10-31 | Q-14 resuelta (no): el administrador no escribe misiones (H1-T6; documentos 01 y 02 actualizados) |
+| 0.3 | 2026-10-31 | Q-14 resuelta (no): el administrador no escribe misiones (H1-T6; documentos 01 y 02 actualizados). H1 (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con las capas de IGN, `geodata`, las tres misiones de demostración, las dependencias aprobadas y la demostración como prueba E2E; Q-26 (sección 6) resuelta en lo de H1 |
 | 0.2 | 2026-10-30 | H0 (sección 3) al día tras construirlo: la demostración lleva una sola organización (decisión D-H0-18), con una cuenta pendiente y rescatistas con perfil incompleto hasta H5; el aislamiento entre organizaciones se demuestra con una organización creada por las pruebas. Riesgos de H0 y «PostGIS real» (sección 6) marcados como resueltos |
 | 0.1 | 2026-10-30 | Primera versión: diez hitos de v1 (H0–H9) con MVP en H0–H4, bosquejo de v2 y v3, definición de terminado común. Cada operación del contrato tiene hito (`milestones.ts`, 74 pruebas) |

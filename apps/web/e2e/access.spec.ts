@@ -106,9 +106,10 @@ test('the whole access (log in, move around, switch language, log out) works wit
   await expect(page).toHaveURL(/\/home$/);
   await expect(page.getByRole('main')).toBeFocused();
 
-  // Navegar a Equipos con la barra: tabulación hasta el enlace y Enter.
+  // Navegar a Equipos con la barra: tabulación hasta el enlace y Enter. El inicio lleva misiones activas (en H1, también las de otras
+  // pruebas en marcha) y la barra queda antes del contenido: hay que dar la vuelta, así que el tope de pulsaciones es generoso.
   const teams = page.getByRole('navigation', { name: es.nav.label }).getByRole('link', { name: es.nav.teams });
-  for (let i = 0; i < 12 && !(await teams.evaluate((el) => el === document.activeElement)); i += 1) await key('Tab');
+  for (let i = 0; i < 60 && !(await teams.evaluate((el) => el === document.activeElement)); i += 1) await key('Tab');
   await expect(teams).toBeFocused();
   await key('Enter');
   await expect(page).toHaveURL(/\/teams$/);

@@ -54,7 +54,7 @@ export async function expectNoHorizontalOverflow(page: Page): Promise<void> {
 export const heading = (page: Page, name: string): Locator => page.getByRole('heading', { level: 1, name });
 
 // PNG transparente de 1×1: las teselas de IGN se sustituyen por él para que estas pruebas no salgan a Internet (D-H1-15).
-const BLANK_TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
+export const BLANK_TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 
 /** Responde con una tesela vacía a los servicios de mapa de terceros (IGN) y deja pasar todo lo demás. */
 export async function stubMapTiles(page: Page): Promise<void> {
