@@ -28,7 +28,7 @@ export function RoutesPage() {
   const user = useCurrentUser();
   const canWrite = user.role === 'coordinator';
   usePageTitle(t('routes.title'));
-  const { filters, view, draft, setDraft, update, clear } = useLibraryState();
+  const { filters, view, setView, draft, setDraft, update, clear } = useLibraryState();
 
   // Zona del mapa: `viewBounds` es lo que se ve; `zone` es la que se usa para pedir la lista.
   const [followMap, setFollowMap] = useState(true);
@@ -82,7 +82,7 @@ export function RoutesPage() {
 
   const showOnList = (id: string) => {
     setHighlighted(id);
-    update({ view: null });
+    setView('list');
     // La tarjeta sale en pantalla y recibe el foco para quien navega con teclado o lector.
     setTimeout(() => {
       const card = cards.current.get(id);
@@ -120,7 +120,7 @@ export function RoutesPage() {
         {writeActions}
       </div>
 
-      <ViewTabs view={view} onSelect={(next) => update({ view: next === 'list' ? null : next })} />
+      <ViewTabs view={view} onSelect={setView} />
 
       <div className="library" data-view={view}>
         <section className="library-list" id="library-panel-list" aria-labelledby="library-tab-list">

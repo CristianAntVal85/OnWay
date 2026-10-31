@@ -74,7 +74,17 @@ export function listQuery(f: LibraryFilters, bbox: string | null) {
 export function useLibraryState() {
   const [params, setParams] = useSearchParams();
   const filters = parseFilters(params);
-  const view: View = params.get('view') === 'map' ? 'map' : 'list';
+  // La vista (Lista o Mapa) es un estado propio y se refleja en la dirección: el cambio de pestaña no espera a que el enrutador
+  // termine de navegar (en un equipo lento podía tardar y la pestaña parecía no responder).
+  const [chosen, setChosen] = useState<View>(params.get('view') === 'map' ? 'map' : 'list');
+  const fromUrl: View = params.get('view') === 'map' ? 'map' : 'list';
+  const urlSeen = useRef(fromUrl);
+  if (urlSeen.current !== fromUrl) {
+    // «Atrás» o un enlace cambian la dirección por fuera: la pestaña los sigue.
+    urlSeen.current = fromUrl;
+    setChosen(fromUrl);
+  }
+  const view = chosen;
 
   // Cada cambio parte de lo último que se pidió, no de lo que se pintó: dos cambios seguidos (escribir y, enseguida, elegir un filtro)
   // no se pisan aunque React Router aún no haya vuelto a pintar entre uno y otro.
@@ -104,11 +114,15 @@ export function useLibraryState() {
   return {
     filters,
     view,
+    setView: (next: View) => {
+      setChosen(next);
+      update({ view: next === 'list' ? null : next });
+    },
     draft,
     setDraft,
     update,
     clear: () => {
-      latest.current = new URLSearchParams(view === 'map' ? { view: 'map' } : {});
+      latest.current = new URLSearchParams(chosen === 'map' ? { view: 'map' } : {});
       setParams(latest.current, { replace: true });
     },
   };
