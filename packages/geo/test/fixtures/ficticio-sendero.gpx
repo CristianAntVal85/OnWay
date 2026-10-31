@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Trazado inventado para las pruebas: no procede de ningún servicio ni de ninguna persona. Las altitudes (999) son falsas a propósito. -->
+<gpx version="1.1" creator="prueba" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3">
+  <metadata><name>Archivo ficticio</name></metadata>
+  <wpt lat="42.6300000" lon="-0.1000000"><name>Refugio &amp; ficticio</name><ele>999</ele></wpt>
+  <wpt lat="42.6400000" lon="-0.1100000"><name>Collado inventado</name></wpt>
+  <trk>
+    <name>Sendero ficticio</name>
+    <trkseg>
+      <trkpt lat="42.6300000" lon="-0.1000000"><ele>999</ele><time>2026-01-01T08:00:00Z</time></trkpt>
+      <trkpt lat="42.6310000" lon="-0.1005000"><ele>999</ele><time>2026-01-01T08:01:00Z</time></trkpt>
+      <trkpt lat="42.6325000" lon="-0.1012000"><ele>999</ele><time>2026-01-01T08:02:00Z</time></trkpt>
+    </trkseg>
+    <trkseg>
+      <trkpt lat="42.6340000" lon="-0.1030000"><ele>999</ele></trkpt>
+      <trkpt lat="42.6360000" lon="-0.1060000"><ele>999</ele></trkpt>
+      <trkpt lat="42.6400000" lon="-0.1100000"><ele>999</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
