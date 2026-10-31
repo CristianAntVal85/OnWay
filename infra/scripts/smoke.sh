@@ -76,6 +76,28 @@ check_environment coordinador@example.org
 check_environment rescatista1@example.org
 echo "ok  getEnvironment: coordinator and rescuer 200 with weather, sun and moon, position rounded"
 
+# Biblioteca de rutas (H2-T6): la semilla deja 6 rutas ficticias (5 activas y 1 archivada); el coordinador las lista, el administrador las lee y el rescatista no.
+# Se exporta una a GPX y se comprueba que no lleva autor.
+check_routes() {
+  : >"$jar"
+  curl -s -c "$jar" -b "$jar" -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"$password\"}" "$base/api/v1/auth/login" >/dev/null
+  code="$(status -b "$jar" "$base/api/v1/routes?pageSize=50")"
+  [ "$code" = "$2" ] || fail "listRoutes as $1 must be $2, got $code"
+}
+check_routes coordinador@example.org 200
+routes="$(curl -s -b "$jar" "$base/api/v1/routes?pageSize=50")"
+echo "$routes" | grep -Eq '"total":[0-9]+' || fail "listRoutes returned no total: $routes"
+[ "$(echo "$routes" | grep -o '"previewGeometry"' | wc -l)" -ge 5 ] || fail "listRoutes must list the 5 active demo routes: $routes"
+curl -s -b "$jar" "$base/api/v1/routes?status=archived" | grep -q 'Camino antiguo' || fail "the archived demo route is not in the archived list"
+first="$(echo "$routes" | sed -n 's/.*"items":\[{"id":"\([^"]*\)".*/\1/p')"
+[ -n "$first" ] || fail "listRoutes returned no id: $routes"
+export_file="$(curl -s -b "$jar" "$base/api/v1/routes/$first/export")"
+echo "$export_file" | grep -q '<trk>' || fail "exportRoute returned no track"
+echo "$export_file" | grep -Eq '<author|@' && fail "exportRoute carries an author or an e-mail"
+check_routes admin@example.org 200
+check_routes rescatista1@example.org 403
+echo "ok  routes: coordinator lists the 5 active demo routes plus the archived one and exports one without author, administrator reads, rescuer 403"
+
 wrong="$(status -H 'Content-Type: application/json' -d '{"email":"admin@example.org","password":"incorrecta-incorrecta"}' "$base/api/v1/auth/login")"
 [ "$wrong" = 401 ] || fail "wrong credentials must be 401, got $wrong"
 echo "ok  wrong credentials -> 401"

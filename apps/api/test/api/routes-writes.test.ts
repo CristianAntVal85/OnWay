@@ -173,6 +173,14 @@ describe('createRoute (RF-505, RF-510; INV-15)', () => {
     expect(rows[0]!.z).toBe(await synthetic.elevationAt({ lon: first![0], lat: first![1] }));
   });
 
+  it('accepts the largest line the contract allows (20 000 vertices) and measures it', async () => {
+    const wander = Array.from({ length: 20_000 }, (_, i) => [-0.9 + i * 0.0001, 42.4 + Math.sin(i / 300) * 0.05] as [number, number]);
+    const created = await createDrawn(a.coordinator, { geometry: { type: 'LineString', coordinates: wander } });
+    const [row] = await fixtures.query<{ points: number; distance_m: string }>(`SELECT ST_NPoints(geom) AS points, distance_m::text FROM route_versions WHERE id = $1`, [created.versionId]);
+    expect(row!.points).toBeGreaterThan(10_000);
+    expect(Number(row!.distance_m)).toBeGreaterThan(150_000);
+  });
+
   it('import: version 1 as a Draft with provenance `imported` and the uploaded file as `source_file_id`', async () => {
     const fileId = await upload(a.coordinator, await fixtureFile('ficticio-sendero.gpx'));
     const response = await call(a.coordinator, 'POST', '/routes', { source: 'import', name: uniq('Imported'), fileId });

@@ -49,5 +49,46 @@
       "target": { "lat": 42.633, "lon": 0.642, "label": "Collado ficticio de la Maladeta" },
       "points": []
     }
+  ],
+  "routes": [
+    {
+      "name": "Pradera a la Brecha (ficticia)",
+      "coordinator": "coordinator-es",
+      "versions": [{ "gpx": "pradera-brecha.gpx", "daysAgo": 12, "validatedDaysAgo": 10, "note": "Trazado inventado, validado por el equipo de demostración." }]
+    },
+    {
+      "name": "Senda del Circo (ficticia)",
+      "coordinator": "coordinator-es",
+      "versions": [
+        { "gpx": "circo-v1.gpx", "daysAgo": 40, "validatedDaysAgo": 38, "note": "Primera propuesta." },
+        { "gpx": "circo-v2.gpx", "daysAgo": 20, "validatedDaysAgo": 18, "note": "Evita el tramo húmedo." },
+        { "gpx": "circo-v3.gpx", "daysAgo": 6, "validatedDaysAgo": 4, "note": "Propuesta final." }
+      ]
+    },
+    {
+      "name": "Collado con borrador nuevo (ficticia)",
+      "coordinator": "coordinator-fr",
+      "versions": [
+        { "gpx": "collado-v1.gpx", "daysAgo": 25, "validatedDaysAgo": 22, "note": "Versión validada." },
+        { "gpx": "collado-v2.gpx", "daysAgo": 2, "note": "Borrador más nuevo que la validada." }
+      ]
+    },
+    {
+      "name": "Variante de la Pradera (ficticia)",
+      "coordinator": "coordinator-es",
+      "derivedFrom": { "route": "Pradera a la Brecha (ficticia)", "version": 1 },
+      "versions": [{ "gpx": "pradera-variante.gpx", "daysAgo": 3, "note": "Copia derivada, aún en borrador." }]
+    },
+    {
+      "name": "Camino antiguo (ficticia)",
+      "coordinator": "coordinator-fr",
+      "archived": true,
+      "versions": [{ "gpx": "camino-antiguo.gpx", "daysAgo": 70, "validatedDaysAgo": 65, "note": "Ruta archivada." }]
+    },
+    {
+      "name": "Pista con validación antigua (ficticia)",
+      "coordinator": "coordinator-es",
+      "versions": [{ "gpx": "pista-caducada.gpx", "daysAgo": 125, "validatedDaysAgo": 120, "note": "Validada hace más de 90 días: la biblioteca avisa." }]
+    }
   ]
 }

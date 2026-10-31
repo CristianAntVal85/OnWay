@@ -18,6 +18,9 @@ export async function createApp(options: CreateAppOptions): Promise<NestExpressA
   app.disable('x-powered-by');
   app.use(requestIdMiddleware);
   app.use(accessLogMiddleware);
+  // After the request id, so that a body the parser refuses is answered with one. A line sent by the client (draw, edit) has up to
+  // 20 000 vertices: about 0.6 MB of JSON, over the 100 kB of Express's default.
+  app.useBodyParser('json', { limit: '2mb' });
   app.setGlobalPrefix(API_PREFIX);
   app.enableShutdownHooks();
   return app;

@@ -53,7 +53,7 @@ pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
 pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
 pnpm --filter @onway/api test:db            # 25 pruebas de Vitest sobre PostGIS: las 194 comprobaciones SQL del esquema + 8 de la política 0010 + 6 de la 0011 + 6 de la 0012 (Testcontainers, necesita Docker)
-pnpm --filter @onway/api test:api           # 251 pruebas del API sobre PostGIS (Testcontainers)
+pnpm --filter @onway/api test:api           # 274 pruebas del API sobre PostGIS (Testcontainers)
 pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME (seed: ELEVATION_DEM_DIR para la altitud de las misiones)
 pnpm --filter @onway/api synthetic-dem      # regenera data/seed/dem (terreno inventado del E2E)
 pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT

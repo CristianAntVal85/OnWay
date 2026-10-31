@@ -9,7 +9,7 @@ import { TestOnlyController } from '../support/test-controllers.js';
 
 /**
  * Operations built so far: the five of H0, the 18 of H1 and those of H2 that earlier tasks have mounted. AC-02 compares the routes
- * Express mounts with this list; each H2 task appends its operations here; H2-T6 leaves exactly the 36 (23 of H0 and H1 + 13 of H2).
+ * Express mounts with this list; each H2 task appended its operations here and H2-T6 left exactly the 36 (23 of H0 and H1 + 13 of H2).
  */
 const BUILT = [
   'getHealth',
@@ -43,6 +43,11 @@ const BUILT = [
   'deriveRoute',
   'validateRouteVersion',
   'archiveRoute', // H2-T5
+  'listRoutes',
+  'getRoute',
+  'getRouteVersion',
+  'exportRoute',
+  'exportRoutes', // H2-T6
 ];
 
 let real: TestApp;
@@ -73,13 +78,14 @@ async function expectError(response: Response, code: keyof typeof ERROR_HTTP) {
 }
 
 describe('routes come from the registry (AC-02, rule 7)', () => {
-  it('mounts every operation of H0 and H1 (23) plus the ones of H2 built so far, and all of them are in the registry (H2-T3)', () => {
+  it('mounts exactly the 36 operations of H0, H1 and H2 (23 + 13), and all of them are in the registry (H2-T6)', () => {
     const ofMilestones = ENDPOINTS.filter((e) => e.milestone === 'H0' || e.milestone === 'H1').map((e) => e.id);
     expect(ofMilestones).toHaveLength(23);
     const ofH2 = ENDPOINTS.filter((e) => e.milestone === 'H2').map((e) => e.id);
     expect(ofH2).toHaveLength(13);
-    expect(BUILT.filter((id) => ofMilestones.includes(id)).sort()).toEqual([...ofMilestones].sort());
-    expect(BUILT.filter((id) => !ofMilestones.includes(id)).every((id) => ofH2.includes(id))).toBe(true);
+    // H2-T6: the 13 operations of H2 are all mounted, so AC-02 is the exact 36.
+    expect([...BUILT].sort()).toEqual([...ofMilestones, ...ofH2].sort());
+    expect(BUILT).toHaveLength(36);
   });
 
   it('mounts exactly the operations built so far, and all of them are in the registry', () => {
@@ -168,7 +174,7 @@ describe('validation from the registry (D-H0-06, AC-16)', () => {
   });
 
   it('answers 413 FILE_TOO_LARGE when the body exceeds the limit', async () => {
-    await expectError(await post(JSON.stringify({ email: 'a@example.org', password: 'x'.repeat(200_000) })), 'FILE_TOO_LARGE');
+    await expectError(await post(JSON.stringify({ email: 'a@example.org', password: 'x'.repeat(3_000_000) })), 'FILE_TOO_LARGE');
   });
 
   it('hands the handler the parsed body when it is valid (the email arrives lower-cased)', async () => {
