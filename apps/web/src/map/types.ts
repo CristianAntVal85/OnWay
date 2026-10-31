@@ -28,6 +28,26 @@ export interface MapFocus extends MapPoint {
   nonce: number;
 }
 
+/** Cómo se pinta una ruta: borrador, validada, validación antigua o archivada. Además del color cambia el trazo (sólido, discontinuo, punteado). */
+export type MapRouteTone = 'draft' | 'validated' | 'stale' | 'archived';
+
+/** Una ruta de la biblioteca sobre el mapa: la línea ya viene simplificada del servidor (`previewGeometry`). */
+export interface MapRoute {
+  id: string;
+  name: string;
+  tone: MapRouteTone;
+  /** `[lon, lat]`. */
+  line: readonly (readonly [number, number])[];
+}
+
+/** Zona visible del mapa, en grados. */
+export interface MapBounds {
+  minLon: number;
+  minLat: number;
+  maxLon: number;
+  maxLat: number;
+}
+
 export interface MapViewProps {
   markers?: readonly MapMarker[];
   /** Clic o toque en el mapa. Si no se pasa, el mapa es solo de consulta. */
@@ -40,6 +60,18 @@ export interface MapViewProps {
   /** Al montarse, encuadra los marcadores que haya (uno: centrado; varios: todos a la vista). Sin marcadores, los Pirineos. */
   fitToMarkers?: boolean;
   defaultLayer?: MapLayerId;
+  /** Rutas de la biblioteca como líneas. */
+  routes?: readonly MapRoute[];
+  /** Ruta resaltada (la tarjeta señalada o la línea tocada). */
+  highlightedRouteId?: string | null;
+  /** Rutas marcadas en la lista: se dibujan más gruesas. */
+  selectedRouteIds?: ReadonlySet<string>;
+  /** Clic o toque sobre una línea de ruta (en vez de `onPick`). */
+  onRouteClick?: (routeId: string) => void;
+  /** La persona ha movido o acercado el mapa (no una orden de la página): zona que se ve ahora. */
+  onViewChange?: (bounds: MapBounds) => void;
+  /** Cada vez que cambia (y no es `undefined`), el mapa encuadra todas las rutas. */
+  fitRoutesKey?: string;
   /** Nombre accesible de la región del mapa. */
   label?: string;
   className?: string;

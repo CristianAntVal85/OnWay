@@ -305,5 +305,72 @@ export interface Messages {
     };
   };
   /** Un texto por cada código de ERROR_HTTP (doc 06 AC-05: el cliente elige el texto por `code`). */
+  units: { km: string; m: string };
+  routes: {
+    title: string;
+    importCta: string;
+    drawCta: string;
+    searchLabel: string;
+    searchSubmit: string;
+    filters: {
+      title: string;
+      status: string;
+      statusActive: string;
+      statusArchived: string;
+      version: string;
+      versionAny: string;
+      versionDraft: string;
+      versionValidated: string;
+      minDistance: string;
+      maxDistance: string;
+      minAscent: string;
+      maxAscent: string;
+      validatedWithin: string;
+      validatedAny: string;
+      validatedDays: string;
+      sort: string;
+      clear: string;
+    };
+    sort: { updated_desc: string; name_asc: string; distance_asc: string; distance_desc: string; ascent_desc: string };
+    views: { label: string; list: string; map: string };
+    zone: { followLabel: string; search: string; clear: string; applied: string; moved: string };
+    summary: string;
+    summaryOnPage: string;
+    empty: { library: string; filtered: string; zone: string; archived: string };
+    clearFilters: string;
+    card: {
+      select: string;
+      version: string;
+      draft: string;
+      validated: string;
+      archived: string;
+      neverValidated: string;
+      validatedOn: string;
+      stale: string;
+      staleHint: string;
+      distance: string;
+      ascent: string;
+      maxElevation: string;
+      usedIn: string;
+      usedInValue: string;
+      notUsed: string;
+      copy: string;
+      open: string;
+    };
+    selection: { count: string; exportGpx: string; exportKml: string; exporting: string; exportError: string; archive: string; clear: string; tooMany: string; validatedOnly: string; hint: string };
+    archive: { title: string; description: string; confirm: string; cancel: string; working: string; done: string; failed: string; inUse: string };
+    map: {
+      label: string;
+      myPosition: string;
+      myPositionUnavailable: string;
+      legend: string;
+      legendDraft: string;
+      legendValidated: string;
+      legendStale: string;
+      legendArchived: string;
+      onlyPage: string;
+      routeLine: string;
+    };
+  };
   errors: Record<ErrorCode, string>;
 }

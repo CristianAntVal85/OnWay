@@ -12,6 +12,7 @@ import { MissionsPage } from '../pages/missions-page';
 import { LoginPage } from '../pages/login-page';
 import { NotFoundPage } from '../pages/not-found-page';
 import { ProfilePage } from '../pages/profile-page';
+import { RoutesPage } from '../pages/routes-page';
 import { WaitingPage } from '../pages/waiting-page';
 
 /** Rutas de la web. Cada ruta de la barra pasa por `RoleGate`; el servidor decide igualmente (RF-103). */
@@ -60,6 +61,30 @@ export function AppRoutes() {
               />
               <Route
                 path={PATHS.routes}
+                element={
+                  <RoleGate route="routes">
+                    <RoutesPage />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={PATHS.routeImport}
+                element={
+                  <RoleGate route="routes">
+                    <LaterPage section="nav.routes" />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={PATHS.routeDraw}
+                element={
+                  <RoleGate route="routes">
+                    <LaterPage section="nav.routes" />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={`${PATHS.routes}/:routeId`}
                 element={
                   <RoleGate route="routes">
                     <LaterPage section="nav.routes" />

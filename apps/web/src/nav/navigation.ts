@@ -9,6 +9,9 @@ export type NextStep = 'home' | 'complete-profile' | 'awaiting-approval';
 /** Dirección del detalle de una misión. */
 export const missionPath = (missionId: string) => `${'/missions'}/${missionId}`;
 
+/** Dirección del detalle de una ruta de la biblioteca. */
+export const routePath = (routeId: string) => `${'/routes'}/${routeId}`;
+
 export const PATHS = {
   login: '/login',
   waiting: '/waiting',
@@ -16,11 +19,13 @@ export const PATHS = {
   missions: '/missions',
   createMission: '/missions/new',
   routes: '/routes',
+  routeImport: '/routes/import',
+  routeDraw: '/routes/draw',
   teams: '/teams',
   admin: '/admin',
   profile: '/profile',
   account: '/account',
-} as const satisfies Record<'login' | 'waiting' | RouteId, string>;
+} as const satisfies Record<'login' | 'waiting' | 'routeImport' | 'routeDraw' | RouteId, string>;
 
 const STAFF: readonly MemberRole[] = ['admin', 'coordinator'];
 /** Quien escribe sobre misiones: Q-14 = no, el administrador las lee pero no las crea ni las edita (D-H1-13). */

@@ -1832,3 +1832,324 @@ h4 {
     forced-color-adjust: none;
   }
 }
+
+/* ---------- biblioteca de rutas (H2-T7) ---------- */
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: var(--tap);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.check-row input,
+.route-card-check {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  flex: none;
+  accent-color: var(--rock);
+}
+
+.library {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: 1rem;
+}
+
+/* Pantalla estrecha: dos pestañas, Lista y Mapa, con la misma selección. */
+.library[data-view='list'] .library-map,
+.library[data-view='map'] .library-list {
+  display: none;
+}
+
+.library-map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.library-map-view {
+  height: 62vh;
+  height: 62dvh;
+  min-height: 18rem;
+}
+
+.library-map-view .map-canvas {
+  flex: 1 1 auto;
+  height: auto;
+}
+
+.zone-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+}
+
+.zone-note {
+  margin: 0.5rem 0;
+  color: var(--stone);
+}
+
+.library-filter-details {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--rock);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.library-filter-details summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.library-filter-grid {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  padding-top: 0.5rem;
+}
+
+.selection-area {
+  margin-bottom: 0.75rem;
+}
+
+.selection-hint {
+  margin: 0 0 0.5rem;
+  color: var(--stone);
+  font-size: 0.95rem;
+}
+
+.selection-bar,
+.selection-report {
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid var(--rock);
+  border-radius: 4px;
+  background: var(--signal-soft);
+}
+
+.selection-count {
+  margin: 0;
+  font-weight: 700;
+}
+
+.selection-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selection-report p {
+  margin: 0 0 0.25rem;
+}
+
+.dialog-list {
+  margin: 0 0 1rem;
+  padding-inline-start: 1.25rem;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.route-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-card {
+  padding: 0.75rem 1rem 1rem;
+  border: 2px solid var(--rock);
+  border-inline-start-width: 8px;
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.route-card[data-highlighted] {
+  outline: 3px solid var(--signal);
+  outline-offset: 1px;
+}
+
+.route-card[data-selected] {
+  background: var(--signal-soft);
+}
+
+.route-card[data-tone='validated'] {
+  border-inline-start-color: #1f6b3a;
+}
+
+.route-card[data-tone='draft'] {
+  border-inline-start-color: #8a5a00;
+  border-inline-start-style: dashed;
+}
+
+.route-card[data-tone='stale'] {
+  border-inline-start-color: #b3261e;
+}
+
+.route-card[data-tone='archived'] {
+  border-inline-start-color: #5f6b73;
+  border-inline-start-style: dotted;
+}
+
+.route-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+/* Objetivo táctil de 48 px alrededor de la casilla. */
+.route-card-select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  margin: -0.25rem 0 -0.25rem -0.5rem;
+  cursor: pointer;
+}
+
+.route-card-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.route-card-head h2 a {
+  color: var(--rock);
+}
+
+.route-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.status-badge[data-version='validated'] {
+  border-color: #1f6b3a;
+  background: #e3f3e8;
+  color: #124a27;
+}
+
+.status-badge[data-version='draft'] {
+  border-style: dashed;
+  background: var(--signal-soft);
+}
+
+.status-badge[data-stale='true'] {
+  border-color: #b3261e;
+  background: #fbe9e7;
+  color: #7a1913;
+}
+
+.status-badge[data-archived='true'] {
+  border-style: dotted;
+  background: var(--snow);
+  color: var(--stone);
+}
+
+.facts-wide {
+  grid-column: 1 / -1;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.map-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.legend-swatch {
+  inline-size: 1.75rem;
+  block-size: 0;
+  border-top: 4px solid var(--stone);
+}
+
+.legend-swatch[data-tone='validated'] {
+  border-top-color: #1f6b3a;
+}
+
+.legend-swatch[data-tone='draft'] {
+  border-top-color: #8a5a00;
+  border-top-style: dashed;
+}
+
+.legend-swatch[data-tone='stale'] {
+  border-top-color: #b3261e;
+}
+
+.legend-swatch[data-tone='archived'] {
+  border-top-color: #5f6b73;
+  border-top-style: dotted;
+}
+
+.legend-note {
+  margin: 0;
+  color: var(--stone);
+  font-size: 0.9rem;
+}
+
+/* Pantalla ancha: lista a la izquierda y mapa a la derecha, a la vez; las pestañas sobran. */
+@media (min-width: 64rem) {
+  .library-tabs {
+    display: none;
+  }
+
+  .library {
+    grid-template-columns: minmax(20rem, 28rem) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .library[data-view='list'] .library-map,
+  .library[data-view='map'] .library-list {
+    display: flex;
+  }
+
+  .library-list {
+    min-width: 0;
+  }
+
+  .library-map {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .library-map-view {
+    height: calc(100vh - 12rem);
+    height: calc(100dvh - 12rem);
+    min-height: 24rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .legend-swatch {
+    forced-color-adjust: none;
+  }
+}

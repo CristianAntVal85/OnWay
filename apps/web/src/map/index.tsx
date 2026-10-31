@@ -14,4 +14,16 @@ export function MapView(props: MapViewProps) {
   );
 }
 
-export { MAP_LAYERS, type ElevationLookup, type MapFocus, type MapLayerId, type MapMarker, type MapPoint, type MapViewProps, type MarkerKind } from './types.js';
+export {
+  MAP_LAYERS,
+  type ElevationLookup,
+  type MapBounds,
+  type MapFocus,
+  type MapLayerId,
+  type MapMarker,
+  type MapPoint,
+  type MapRoute,
+  type MapRouteTone,
+  type MapViewProps,
+  type MarkerKind,
+} from './types.js';
