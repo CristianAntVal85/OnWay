@@ -19,7 +19,7 @@ type ConfigModule = {
 const config = (await import(/* @vite-ignore */ pathToFileURL(CONFIG).href)) as ConfigModule;
 
 const baseline = new ESLint({ cwd: ROOT, overrideConfigFile: CONFIG });
-/** Igual que la real, pero con una lista permitida (la real está vacía hasta T6). */
+/** Igual que la real, pero con una lista permitida propia. */
 const withAllowedList = (allowed: readonly string[]) =>
   new ESLint({
     cwd: ROOT,
@@ -61,11 +61,16 @@ describe('límite del mapa: apps/web/src fuera de src/map/', () => {
     expect(await rulesBroken(baseline, COMPONENT, "import maplibregl from 'maplibre-gl';\nexport const x = maplibregl;\n")).toHaveLength(1);
   });
 
-  it('una función de @onway/geo no permitida falla en una página (la lista real está vacía hasta T6)', async () => {
-    expect(config.ALLOWED_GEO_IMPORTS).toEqual([]);
-    const problems = await rulesBroken(baseline, PAGE, "import { haversine } from '@onway/geo';\nexport const x = haversine;\n");
-    expect(problems).toHaveLength(1);
-    expect(problems[0]).toMatch(/@onway\/geo/);
+  it('la lista real de @onway/geo es solo lectura y formato de coordenadas, y lo demás falla en una página', async () => {
+    expect(config.ALLOWED_GEO_IMPORTS).toEqual(['parseCoordinates', 'formatCoordinate', 'CoordinateError']);
+    const allowed =
+      "import { parseCoordinates, formatCoordinate, type CoordinateError } from '@onway/geo';\nexport const x = [parseCoordinates, formatCoordinate, undefined as CoordinateError | undefined];\n";
+    expect(await rulesBroken(baseline, PAGE, allowed)).toEqual([]);
+    for (const name of ['haversine', 'roundToCell', 'sunLight', 'toUtm', 'fromUtm', 'formatDms']) {
+      const problems = await rulesBroken(baseline, PAGE, `import { ${name} } from '@onway/geo';\nexport const x = ${name};\n`);
+      expect(problems, name).toHaveLength(1);
+      expect(problems[0]).toMatch(/@onway\/geo/);
+    }
   });
 
   it('con una lista explícita, solo pasan los nombres de la lista', async () => {

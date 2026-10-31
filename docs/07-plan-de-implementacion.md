@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.2 · **Estado:** borrador para revisión · **Fecha:** 30 de octubre de 2026
+**Versión:** 0.3 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -218,7 +218,7 @@ Cada bloque tendrá su propio documento de diseño cuando llegue su turno. Aquí
 | ~~PostGIS real~~ | ~~H0 (primera tarea)~~ | **Resuelto en H0**: 118/118 sobre `postgis/postgis:16-3.4` |
 | Prueba técnica del motor | H3 | Se hace durante H1 y H2; si falla, ver el riesgo de H3 |
 | Q-26 capas de IGN y licencias | v2.1; mejora de H1 | Mapa base abierto y satélite de servicios abiertos |
-| Q-14 el administrador escribe misiones | H1 | No; cambiarlo es una sola constante (`MISSION_WRITERS`) |
+| ~~Q-14 el administrador escribe misiones~~ | ~~H1~~ | **Resuelto (2026-10-31): no.** Cambiarlo es una sola constante (`MISSION_WRITERS`) |
 | Q-31 qué misiones ve el rescatista | H1 | Todas las activas de su organización |
 | Q-32 punto base para el tiempo | H1 | Sin punto base: si deniega la ubicación, se pide elegir un punto |
 | Q-28 dominio | H7 | Desarrollo con Mailpit y sin HTTPS público |
@@ -243,5 +243,6 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.3 | 2026-10-31 | Q-14 resuelta (no): el administrador no escribe misiones (H1-T6; documentos 01 y 02 actualizados) |
 | 0.2 | 2026-10-30 | H0 (sección 3) al día tras construirlo: la demostración lleva una sola organización (decisión D-H0-18), con una cuenta pendiente y rescatistas con perfil incompleto hasta H5; el aislamiento entre organizaciones se demuestra con una organización creada por las pruebas. Riesgos de H0 y «PostGIS real» (sección 6) marcados como resueltos |
 | 0.1 | 2026-10-30 | Primera versión: diez hitos de v1 (H0–H9) con MVP en H0–H4, bosquejo de v2 y v3, definición de terminado común. Cada operación del contrato tiene hito (`milestones.ts`, 74 pruebas) |

@@ -21,6 +21,7 @@ RUN --mount=type=cache,id=onway-pnpm,target=/root/.local/share/pnpm/store \
 
 COPY tsconfig.base.json ./
 COPY packages/contracts packages/contracts
+COPY packages/geo packages/geo
 COPY packages/i18n packages/i18n
 COPY apps/web apps/web
 # Genera el cliente tipado, comprueba los tipos y construye la web.

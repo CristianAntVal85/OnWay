@@ -4,6 +4,7 @@ import { Shell } from '../components/shell';
 import { SkipLink } from '../components/skip-link';
 import { PATHS } from '../nav/navigation';
 import { AccountPage } from '../pages/account-page';
+import { CreateMissionPage } from '../pages/create-mission-page';
 import { HomePage } from '../pages/home-page';
 import { LaterPage } from '../pages/later-page';
 import { LoginPage } from '../pages/login-page';
@@ -43,7 +44,16 @@ export function AppRoutes() {
                 path={PATHS.createMission}
                 element={
                   <RoleGate route="createMission">
-                    <LaterPage section="nav.createMission" />
+                    <CreateMissionPage />
+                  </RoleGate>
+                }
+              />
+              {/* El detalle de la misión llega en T7; hasta entonces «Crear misión» termina aquí. */}
+              <Route
+                path={`${PATHS.missions}/:missionId`}
+                element={
+                  <RoleGate route="missions">
+                    <LaterPage section="nav.missions" />
                   </RoleGate>
                 }
               />

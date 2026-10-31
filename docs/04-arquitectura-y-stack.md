@@ -266,23 +266,26 @@ Los cálculos raster (superficie de coste, pendiente, obstáculos) son más cóm
 
 | Capa | Origen | Cómo se sirve |
 |---|---|---|
-| Carreteras (mapa base) | OpenStreetMap, vía Protomaps | Un archivo PMTiles de los Pirineos en el servidor, servido por Caddy |
-| Satélite | Ortofotos de IGN España (PNOA) e IGN Francia | Servicio de teselas WMTS de cada instituto, desde el navegador |
-| Topográfico | Mapas de IGN España e IGN Francia + curvas de nivel generadas desde el modelo de elevación | Servicios WMTS y capa generada en el navegador |
+| Carreteras (mapa base) | OpenStreetMap, vía Protomaps | Un extracto PMTiles de los Pirineos (lon −2…4, lat 42…44, hasta zoom 14) en el volumen `geodata`, servido por Caddy en `/tiles/` con peticiones por rango, junto con sus fuentes y sprites; estilo de `@protomaps/basemaps` (idioma de la interfaz). Fuera de la caja se ve vacío |
+| Satélite | IGN España (PNOA y Sentinel-2) e IGN Francia (ortofotos) | WMTS desde el navegador. Cada tesela se compone en el navegador (`apps/web/src/map/ign-mix.ts`): se pide a la fuente o fuentes que la tocan, la española debajo y la francesa encima con su blanco puro «sin datos» hecho transparente |
+| Topográfico | Mapa Topográfico Nacional de IGN España y Plan IGN de Francia (con curvas de nivel y sombreado propios) | WMTS desde el navegador, apilados: España debajo y encima franjas de Francia (el Plan IGN responde 404 donde no tiene datos). Las curvas de nivel generadas desde el modelo de elevación son RF-303 (H9) |
 
-La capa que se pide cambia según la zona visible (lado español o francés).
+La capa que se pide cambia según la zona visible. Los límites por país son rectángulos propios (España peninsular y Baleares; Francia en seis franjas de longitud con el borde sur un poco al sur de la frontera): una aproximación nuestra, no un dato de IGN. **Hueco conocido (R-13):** ni PNOA ni IGN Francia cubren Andorra con detalle: allí el satélite cae a la imagen de menor resolución y el topográfico a la de España; la capa de carreteras sí la cubre. Plan B de satélite: otro proveedor en plan gratuito (§9).
 
 ### 8.2 Lo verificado
 
-- **IGN España, PNOA:** servicio `https://www.ign.es/wmts/pnoa-ma`, licencia CC BY 4.0 y acceso público sin limitaciones, sin cuota publicada. La atribución se compone con "Instituto Geográfico Nacional / Centro Nacional de Información Geográfica".
-- **IGN Francia:** servicio `https://data.geopf.fr/wmts`, con acceso público sin condiciones listadas en su ficha. Las bases de ortofotos, Plan IGN y BD TOPO se abrieron bajo Licence Ouverte 2.0 desde enero de 2021.
-- **Protomaps:** el mapa base se distribuye como obra producida bajo ODbL y exige atribución a OpenStreetMap. El planeta completo ocupa unos 120 GB, así que se extrae solo la región con la herramienta `pmtiles extract`. Recomiendan alojar la copia en almacenamiento propio en lugar de enlazar la descarga.
+Capacidades leídas el **2026-10-31** en los `GetCapabilities` oficiales; las teselas se pidieron desde un origen distinto (CORS abierto, `Access-Control-Allow-Origin: *` en los dos).
 
-### 8.3 A verificar *(Q-26)*
+- **IGN España, satélite:** `https://www.ign.es/wmts/pnoa-ma`, capa `OI.OrthoimageCoverage` («Imágenes de satélite Sentinel y ortofotos PNOA»: Sentinel-2 por debajo de 1:70 000 y PNOA por encima), `GoogleMapsCompatible`, niveles 0–20, JPEG, solo KVP. `Fees`: «No se aplican condiciones»; `AccessConstraints`: **CC BY 4.0**. Fuera de España devuelve Sentinel-2 de 10 m (pixelado), no un error.
+- **IGN España, topográfico:** `https://www.ign.es/wmts/mapa-raster`, capa `MTN` («Cartografía del IGN»: MTN 1:50 000, 1:25 000 y alta resolución desde 1,4 m/píxel), mismas condiciones y CC BY 4.0. Fuera de España devuelve una tesela lisa.
+- **IGN Francia (Géoplateforme):** `https://data.geopf.fr/wmts`, `TileMatrixSet` `PM`, sin cuenta ni clave para estas capas: `ORTHOIMAGERY.ORTHOPHOTOS` («Photographies aériennes», 0–19, JPEG) y `GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2` («Plan IGN», 0–19, PNG, con curvas de nivel y sombreado). Condiciones: https://cartes.gouv.fr/cgu (el WMTS público «n'est pas soumis à une limite d'usage»; datos con la Licence Ouverte / Etalab 2.0 salvo licencia específica). **No hay SCAN 25 en abierto** en ese servicio: la capa topográfica francesa es el Plan IGN. Las ortofotos devuelven teselas **completamente blancas** (200, no 404) al otro lado de la frontera, de ahí la composición por tesela del satélite.
+- **Protomaps:** el mapa base se distribuye como obra producida bajo ODbL y exige atribución a OpenStreetMap. El planeta completo ocupa unos 120 GB, así que se extrae solo la región con la herramienta `pmtiles extract` (§9.0). Recomiendan alojar la copia en almacenamiento propio en lugar de enlazar la descarga.
 
-- Qué capas concretas, nombres y formatos ofrecen ambos servicios (se leen en su `GetCapabilities`) y si hay mapas topográficos a escala de montaña en abierto en ambos lados.
-- Si un servicio gratuito tolera el uso previsto sin condiciones de uso razonable. Ninguna ficha publica cuota, pero eso no garantiza que no exista.
-- Si las licencias permiten **pregenerar teselas para uso offline** (v2).
+### 8.3 Pendiente *(Q-26)*
+
+- Resuelta la parte de H1: capas, nombres y condiciones de uso en línea (§8.2). La web declara los dos anfitriones de IGN en un solo módulo (`src/map/ign.ts`) y la CSP de Caddy los repite en `img-src` y `connect-src`; una prueba exige que coincidan.
+- **Abierta:** si las licencias permiten **pregenerar teselas para uso offline** (v2.1). CC BY 4.0 y Licence Ouverte lo permiten en principio, pero las condiciones de uso intensivo de los servicios no se han contrastado.
+- Ninguna ficha publica cuota; el WMTS francés dice no tener límite. No garantiza que no exista uno efectivo para un uso intensivo.
 
 ### 8.4 Modo sin conexión (v2)
 
@@ -290,7 +293,13 @@ Como el mapa base ya es un archivo PMTiles, la descarga de una región consiste 
 
 ### 8.5 Atribuciones
 
-Se muestran siempre en el mapa: OpenStreetMap, IGN España / CNIG, IGN Francia, Open-Meteo, y la cita de Copernicus DEM si se muestra algo derivado.
+Se muestran siempre bajo el mapa, también a 375 px, sin plegar tras un botón (D-H1-17), según la capa activa:
+
+- Carreteras: «Datos © colaboradores de OpenStreetMap (ODbL), mapa base de Protomaps».
+- Satélite: «Imágenes PNOA y Sentinel-2 © Instituto Geográfico Nacional de España / CNIG (CC BY 4.0)» y «© IGN, Géoplateforme (Licence Ouverte 2.0)».
+- Topográfico: «Cartografía © Instituto Geográfico Nacional de España / CNIG (CC BY 4.0)» y «© IGN, Géoplateforme (Licence Ouverte 2.0)».
+- Con altitud derivada del modelo (el personal), la cita de Copernicus DEM GLO-30 (§9.0).
+- Open-Meteo se cita en la tarjeta del tiempo (T9). Las atribuciones son texto sin enlaces: la web no abre ninguna dirección externa (§10).
 
 ---
 
@@ -302,7 +311,7 @@ Es la prueba de la sección 9.1 del documento 03.
 |---|---|---|---|
 | **Open-Meteo** | Pronóstico a la altitud del punto | Gratuito solo no comercial. Hasta 600 llamadas por minuto, 5.000 por hora, 10.000 al día y 300.000 al mes. Datos CC BY 4.0 | Sobrado para el proyecto. Aun así: caché por punto y altitud redondeados, y se agrupan peticiones de la misma celda |
 | **Nominatim** (público) | Dirección a coordenadas | Máximo 1 petición por segundo. Obligatorio identificar la aplicación en User-Agent. Obligatorio cachear resultados. **Prohibido el autocompletado en cliente** | La búsqueda de dirección en Crear misión (vista 5) se lanza **al pulsar buscar**, no al teclear. Caché de resultados en servidor. Si crece el uso: CartoCiudad y BAN |
-| **IGN España / Francia** | Teselas de satélite y topográficas | Sin cuota publicada (ver 8.3) | Atribución visible. Plan B: otro proveedor de satélite en plan gratuito |
+| **IGN España / Francia** | Teselas de satélite y topográficas | Sin cuota publicada en España; el WMTS público francés «no sujeto a límite de uso» (§8.2) | Atribución visible. Plan B: otro proveedor de satélite en plan gratuito |
 | **Copernicus DEM GLO-30** | Elevación | Gratuito, sin cuenta, en archivos descargables. Algunos países no tienen todas las teselas públicas | Se descarga la caja de los Pirineos al servidor. Cero cupo |
 | **Resend** | Correo transaccional (solo recuperar contraseña en v1) | Plan gratuito: 3.000 correos al mes y 100 al día. Para enviar a cualquier destinatario exige verificar un dominio propio | Detrás del puerto `Mailer`. Hasta tener dominio (Q-28) solo llega al propietario de la cuenta, suficiente para desarrollar. Sin notificaciones activas en v1 (doc. 02 §4.1) |
 | **Protomaps / OSM** | Mapa base | ODbL, atribución obligatoria | Archivo propio. Cero cupo |
@@ -432,7 +441,7 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | ID | Pregunta | Quién |
 |---|---|---|
-| Q-26 | Capas, nombres y condiciones reales de los servicios de IGN España y Francia, y si permiten teselas para uso offline | Se verifica con sus capacidades y licencias |
+| Q-26 | ~~Capas, nombres y condiciones reales de los servicios de IGN España y Francia~~ **Resuelta en H1 (§8.2, 2026-10-31).** Abierta solo: si permiten teselas para uso offline (v2.1) | Se verifica con sus capacidades y licencias |
 | Q-27 | ~~Proveedor y plan del servidor~~ **Cerrada:** Hetzner Cloud, UE, 8 GB y 4 vCPU compartidas, techo de 20 €/mes, contratar tras la primera entrega (sección 11.1) | Arquitecto |
 | Q-28 | Dominio propio para HTTPS (necesario para cookies seguras y certificado). Cuesta unos 10–15 € al año. Se compra al contratar el servidor, no antes | Tú, más adelante |
 | Q-29 | ~~Archivos en disco o en almacenamiento tipo S3~~ **Cerrada:** disco del servidor con copia cifrada externa, detrás del puerto `FileStorage`; pasar a S3 es cambiar una implementación | Arquitecto |
@@ -452,7 +461,7 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | Versión | Fecha | Cambios |
 |---|---|---|
-| 0.7 | 2026-10-30 | H1-T5: §5.2 con `WeatherProvider` Open-Meteo, caché por celda y banda, degradación (`stale`/`unavailable`), salud pasiva, redondeo de la ubicación y registro sin consulta; §9.0 con el pronóstico de Open-Meteo y SunCalc; §9.1 con el presupuesto de llamadas. H1-T4: §5.2 con `ElevationProvider` compuesto (GLO-30 local + Open-Meteo) y `GeocodingProvider` Nominatim implementados; §9.0 con las fuentes de `geodata` verificadas (URL oficiales, licencias, atribuciones, tamaños, caja lon −2…4 / lat 42…44) y el rechazo de Nominatim al `User-Agent` con contacto de `example.org` |
+| 0.7 | 2026-10-31 | H1-T6: §8.1 con las tres capas tal como se construyeron (PMTiles propio en `/tiles/`; satélite compuesto por tesela; topográfico apilado), §8.2 con los `GetCapabilities` leídos el 2026-10-31 (capas, formatos, licencias, sin SCAN 25 público francés, teselas blancas de IGN Francia fuera de su país), §8.3 y Q-26 (parte de H1 resuelta), §8.5 con las atribuciones y el hueco de Andorra, CSP con los dos anfitriones de IGN. H1-T5: §5.2 con `WeatherProvider` Open-Meteo, caché por celda y banda, degradación (`stale`/`unavailable`), salud pasiva, redondeo de la ubicación y registro sin consulta; §9.0 con el pronóstico de Open-Meteo y SunCalc; §9.1 con el presupuesto de llamadas. H1-T4: §5.2 con `ElevationProvider` compuesto (GLO-30 local + Open-Meteo) y `GeocodingProvider` Nominatim implementados; §9.0 con las fuentes de `geodata` verificadas (URL oficiales, licencias, atribuciones, tamaños, caja lon −2…4 / lat 42…44) y el rechazo de Nominatim al `User-Agent` con contacto de `example.org` |
 | 0.6 | 2026-10-30 | Cierre de H0: sección 3 con lo realmente elegido (driver `pg`, `react-router`, Prettier, Argon2id de `crypto.argon2` de Node, migrador de Drizzle sobre SQL a mano sin `drizzle-kit`, validación sin `nestjs-zod`, componentes propios, jsdom y Testing Library, Testcontainers 12) y versiones reales. Sección 12: la prueba E2E de H0 |
 | 0.5 | 2026-10-29 | Recuperar contraseña: puerto `Mailer` con Resend (sección 9). Referencias a 01 (v0.7) y 05 (v0.3) |
 | 0.4 | 2026-10-29 | Árbol del repositorio con `db/`. Documento 06 escrito; referencias actualizadas a 01 (v0.6) y 02 (v0.5) |

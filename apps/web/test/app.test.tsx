@@ -132,11 +132,11 @@ describe('acceso (RF-101)', () => {
 });
 
 describe('marco y barra por rol (RF-702)', () => {
-  it('administrador: siete enlaces, con Administración', async () => {
+  it('administrador: seis enlaces, con Administración y sin Crear misión (Q-14 = no)', async () => {
     const { api } = sessionServer({ user: admin() });
     renderApp({ fetch: api.fetch });
     await screen.findByRole('heading', { level: 1, name: es.home.title });
-    expect(navNames()).toEqual([es.nav.home, es.nav.missions, es.nav.createMission, es.nav.routes, es.nav.teams, es.nav.administration, es.nav.account]);
+    expect(navNames()).toEqual([es.nav.home, es.nav.missions, es.nav.routes, es.nav.teams, es.nav.administration, es.nav.account]);
     expect(path()).toBe('/home');
   });
 
@@ -191,6 +191,12 @@ describe('marco y barra por rol (RF-702)', () => {
       expect(api.calls.some((c) => c.path === '/org')).toBe(false);
       view.unmount();
     }
+  });
+
+  it('el administrador que abre /missions/new ve «sin acceso»: no escribe misiones (D-H1-13)', async () => {
+    const { api } = sessionServer({ user: admin() });
+    renderApp({ route: '/missions/new', fetch: api.fetch });
+    expect(await screen.findByRole('heading', { level: 1, name: es.forbidden.title })).toBeTruthy();
   });
 
   it('el coordinador que abre /admin ve «sin acceso»; el administrador sí entra', async () => {

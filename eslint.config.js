@@ -9,11 +9,11 @@ import tseslint from 'typescript-eslint';
 /**
  * Funciones de `@onway/geo` que pueden importar las páginas y los componentes de `apps/web/src/**`
  * fuera de `src/map/`: solo lectura y formato de coordenadas (decimal, grados-minutos-segundos y UTM),
- * nunca geometría de rutas. Vacía hasta T6, que añade las funciones de lectura y formato.
+ * nunca geometría de rutas. T6 añade la lectura de coordenadas y su error; el formato de coordenadas lo usan las páginas para mostrar un punto.
  * Es la única lista: ampliarla es una decisión de diseño, no un arreglo de lint.
  * @type {readonly string[]}
  */
-export const ALLOWED_GEO_IMPORTS = [];
+export const ALLOWED_GEO_IMPORTS = ['parseCoordinates', 'formatCoordinate', 'CoordinateError'];
 
 const MAP_MESSAGE = 'MapLibre, react-map-gl y pmtiles solo se importan desde apps/web/src/map/ (D-H1-07); las páginas pasan datos a ese módulo.';
 const GEO_MESSAGE = 'Las páginas y los componentes solo pueden importar de @onway/geo la lectura y el formato de coordenadas (decimal, GMS y UTM); la geometría vive en packages/geo o en el servidor.';
@@ -75,7 +75,7 @@ export default defineConfig([
     },
   },
   {
-    // Límite del mapa: todo `apps/web/src` salvo el módulo `src/map/` (que no existe hasta T6).
+    // Límite del mapa: todo `apps/web/src` salvo el módulo `src/map/`.
     files: ['apps/web/src/**/*.{ts,tsx}'],
     ignores: ['apps/web/src/map/**'],
     rules: webBoundaryRules(),

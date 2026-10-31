@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { MemberRole } from '@onway/contracts';
 import { es } from '@onway/i18n';
-import { NAV_ITEMS, PATHS, ROUTE_ROLES, canAccess, landingPath, navItemsFor, postLoginPath, routeIdForPath, type RouteId } from '../src/nav/navigation';
+import { NAV_ITEMS, PATHS, missionPath, ROUTE_ROLES, canAccess, landingPath, navItemsFor, postLoginPath, routeIdForPath, type RouteId } from '../src/nav/navigation';
 
 const ROLES = MemberRole.options;
 const ROUTE_IDS = Object.keys(ROUTE_ROLES) as RouteId[];
 const labels = (role: (typeof ROLES)[number]) => navItemsFor(role).map((item) => item.id);
 
 describe('barra de navegación por rol (RF-702, D-H0-20)', () => {
-  it('el administrador ve Inicio, Misiones, Crear misión, Rutas, Equipos, Administración y Cuenta', () => {
-    expect(labels('admin')).toEqual(['home', 'missions', 'createMission', 'routes', 'teams', 'admin', 'account']);
+  it('el administrador ve Inicio, Misiones, Rutas, Equipos, Administración y Cuenta, sin Crear misión (Q-14 = no)', () => {
+    expect(labels('admin')).toEqual(['home', 'missions', 'routes', 'teams', 'admin', 'account']);
   });
 
-  it('el coordinador ve lo mismo salvo Administración', () => {
+  it('el coordinador ve lo mismo, con Crear misión y sin Administración', () => {
     expect(labels('coordinator')).toEqual(['home', 'missions', 'createMission', 'routes', 'teams', 'account']);
   });
 
@@ -48,7 +48,7 @@ describe('cada ruta rechaza los roles no permitidos (RF-103 en interfaz)', () =>
   const matrix: Record<RouteId, string[]> = {
     home: ['admin', 'coordinator'],
     missions: ['admin', 'coordinator', 'rescuer'],
-    createMission: ['admin', 'coordinator'],
+    createMission: ['coordinator'],
     routes: ['admin', 'coordinator'],
     teams: ['admin', 'coordinator'],
     admin: ['admin'],
@@ -63,6 +63,11 @@ describe('cada ruta rechaza los roles no permitidos (RF-103 en interfaz)', () =>
         route,
       ).toEqual(ROLES.filter((role) => matrix[route].includes(role)));
     }
+  });
+
+  it('Crear misión es solo del coordinador: el administrador no escribe misiones (Q-14 = no, D-H1-13)', () => {
+    expect(ROLES.filter((role) => canAccess(role, 'createMission'))).toEqual(['coordinator']);
+    expect(ROLES.filter((role) => labels(role).includes('createMission'))).toEqual(['coordinator']);
   });
 
   it('el rescatista no puede abrir ninguna ruta de personal', () => {
@@ -84,6 +89,7 @@ describe('destinos', () => {
     expect(routeIdForPath('/admin')).toBe('admin');
     expect(routeIdForPath('/missions/')).toBe('missions');
     expect(routeIdForPath('/missions/new')).toBe('createMission');
+    expect(missionPath('abc')).toBe('/missions/abc');
     expect(routeIdForPath('/desconocida')).toBeNull();
     expect(routeIdForPath('/')).toBeNull();
   });

@@ -1,6 +1,10 @@
 // Vista móvil de 375 px (proyecto `mobile`): sin desbordes horizontales y con la barra plegada tras «Menú» (criterio 8 del doc 07 §4).
 import { expect, test } from '@playwright/test';
-import { ACCOUNTS, es, expectNoHorizontalOverflow, login, navLabels, openMenuIfCollapsed } from './support/app';
+import { ACCOUNTS, es, expectNoHorizontalOverflow, login, navLabels, openMenuIfCollapsed, stubMapTiles } from './support/app';
+
+test.beforeEach(async ({ page }) => {
+  await stubMapTiles(page);
+});
 
 test('the viewport is the 375 px phone', async ({ page }) => {
   expect(page.viewportSize()?.width).toBe(375);
@@ -19,8 +23,8 @@ test('login screen fits the screen, also in French and with an error showing', a
 });
 
 for (const [role, account, paths] of [
-  ['administrator', ACCOUNTS.admin, ['/home', '/missions', '/missions/new', '/routes', '/teams', '/admin', '/account']],
-  ['coordinator', ACCOUNTS.coordinator, ['/home', '/missions', '/teams', '/account']],
+  ['administrator', ACCOUNTS.admin, ['/home', '/missions', '/routes', '/teams', '/admin', '/account']],
+  ['coordinator', ACCOUNTS.coordinator, ['/home', '/missions', '/missions/new', '/teams', '/account']],
   ['rescuer', ACCOUNTS.rescuer, ['/profile', '/missions', '/account', '/admin']],
 ] as const) {
   test(`${role}: every view fits the screen and the menu works by touch`, async ({ page }) => {

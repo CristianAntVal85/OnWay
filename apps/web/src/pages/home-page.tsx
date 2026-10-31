@@ -2,17 +2,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
+import { countryName } from '../i18n/country-name';
 import { ROLE_LABEL_KEYS } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { useCurrentUser } from '../session/session';
-
-function countryName(code: string, locale: string): string {
-  try {
-    return new Intl.DisplayNames([locale], { type: 'region' }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
 
 /** Inicio provisional (H0): la organización de la sesión. El inicio informativo (RF-701) llega en H1. */
 export function HomePage() {

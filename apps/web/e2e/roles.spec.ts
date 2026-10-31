@@ -19,7 +19,8 @@ test('administrator, coordinator and rescuer each see their own menu', async ({ 
     await context.close();
   }
 
-  expect(bars.admin).toEqual([nav.home, nav.missions, nav.createMission, nav.routes, nav.teams, nav.administration, nav.account]);
+  // Q-14 = no: el administrador no escribe misiones, así que no tiene «Crear misión».
+  expect(bars.admin).toEqual([nav.home, nav.missions, nav.routes, nav.teams, nav.administration, nav.account]);
   expect(bars.coordinator).toEqual([nav.home, nav.missions, nav.createMission, nav.routes, nav.teams, nav.account]);
   expect(bars.rescuer).toEqual([nav.missions, nav.myProfile, nav.account]);
   // Las tres barras son distintas entre sí.

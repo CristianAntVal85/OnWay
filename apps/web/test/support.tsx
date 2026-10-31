@@ -66,7 +66,7 @@ export const pending = () => sessionUser({ email: 'pendiente@example.org', displ
 export const org = () => ({ id: '22222222-2222-4222-8222-222222222222', name: 'Servicio de Rescate Valle Demo', country: 'ES', config: { validationMaxAgeDays: 90, maxUploadBytes: 10_485_760 } });
 
 /** Servidor simulado con una sesión que las pruebas pueden cambiar: `state.user` = quién está dentro; `state.expired` = cookie caducada. */
-export function sessionServer(initial: { user?: SessionUser | null; expired?: boolean } = {}) {
+export function sessionServer(initial: { user?: SessionUser | null; expired?: boolean } = {}, extra: Record<string, Handler> = {}) {
   const state = { user: initial.user ?? null, expired: initial.expired ?? false, password: 'OnWay-demo-ficticia-2026', accounts: new Map<string, SessionUser>() };
   const api = fakeApi({
     'GET /auth/me': () => {
@@ -88,6 +88,7 @@ export function sessionServer(initial: { user?: SessionUser | null; expired?: bo
       return json(204, null);
     },
     'GET /org': () => (state.user?.role ? json(200, org()) : apiError(403, 'ACCOUNT_PENDING')),
+    ...extra,
   });
   return { state, api };
 }
