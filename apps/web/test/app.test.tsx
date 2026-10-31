@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { es, fr } from '@onway/i18n';
 import { admin, apiError, fakeApi, pending, renderApp, rescuer, sessionServer, sessionUser } from './support';
 
@@ -79,7 +79,7 @@ describe('acceso (RF-101)', () => {
     await user.tab();
     await user.type(document.activeElement as HTMLElement, `${PASSWORD}{Enter}`);
     expect(await screen.findByRole('heading', { level: 1, name: es.home.title })).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole('main'));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('main'))); // el foco pasa al contenido en un efecto, tras pintar el título
   });
 
   it('orden de tabulación del acceso: saltar al contenido, correo, contraseña, entrar, idioma', async () => {
@@ -221,6 +221,7 @@ describe('marco y barra por rol (RF-702)', () => {
     const { api } = sessionServer({ user: sessionUser() });
     const { user } = renderApp({ fetch: api.fetch });
     const button = await screen.findByRole('button', { name: es.nav.menu });
+    await act(async () => {}); // el marco cierra el menú al llegar, en un efecto: se espera a que termine antes de pulsar
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(button.getAttribute('aria-controls')).toBe(screen.getByRole('navigation').id);
     await user.click(button);
@@ -236,7 +237,7 @@ describe('marco y barra por rol (RF-702)', () => {
     await screen.findByRole('heading', { level: 1, name: es.home.title });
     await user.click(within(screen.getByRole('navigation')).getByRole('link', { name: es.nav.teams }));
     await screen.findByRole('heading', { level: 1, name: es.nav.teams });
-    expect(document.activeElement).toBe(screen.getByRole('main'));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('main'))); // el foco pasa al contenido en un efecto, tras pintar el título
   });
 
   it('«saltar al contenido» apunta al contenido principal', async () => {
