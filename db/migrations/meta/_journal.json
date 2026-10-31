@@ -57,6 +57,20 @@
       "when": 1762387200000,
       "tag": "0009_password_resets",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1762473600000,
+      "tag": "0010_audit_mission_staff",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1762560000000,
+      "tag": "0011_missions_coordinator_only",
+      "breakpoints": true
     }
   ]
 }

@@ -1,16 +1,24 @@
-// Drizzle schema of the tables H0 reads. The SQL migrations (db/migrations) are the source of truth;
+// Drizzle schema of the tables the API reads and writes (H0, plus the mission tables from H1). The SQL migrations (db/migrations) are the source of truth;
 // test/api/schema.test.ts compares this file with information_schema so they cannot drift apart.
-import { boolean, char, customType, integer, pgEnum, pgTable, primaryKey, smallint, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import { bigint, boolean, char, customType, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 
 const citext = customType<{ data: string }>({ dataType: () => 'citext' });
 const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' });
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true });
+/**
+ * `geometry(PointZ, 4326)`. Its value is never read or written through Drizzle: the queries build it with
+ * `ST_MakePoint` and read it back with `ST_X/ST_Y/ST_Z` in their own SQL, so a column here only gives the name and the type.
+ */
+const pointZ = customType<{ data: string }>({ dataType: () => 'geometry(PointZ,4326)' });
 
 export const accountStatus = pgEnum('account_status', ['pending', 'active', 'rejected', 'disabled']);
 export const memberRole = pgEnum('member_role', ['coordinator', 'rescuer', 'admin']);
 export const memberStatus = pgEnum('member_status', ['active', 'disabled']);
 export const profileStatus = pgEnum('profile_status', ['incomplete', 'complete', 'deleted']);
 export const teamStatus = pgEnum('team_status', ['active', 'archived']);
+export const missionStatus = pgEnum('mission_status', ['planning', 'active', 'closed']);
+export const pointKind = pgEnum('point_kind', ['origin', 'waypoint', 'rendezvous']);
+export const targetSource = pgEnum('target_source', ['coordinates', 'map', 'address']);
 
 export const organizations = pgTable('organizations', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -93,6 +101,48 @@ export const teamMembers = pgTable(
   (t) => [primaryKey({ columns: [t.teamId, t.userId] })],
 );
 
-export const enums = { accountStatus, memberRole, memberStatus, profileStatus, teamStatus };
+export const missions = pgTable('missions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  coordinatorId: uuid('coordinator_id').notNull(),
+  status: missionStatus('status').notNull().default('planning'),
+  target: pointZ('target').notNull(),
+  targetLabel: text('target_label'),
+  targetCountry: char('target_country', { length: 2 }),
+  targetSource: targetSource('target_source').notNull(),
+  createdBy: uuid('created_by').notNull(),
+  createdAt: timestamptz('created_at').notNull().defaultNow(),
+  updatedAt: timestamptz('updated_at').notNull().defaultNow(),
+  activatedAt: timestamptz('activated_at'),
+  closedAt: timestamptz('closed_at'),
+});
 
-export const schema = { organizations, users, sessions, memberships, rescuerProfiles, teams, teamMembers };
+export const missionPoints = pgTable('mission_points', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull(),
+  missionId: uuid('mission_id').notNull(),
+  kind: pointKind('kind').notNull(),
+  name: text('name').notNull(),
+  note: text('note'),
+  geom: pointZ('geom').notNull(),
+  position: integer('position').notNull().default(0),
+  createdAt: timestamptz('created_at').notNull().defaultNow(),
+});
+
+export const auditLog = pgTable('audit_log', {
+  id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
+  organizationId: uuid('organization_id').notNull(),
+  entityType: text('entity_type').notNull(),
+  entityId: uuid('entity_id'),
+  action: text('action').notNull(),
+  actorUserId: uuid('actor_user_id'),
+  subjectUserId: uuid('subject_user_id'),
+  occurredAt: timestamptz('occurred_at').notNull().defaultNow(),
+  detail: jsonb('detail').notNull().default({}),
+});
+
+export const enums = { accountStatus, memberRole, memberStatus, profileStatus, teamStatus, missionStatus, pointKind, targetSource };
+
+export const schema = { organizations, users, sessions, memberships, rescuerProfiles, teams, teamMembers, missions, missionPoints, auditLog };

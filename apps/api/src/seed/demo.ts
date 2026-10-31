@@ -26,6 +26,25 @@ const DemoTeam = z.strictObject({
   members: z.array(Key),
 });
 
+const DemoPoint = z.strictObject({
+  kind: z.enum(['origin', 'waypoint', 'rendezvous']),
+  name: z.string().trim().min(1).max(120),
+  note: z.string().trim().min(1).max(500).optional(),
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+});
+
+/** A made-up mission (P4 b). Altitudes are not in the file: the seed asks the configured `ElevationProvider`, as the API does (RN-07). */
+const DemoMission = z.strictObject({
+  name: z.string().trim().min(3).max(120),
+  description: z.string().trim().min(1).max(2000).optional(),
+  status: z.enum(['planning', 'active', 'closed']),
+  /** Key of a coordinator of `members`. */
+  coordinator: Key,
+  target: z.strictObject({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180), label: z.string().trim().min(1).max(200).optional() }),
+  points: z.array(DemoPoint),
+});
+
 /**
  * `data/seed/demo.json` (D-H0-17, D-H0-18). It holds no hash and no secret: the single fictitious demo password is
  * public on purpose (data/seed/README.md) and is hashed with Argon2id when the seed runs.
@@ -38,6 +57,7 @@ export const Demo = z
     members: z.array(DemoMember).min(1),
     applicants: z.array(DemoApplicant),
     teams: z.array(DemoTeam),
+    missions: z.array(DemoMission).default([]),
   })
   .superRefine((demo, ctx) => {
     const keys = new Set<string>();
@@ -54,6 +74,15 @@ export const Demo = z
         if (!rescuers.has(member)) ctx.addIssue({ code: 'custom', message: `team member ${member} is not a rescuer of the demo`, path: ['teams', index, 'members'] });
       }
       if (new Set(team.members).size !== team.members.length) ctx.addIssue({ code: 'custom', message: 'a rescuer is listed twice in a team', path: ['teams', index, 'members'] });
+    }
+    const coordinators = new Set(demo.members.filter((m) => m.role === 'coordinator').map((m) => m.key));
+    const names = new Set<string>();
+    for (const [index, mission] of demo.missions.entries()) {
+      if (!coordinators.has(mission.coordinator))
+        ctx.addIssue({ code: 'custom', message: `mission coordinator ${mission.coordinator} is not a coordinator of the demo`, path: ['missions', index, 'coordinator'] });
+      // Same rule as the unique index of open missions, applied to the whole file so that re-seeding never depends on the state.
+      if (names.has(mission.name.toLowerCase())) ctx.addIssue({ code: 'custom', message: `duplicate mission name ${mission.name}`, path: ['missions', index, 'name'] });
+      names.add(mission.name.toLowerCase());
     }
   });
 export type Demo = z.infer<typeof Demo>;

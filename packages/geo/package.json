@@ -19,5 +19,8 @@
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0",
     "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "suncalc": "^2.1.1"
   }
 }

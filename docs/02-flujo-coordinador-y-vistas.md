@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 0.5 (borrador) · Fecha: 2026-10-29 · Depende de: documento 01 (v0.6)
+Versión: 0.6 (borrador) · Fecha: 2026-10-31 · Depende de: documento 01 (v0.9)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -48,14 +48,14 @@ Barra de navegación principal, visible en todas las vistas tras el login.
 |---|---|---|---|
 | Inicio | Sí | Sí | Sí (versión reducida) |
 | Misiones | Sí | Sí | Sí (solo activas y cerradas) |
-| Crear misión | Sí *(propuesto)* | Sí | No |
+| Crear misión | No (Q-14) | Sí | No |
 | Rutas (biblioteca) | Sí *(propuesto)* | Sí | No (Q-17) |
 | Equipos | Sí *(propuesto)* | Sí *(propuesto)* | No |
 | Administración | Sí | No | No |
 | Mi perfil | No aplica | No aplica | Sí |
 | Cuenta (idioma, cerrar sesión) | Sí | Sí | Sí |
 
-Rutas aparece como enlace porque la biblioteca es independiente de las misiones. Equipos, porque la lista de equipos "ya formados" tiene que gestionarse en algún sitio (Q-12). Mi perfil, porque el rescatista mantiene sus datos, habilidades e historial. Administración, porque alguien tiene que aprobar cuentas y custodiar los datos sensibles (D-25).
+El administrador no tiene «Crear misión» porque no escribe misiones (Q-14 resuelta: no, 2026-10-31); ve Misiones y el detalle en solo lectura. Rutas aparece como enlace porque la biblioteca es independiente de las misiones. Equipos, porque la lista de equipos "ya formados" tiene que gestionarse en algún sitio (Q-12). Mi perfil, porque el rescatista mantiene sus datos, habilidades e historial. Administración, porque alguien tiene que aprobar cuentas y custodiar los datos sensibles (D-25).
 
 En el boceto del rescatista (14) la barra tiene solo Misiones y Mi perfil.
 
@@ -95,7 +95,7 @@ Boceto 3. Vista informativa. No se edita nada desde aquí (RF-701). El criterio 
 | Luz y luna | Amanecer, atardecer, crepúsculos, fase lunar con porcentaje de iluminación, salida y puesta de la luna, de la misma ubicación | Should (RF-705) |
 | Boletines oficiales | Enlaces a la predicción de montaña de AEMET y Météo-France y, en temporada, a los boletines de aludes, según la zona mostrada | Could (RF-706) |
 | Mapa | Posición del dispositivo y objetivos de las misiones activas, con la misión elegida resaltada | Could (RF-707) |
-| Acceso rápido a Crear misión | Botón destacado | Must |
+| Acceso rápido a Crear misión | Botón destacado (solo coordinador) | Must |
 
 - **Por qué a la altitud del punto:** los modelos meteorológicos suavizan el relieve. Una previsión a nivel de valle puede errar varios grados en una cima (R-06). Es lo que distingue una previsión de montaña de una de ciudad.
 - **Proveedores:** Open-Meteo como principal y Meteoblue como alternativa, ambos con planes gratuitos no comerciales (D-18). Los datos se guardan en caché por punto y altitud redondeados, por los cupos gratuitos (R-09).
@@ -372,7 +372,7 @@ Boceto 13. Vista solo para el administrador de organización (RF-106, RF-813).
 
 **Código de invitación** *(propuesto)*: el administrador consulta y regenera el código que usan los rescatistas al registrarse.
 
-El administrador no edita misiones por defecto (Q-14).
+El administrador no escribe misiones (Q-14 resuelta: no); las lee, sin acciones de escritura.
 
 ## 4. Subflujos desde el detalle de misión
 
@@ -519,13 +519,13 @@ Un rescatista con perfil *Incompleto* no puede ofrecerse a misiones (RN-20). En 
 | Ver Inicio | Sí | Sí | Sí (reducido) |
 | Ver misiones activas | Sí | Sí | Sí |
 | Ver misiones en planificación | Sí | Sí | No *(propuesto, Q-16)* |
-| Crear misión | Sí *(propuesto, Q-14)* | Sí | No |
-| Editar datos de misión | Q-14 | Sí (Q-10) | No |
-| Activar, cerrar o reabrir misión | Q-14 | Sí | No |
-| Confirmar la participación al cerrar | Q-14 | Sí | No |
-| Añadir equipos y rescatistas | Q-14 | Sí | No |
+| Crear misión | No | Sí | No |
+| Editar datos de misión | No | Sí (Q-10) | No |
+| Activar, cerrar o reabrir misión | No | Sí | No |
+| Confirmar la participación al cerrar | No | Sí | No |
+| Añadir equipos y rescatistas | No | Sí | No |
 | Ofrecerse o retirar su oferta | No aplica | No aplica | Sí, solo a sí mismo, solo en misiones activas, con el perfil completo |
-| Aceptar, rechazar o quitar voluntarios | Q-14 | Sí | No |
+| Aceptar, rechazar o quitar voluntarios | No | Sí | No |
 | Ver lista de voluntarios y participantes | Sí | Sí | No |
 | Ver ficha del voluntario (habilidades, teléfono, correo) | Sí | Sí, de quienes se ofrecieron o añadió a sus misiones *(propuesto)* | No |
 | Abrir un certificado | Sí, con registro | Sí, con registro *(propuesto)* | Solo los propios |
@@ -533,12 +533,12 @@ Un rescatista con perfil *Incompleto* no puede ofrecerse a misiones (RN-20). En 
 | Ver documento de identidad y dirección de un rescatista | Sí, con registro | **No** | Solo los propios |
 | Editar el propio perfil, habilidades y datos | No aplica | No aplica | Sí |
 | Solicitar la eliminación de los propios datos | No aplica | No aplica | Sí |
-| Añadir puntos | Q-14 | Sí | No |
+| Añadir puntos | No | Sí | No |
 | Ver la biblioteca de rutas | Sí | Sí | No (Q-17) |
-| Generar, importar, dibujar, adaptar y editar rutas | Q-14 | Sí | No |
-| Validar versiones de ruta | Q-14 | Sí | No |
-| Añadir, quitar o cambiar la versión de una ruta en una misión | Q-14 | Sí | No |
-| Marcar una ruta no disponible en una misión | Q-14 | Sí | No |
+| Generar, importar, dibujar, adaptar y editar rutas | No | Sí | No |
+| Validar versiones de ruta | No | Sí | No |
+| Añadir, quitar o cambiar la versión de una ruta en una misión | No | Sí | No |
+| Marcar una ruta no disponible en una misión | No | Sí | No |
 | Ver rutas o versiones en borrador | Sí | Sí | No |
 | Ver rutas validadas de una misión activa | Sí | Sí | Sí |
 | Exportar rutas | Sí | Sí | Sí, solo validadas de misiones activas |
@@ -548,7 +548,7 @@ Un rescatista con perfil *Incompleto* no puede ofrecerse a misiones (RN-20). En 
 | Gestionar usuarios (rol, desactivar) | Sí | No | No |
 | Ver el registro de accesos a datos sensibles | Sí | No | Solo los accesos a los propios *(propuesto)* |
 
-Todas estas comprobaciones se aplican en el servidor (RF-103), no solo ocultando botones. Esto incluye los datos sensibles: la API de listados no los devuelve nunca (RN-21). Las celdas "Q-14" dependen de si el administrador puede además trabajar con misiones o solo gestiona usuarios y datos.
+Todas estas comprobaciones se aplican en el servidor (RF-103), no solo ocultando botones. Esto incluye los datos sensibles: la API de listados no los devuelve nunca (RN-21). Q-14 está resuelta (no): el administrador lee misiones y rutas, y solo gestiona usuarios y datos; no las escribe.
 
 ## 7. Flujo del rescatista (resumen)
 
@@ -630,7 +630,7 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 - **Q-10** Si todos los coordinadores pueden editar una misión o solo el responsable.
 - **Q-12** Quién gestiona los equipos.
 - **Q-13** Prioridad del inicio y proveedor meteorológico.
-- **Q-14** Si el administrador también trabaja con misiones y rutas, o solo gestiona usuarios y datos.
+- ~~**Q-14** Si el administrador también trabaja con misiones y rutas, o solo gestiona usuarios y datos.~~ **Resuelta (2026-10-31): no.** El administrador no escribe misiones.
 - **Q-16** Visibilidad de las misiones en planificación para los rescatistas.
 - **Q-17** Si los rescatistas pueden consultar la biblioteca.
 - **Q-21** Etiquetas de rutas.
@@ -640,6 +640,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**0.6 (2026-10-31)**
+- Q-14 resuelta (no): el administrador no escribe misiones. §2: sin «Crear misión» en su barra. §6: sus celdas «Q-14» pasan a «No». §3.2, §3.10 y §11 al día (H1-T6).
 
 **0.5 (2026-10-29)**
 - Solicitudes de alta (3.10): se retiran las columnas «Equipo indicado» y «Datos completos» del boceto 13 (Q-34).

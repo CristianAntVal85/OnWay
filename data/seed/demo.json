@@ -19,5 +19,35 @@
     { "name": "Grupo Ribagorza", "locality": "Benasque", "members": ["rescuer-3", "rescuer-5"] },
     { "name": "Equipo Ordesa", "locality": "Torla", "members": ["rescuer-4", "rescuer-5"] },
     { "name": "Grupo Alto Gállego", "locality": "Sabiñánigo", "members": ["rescuer-6"] }
+  ],
+  "missions": [
+    {
+      "name": "Simulacro ficticio · Circo de Piedrafita",
+      "description": "Ejercicio inventado en planificación: aún no hay nada que ver para el rescatista.",
+      "status": "planning",
+      "coordinator": "coordinator-es",
+      "target": { "lat": 42.7897, "lon": -0.2814, "label": "Cima ficticia de Piedrafita" },
+      "points": []
+    },
+    {
+      "name": "Simulacro ficticio · Valle de Ordesa",
+      "description": "Ejercicio inventado en curso, con un origen, un punto intermedio y un punto de reunión.",
+      "status": "active",
+      "coordinator": "coordinator-es",
+      "target": { "lat": 42.6788, "lon": 0.0153, "label": "Brecha ficticia del Cilindro" },
+      "points": [
+        { "kind": "origin", "name": "Origen ficticio · Pradera de Ordesa", "note": "Aparcamiento inventado.", "lat": 42.6481, "lon": -0.0405 },
+        { "kind": "waypoint", "name": "Intermedio ficticio · Refugio", "lat": 42.664, "lon": 0.005 },
+        { "kind": "rendezvous", "name": "Reunión ficticia · Torla", "note": "Plaza inventada.", "lat": 42.6297, "lon": -0.1 }
+      ]
+    },
+    {
+      "name": "Simulacro ficticio · Maladeta",
+      "description": "Ejercicio inventado ya terminado (misión cerrada, sin participantes hasta H6).",
+      "status": "closed",
+      "coordinator": "coordinator-fr",
+      "target": { "lat": 42.633, "lon": 0.642, "label": "Collado ficticio de la Maladeta" },
+      "points": []
+    }
   ]
 }

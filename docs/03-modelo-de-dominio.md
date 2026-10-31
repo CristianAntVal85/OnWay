@@ -1,6 +1,6 @@
 # OnWay — Documento 03: Modelo de dominio y flujos clave
 
-Versión: 0.4 (borrador) · Fecha: 2026-10-30 · Depende de: documentos 01 (v0.7) y 02 (v0.5)
+Versión: 0.5 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7) y 02 (v0.5)
 
 Este documento traduce los requisitos y las vistas en un modelo conceptual: qué cosas existen en el sistema, cómo se relacionan, qué reglas deben cumplirse siempre y cómo fluyen los datos en los procesos clave. No fija tecnologías ni tablas: la arquitectura está en el documento 04 y el modelo de datos será el documento 05. Los IDs RF, RN, D y Q remiten al documento 01.
 
@@ -210,7 +210,7 @@ Condiciones que el sistema debe garantizar siempre, independientemente de la int
 |---|---|---|
 | INV-01 | Ninguna consulta ni escritura cruza organizaciones | RN-01, RN-17 |
 | INV-02 | Una misión siempre tiene organización, coordinador responsable y objetivo | RN-07, RN-11 |
-| INV-03 | El coordinador responsable pertenece a la organización de la misión y tiene rol de coordinador | RN-11 |
+| INV-03 | El coordinador responsable pertenece a la organización de la misión y tiene rol de coordinador (nunca de administrador: Q-14 = no). Lo comprueba el servidor y también un disparador de la base | RN-11 |
 | INV-04 | Una versión de ruta guardada no cambia | RN-12 |
 | INV-05 | Solo una versión validada es visible para un rescatista, y solo la fijada por la misión | RN-03, RN-13 |
 | INV-06 | Una ruta en una misión referencia una versión de esa misma ruta | RN-13 |
@@ -550,13 +550,13 @@ Centralizadas en el documento 01, sección 9. Las que condicionan el modelo son:
 - **Q-05** Dónde se guardan las zonas a evitar y quién las ve.
 - **Q-10** Quién puede editar una misión.
 - **Q-12** Quién gestiona los equipos.
-- **Q-14** Si el administrador también trabaja con misiones, o solo con usuarios y datos.
+- ~~**Q-14** Si el administrador también trabaja con misiones, o solo con usuarios y datos.~~ **Resuelta (2026-10-31): no.** El administrador no escribe misiones ni lo que cuelga de ellas (puntos, participaciones, rutas en la misión, rutas y zonas a evitar); las lee. Escriben solo los coordinadores, y el responsable de una misión no puede ser un administrador (INV-03). Lo decide el servidor y también la base de datos (migración 0011, documento 05 §6.3).
 - **Q-17** Si los rescatistas ven la biblioteca.
 - **Q-21** Etiquetas de rutas.
 - **Q-31** Qué misiones ve el rescatista y qué avisos recibe.
 - **Q-32** Alternativa si se deniega la ubicación del dispositivo.
 
-Resueltas: Q-22, Q-23, Q-24 y Q-25.
+Resueltas: Q-14, Q-22, Q-23, Q-24 y Q-25.
 
 ## 17. Siguiente documento
 
@@ -573,6 +573,9 @@ La arquitectura y el stack están en el documento 04, el modelo de datos en el 0
 Consultadas el 29 de octubre de 2026. Las condiciones y precios de terceros pueden cambiar. Hay que confirmarlas directamente con cada proveedor antes de publicar la demo.
 
 ## 19. Registro de cambios
+
+**0.5 (2026-10-31)**
+- Q-14 resuelta (no): el administrador no escribe misiones; solo los coordinadores. INV-03 precisa que el responsable nunca es un administrador y que lo comprueba también la base de datos (documento 05, migración 0011). Sin cambios en el modelo ni en lo que ve cada rol.
 
 **0.4 (2026-10-30)**
 - El perfil de rescatista pasa de una entidad a tres: **Perfil** (nombre y estado), **Contacto** (teléfono) y **Datos sensibles** (documento y dirección), como ya estaba en el modelo de datos (documento 05, DB-09). Nueva invariante INV-32. Sin cambios en lo que ve cada rol.

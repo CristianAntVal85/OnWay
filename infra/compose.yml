@@ -1,9 +1,12 @@
 # Pila local completa (doc 04 §11.2, D-H0-16). Se arranca desde la raíz: `docker compose up --wait`.
 #
-# Orden: secrets -> db -> migrate -> seed -> api -> web. Cada paso espera al anterior.
+# Orden: secrets -> db -> migrate -> seed -> api -> web. Cada paso espera al anterior; `geodata` corre aparte y `seed` lo espera.
 #   secrets  genera al azar, solo la primera vez, las contraseñas y el secreto CSRF (volumen `secrets`).
+#   geodata  un solo uso: la primera vez descarga a su volumen el DEM Copernicus GLO-30 (~466 MB) y un extracto PMTiles de los
+#            Pirineos con sus fuentes y sprites (H1, P2); las siguientes no descarga nada. Si algo falla, avisa y la pila
+#            arranca igual (sin mapa base o con OUTSIDE_COVERAGE). Es lo único que sale a Internet al arrancar.
 #   db       PostgreSQL 16 + PostGIS; el primer arranque aplica la 0001 y los roles como superusuario.
-#   migrate  migraciones 0002-0009 como onway_owner.
+#   migrate  migraciones 0002-0011 como onway_owner.
 #   seed     datos de demostración ficticios (R-10), idempotente.
 #   api      NestJS como onway_app (se niega a arrancar con un rol que salte la seguridad por filas).
 #   web      Caddy: sirve la web y hace de proxy de /api. Único puerto publicado: 127.0.0.1:8080.
@@ -97,16 +100,36 @@ services:
       db:
         condition: service_healthy
 
+  geodata:
+    <<: *hardened
+    build:
+      context: ..
+      dockerfile: infra/docker/geodata.Dockerfile
+    image: onway/geodata:local
+    read_only: true
+    restart: 'no'
+    mem_limit: 256m
+    # Necesita salir a Internet (copernicus-dem-30m.s3.amazonaws.com, build.protomaps.com, github.com).
+    networks: [edge]
+    tmpfs:
+      - /tmp
+    volumes:
+      - geodata:/geodata
+
   seed:
     <<: *node-job
     command: ['node', 'dist/src/cli/seed.js']
     environment:
       <<: *db-env
       DB_OWNER_PASSWORD_FILE: /run/onway/owner/password
+      ELEVATION_DEM_DIR: /geodata/dem
     volumes:
       - { type: volume, source: secrets, target: /run/onway/owner, read_only: true, volume: { subpath: owner } }
+      - geodata:/geodata:ro
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      geodata:
         condition: service_completed_successfully
 
   api:
@@ -125,9 +148,16 @@ services:
       NODE_OPTIONS: --max-old-space-size=384
       DB_APP_PASSWORD_FILE: /run/onway/app/password
       CSRF_SECRET_FILE: /run/onway/csrf/secret
+      # Altitud: teselas GLO-30 locales y, fuera de ellas, Open-Meteo. Dirección: Nominatim. Las URL y el contacto se pueden cambiar (D-H1-15).
+      ELEVATION_DEM_DIR: /geodata/dem
+      OPEN_METEO_ELEVATION_URL: ${OPEN_METEO_ELEVATION_URL:-https://api.open-meteo.com/v1/elevation}
+      OPEN_METEO_FORECAST_URL: ${OPEN_METEO_FORECAST_URL:-https://api.open-meteo.com/v1/forecast}
+      NOMINATIM_URL: ${NOMINATIM_URL:-https://nominatim.openstreetmap.org/search}
+      NOMINATIM_CONTACT: ${NOMINATIM_CONTACT:-}
     volumes:
       - { type: volume, source: secrets, target: /run/onway/app, read_only: true, volume: { subpath: app } }
       - { type: volume, source: secrets, target: /run/onway/csrf, read_only: true, volume: { subpath: csrf } }
+      - geodata:/geodata:ro
     depends_on:
       seed:
         condition: service_completed_successfully
@@ -156,6 +186,9 @@ services:
     networks: [edge]
     tmpfs:
       - /tmp
+    volumes:
+      # Extracto PMTiles, fuentes y sprites (/geodata/basemap); el Caddyfile los sirve desde T6.
+      - geodata:/geodata:ro
     ports:
       # Solo tu equipo (HTTP, contraseña de demostración pública). `ONWAY_HTTP_BIND`/`ONWAY_HTTP_PORT` en .env.example.
       - '${ONWAY_HTTP_BIND:-127.0.0.1}:${ONWAY_HTTP_PORT:-8080}:8080'
@@ -179,3 +212,5 @@ networks:
 volumes:
   secrets: {}
   db-data: {}
+  # DEM y mapa base descargados por `geodata`. Se puede borrar sola (`docker volume rm onway_geodata`): se vuelve a descargar.
+  geodata: {}

@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 0.8 (borrador) · Fecha: 2026-10-30 · Estado: pendiente de revisión por el propietario del producto
+Versión: 0.9 (borrador) · Fecha: 2026-10-31 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -491,7 +491,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - **Q-10** ¿Pueden editar una misión todos los coordinadores de la organización, o solo su coordinador responsable?
 - **Q-12** ¿Quién puede crear y gestionar equipos y sus miembros: los coordinadores, el administrador de organización, el propio rescatista al elegir su equipo, o varios?
 - **Q-13** ¿Qué prioridad tiene cada elemento del inicio? ¿Aceptas Open-Meteo como proveedor meteorológico principal con Meteoblue como alternativa (D-18)?
-- **Q-14** ¿Puede el administrador de organización ver y editar misiones, o solo gestionar usuarios, equipos y datos sensibles?
+- ~~**Q-14** ¿Puede el administrador de organización ver y editar misiones, o solo gestionar usuarios, equipos y datos sensibles?~~ **Resuelta (2026-10-31): no.** El administrador lee las misiones pero no las escribe (ni crea, ni edita, ni activa, ni cierra); gestiona usuarios, equipos y datos sensibles. Lo escribe solo el coordinador (`MISSION_WRITERS`, y también las políticas de la base de datos: migración 0011).
 - **Q-15** Para informar a otras organizaciones (D-08), ¿qué formato necesitas: ficha en PDF, enlace de solo lectura, o basta con exportar las rutas?
 - **Q-16** Una misión *En planificación*, ¿solo la ven los coordinadores? ¿Los rescatistas solo pueden ofrecerse cuando está *Activa*?
 - **Q-17** ¿Pueden los rescatistas consultar la biblioteca de rutas, o solo ven las rutas de las misiones activas?
@@ -547,6 +547,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**0.9 (2026-10-31)**
+- Resuelta Q-14: el administrador no escribe misiones (H1-T6). Su barra de navegación pierde «Crear misión» (documento 02, §2 y §6). Cambiarlo ya no es una sola constante: el servidor (`MISSION_WRITERS`) y la base de datos (migración 0011, documento 05) lo repiten.
 
 **0.8 (2026-10-30)**
 - Alcance por versión reorganizado en hitos (D-33, documento 07): MVP en H0–H4, primera entrega hasta H7, segunda entrega H8–H9, v2 y v3 en bloques. Documento 07 y `CLAUDE.md` escritos.

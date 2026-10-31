@@ -1,6 +1,6 @@
 # OnWay — Documento 04: Arquitectura y stack
 
-Versión: 0.6 (borrador) · Fecha: 2026-10-30 · Depende de: documentos 01 (v0.7), 02 (v0.5) y 03 (v0.4)
+Versión: 0.8 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7), 02 (v0.5) y 03 (v0.4)
 
 Este documento decide **con qué y cómo** se construye OnWay: lenguaje, frameworks, base de datos, despliegue, proveedores externos, seguridad y estrategia para la futura app móvil. Parte de las restricciones de un proyecto didáctico (documento 03, sección 14).
 
@@ -99,11 +99,13 @@ Puntos clave:
 | Motor de rutas | GraphHopper (candidato) en contenedor propio | Sección 7 |
 | Mapa base | Protomaps (PMTiles) extraído para los Pirineos | Sección 8 |
 | Pruebas | Vitest (`jsdom` y Testing Library en la web), Testcontainers con PostGIS real, Playwright (Chromium) | Sección 12 |
-| Formato | Prettier (`pnpm format:check` en la integración continua) | ESLint con `typescript-eslint` está aprobado pero no se ha incorporado todavía: el plan de H0 solo exigía formato |
+| Formato y reglas | Prettier (`pnpm format:check`) y ESLint 10 con `typescript-eslint` (`pnpm lint`), ambos en la integración continua | Desde H1-T1: configuración plana recomendada, sin reglas con tipos, y `no-restricted-imports` que confina `maplibre-gl`, `react-map-gl` y `pmtiles` a `apps/web/src/map/` y limita `@onway/geo` en la web a una lista explícita de funciones (regla inviolable 9). Lleva `@eslint/js` como dependencia de desarrollo: es el paquete de ESLint que da la configuración recomendada |
 | Integración continua | GitHub Actions | |
 | Servidor web | Caddy | HTTPS automático, sirve la web y los archivos PMTiles. En local, `docker compose up` lo publica en `http://localhost:8080` con proxy a `/api` |
 
 **Versiones reales tras H0** (2026-10-30): Node 24 (imágenes `node:24.22.2-alpine3.24`), pnpm 9.12, TypeScript 5.9, NestJS 11 (Express 5), Drizzle ORM 0.45, `pg` 8.23, Zod 4.6, React 19.3, Vite 7.3, TanStack Query 5.105, react-router 7.18, react-i18next 17, Vitest 3.2, Testing Library 16, Testcontainers 12, Playwright 1.64, Prettier 3.9, PostGIS `postgis/postgis:16-3.4`, Caddy 2.11.
+
+**Versiones reales tras H1** (2026-10-31, lo que fija `pnpm-lock.yaml`): lo de H0 más MapLibre GL JS 6.16, react-map-gl 8.1, pmtiles 4.5 (en el navegador) y 1.31.2 (herramienta de `geodata`), @protomaps/basemaps 5.7, geotiff 3.0 (lectura del DEM en el API), SunCalc 2.1 (sol y luna en `packages/geo`), ESLint 10.14, typescript-eslint 8.72, Vitest 3.2, Playwright 1.64 y TypeScript 5.9. Son las dependencias que aprobó el usuario para H1 y ninguna más; `pnpm audit --prod` sin avisos.
 
 ---
 
@@ -164,12 +166,16 @@ Principio 7 del documento 03: lo externo se puede cambiar sin tocar el dominio. 
 | Puerto | Implementación inicial | Alternativas previstas |
 |---|---|---|
 | `RoutingProvider` | GraphHopper | Valhalla, pgRouting; módulo propio de superficie de coste (v2) |
-| `ElevationProvider` | Lectura de archivos Copernicus GLO-30 en el servidor | MDT del IGN español, RGE ALTI francés |
-| `WeatherProvider` | Open-Meteo | Meteoblue |
-| `GeocodingProvider` | Nominatim | CartoCiudad (España), Base Adresse Nationale (Francia) |
+| `ElevationProvider` | **Compuesto (H1)**: archivos Copernicus GLO-30 del servidor (lectura por ventanas, interpolación bilineal) dentro de la caja de los Pirineos y, fuera de ella, la API de elevación de Open-Meteo (Copernicus GLO-90). Si ninguna responde, `OUTSIDE_COVERAGE` | MDT del IGN español, RGE ALTI francés |
+| `WeatherProvider` | **Open-Meteo (H1)**: pronóstico a la altitud propia del punto (`elevation`), horario y diario de 7 días, isoterma de 0 °C; caché por celda y banda en `forecast_cache` | Meteoblue |
+| `GeocodingProvider` | **Nominatim público (H1)**: `User-Agent` con contacto, 1 petición/s en toda la API, caché de 24 h | CartoCiudad (España), Base Adresse Nationale (Francia) |
 | `FileStorage` | Disco del servidor (volumen) | Almacenamiento compatible con S3 |
 | `Clock` | Reloj del sistema | Reloj fijo en pruebas |
 | `Mailer` | **Resend** (recuperar contraseña). En desarrollo y pruebas, registro en consola o Mailpit | SMTP propio, Brevo |
+
+**Cómo se implementó en H1 (T4).** Los adaptadores viven en `apps/api/src/geo/` y se inyectan por símbolo; `main.ts` monta siempre los reales y las pruebas inyectan los suyos (superficie sintética y geocodificador en memoria en `test:api`; nada de variables que cambien a falsos en la imagen). Las URL, el contacto de Nominatim y la carpeta del DEM salen de la configuración (`ELEVATION_DEM_DIR`, `OPEN_METEO_ELEVATION_URL`, `NOMINATIM_URL`, `NOMINATIM_CONTACT`). El DEM se lee con `geotiff` por bloques de 1024 x 1024 (nunca entero en memoria) y con a lo sumo 2 lecturas a la vez: el `api` queda en unos 75 MiB tras leer teselas de la caja (límite 512 MiB). El límite por usuario de `getElevation` es un cubo de 30 peticiones de ráfaga y 3 por segundo (D-H1-09); el de Nominatim es un cubo global de 1 petición por segundo con hasta 2 s de cola, pasados los cuales responde `RATE_LIMITED` con `retryAfterSeconds`. Los datos pesados los descarga el servicio `geodata` (sección 9).
+
+**Cómo se implementó en H1 (T5): entorno, tiempo, luz y luna.** Módulo `apps/api/src/weather/` con `getEnvironment`. `OpenMeteoWeatherProvider` pide a `https://api.open-meteo.com/v1/forecast` (configurable con `OPEN_METEO_FORECAST_URL`) la **altitud propia** del punto en `elevation` (R-06; hay una prueba unitaria sobre la URL) con `timezone=auto`, 7 días, `wind_speed_unit=kmh` y las variables `temperature_2m`, `wind_speed_10m`, `wind_gusts_10m`, `precipitation`, `snowfall`, `cloud_cover` y `freezing_level_height` (isoterma de 0 °C), en `current`, `hourly` y, agregadas, `daily`. Las horas locales se devuelven como instantes UTC y una hora sin temperatura, viento, precipitación o nubosidad se descarta en vez de inventarla. **Caché** `forecast_cache`: clave (proveedor, celda de 0,01°, banda de altitud de 100 m), validez de 3 h; la altitud que se pide al proveedor es la de la banda (así lo guardado es función de la clave, y el redondeo es de ±50 m). Una sola llamada en curso por celda: las peticiones simultáneas esperan la misma y la primera guarda el resultado. Si el proveedor falla: `stale` (último dato, con su hora, aunque haya caducado) o `unavailable`, siempre 200 (doc 06); la celda no vuelve a preguntarse durante 60 s. **Salud pasiva (D-H1-12):** `getHealth` no llama al proveedor; `weatherProvider` vale `false` solo si la última llamada real falló hace menos de 30 min, y entonces `status` es `degraded`. **Ubicación (INV-30, RN-26):** la posición del dispositivo se redondea a su celda de ~1 km al recibirla (`roundToCell` de `@onway/geo`, idempotente: el cliente ya la redondea), la altitud es la del DEM en el centro de la celda, y no se guarda ni se registra: la única huella es la fila de la celda, sin usuario ni organización. El API escribe una línea por petición (id, método, ruta, estado y tiempo) **sin cadena de consulta** y sin registrar `/health`. Sol y luna salen de `@onway/geo` (SunCalc 2, BSD-2, cálculo local): el día es el día solar local del punto (de una medianoche solar a la siguiente), sin zona horaria. `bulletins` va siempre vacío en H1 (RF-706 es Could).
 
 ### 5.3 Reglas transversales
 
@@ -262,23 +268,26 @@ Los cálculos raster (superficie de coste, pendiente, obstáculos) son más cóm
 
 | Capa | Origen | Cómo se sirve |
 |---|---|---|
-| Carreteras (mapa base) | OpenStreetMap, vía Protomaps | Un archivo PMTiles de los Pirineos en el servidor, servido por Caddy |
-| Satélite | Ortofotos de IGN España (PNOA) e IGN Francia | Servicio de teselas WMTS de cada instituto, desde el navegador |
-| Topográfico | Mapas de IGN España e IGN Francia + curvas de nivel generadas desde el modelo de elevación | Servicios WMTS y capa generada en el navegador |
+| Carreteras (mapa base) | OpenStreetMap, vía Protomaps | Un extracto PMTiles de los Pirineos (lon −2…4, lat 42…44, hasta zoom 14) en el volumen `geodata`, servido por Caddy en `/tiles/` con peticiones por rango, junto con sus fuentes y sprites; estilo de `@protomaps/basemaps` (idioma de la interfaz). Fuera de la caja se ve vacío |
+| Satélite | IGN España (PNOA y Sentinel-2) e IGN Francia (ortofotos) | WMTS desde el navegador. Cada tesela se compone en el navegador (`apps/web/src/map/ign-mix.ts`): se pide a la fuente o fuentes que la tocan, la española debajo y la francesa encima con su blanco puro «sin datos» hecho transparente |
+| Topográfico | Mapa Topográfico Nacional de IGN España y Plan IGN de Francia (con curvas de nivel y sombreado propios) | WMTS desde el navegador, apilados: España debajo y encima franjas de Francia (el Plan IGN responde 404 donde no tiene datos). Las curvas de nivel generadas desde el modelo de elevación son RF-303 (H9) |
 
-La capa que se pide cambia según la zona visible (lado español o francés).
+La capa que se pide cambia según la zona visible. Los límites por país son rectángulos propios (España peninsular y Baleares; Francia en seis franjas de longitud con el borde sur un poco al sur de la frontera): una aproximación nuestra, no un dato de IGN. **Hueco conocido (R-13):** ni PNOA ni IGN Francia cubren Andorra con detalle: allí el satélite cae a la imagen de menor resolución y el topográfico a la de España; la capa de carreteras sí la cubre. Plan B de satélite: otro proveedor en plan gratuito (§9).
 
 ### 8.2 Lo verificado
 
-- **IGN España, PNOA:** servicio `https://www.ign.es/wmts/pnoa-ma`, licencia CC BY 4.0 y acceso público sin limitaciones, sin cuota publicada. La atribución se compone con "Instituto Geográfico Nacional / Centro Nacional de Información Geográfica".
-- **IGN Francia:** servicio `https://data.geopf.fr/wmts`, con acceso público sin condiciones listadas en su ficha. Las bases de ortofotos, Plan IGN y BD TOPO se abrieron bajo Licence Ouverte 2.0 desde enero de 2021.
-- **Protomaps:** el mapa base se distribuye como obra producida bajo ODbL y exige atribución a OpenStreetMap. El planeta completo ocupa unos 120 GB, así que se extrae solo la región con la herramienta `pmtiles extract`. Recomiendan alojar la copia en almacenamiento propio en lugar de enlazar la descarga.
+Capacidades leídas el **2026-10-31** en los `GetCapabilities` oficiales; las teselas se pidieron desde un origen distinto (CORS abierto, `Access-Control-Allow-Origin: *` en los dos).
 
-### 8.3 A verificar *(Q-26)*
+- **IGN España, satélite:** `https://www.ign.es/wmts/pnoa-ma`, capa `OI.OrthoimageCoverage` («Imágenes de satélite Sentinel y ortofotos PNOA»: Sentinel-2 por debajo de 1:70 000 y PNOA por encima), `GoogleMapsCompatible`, niveles 0–20, JPEG, solo KVP. `Fees`: «No se aplican condiciones»; `AccessConstraints`: **CC BY 4.0**. Fuera de España devuelve Sentinel-2 de 10 m (pixelado), no un error.
+- **IGN España, topográfico:** `https://www.ign.es/wmts/mapa-raster`, capa `MTN` («Cartografía del IGN»: MTN 1:50 000, 1:25 000 y alta resolución desde 1,4 m/píxel), mismas condiciones y CC BY 4.0. Fuera de España devuelve una tesela lisa.
+- **IGN Francia (Géoplateforme):** `https://data.geopf.fr/wmts`, `TileMatrixSet` `PM`, sin cuenta ni clave para estas capas: `ORTHOIMAGERY.ORTHOPHOTOS` («Photographies aériennes», 0–19, JPEG) y `GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2` («Plan IGN», 0–19, PNG, con curvas de nivel y sombreado). Condiciones: https://cartes.gouv.fr/cgu (el WMTS público «n'est pas soumis à une limite d'usage»; datos con la Licence Ouverte / Etalab 2.0 salvo licencia específica). **No hay SCAN 25 en abierto** en ese servicio: la capa topográfica francesa es el Plan IGN. Las ortofotos devuelven teselas **completamente blancas** (200, no 404) al otro lado de la frontera, de ahí la composición por tesela del satélite.
+- **Protomaps:** el mapa base se distribuye como obra producida bajo ODbL y exige atribución a OpenStreetMap. El planeta completo ocupa unos 120 GB, así que se extrae solo la región con la herramienta `pmtiles extract` (§9.0). Recomiendan alojar la copia en almacenamiento propio en lugar de enlazar la descarga.
 
-- Qué capas concretas, nombres y formatos ofrecen ambos servicios (se leen en su `GetCapabilities`) y si hay mapas topográficos a escala de montaña en abierto en ambos lados.
-- Si un servicio gratuito tolera el uso previsto sin condiciones de uso razonable. Ninguna ficha publica cuota, pero eso no garantiza que no exista.
-- Si las licencias permiten **pregenerar teselas para uso offline** (v2).
+### 8.3 Pendiente *(Q-26)*
+
+- Resuelta la parte de H1: capas, nombres y condiciones de uso en línea (§8.2). La web declara los dos anfitriones de IGN en un solo módulo (`src/map/ign.ts`) y la CSP de Caddy los repite en `img-src` y `connect-src`; una prueba exige que coincidan.
+- **Abierta:** si las licencias permiten **pregenerar teselas para uso offline** (v2.1). CC BY 4.0 y Licence Ouverte lo permiten en principio, pero las condiciones de uso intensivo de los servicios no se han contrastado.
+- Ninguna ficha publica cuota; el WMTS francés dice no tener límite. No garantiza que no exista uno efectivo para un uso intensivo.
 
 ### 8.4 Modo sin conexión (v2)
 
@@ -286,7 +295,13 @@ Como el mapa base ya es un archivo PMTiles, la descarga de una región consiste 
 
 ### 8.5 Atribuciones
 
-Se muestran siempre en el mapa: OpenStreetMap, IGN España / CNIG, IGN Francia, Open-Meteo, y la cita de Copernicus DEM si se muestra algo derivado.
+Se muestran siempre bajo el mapa, también a 375 px, sin plegar tras un botón (D-H1-17), según la capa activa:
+
+- Carreteras: «Datos © colaboradores de OpenStreetMap (ODbL), mapa base de Protomaps».
+- Satélite: «Imágenes PNOA y Sentinel-2 © Instituto Geográfico Nacional de España / CNIG (CC BY 4.0)» y «© IGN, Géoplateforme (Licence Ouverte 2.0)».
+- Topográfico: «Cartografía © Instituto Geográfico Nacional de España / CNIG (CC BY 4.0)» y «© IGN, Géoplateforme (Licence Ouverte 2.0)».
+- Con altitud derivada del modelo (el personal), la cita de Copernicus DEM GLO-30 (§9.0).
+- Open-Meteo se cita en la tarjeta del tiempo (T9). Las atribuciones son texto sin enlaces: la web no abre ninguna dirección externa (§10).
 
 ---
 
@@ -298,14 +313,30 @@ Es la prueba de la sección 9.1 del documento 03.
 |---|---|---|---|
 | **Open-Meteo** | Pronóstico a la altitud del punto | Gratuito solo no comercial. Hasta 600 llamadas por minuto, 5.000 por hora, 10.000 al día y 300.000 al mes. Datos CC BY 4.0 | Sobrado para el proyecto. Aun así: caché por punto y altitud redondeados, y se agrupan peticiones de la misma celda |
 | **Nominatim** (público) | Dirección a coordenadas | Máximo 1 petición por segundo. Obligatorio identificar la aplicación en User-Agent. Obligatorio cachear resultados. **Prohibido el autocompletado en cliente** | La búsqueda de dirección en Crear misión (vista 5) se lanza **al pulsar buscar**, no al teclear. Caché de resultados en servidor. Si crece el uso: CartoCiudad y BAN |
-| **IGN España / Francia** | Teselas de satélite y topográficas | Sin cuota publicada (ver 8.3) | Atribución visible. Plan B: otro proveedor de satélite en plan gratuito |
+| **IGN España / Francia** | Teselas de satélite y topográficas | Sin cuota publicada en España; el WMTS público francés «no sujeto a límite de uso» (§8.2) | Atribución visible. Plan B: otro proveedor de satélite en plan gratuito |
 | **Copernicus DEM GLO-30** | Elevación | Gratuito, sin cuenta, en archivos descargables. Algunos países no tienen todas las teselas públicas | Se descarga la caja de los Pirineos al servidor. Cero cupo |
 | **Resend** | Correo transaccional (solo recuperar contraseña en v1) | Plan gratuito: 3.000 correos al mes y 100 al día. Para enviar a cualquier destinatario exige verificar un dominio propio | Detrás del puerto `Mailer`. Hasta tener dominio (Q-28) solo llega al propietario de la cuenta, suficiente para desarrollar. Sin notificaciones activas en v1 (doc. 02 §4.1) |
 | **Protomaps / OSM** | Mapa base | ODbL, atribución obligatoria | Archivo propio. Cero cupo |
 
+### 9.0 Lo que descarga y consulta el servicio `geodata` y la `api` (H1-T4, verificado el 2026-10-30)
+
+| Fuente | Dirección oficial | Licencia y atribución | Uso |
+|---|---|---|---|
+| Copernicus DEM GLO-30 (AWS Open Data, sin cuenta) | `https://copernicus-dem-30m.s3.amazonaws.com/<tesela>/<tesela>.tif` | Gratuito para el público general; aviso obligatorio «© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved» (con «produced using Copernicus WorldDEM-30 …» si se adapta). Es un modelo de superficie (R-15) | 12 teselas de 1° x 1° de la caja **lon −2…4, lat 42…44**: 466 149 644 bytes, cada una con tamaño y SHA-256 fijados en `infra/geodata/manifest.json` |
+| Protomaps, compilación diaria del planeta | `https://build.protomaps.com/AAAAMMDD.pmtiles` (índice en `https://build-metadata.protomaps.dev/builds.json`) | ODbL, obra producida: atribución a OpenStreetMap. El cubo solo conserva la última semana y la última de cada versión de parche, así que la compilación (esquema 4.x) se elige al ejecutar y el extracto se conserva en el volumen propio | `pmtiles extract` de la misma caja, hasta zoom 14: 403 MB (compilación `20261030`, 41 867 teselas). Tope de 1 GiB |
+| Fuentes y sprites de Protomaps | `https://github.com/protomaps/basemaps-assets` (commit `028c18f…` fijado) | Fuentes SIL OFL 1.1; sprites derivados de tangrams/icons (MIT) | Noto Sans Regular, Medium e Italic y `sprites/v4`: 14 MB, con una suma de comprobación del árbol de archivos |
+| Herramienta `pmtiles` | `https://github.com/protomaps/go-pmtiles/releases` v1.31.2 | BSD-3 | Solo dentro de la imagen de `geodata`, con el SHA-256 de la release comprobado al construirla |
+| Open-Meteo, elevación | `https://api.open-meteo.com/v1/elevation` | CC BY 4.0, no comercial, mismo cupo que el pronóstico | Fuera de la caja, con caché de 2000 puntos de ~11 m |
+| Open-Meteo, pronóstico (H1-T5, verificado el 2026-10-31) | `https://api.open-meteo.com/v1/forecast` | CC BY 4.0, uso no comercial, sin clave; la tarjeta del tiempo cita a Open-Meteo (T9) | Una llamada por celda de ~1 km y banda de 100 m cada 3 h, con `elevation`, `freezing_level_height` y `timezone=auto` |
+| SunCalc 2.1 (paquete npm `suncalc`) | `https://github.com/mourner/suncalc` | BSD-2-Clause | Sol y luna en `@onway/geo`; sin red. Referencias de las pruebas: US Naval Observatory (`aa.usno.navy.mil/api/rstt/oneday`) y sunrise-sunset.org, consultadas el 2026-10-31 solo para fijar valores, no desde las pruebas |
+
+Descarga total de la primera vez: **~843 MB** (466 MB de DEM, 403 MB de PMTiles y 14 MB de fuentes) en unos 90 s con una conexión doméstica rápida; la segunda vez no descarga nada (comprueba las sumas y termina en ~1 s). El tope total es 2 GiB. Si una parte falla, `geodata` lo anota en `status.json` y la pila arranca igual (sin mapa base, o con `OUTSIDE_COVERAGE` en lo que no cubra Open-Meteo).
+
+**Cómo se identifica la aplicación ante Nominatim.** La política del servicio público pide un `User-Agent` o `Referer` que identifique la aplicación. El 2026-10-30 respondió `403 Access denied` («See https://operations.osmfoundation.org/policies/nominatim/») a `OnWay/0.1 (portfolio demo; contact: onway-demo@example.org)`, y el 2026-10-31 respondió `200` a `OnWay/0.1 (+https://github.com/CristianAntVal85/OnWay)`: el motivo fue el contacto ficticio, no la red. Por eso el valor por defecto es la página pública del proyecto, que no lleva datos personales (R-10) y es verdadera; quien publique la aplicación fija `NOMINATIM_CONTACT` a su URL o contacto. Se usa también al hablar con Open-Meteo. Si el servicio público retirara el acceso, la búsqueda degrada (`UPSTREAM_UNAVAILABLE`, la misión se crea por mapa o coordenadas), el `api` registra solo el estado recibido, y el cambio de proveedor es un adaptador nuevo tras el puerto `GeocodingProvider` (CartoCiudad para España, Géoplateforme de IGN para Francia), sin tocar dominio ni web. Las pruebas y el E2E usan `providers-stub` y no dependen de esto.
+
 ### 9.1 Presupuesto de llamadas meteorológicas
 
-La pantalla de inicio consulta el tiempo en la ubicación del dispositivo y, al pinchar, en el objetivo de una misión. Con el redondeo de coordenadas (~1 km) y una caché de varias horas, el número de llamadas depende del número de **celdas distintas**, no de usuarios. Aun con decenas de coordinadores, queda muy por debajo de 10.000 al día. La posición del dispositivo se usa solo para esta consulta y **no se guarda** *(propuesto)*.
+La pantalla de inicio consulta el tiempo en la ubicación del dispositivo y, al pinchar, en el objetivo de una misión. Con el redondeo de coordenadas (~1 km) y una caché de varias horas, el número de llamadas depende del número de **celdas distintas**, no de usuarios. Aun con decenas de coordinadores, queda muy por debajo de 10.000 al día. La posición del dispositivo se usa solo para esta consulta y **no se guarda**: se redondea a su celda al llegar y no se registra (H1-T5, INV-30). Cada celda y banda cuesta una llamada cada 3 h, una sola con peticiones simultáneas, y 60 s de pausa tras un fallo; en H1 no hay límite por usuario: quien recorra muchas celdas distintas gasta una llamada por celda (riesgo residual de R-09, anotado en `docs/estado.md`).
 
 ---
 
@@ -378,7 +409,7 @@ Registros estructurados, endpoint de salud para API, worker y motor de rutas, y 
 | Invariantes | Una prueba por cada INV-xx del documento 03, especialmente las de aislamiento, inmutabilidad de versiones y visibilidad de datos | Vitest + base real |
 | Integración | Consultas espaciales, RLS, cola de trabajos | Testcontainers con PostGIS |
 | Contrato | El API respeta los esquemas Zod y el OpenAPI | Generado desde los esquemas |
-| Extremo a extremo | Flujos de las vistas: crear misión, ofrecerse, aceptar, cerrar con asistencia, aprobar cuenta. En H0: la demostración completa contra `docker compose up`, en escritorio y a 375 px | Playwright |
+| Extremo a extremo | Flujos de las vistas: crear misión, ofrecerse, aceptar, cerrar con asistencia, aprobar cuenta. En H0: la demostración completa contra `docker compose up`, en escritorio y a 375 px. En H1 (`apps/web/e2e/h1-demo.spec.ts`, 11 pruebas por proyecto): con `compose.yml` + `infra/compose.e2e.yml` (DEM sintético y `providers-stub`, sin salir a Internet) el coordinador crea una misión pinchando el objetivo en el mapa, añade orígenes por coordenadas (decimal y GMS) y por dirección, un intermedio y una reunión (esta en otro país, con confirmación), cambia las tres capas con sus atribuciones a la vista, ve el tiempo, la luz y la luna de una ubicación concedida y del objetivo y la tarjeta «no disponible» con el proveedor caído, activa con el aviso de «sin ruta validada», cierra y reabre; el rescatista ve la misión activa sin rutas y no la ve en planificación; el historial lo refleja; una organización ajena recibe 404; y un recorrido solo con teclado y en francés. Una vigilancia de red comprueba en cada prueba que el navegador solo habla con el propio origen y con los servicios de IGN (las teselas se sustituyen por una imagen vacía). Cada ejecución crea misiones «E2E …» y las deja cerradas: el registro de auditoría es de solo añadir | Playwright |
 | Motor de rutas | Casos de la prueba técnica, guardados como regresión | Vitest con el contenedor |
 
 ---
@@ -412,7 +443,7 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | ID | Pregunta | Quién |
 |---|---|---|
-| Q-26 | Capas, nombres y condiciones reales de los servicios de IGN España y Francia, y si permiten teselas para uso offline | Se verifica con sus capacidades y licencias |
+| Q-26 | ~~Capas, nombres y condiciones reales de los servicios de IGN España y Francia~~ **Resuelta en H1 (§8.2, 2026-10-31).** Abierta solo: si permiten teselas para uso offline (v2.1) | Se verifica con sus capacidades y licencias |
 | Q-27 | ~~Proveedor y plan del servidor~~ **Cerrada:** Hetzner Cloud, UE, 8 GB y 4 vCPU compartidas, techo de 20 €/mes, contratar tras la primera entrega (sección 11.1) | Arquitecto |
 | Q-28 | Dominio propio para HTTPS (necesario para cookies seguras y certificado). Cuesta unos 10–15 € al año. Se compra al contratar el servidor, no antes | Tú, más adelante |
 | Q-29 | ~~Archivos en disco o en almacenamiento tipo S3~~ **Cerrada:** disco del servidor con copia cifrada externa, detrás del puerto `FileStorage`; pasar a S3 es cambiar una implementación | Arquitecto |
@@ -432,6 +463,8 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 0.8 | 2026-10-31 | H1, validación: §9.0 corrige la causa del `403` de Nominatim (el contacto ficticio de `example.org`, no la red ni la IP): el `User-Agent` por defecto pasa a ser la página pública del proyecto, comprobado con `200`. Q-26 y el resto, sin cambios |
+| 0.7 | 2026-10-31 | H1-T10: §3 con ESLint incorporado y las versiones reales tras H1; §12 con la prueba de extremo a extremo de H1 y su vigilancia de red; Q-26 queda resuelta en lo de H1 y abierta solo en lo offline (v2.1), como ya figuraba. H1-T6: §8.1 con las tres capas tal como se construyeron (PMTiles propio en `/tiles/`; satélite compuesto por tesela; topográfico apilado), §8.2 con los `GetCapabilities` leídos el 2026-10-31 (capas, formatos, licencias, sin SCAN 25 público francés, teselas blancas de IGN Francia fuera de su país), §8.3 y Q-26 (parte de H1 resuelta), §8.5 con las atribuciones y el hueco de Andorra, CSP con los dos anfitriones de IGN. H1-T5: §5.2 con `WeatherProvider` Open-Meteo, caché por celda y banda, degradación (`stale`/`unavailable`), salud pasiva, redondeo de la ubicación y registro sin consulta; §9.0 con el pronóstico de Open-Meteo y SunCalc; §9.1 con el presupuesto de llamadas. H1-T4: §5.2 con `ElevationProvider` compuesto (GLO-30 local + Open-Meteo) y `GeocodingProvider` Nominatim implementados; §9.0 con las fuentes de `geodata` verificadas (URL oficiales, licencias, atribuciones, tamaños, caja lon −2…4 / lat 42…44) y el rechazo de Nominatim al `User-Agent` con contacto de `example.org` |
 | 0.6 | 2026-10-30 | Cierre de H0: sección 3 con lo realmente elegido (driver `pg`, `react-router`, Prettier, Argon2id de `crypto.argon2` de Node, migrador de Drizzle sobre SQL a mano sin `drizzle-kit`, validación sin `nestjs-zod`, componentes propios, jsdom y Testing Library, Testcontainers 12) y versiones reales. Sección 12: la prueba E2E de H0 |
 | 0.5 | 2026-10-29 | Recuperar contraseña: puerto `Mailer` con Resend (sección 9). Referencias a 01 (v0.7) y 05 (v0.3) |
 | 0.4 | 2026-10-29 | Árbol del repositorio con `db/`. Documento 06 escrito; referencias actualizadas a 01 (v0.6) y 02 (v0.5) |

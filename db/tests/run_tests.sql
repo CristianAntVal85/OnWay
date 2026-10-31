@@ -216,6 +216,114 @@ SELECT t.rec('cuenta desactivada después de pedir: el token no sirve', auth_con
 SELECT t.count_is('cuenta desactivada: no se pide otro','SELECT * FROM auth_request_password_reset(''r1@a.test'', decode(''ab02'',''hex''))',0);
 ROLLBACK;
 
+
+-- ===== Q-14 (0011): el administrador lee misiones y rutas pero no las escribe; solo escribe el coordinador =====
+-- El mismo conjunto de sentencias se ejecuta dos veces: el coordinador las logra (1 fila o sin error) y el administrador, no (violación de política o 0 filas).
+BEGIN; SET LOCAL ROLE onway_app;
+SELECT t.ctx(:'A','00000000-0000-0000-0000-0000000000a1','admin');
+SELECT t.count_is('Q-14 el administrador sigue leyendo las misiones de su org (2)','SELECT 1 FROM missions',2);
+SELECT t.count_is('Q-14 el administrador sigue leyendo los puntos (2)','SELECT 1 FROM mission_points',2);
+SELECT t.count_is('Q-14 el administrador sigue leyendo las asignaciones de equipo (1)','SELECT 1 FROM mission_team_assignments',1);
+SELECT t.count_is('Q-14 el administrador sigue leyendo las participaciones (1)','SELECT 1 FROM participations',1);
+SELECT t.count_is('Q-14 el administrador sigue leyendo las rutas en misión (2)','SELECT 1 FROM mission_routes',2);
+SELECT t.count_is('Q-14 el administrador sigue leyendo las rutas (4)','SELECT 1 FROM routes',4);
+SELECT t.count_is('Q-14 el administrador sigue leyendo las versiones (4)','SELECT 1 FROM route_versions',4);
+SELECT t.count_is('Q-14 el administrador sigue leyendo los tramos (1)','SELECT 1 FROM route_segments',1);
+SELECT t.count_is('Q-14 el administrador sigue leyendo las zonas a evitar (1)','SELECT 1 FROM avoid_zones',1);
+SELECT t.count_is('Q-14 el administrador sigue leyendo los equipos (2)','SELECT 1 FROM teams',2);
+SELECT t.works('Q-14 el administrador sigue creando equipos (Q-12)','INSERT INTO teams (organization_id,name,locality) VALUES (''a0000000-0000-0000-0000-000000000001'',''Equipo Este'',''Localidad C'')');
+SELECT t.works('Q-14 el administrador sigue gestionando miembros de equipo (Q-12)','INSERT INTO team_members (team_id,user_id,organization_id) VALUES (''d0000000-0000-0000-0000-000000000002'',''00000000-0000-0000-0000-000000000002'',''a0000000-0000-0000-0000-000000000001'')');
+ROLLBACK;
+BEGIN; SET LOCAL ROLE onway_app;
+SELECT t.ctx(:'A','00000000-0000-0000-0000-0000000000c1','coordinator');
+SELECT t.works('Q-14 el coordinador sigue pudiendo: misiones INSERT','INSERT INTO missions (organization_id,name,coordinator_id,target,target_source,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''Mision nueva'',''00000000-0000-0000-0000-0000000000c1'',''POINT Z (0 0 0)'',''map'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: misiones UPDATE','UPDATE missions SET name=''Mision renombrada'' WHERE id=''e0000000-0000-0000-0000-000000000001''',1);
+SELECT t.works('Q-14 el coordinador sigue pudiendo: puntos INSERT','INSERT INTO mission_points (organization_id,mission_id,kind,name,geom) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''waypoint'',''Intermedio'',''POINT Z (0 0 0)'')');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: puntos UPDATE','UPDATE mission_points SET name=''Otro'' WHERE id=''f0000000-0000-0000-0000-000000000001''',1);
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: puntos DELETE','DELETE FROM mission_points WHERE id=''f0000000-0000-0000-0000-000000000002''',1);
+SELECT t.works('Q-14 el coordinador sigue pudiendo: asignaciones de equipo INSERT','INSERT INTO mission_team_assignments (mission_id,team_id,organization_id,assigned_by) VALUES (''e0000000-0000-0000-0000-000000000002'',''d0000000-0000-0000-0000-000000000002'',''a0000000-0000-0000-0000-000000000001'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: asignaciones de equipo UPDATE','UPDATE mission_team_assignments SET assigned_at=now() WHERE mission_id=''e0000000-0000-0000-0000-000000000002'' AND team_id=''d0000000-0000-0000-0000-000000000001''',1);
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: asignaciones de equipo DELETE','DELETE FROM mission_team_assignments WHERE mission_id=''e0000000-0000-0000-0000-000000000002'' AND team_id=''d0000000-0000-0000-0000-000000000001''',1);
+SELECT t.works('Q-14 el coordinador sigue pudiendo: participaciones INSERT','INSERT INTO participations (organization_id,mission_id,user_id,status,origin,decided_by,decided_at) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''00000000-0000-0000-0000-000000000002'',''accepted'',''coordinator'',''00000000-0000-0000-0000-0000000000c1'',now())');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: participaciones UPDATE','UPDATE participations SET status=''accepted'', decided_by=''00000000-0000-0000-0000-0000000000c1'', decided_at=now() WHERE user_id=''00000000-0000-0000-0000-000000000001''',1);
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: participaciones DELETE','DELETE FROM participations WHERE user_id=''00000000-0000-0000-0000-000000000001''',1);
+SELECT t.works('Q-14 el coordinador sigue pudiendo: rutas en misión INSERT','INSERT INTO mission_routes (organization_id,mission_id,route_id,pinned_version_id,added_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000001'',''90000000-0000-0000-0000-000000000001'',''91000000-0000-0000-0000-000000000001'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: rutas en misión UPDATE','UPDATE mission_routes SET note=''x'' WHERE mission_id=''e0000000-0000-0000-0000-000000000002'' AND route_id=''90000000-0000-0000-0000-000000000001''',1);
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: rutas en misión DELETE','DELETE FROM mission_routes WHERE mission_id=''e0000000-0000-0000-0000-000000000002'' AND route_id=''90000000-0000-0000-0000-000000000002''',1);
+SELECT t.works('Q-14 el coordinador sigue pudiendo: rutas INSERT','INSERT INTO routes (organization_id,name,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''Ruta nueva'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: rutas UPDATE','UPDATE routes SET name=''Ruta renombrada'' WHERE id=''90000000-0000-0000-0000-000000000003''',1);
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: rutas DELETE','DELETE FROM routes WHERE id=''90000000-0000-0000-0000-000000000004''',1);
+SELECT t.works('Q-14 el coordinador sigue pudiendo: versiones INSERT','INSERT INTO route_versions (organization_id,route_id,version_number,status,geom,distance_m,ascent_m,descent_m,min_elevation_m,max_elevation_m,max_slope_pct,provenance,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''90000000-0000-0000-0000-000000000003'',2,''draft'',''LINESTRING Z (0 0 0, 0.01 0.01 10)'',700,70,30,700,770,8.0,''generated'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: versiones UPDATE','UPDATE route_versions SET status=''validated'', validated_by=''00000000-0000-0000-0000-0000000000c1'', validated_at=now() WHERE id=''91000000-0000-0000-0000-000000000003''',1);
+SELECT t.works('Q-14 el coordinador sigue pudiendo: tramos INSERT','INSERT INTO route_segments (organization_id,version_id,position,geom,road_type,distance_m,ascent_m,descent_m) VALUES (''a0000000-0000-0000-0000-000000000001'',''91000000-0000-0000-0000-000000000004'',1,''LINESTRING Z (0 0 0, 0.01 0.01 10)'',''path'',10,1,1)');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: tramos DELETE','DELETE FROM route_segments WHERE id=''92000000-0000-0000-0000-000000000001''',1);
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: versiones DELETE','DELETE FROM route_versions WHERE id=''91000000-0000-0000-0000-000000000004''',1);
+SELECT t.works('Q-14 el coordinador sigue pudiendo: zonas a evitar INSERT','INSERT INTO avoid_zones (organization_id,mission_id,geom,reason,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''POLYGON((0 0, 0 1, 1 1, 0 0))'',''Otra'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: zonas a evitar UPDATE','UPDATE avoid_zones SET reason=''Cambiada'' WHERE id=''93000000-0000-0000-0000-000000000001''',1);
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: zonas a evitar DELETE','DELETE FROM avoid_zones WHERE id=''93000000-0000-0000-0000-000000000001''',1);
+SELECT t.rows_changed('Q-14 el coordinador sigue pudiendo: misiones DELETE','DELETE FROM missions WHERE id=''e0000000-0000-0000-0000-000000000001''',1);
+ROLLBACK;
+BEGIN; SET LOCAL ROLE onway_app;
+SELECT t.ctx(:'A','00000000-0000-0000-0000-0000000000a1','admin');
+SELECT t.fails('Q-14 el administrador no puede: misiones INSERT','INSERT INTO missions (organization_id,name,coordinator_id,target,target_source,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''Mision nueva'',''00000000-0000-0000-0000-0000000000c1'',''POINT Z (0 0 0)'',''map'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el administrador no puede: misiones UPDATE (0 filas)','UPDATE missions SET name=''Mision renombrada'' WHERE id=''e0000000-0000-0000-0000-000000000001''',0);
+SELECT t.fails('Q-14 el administrador no puede: puntos INSERT','INSERT INTO mission_points (organization_id,mission_id,kind,name,geom) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''waypoint'',''Intermedio'',''POINT Z (0 0 0)'')');
+SELECT t.rows_changed('Q-14 el administrador no puede: puntos UPDATE (0 filas)','UPDATE mission_points SET name=''Otro'' WHERE id=''f0000000-0000-0000-0000-000000000001''',0);
+SELECT t.rows_changed('Q-14 el administrador no puede: puntos DELETE (0 filas)','DELETE FROM mission_points WHERE id=''f0000000-0000-0000-0000-000000000002''',0);
+SELECT t.fails('Q-14 el administrador no puede: asignaciones de equipo INSERT','INSERT INTO mission_team_assignments (mission_id,team_id,organization_id,assigned_by) VALUES (''e0000000-0000-0000-0000-000000000002'',''d0000000-0000-0000-0000-000000000002'',''a0000000-0000-0000-0000-000000000001'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el administrador no puede: asignaciones de equipo UPDATE (0 filas)','UPDATE mission_team_assignments SET assigned_at=now() WHERE mission_id=''e0000000-0000-0000-0000-000000000002'' AND team_id=''d0000000-0000-0000-0000-000000000001''',0);
+SELECT t.rows_changed('Q-14 el administrador no puede: asignaciones de equipo DELETE (0 filas)','DELETE FROM mission_team_assignments WHERE mission_id=''e0000000-0000-0000-0000-000000000002'' AND team_id=''d0000000-0000-0000-0000-000000000001''',0);
+SELECT t.fails('Q-14 el administrador no puede: participaciones INSERT','INSERT INTO participations (organization_id,mission_id,user_id,status,origin,decided_by,decided_at) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''00000000-0000-0000-0000-000000000002'',''accepted'',''coordinator'',''00000000-0000-0000-0000-0000000000c1'',now())');
+SELECT t.rows_changed('Q-14 el administrador no puede: participaciones UPDATE (0 filas)','UPDATE participations SET status=''accepted'', decided_by=''00000000-0000-0000-0000-0000000000c1'', decided_at=now() WHERE user_id=''00000000-0000-0000-0000-000000000001''',0);
+SELECT t.rows_changed('Q-14 el administrador no puede: participaciones DELETE (0 filas)','DELETE FROM participations WHERE user_id=''00000000-0000-0000-0000-000000000001''',0);
+SELECT t.fails('Q-14 el administrador no puede: rutas en misión INSERT','INSERT INTO mission_routes (organization_id,mission_id,route_id,pinned_version_id,added_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000001'',''90000000-0000-0000-0000-000000000001'',''91000000-0000-0000-0000-000000000001'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el administrador no puede: rutas en misión UPDATE (0 filas)','UPDATE mission_routes SET note=''x'' WHERE mission_id=''e0000000-0000-0000-0000-000000000002'' AND route_id=''90000000-0000-0000-0000-000000000001''',0);
+SELECT t.rows_changed('Q-14 el administrador no puede: rutas en misión DELETE (0 filas)','DELETE FROM mission_routes WHERE mission_id=''e0000000-0000-0000-0000-000000000002'' AND route_id=''90000000-0000-0000-0000-000000000002''',0);
+SELECT t.fails('Q-14 el administrador no puede: rutas INSERT','INSERT INTO routes (organization_id,name,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''Ruta nueva'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el administrador no puede: rutas UPDATE (0 filas)','UPDATE routes SET name=''Ruta renombrada'' WHERE id=''90000000-0000-0000-0000-000000000003''',0);
+SELECT t.rows_changed('Q-14 el administrador no puede: rutas DELETE (0 filas)','DELETE FROM routes WHERE id=''90000000-0000-0000-0000-000000000004''',0);
+SELECT t.fails('Q-14 el administrador no puede: versiones INSERT','INSERT INTO route_versions (organization_id,route_id,version_number,status,geom,distance_m,ascent_m,descent_m,min_elevation_m,max_elevation_m,max_slope_pct,provenance,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''90000000-0000-0000-0000-000000000003'',2,''draft'',''LINESTRING Z (0 0 0, 0.01 0.01 10)'',700,70,30,700,770,8.0,''generated'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el administrador no puede: versiones UPDATE (0 filas)','UPDATE route_versions SET status=''validated'', validated_by=''00000000-0000-0000-0000-0000000000c1'', validated_at=now() WHERE id=''91000000-0000-0000-0000-000000000003''',0);
+SELECT t.fails('Q-14 el administrador no puede: tramos INSERT','INSERT INTO route_segments (organization_id,version_id,position,geom,road_type,distance_m,ascent_m,descent_m) VALUES (''a0000000-0000-0000-0000-000000000001'',''91000000-0000-0000-0000-000000000004'',1,''LINESTRING Z (0 0 0, 0.01 0.01 10)'',''path'',10,1,1)');
+SELECT t.rows_changed('Q-14 el administrador no puede: tramos DELETE (0 filas)','DELETE FROM route_segments WHERE id=''92000000-0000-0000-0000-000000000001''',0);
+SELECT t.rows_changed('Q-14 el administrador no puede: versiones DELETE (0 filas)','DELETE FROM route_versions WHERE id=''91000000-0000-0000-0000-000000000004''',0);
+SELECT t.fails('Q-14 el administrador no puede: zonas a evitar INSERT','INSERT INTO avoid_zones (organization_id,mission_id,geom,reason,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''POLYGON((0 0, 0 1, 1 1, 0 0))'',''Otra'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('Q-14 el administrador no puede: zonas a evitar UPDATE (0 filas)','UPDATE avoid_zones SET reason=''Cambiada'' WHERE id=''93000000-0000-0000-0000-000000000001''',0);
+SELECT t.rows_changed('Q-14 el administrador no puede: zonas a evitar DELETE (0 filas)','DELETE FROM avoid_zones WHERE id=''93000000-0000-0000-0000-000000000001''',0);
+SELECT t.rows_changed('Q-14 el administrador no puede: misiones DELETE (0 filas)','DELETE FROM missions WHERE id=''e0000000-0000-0000-0000-000000000001''',0);
+ROLLBACK;
+
+-- INV-03 (0011): el responsable no puede ser un administrador (antes de la 0011 sí podía)
+BEGIN; SET LOCAL ROLE onway_app;
+SELECT t.ctx(:'A','00000000-0000-0000-0000-0000000000c1','coordinator');
+SELECT t.fails('INV-03 el responsable no puede ser un administrador (UPDATE)','UPDATE missions SET coordinator_id=''00000000-0000-0000-0000-0000000000a1'' WHERE id=''e0000000-0000-0000-0000-000000000001''');
+SELECT t.fails('INV-03 el responsable no puede ser un administrador (INSERT)','INSERT INTO missions (organization_id,name,coordinator_id,target,target_source,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''Con admin'',''00000000-0000-0000-0000-0000000000a1'',''POINT Z (0 0 0)'',''map'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.rows_changed('INV-03 el responsable sigue pudiendo ser otro coordinador activo','UPDATE missions SET coordinator_id=''00000000-0000-0000-0000-0000000000c1'' WHERE id=''e0000000-0000-0000-0000-000000000001''',1);
+ROLLBACK;
+
+-- El administrador lee el historial (audit_select) de las misiones aunque ya no las escriba
+BEGIN; SET LOCAL ROLE onway_app;
+SELECT t.ctx(:'A','00000000-0000-0000-0000-0000000000c1','coordinator');
+SELECT t.works('Q-14 el coordinador deja una línea de auditoría de misión','INSERT INTO audit_log (organization_id,entity_type,entity_id,action,actor_user_id) VALUES (''a0000000-0000-0000-0000-000000000001'',''mission'',''e0000000-0000-0000-0000-000000000002'',''mission_updated'',''00000000-0000-0000-0000-0000000000c1'')');
+SELECT t.ctx(:'A','00000000-0000-0000-0000-0000000000a1','admin');
+SELECT t.count_is('Q-14 el administrador sigue leyendo el historial de la misión','SELECT 1 FROM audit_log WHERE entity_type=''mission'' AND entity_id=''e0000000-0000-0000-0000-000000000002''',1);
+ROLLBACK;
+
+-- El rescatista sigue sin escribir en estas tablas (su oferta y su retirada siguen funcionando: part_offer y part_withdraw)
+BEGIN; SET LOCAL ROLE onway_app;
+SELECT t.ctx(:'A','00000000-0000-0000-0000-000000000002','rescuer');
+SELECT t.fails('Q-14 el rescatista no añade puntos','INSERT INTO mission_points (organization_id,mission_id,kind,name,geom) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''waypoint'',''Intermedio'',''POINT Z (0 0 0)'')');
+SELECT t.rows_changed('Q-14 el rescatista no borra puntos (0 filas)','DELETE FROM mission_points',0);
+SELECT t.rows_changed('Q-14 el rescatista no borra participaciones ajenas (0 filas)','DELETE FROM participations',0);
+SELECT t.fails('Q-14 el rescatista no crea zonas a evitar','INSERT INTO avoid_zones (organization_id,mission_id,geom,reason,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''POLYGON((0 0, 0 1, 1 1, 0 0))'',''Otra'',''00000000-0000-0000-0000-000000000002'')');
+SELECT t.works('Q-14 el rescatista sigue ofreciéndose (part_offer)','INSERT INTO participations (organization_id,mission_id,user_id,status,origin,offered_at) VALUES (''a0000000-0000-0000-0000-000000000001'',''e0000000-0000-0000-0000-000000000002'',''00000000-0000-0000-0000-000000000002'',''pending'',''volunteer'',now())');
+SELECT t.rows_changed('Q-14 el rescatista sigue retirando su oferta (part_withdraw)','UPDATE participations SET status=''withdrawn'' WHERE user_id=''00000000-0000-0000-0000-000000000002''',1);
+ROLLBACK;
+
+-- Catálogo: ninguna política de escritura de las tablas de misión y ruta (salvo org_isolation) nombra al personal en bloque
+SELECT t.count_is('Q-14 ninguna política de escritura de misiones y rutas usa app_is_staff()',
+  'SELECT 1 FROM pg_policies WHERE schemaname=''public'' AND tablename IN (''missions'',''mission_points'',''mission_team_assignments'',''participations'',''mission_routes'',''routes'',''route_versions'',''route_segments'',''avoid_zones'') AND cmd IN (''ALL'',''INSERT'',''UPDATE'',''DELETE'') AND policyname <> ''org_isolation'' AND (coalesce(qual,'''') || coalesce(with_check,'''')) LIKE ''%app_is_staff%''',0);
+
 -- ===== ROLES =====
 DO $$ DECLARE r record; BEGIN
   FOR r IN SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolname IN ('onway_app','onway_platform') LOOP

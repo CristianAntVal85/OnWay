@@ -47,4 +47,34 @@ describe('data/seed/demo.json (D-H0-18, R-10)', () => {
     expect(Demo.safeParse({ ...raw(), teams: [{ name: 'T', locality: 'L', members: ['admin'] }] }).success).toBe(false);
     expect(Demo.safeParse({ ...raw(), surprise: true }).success).toBe(false);
   });
+
+  it('has three made-up missions, one per state, the active one with an origin, an intermediate and a rendezvous point (P4 b)', () => {
+    expect(demo.missions.map((m) => m.status).sort()).toEqual(['active', 'closed', 'planning']);
+    expect(
+      demo.missions
+        .find((m) => m.status === 'active')!
+        .points.map((p) => p.kind)
+        .sort(),
+    ).toEqual(['origin', 'rendezvous', 'waypoint']);
+    for (const mission of demo.missions) {
+      expect(mission.name).toMatch(/ficticio/i);
+      // Inside the Pyrenees box that geodata downloads (lon -2..4, lat 42..44): the elevation source covers them all.
+      for (const place of [mission.target, ...mission.points]) {
+        expect(place.lat).toBeGreaterThanOrEqual(42);
+        expect(place.lat).toBeLessThan(44);
+        expect(place.lon).toBeGreaterThanOrEqual(-2);
+        expect(place.lon).toBeLessThan(4);
+      }
+    }
+    expect(new Set(demo.missions.map((m) => m.name.toLowerCase())).size).toBe(3);
+  });
+
+  it('rejects a mission with an unknown or non-coordinator responsible, a repeated name or a stray field', () => {
+    const missions = raw().missions as Record<string, unknown>[];
+    const first = missions[0]!;
+    expect(Demo.safeParse({ ...raw(), missions: [{ ...first, coordinator: 'nobody' }] }).success).toBe(false);
+    expect(Demo.safeParse({ ...raw(), missions: [{ ...first, coordinator: 'admin' }] }).success).toBe(false);
+    expect(Demo.safeParse({ ...raw(), missions: [first, { ...first, name: String(first.name).toUpperCase() }] }).success).toBe(false);
+    expect(Demo.safeParse({ ...raw(), missions: [{ ...first, elevationM: 1200 }] }).success).toBe(false);
+  });
 });

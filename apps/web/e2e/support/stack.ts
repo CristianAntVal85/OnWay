@@ -94,3 +94,12 @@ COMMIT;
 export async function removeOrganizationB(): Promise<void> {
   await psqlAsOwner(`BEGIN;\n${REMOVE_ORG_B}\nCOMMIT;`);
 }
+
+/**
+ * Las misiones que crea la demostración de H1 se llaman «E2E …» y acaban cerradas. Si una ejecución falla a medias puede dejar una
+ * activa o en planificación; esto la cierra para que la pila quede como estaba (las filas de `audit_log` no se pueden borrar: solo
+ * de añadir). Solo toca misiones cuyo nombre empieza por «E2E » y que siguen abiertas.
+ */
+export async function closeLeftoverE2eMissions(): Promise<void> {
+  await psqlAsOwner(`UPDATE missions SET status = 'closed', closed_at = COALESCE(closed_at, now()), activated_at = COALESCE(activated_at, now()) WHERE name LIKE 'E2E %' AND status <> 'closed';`);
+}

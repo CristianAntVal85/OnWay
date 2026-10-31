@@ -21,6 +21,7 @@ RUN --mount=type=cache,id=onway-pnpm,target=/root/.local/share/pnpm/store \
 
 COPY tsconfig.base.json ./
 COPY packages/contracts packages/contracts
+COPY packages/geo packages/geo
 COPY apps/api apps/api
 RUN pnpm --filter "@onway/api..." build
 # Solo dependencias de producción y lo compilado (apps/api/package.json "files": ["dist"]).
@@ -30,7 +31,7 @@ FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out/ ./
-# Migraciones 0002-0009 (la 0001 la aplica el arranque de la base de datos como superusuario)
+# Migraciones 0002-0011 (la 0001 la aplica el arranque de la base de datos como superusuario)
 # y datos de demostración ficticios (R-10): sin secretos ni hashes.
 COPY --chown=node:node db/migrations db/migrations
 COPY --chown=node:node data/seed/demo.json data/seed/demo.json

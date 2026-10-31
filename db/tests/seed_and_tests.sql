@@ -98,3 +98,18 @@ INSERT INTO participations (organization_id,mission_id,user_id,status,origin,off
 INSERT INTO mission_routes (organization_id,mission_id,route_id,pinned_version_id,added_by) VALUES
  ('a0000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-000000000002','90000000-0000-0000-0000-000000000001','91000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-0000000000c1'),
  ('a0000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-000000000002','90000000-0000-0000-0000-000000000002','91000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-0000000000c1');
+
+-- datos de la 0011 (Q-14): un equipo sin asignar, dos rutas sin usar (una con un borrador y un tramo), una asignación y una zona a evitar
+INSERT INTO teams (id,organization_id,name,locality) VALUES ('d0000000-0000-0000-0000-000000000002','a0000000-0000-0000-0000-000000000001','Equipo Sur','Localidad B');
+INSERT INTO mission_team_assignments (mission_id,team_id,organization_id,assigned_by) VALUES
+ ('e0000000-0000-0000-0000-000000000002','d0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-0000000000c1');
+INSERT INTO routes (id,organization_id,name,created_by) VALUES
+ ('90000000-0000-0000-0000-000000000003','a0000000-0000-0000-0000-000000000001','Ruta 3','00000000-0000-0000-0000-0000000000c1');
+INSERT INTO routes (id,organization_id,name,created_by) VALUES
+ ('90000000-0000-0000-0000-000000000004','a0000000-0000-0000-0000-000000000001','Ruta 4','00000000-0000-0000-0000-0000000000c1');
+INSERT INTO route_versions (id,organization_id,route_id,version_number,status,geom,distance_m,ascent_m,descent_m,min_elevation_m,max_elevation_m,max_slope_pct,provenance,created_by) VALUES
+ ('91000000-0000-0000-0000-000000000004','a0000000-0000-0000-0000-000000000001','90000000-0000-0000-0000-000000000003',1,'draft','LINESTRING Z (0 0 0, 0.01 0.01 10)',700,70,30,700,770,8.0,'generated','00000000-0000-0000-0000-0000000000c1');
+INSERT INTO route_segments (id,organization_id,version_id,position,geom,road_type,distance_m,ascent_m,descent_m) VALUES
+ ('92000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000001','91000000-0000-0000-0000-000000000004',0,'LINESTRING Z (0 0 0, 0.01 0.01 10)','track',700,70,30);
+INSERT INTO avoid_zones (id,organization_id,mission_id,geom,reason,created_by) VALUES
+ ('93000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-000000000002','POLYGON((0 0, 0 1, 1 1, 0 0))','Zona inventada','00000000-0000-0000-0000-0000000000c1');

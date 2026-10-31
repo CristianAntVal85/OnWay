@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+// El esquema JSON es dinámico por naturaleza: `any` se queda confinado a este alias.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type J = Record<string, any>;
 
 export const toJson = (s: z.ZodType, io: 'input' | 'output'): J => z.toJSONSchema(s, { io, unrepresentable: 'any', target: 'draft-2020-12', reused: 'inline' }) as J;
@@ -54,7 +56,7 @@ export function flatten(n: J, prefix = '', depth = 2, required = true): Row[] {
   const props: J | undefined = n.properties ?? (n.anyOf ? undefined : undefined);
   if (n.anyOf && !props) {
     const objs = (n.anyOf as J[]).filter((p) => p.properties);
-    if (objs.length) objs.forEach((o, i) => rows.push(...flatten(o, prefix, depth, required)));
+    if (objs.length) objs.forEach((o) => rows.push(...flatten(o, prefix, depth, required)));
     return dedupe(rows);
   }
   if (!props) return rows;

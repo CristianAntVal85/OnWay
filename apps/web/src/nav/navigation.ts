@@ -6,6 +6,9 @@ export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'teams'
 
 export type NextStep = 'home' | 'complete-profile' | 'awaiting-approval';
 
+/** Dirección del detalle de una misión. */
+export const missionPath = (missionId: string) => `${'/missions'}/${missionId}`;
+
 export const PATHS = {
   login: '/login',
   waiting: '/waiting',
@@ -20,13 +23,15 @@ export const PATHS = {
 } as const satisfies Record<'login' | 'waiting' | RouteId, string>;
 
 const STAFF: readonly MemberRole[] = ['admin', 'coordinator'];
+/** Quien escribe sobre misiones: Q-14 = no, el administrador las lee pero no las crea ni las edita (D-H1-13). */
+const MISSION_WRITERS: readonly MemberRole[] = ['coordinator'];
 const EVERYONE: readonly MemberRole[] = ['admin', 'coordinator', 'rescuer'];
 
 /** Roles que pueden abrir cada ruta. Una ruta fuera de esta lista muestra «sin acceso». */
 export const ROUTE_ROLES: Readonly<Record<RouteId, readonly MemberRole[]>> = {
   home: STAFF,
   missions: EVERYONE,
-  createMission: STAFF,
+  createMission: MISSION_WRITERS,
   routes: STAFF,
   teams: STAFF,
   admin: ['admin'],

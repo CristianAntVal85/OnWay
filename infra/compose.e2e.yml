@@ -1,0 +1,53 @@
+# Superposición para el E2E y el CI (H1, D-H1-15): la misma pila, sin descargar nada y sin salir a Internet.
+#   docker compose -f compose.yml -f infra/compose.e2e.yml up --wait --build
+# o, para que `smoke.sh` y el E2E usen también estos archivos: COMPOSE_FILE=compose.yml:infra/compose.e2e.yml
+#
+# - `geodata` no descarga: copia al volumen el DEM sintético de data/seed/dem (terreno inventado, no datos reales).
+# - `providers-stub` responde con respuestas fijas de Nominatim y Open-Meteo (incluido un 503); los adaptadores REALES
+#   de la `api` apuntan a él por URL. Las rutas de este archivo son relativas a la raíz del repositorio.
+services:
+  geodata:
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        set -eu
+        rm -rf /geodata/dem && mkdir -p /geodata/dem
+        cp /synthetic/*.tif /geodata/dem/
+        printf '{"synthetic":true,"note":"DEM sintetico de pruebas: no son datos reales"}\n' > /geodata/status.json
+        echo "geodata: synthetic DEM copied (no download)"
+    volumes:
+      - ./data/seed/dem:/synthetic:ro
+
+  providers-stub:
+    image: caddy:2.11.7-alpine
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add: [NET_BIND_SERVICE]
+    mem_limit: 64m
+    networks: [edge]
+    tmpfs:
+      - /tmp
+    environment:
+      XDG_DATA_HOME: /tmp/caddy-data
+      XDG_CONFIG_HOME: /tmp/caddy-config
+    volumes:
+      - ./infra/providers-stub/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./infra/providers-stub/responses:/srv/stub:ro
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', '--header=User-Agent: OnWay-health', 'http://127.0.0.1:8081/v1/elevation']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    environment:
+      OPEN_METEO_ELEVATION_URL: http://providers-stub:8081/v1/elevation
+      NOMINATIM_URL: http://providers-stub:8081/search
+      OPEN_METEO_FORECAST_URL: http://providers-stub:8081/v1/forecast
+    depends_on:
+      providers-stub:
+        condition: service_healthy

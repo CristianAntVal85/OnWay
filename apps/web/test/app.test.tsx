@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import { es, fr } from '@onway/i18n';
-import { admin, apiError, fakeApi, org, pending, renderApp, rescuer, sessionServer, sessionUser } from './support';
+import { admin, apiError, fakeApi, pending, renderApp, rescuer, sessionServer, sessionUser } from './support';
 
 const PASSWORD = 'OnWay-demo-ficticia-2026';
 
@@ -79,7 +79,7 @@ describe('acceso (RF-101)', () => {
     await user.tab();
     await user.type(document.activeElement as HTMLElement, `${PASSWORD}{Enter}`);
     expect(await screen.findByRole('heading', { level: 1, name: es.home.title })).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole('main'));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('main'))); // el foco pasa al contenido en un efecto, tras pintar el título
   });
 
   it('orden de tabulación del acceso: saltar al contenido, correo, contraseña, entrar, idioma', async () => {
@@ -108,7 +108,7 @@ describe('acceso (RF-101)', () => {
     state.accounts.set('admin@example.org', admin());
     let first = true;
     const fetchImpl: typeof fetch = async (input, init) => {
-      if (String(input).endsWith('/org') && first) {
+      if (String(input).includes('/missions') && first) {
         first = false;
         state.user = null;
         state.expired = true;
@@ -132,11 +132,11 @@ describe('acceso (RF-101)', () => {
 });
 
 describe('marco y barra por rol (RF-702)', () => {
-  it('administrador: siete enlaces, con Administración', async () => {
+  it('administrador: seis enlaces, con Administración y sin Crear misión (Q-14 = no)', async () => {
     const { api } = sessionServer({ user: admin() });
     renderApp({ fetch: api.fetch });
     await screen.findByRole('heading', { level: 1, name: es.home.title });
-    expect(navNames()).toEqual([es.nav.home, es.nav.missions, es.nav.createMission, es.nav.routes, es.nav.teams, es.nav.administration, es.nav.account]);
+    expect(navNames()).toEqual([es.nav.home, es.nav.missions, es.nav.routes, es.nav.teams, es.nav.administration, es.nav.account]);
     expect(path()).toBe('/home');
   });
 
@@ -159,7 +159,7 @@ describe('marco y barra por rol (RF-702)', () => {
   it('rescatista con el perfil completo entra por Misiones', async () => {
     const { api } = sessionServer({ user: rescuer({ profileStatus: 'complete', nextStep: 'home' }) });
     renderApp({ fetch: api.fetch });
-    expect(await screen.findByRole('heading', { level: 1, name: es.nav.missions })).toBeTruthy();
+    expect(await screen.findByRole('heading', { level: 1, name: es.myMissions.title })).toBeTruthy();
     expect(path()).toBe('/missions');
   });
 
@@ -193,6 +193,12 @@ describe('marco y barra por rol (RF-702)', () => {
     }
   });
 
+  it('el administrador que abre /missions/new ve «sin acceso»: no escribe misiones (D-H1-13)', async () => {
+    const { api } = sessionServer({ user: admin() });
+    renderApp({ route: '/missions/new', fetch: api.fetch });
+    expect(await screen.findByRole('heading', { level: 1, name: es.forbidden.title })).toBeTruthy();
+  });
+
   it('el coordinador que abre /admin ve «sin acceso»; el administrador sí entra', async () => {
     const coordinator = sessionServer({ user: sessionUser() });
     const first = renderApp({ route: '/admin', fetch: coordinator.api.fetch });
@@ -215,6 +221,7 @@ describe('marco y barra por rol (RF-702)', () => {
     const { api } = sessionServer({ user: sessionUser() });
     const { user } = renderApp({ fetch: api.fetch });
     const button = await screen.findByRole('button', { name: es.nav.menu });
+    await act(async () => {}); // el marco cierra el menú al llegar, en un efecto: se espera a que termine antes de pulsar
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(button.getAttribute('aria-controls')).toBe(screen.getByRole('navigation').id);
     await user.click(button);
@@ -230,7 +237,7 @@ describe('marco y barra por rol (RF-702)', () => {
     await screen.findByRole('heading', { level: 1, name: es.home.title });
     await user.click(within(screen.getByRole('navigation')).getByRole('link', { name: es.nav.teams }));
     await screen.findByRole('heading', { level: 1, name: es.nav.teams });
-    expect(document.activeElement).toBe(screen.getByRole('main'));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('main'))); // el foco pasa al contenido en un efecto, tras pintar el título
   });
 
   it('«saltar al contenido» apunta al contenido principal', async () => {
@@ -239,43 +246,6 @@ describe('marco y barra por rol (RF-702)', () => {
     await screen.findByRole('heading', { level: 1, name: es.home.title });
     const skip = screen.getByRole('link', { name: es.nav.skipToContent });
     expect(skip.getAttribute('href')).toBe(`#${screen.getByRole('main').id}`);
-  });
-});
-
-describe('inicio provisional: carga, error y datos', () => {
-  it('muestra la organización de la sesión', async () => {
-    const { api } = sessionServer({ user: sessionUser() });
-    renderApp({ fetch: api.fetch });
-    expect(await screen.findByText(org().name, { selector: 'dd' })).toBeTruthy();
-    expect(screen.getByText('España')).toBeTruthy();
-  });
-
-  it('mientras carga lo anuncia, y si falla ofrece reintentar', async () => {
-    const { api } = sessionServer({ user: sessionUser() });
-    let attempts = 0;
-    const fetchImpl: typeof fetch = async (input, init) => {
-      if (String(input).endsWith('/org')) {
-        attempts += 1;
-        if (attempts === 1) return apiError(500, 'INTERNAL');
-      }
-      return api.fetch(input, init);
-    };
-    const { user } = renderApp({ fetch: fetchImpl });
-    const alert = await screen.findByRole('alert');
-    expect(within(alert).getByText(es.state.errorTitle)).toBeTruthy();
-    expect(within(alert).getByText(es.errors.INTERNAL)).toBeTruthy();
-    await user.click(within(alert).getByRole('button', { name: es.state.retry }));
-    expect(await screen.findByText(org().name, { selector: 'dd' })).toBeTruthy();
-  });
-
-  it('sin conexión dice que hace falta conexión', async () => {
-    const { api } = sessionServer({ user: sessionUser() });
-    const fetchImpl: typeof fetch = async (input, init) => {
-      if (String(input).endsWith('/org')) throw new TypeError('Failed to fetch');
-      return api.fetch(input, init);
-    };
-    renderApp({ fetch: fetchImpl });
-    expect(await screen.findByText(es.state.offline)).toBeTruthy();
   });
 });
 

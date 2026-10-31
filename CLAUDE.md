@@ -40,27 +40,32 @@ PostgreSQL 16 + PostGIS, Drizzle (SQL propio para lo espacial), pg-boss para tra
 ## Comandos
 
 ```
-docker compose up --wait                    # todo en local: http://localhost:8080 (cuentas en data/seed/README.md)
-docker compose down                         # para; conserva datos (con -v los borra, también las contraseñas generadas)
-infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 4 cuentas y roles de la base (sin superusuario ni BYPASSRLS)
-pnpm --filter @onway/web e2e                # 21 pruebas de Playwright (Chromium; escritorio y móvil 375 px) contra la pila levantada
+docker compose up --wait                    # todo en local: http://localhost:8080 (cuentas en data/seed/README.md). La primera vez `geodata` descarga ~843 MB
+docker compose down                         # para; conserva datos y descargas (con -v los borra, también las contraseñas generadas y los ~843 MB de geodata)
+infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 4 cuentas, altitud del servidor, entorno (tiempo, luz y luna) y roles de la base (sin superusuario ni BYPASSRLS)
+COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --wait   # pila de pruebas: sin descargas (DEM sintético) y proveedores falsos (providers-stub)
+pnpm --filter @onway/web e2e                # 43 pruebas de Playwright (Chromium; 25 de escritorio y 18 de móvil 375 px: 21 de H0 y la demostración de H1 en los dos formatos) contra la pila levantada (con la superposición, como en el CI)
 
 pnpm install                                # pnpm 9.12 vía corepack, Node >= 24.7
+pnpm lint                                  # ESLint plano en la raíz; incluye la regla de límites del mapa (apps/web/src fuera de src/map/)
 pnpm format:check | typecheck | test | build   # recursivos sobre todo el monorepo
 pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
 pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
-pnpm --filter @onway/api test:db            # 118 pruebas del esquema sobre PostGIS (Testcontainers, necesita Docker)
-pnpm --filter @onway/api test:api           # 92 pruebas del API sobre PostGIS (Testcontainers)
-pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME
+pnpm --filter @onway/api test:db            # 19 pruebas de Vitest sobre PostGIS: las 194 comprobaciones SQL del esquema + 8 de la política 0010 + 6 de la 0011 (Testcontainers, necesita Docker)
+pnpm --filter @onway/api test:api           # 191 pruebas del API sobre PostGIS (Testcontainers)
+pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME (seed: ELEVATION_DEM_DIR para la altitud de las misiones)
+pnpm --filter @onway/api synthetic-dem      # regenera data/seed/dem (terreno inventado del E2E)
 pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT
 pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (3000)
-db/tests/run-postgis.sh                     # las 118 pruebas del esquema con un PostGIS en Docker, sin Node
+db/tests/run-postgis.sh                     # las 194 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-Recuentos de `pnpm -r test`: contratos 83 (74 de contrato y 9 del cliente generado), i18n 8, geo 3, api unitarias 36, web 62. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
+Recuentos de `pnpm -r test`: contratos 84 (75 de contrato y 9 del cliente generado), i18n 8, geo 64, api unitarias 105, web 201. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y casi deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). La demostración de H1 crea en cada ejecución cuatro misiones «E2E …» (dos por proyecto) y las deja **cerradas** (el registro de auditoría es de solo añadir, así que no se pueden borrar; `docker compose down -v` las borra con la pila); si una ejecución se interrumpe, la siguiente (o el cierre) cierra las que queden abiertas. Se apunta a otra dirección con `E2E_BASE_URL`.
 
-`docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen. Los recuentos y el estado al día los anota `docs/estado.md`.
+`docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen.
+
+**`geodata`** (H1) es un servicio de un solo uso con su volumen (`onway_geodata`): la primera vez descarga el DEM Copernicus GLO-30 de los Pirineos (12 teselas, 466 MB), un extracto PMTiles del mapa base (403 MB) y las fuentes y sprites de su estilo (14 MB); ~90 s con buena conexión, nada la segunda vez. Si una descarga falla, la pila arranca igual y se degrada. Fuentes, licencias y atribuciones: `docs/04` §9.0. Nada de esto se descarga en CI ni en el E2E (superposición `infra/compose.e2e.yml`: DEM sintético de `data/seed/dem` y `providers-stub` con respuestas fijas de Nominatim y Open-Meteo). La búsqueda de direcciones usa el Nominatim público, al que la aplicación se identifica con la página del proyecto (`NOMINATIM_CONTACT` en `.env` la sustituye). El mapa (H1-T6): el extracto y sus fuentes los sirve Caddy en `/tiles/`; satélite y topográfico los piden directamente al navegador los WMTS de IGN España y Francia (únicos anfitriones de terceros, en `apps/web/src/map/ign.ts` y en la CSP de `infra/Caddyfile`; el resto del navegador solo habla con el propio origen). Los recuentos y el estado al día los anota `docs/estado.md`.
 
 ## Reglas inviolables
 

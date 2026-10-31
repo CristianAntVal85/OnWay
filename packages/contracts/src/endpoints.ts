@@ -48,7 +48,7 @@ export interface Endpoint {
 const ALL: Role[] = ['rescuer', 'coordinator', 'admin'];
 const SESSION: Role[] = ['pending', ...ALL];
 const STAFF: Role[] = ['coordinator', 'admin'];
-/** Q-14: si el administrador puede además trabajar con misiones y rutas, basta añadir 'admin' aquí. */
+/** Q-14 = no (resuelta 2026-10-31): el administrador lee misiones y rutas pero no las escribe. Cambiarlo exige también las políticas de la base (migración 0011) y INV-03, no solo esta constante. */
 const MISSION_WRITERS: Role[] = ['coordinator'];
 /** Q-12 (propuesto): administrador y coordinador gestionan equipos. */
 const TEAM_MANAGERS: Role[] = ['coordinator', 'admin'];
@@ -86,7 +86,7 @@ const Items = <T extends z.ZodType>(t: T) => z.strictObject({ items: z.array(t) 
 const RAW = [
   // ================= Sistema =================
   { id: 'getHealth', method: 'GET', path: '/health', tag: 'Sistema', summary: 'Estado del servicio y de sus dependencias', roles: ['public'], response: { status: 200, schema: Health }, delivery: 1,
-    notes: 'Lo consulta el comprobador externo. 200 aunque una dependencia falle (status "degraded"): la degradación es controlada. En H0 solo se comprueba la base de datos (SELECT 1 sin contexto de usuario); routingEngine y weatherProvider valen false mientras no exista su adaptador (puertos RoutingProvider y WeatherProvider) y no degradan status hasta que lo haya.' },
+    notes: 'Lo consulta el comprobador externo. 200 aunque una dependencia falle (status "degraded"): la degradación es controlada. La base de datos se comprueba con SELECT 1 sin contexto de usuario. weatherProvider es pasivo (D-H1-12): refleja la última llamada real al proveedor del tiempo y nunca provoca una llamada solo para la salud; vale false únicamente si esa llamada falló en los últimos 30 minutos, y entonces status pasa a degraded. routingEngine vale false mientras no exista su adaptador (puerto RoutingProvider) y no degrada status hasta que lo haya.' },
 
   // ================= Acceso =================
   { id: 'register', method: 'POST', path: '/auth/register', tag: 'Acceso', summary: 'Solicitar el alta con código de invitación', roles: ['public'],
@@ -122,18 +122,20 @@ const RAW = [
   { id: 'getElevation', method: 'GET', path: '/geo/elevation', tag: 'Geo', summary: 'Altitud de un punto', roles: STAFF,
     query: E.ElevationQuery, response: { status: 200, schema: E.ElevationResponse }, errors: ['OUTSIDE_COVERAGE'], delivery: 1 },
   { id: 'getEnvironment', method: 'GET', path: '/environment', tag: 'Inicio', summary: 'Tiempo, luz y luna para la ubicación del dispositivo o el objetivo de una misión', roles: ALL,
-    query: E.EnvironmentQuery, response: { status: 200, schema: E.EnvironmentResponse }, errors: ['OUTSIDE_COVERAGE'], delivery: 1,
-    notes: 'Si el proveedor falla: 200 con weather.status = stale | unavailable. La posición se redondea a ~1 km y no se guarda (RN-26). Un rescatista solo puede pedir misionId de misiones que ve.' },
+    query: E.EnvironmentQuery, response: { status: 200, schema: E.EnvironmentResponse }, errors: ['OUTSIDE_COVERAGE', 'NOT_FOUND'], delivery: 1,
+    notes: 'Si el proveedor falla: 200 con weather.status = stale | unavailable. La posición se redondea a ~1 km y no se guarda (RN-26). Un rescatista solo puede pedir misionId de misiones que ve: una misión en planificación o de otra organización responde 404 NOT_FOUND, como en getMyMission.' },
 
   // ================= Misiones (personal) =================
   { id: 'listMissions', method: 'GET', path: '/missions', tag: 'Misiones', summary: 'Lista de misiones con pestañas por estado', roles: STAFF,
     query: M.ListMissionsQuery, response: { status: 200, schema: M.MissionsPage }, delivery: 1 },
   { id: 'createMission', method: 'POST', path: '/missions', tag: 'Misiones', summary: 'Crear misión (nace En planificación)', roles: MISSION_WRITERS,
-    body: M.CreateMissionRequest, response: { status: 201, schema: M.MissionDetail }, errors: ['DUPLICATE_NAME'], delivery: 1, audited: true },
+    body: M.CreateMissionRequest, response: { status: 201, schema: M.MissionDetail }, errors: ['DUPLICATE_NAME', 'OUTSIDE_COVERAGE'], delivery: 1, audited: true,
+    notes: 'La altitud del objetivo y de los orígenes la calcula el servidor (RN-07); si ninguna fuente la tiene, 422 OUTSIDE_COVERAGE. teamIds, rescuerIds y routes llegan vacíos hasta H4/H6 (RF-513, RF-802, RF-804): no vacíos dan 400 VALIDATION_FAILED con issues en esos campos. Un coordinatorId que no es un coordinador activo de la organización da 400 VALIDATION_FAILED en coordinatorId.' },
   { id: 'getMission', method: 'GET', path: '/missions/{missionId}', tag: 'Misiones', summary: 'Detalle de misión (centro de trabajo)', roles: STAFF,
     params: p.mission, response: { status: 200, schema: M.MissionDetail }, delivery: 1 },
   { id: 'updateMission', method: 'PATCH', path: '/missions/{missionId}', tag: 'Misiones', summary: 'Editar datos de la misión', roles: MISSION_WRITERS,
-    params: p.mission, body: M.UpdateMissionRequest, response: { status: 200, schema: M.MissionDetail }, errors: ['MISSION_CLOSED', 'DUPLICATE_NAME', 'STALE_RESOURCE'], delivery: 1, audited: true },
+    params: p.mission, body: M.UpdateMissionRequest, response: { status: 200, schema: M.MissionDetail }, errors: ['MISSION_CLOSED', 'DUPLICATE_NAME', 'STALE_RESOURCE', 'OUTSIDE_COVERAGE'], delivery: 1, audited: true,
+    notes: 'Si cambia el objetivo, el servidor recalcula la altitud (422 OUTSIDE_COVERAGE si ninguna fuente la tiene).' },
   { id: 'duplicateMission', method: 'POST', path: '/missions/{missionId}/duplicate', tag: 'Misiones', summary: 'Duplicar misión (puntos y, si se pide, rutas; sin participantes)', roles: MISSION_WRITERS,
     params: p.mission, body: M.DuplicateMissionRequest, response: { status: 201, schema: M.MissionDetail }, errors: ['DUPLICATE_NAME'], delivery: 1, audited: true },
   { id: 'activateMission', method: 'POST', path: '/missions/{missionId}/activate', tag: 'Misiones', summary: 'Activar misión (abre el voluntariado)', roles: MISSION_WRITERS,
@@ -151,11 +153,12 @@ const RAW = [
 
   // ================= Puntos =================
   { id: 'createMissionPoint', method: 'POST', path: '/missions/{missionId}/points', tag: 'Puntos', summary: 'Añadir origen, punto intermedio o de reunión', roles: MISSION_WRITERS,
-    params: p.mission, body: M.PointInput, response: { status: 201, schema: M.MissionPoint }, errors: ['MISSION_CLOSED'], delivery: 1, audited: true },
+    params: p.mission, body: M.PointInput, response: { status: 201, schema: M.MissionPoint }, errors: ['MISSION_CLOSED', 'OUTSIDE_COVERAGE'], delivery: 1, audited: true },
   { id: 'importMissionPoints', method: 'POST', path: '/missions/{missionId}/points/import', tag: 'Puntos', summary: 'Importar puntos desde un GPX/KML ya subido', roles: MISSION_WRITERS,
     params: p.mission, body: M.ImportPointsRequest, response: { status: 201, schema: Items(M.MissionPoint) }, errors: ['MISSION_CLOSED', 'INVALID_FILE_CONTENT'], delivery: 1, audited: true },
   { id: 'updateMissionPoint', method: 'PATCH', path: '/missions/{missionId}/points/{pointId}', tag: 'Puntos', summary: 'Editar un punto', roles: MISSION_WRITERS,
-    params: p.missionPoint, body: M.UpdatePointRequest, response: { status: 200, schema: M.MissionPoint }, errors: ['MISSION_CLOSED'], delivery: 1, audited: true },
+    params: p.missionPoint, body: M.UpdatePointRequest, response: { status: 200, schema: M.MissionPoint }, errors: ['MISSION_CLOSED', 'OUTSIDE_COVERAGE'], delivery: 1, audited: true,
+    notes: 'Si cambian lat o lon, el servidor recalcula la altitud.' },
   { id: 'deleteMissionPoint', method: 'DELETE', path: '/missions/{missionId}/points/{pointId}', tag: 'Puntos', summary: 'Borrar un punto (no si una ruta de la misión sale de él)', roles: MISSION_WRITERS,
     params: p.missionPoint, response: { status: 204 }, errors: ['MISSION_CLOSED'], delivery: 1, audited: true },
 
@@ -345,6 +348,7 @@ type InputOf<S> = S extends z.ZodType ? z.input<S> : never;
 
 /** Entrada de una operación: `params`, `query` y `body` según declare el registro. */
 export type OperationInput<I extends OperationId> = (OperationOf<I> extends { params: infer P } ? { params: InputOf<P> } : unknown) &
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- `{}` comprueba que todos los campos de la consulta son opcionales
   (OperationOf<I> extends { query: infer Q } ? ({} extends InputOf<Q> ? { query?: InputOf<Q> } : { query: InputOf<Q> }) : unknown) &
   (OperationOf<I> extends { body: infer B } ? { body: InputOf<B> } : unknown) &
   (OperationOf<I> extends { multipart: z.ZodType } ? { body: FormData } : unknown);

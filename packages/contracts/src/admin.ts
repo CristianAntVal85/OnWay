@@ -3,7 +3,6 @@
 import { z } from 'zod';
 import { Address } from './profile.js';
 import { Skill } from './profile.js';
-import { Email } from './auth.js';
 import { BulkResult, Id, PageQuery, Paged, PersonRef, QueryBool, Selection, TeamRef, Timestamp } from './common.js';
 import { AccountStatus, DocumentType, MemberRole, ProfileStatus, RequestStatus } from './enums.js';
 

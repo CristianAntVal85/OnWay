@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { MAX_FILE_BYTES, type OperationOutput } from '@onway/contracts';
-import { eq } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import type { Tx } from '../db/database.service.js';
-import { organizations } from '../db/schema.js';
+import { memberships, organizations, users } from '../db/schema.js';
 
 @Injectable()
 export class OrganizationService {
@@ -24,5 +24,20 @@ export class OrganizationService {
     if (!row) throw new DomainError('NOT_FOUND');
     // maxUploadBytes is the constant of the files contract, which mirrors the CHECK on files.size_bytes.
     return { id: row.id, name: row.name, country: row.country, config: { validationMaxAgeDays: row.validationMaxAgeDays, maxUploadBytes: MAX_FILE_BYTES } };
+  }
+
+  /**
+   * The selector «Coordinador responsable» (RF-201): active members with the coordinator role, by name. Rescuers and
+   * administrators are not in it (Q-14 = no, D-H1-03). Only id and name leave the database (RN-21).
+   */
+  async listCoordinators(tx: Tx, principal: Principal): Promise<OperationOutput<'listCoordinators'>> {
+    if (!principal.orgId) throw new DomainError('ACCOUNT_PENDING');
+    const rows = await tx
+      .select({ id: users.id, displayName: users.displayName })
+      .from(memberships)
+      .innerJoin(users, eq(users.id, memberships.userId))
+      .where(and(eq(memberships.organizationId, principal.orgId), eq(memberships.role, 'coordinator'), eq(memberships.status, 'active'), isNull(users.anonymizedAt)))
+      .orderBy(asc(users.displayName), asc(users.id));
+    return { items: rows };
   }
 }

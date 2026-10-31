@@ -35,6 +35,9 @@ jobs:
       - name: Format
         run: pnpm format:check
 
+      - name: Lint (ESLint, including the map boundary rule)
+        run: pnpm lint
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -100,10 +103,14 @@ jobs:
     name: images and docker compose up
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      # Superposición de pruebas (H1, D-H1-15): `geodata` no descarga (DEM sintético) y la `api` apunta a `providers-stub`
+      # en vez de Nominatim y Open-Meteo. La demostración real (sin la superposición) se prueba en local.
+      COMPOSE_FILE: compose.yml:infra/compose.e2e.yml
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Build the images (api, web)
+      - name: Build the images (api, web, geodata)
         run: docker compose build
 
       # Sin copiar ningún archivo antes: las contraseñas y el secreto CSRF los genera el servicio `secrets`.
@@ -134,6 +141,9 @@ jobs:
     name: end-to-end demo (Playwright against docker compose up)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      # Sin descargas ni salida a Internet de la aplicación: DEM sintético y `providers-stub` (ver el trabajo `stack`).
+      COMPOSE_FILE: compose.yml:infra/compose.e2e.yml
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

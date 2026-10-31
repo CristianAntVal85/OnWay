@@ -4,7 +4,7 @@ const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE';
 
 /** Quita espacios, guiones y puntos y pasa a mayúsculas. Es la forma que se cifra y de la que sale el hash (INV-24). */
 export function normalizeDocument(raw: string): string {
-  return raw.replace(/[\s.\-]/g, '').toUpperCase();
+  return raw.replace(/[\s.-]/g, '').toUpperCase();
 }
 
 /** DNI: 8 cifras + letra de control. */
