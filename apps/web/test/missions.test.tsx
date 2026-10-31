@@ -532,3 +532,440 @@ describe('detalle de misión en francés', () => {
     expect(screen.getByRole('region', { name: fr.missionDetail.readiness.title })).toBeTruthy();
   });
 });
+
+// ---------- Ciclo de vida, duplicar e historial (T8: RF-202, RF-203, RF-207, RF-208 sin asistencia, RN-05) ----------
+
+const L = D.lifecycle;
+const H = D.history;
+const COPY_ID = '55555555-5555-4555-8555-555555555555';
+
+const planningActions = { ...allActions, activate: true, close: false, reopen: false };
+const activeActions = { ...allActions, activate: false, close: true, reopen: false };
+const closedActions = { ...noActions, reopen: true, duplicate: true };
+
+const entry = (id: number, action: string, extra: Record<string, unknown> = {}) => ({
+  id,
+  occurredAt: `2026-10-31T0${id}:00:00+00:00`,
+  action,
+  actor: COORDINATOR,
+  summary: null,
+  ...extra,
+});
+
+/** La misión cambia de estado como lo haría el servidor y el historial gana una línea por cada acción. */
+function lifecycleServer(initial: Mission) {
+  const server = detailServer(initial);
+  const history = [entry(1, 'mission_created')];
+  const transition = (status: string, actions: object, action: string, extra: Record<string, unknown> = {}) => {
+    server.state.mission = { ...server.state.mission, status, actions, ...extra } as Mission;
+    history.unshift(entry(history.length + 1, action));
+    return json(200, server.state.mission);
+  };
+  const copy = detail({ id: COPY_ID, name: 'Rescate en el Aneto (copia)', status: 'planning', actions: planningActions });
+  Object.assign(server.handlers, {
+    [`POST ${PATH}/activate`]: () => transition('active', activeActions, 'mission_activated', { activatedAt: '2026-10-31T11:00:00+00:00' }),
+    [`POST ${PATH}/close`]: () => transition('closed', closedActions, 'mission_closed', { closedAt: '2026-10-31T12:00:00+00:00' }),
+    [`POST ${PATH}/reopen`]: () => transition('active', activeActions, 'mission_reopened', { closedAt: null }),
+    [`POST ${PATH}/duplicate`]: () => json(201, copy),
+    [`GET /missions/${COPY_ID}`]: () => json(200, copy),
+    [`GET ${PATH}/history`]: ({ query }: Call) => json(200, { items: history, page: Number(query.get('page') ?? 1), pageSize: 20, total: history.length }),
+    [`GET /missions/${COPY_ID}/history`]: () => json(200, { items: [entry(1, 'mission_created', { summary: null })], page: 1, pageSize: 20, total: 1 }),
+  });
+  return server;
+}
+
+const warning = () => apiError(409, 'CONFIRMATION_REQUIRED', { warning: 'no_validated_route' });
+const currentPath = () => screen.getByTestId('path').textContent;
+
+describe('historial de la misión (RN-05)', () => {
+  it('muestra las acciones con su texto traducido, de más reciente a más antigua, con quién y cuándo', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    await openDetail(
+      {
+        [`GET ${PATH}/history`]: () =>
+          json(200, {
+            items: [entry(3, 'mission_updated', { summary: 'name, target' }), entry(2, 'point_added', { summary: 'Refugio de la Renclusa' }), entry(1, 'mission_created', { actor: null })],
+            page: 1,
+            pageSize: 20,
+            total: 3,
+          }),
+      },
+      server,
+    );
+    const region = await screen.findByRole('region', { name: H.title });
+    const items = await within(region).findAllByRole('listitem');
+    expect(items).toHaveLength(3);
+    expect(items[0]!.textContent).toContain(`${H.actions.mission_updated}: ${H.fields.name}, ${H.fields.target}`);
+    expect(items[1]!.textContent).toContain(`${H.actions.point_added}: Refugio de la Renclusa`);
+    expect(items[2]!.textContent).toContain(H.actions.mission_created);
+    expect(items[0]!.textContent).toContain(H.by.replace('{{actor}}', 'Coordinador Demo'));
+    expect(items[2]!.textContent).toContain(H.by.replace('{{actor}}', H.system));
+    expect(items[0]!.querySelector('time')?.getAttribute('datetime')).toBe('2026-10-31T03:00:00+00:00');
+    expect(items.map((item) => item.textContent).join(' ')).not.toMatch(/mission_|point_/); // nunca el nombre técnico
+  });
+
+  it('estados de carga, vacío y error con reintento', async () => {
+    let attempts = 0;
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    await openDetail(
+      {
+        [`GET ${PATH}/history`]: () => {
+          attempts += 1;
+          if (attempts === 1) return apiError(500, 'INTERNAL');
+          return json(200, { items: [], page: 1, pageSize: 20, total: 0 });
+        },
+      },
+      server,
+    );
+    const region = screen.getByRole('region', { name: H.title });
+    expect(await within(region).findByText(es.state.errorTitle)).toBeTruthy();
+    await userEventClick(within(region).getByRole('button', { name: es.state.retry }));
+    expect(await within(region).findByText(H.empty)).toBeTruthy();
+  });
+
+  it('muestra el cargando mientras llega el historial', async () => {
+    let release: (response: Response) => void = () => {};
+    const pending = new Promise<Response>((resolve) => (release = resolve));
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    await openDetail({ [`GET ${PATH}/history`]: () => pending }, server);
+    const region = screen.getByRole('region', { name: H.title });
+    expect(within(region).getByText(es.state.loading)).toBeTruthy();
+    release(json(200, { items: [entry(1, 'mission_created')], page: 1, pageSize: 20, total: 1 }));
+    expect(await within(region).findByText(H.actions.mission_created)).toBeTruthy();
+    expect(within(region).queryByText(es.state.loading)).toBeNull();
+  });
+
+  it('pagina cuando hay más de una página', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user, calls } = await openDetail(
+      {
+        [`GET ${PATH}/history`]: ({ query }: Call) =>
+          json(200, { items: [entry(Number(query.get('page') ?? 1), 'point_added', { summary: `Punto ${query.get('page')}` })], page: Number(query.get('page') ?? 1), pageSize: 20, total: 45 }),
+      },
+      server,
+    );
+    expect(await screen.findByText('Punto 1', { exact: false })).toBeTruthy();
+    const nav = screen.getByRole('navigation', { name: es.missions.pagination.label });
+    expect(within(nav).getByText('Página 1 de 3')).toBeTruthy();
+    await user.click(within(nav).getByRole('button', { name: es.missions.pagination.next }));
+    expect(await screen.findByText('Punto 2', { exact: false })).toBeTruthy();
+    expect(
+      calls()
+        .filter((c) => c.path === `${PATH}/history`)
+        .at(-1)!
+        .query.get('page'),
+    ).toBe('2');
+  });
+
+  it('en francés, textos en francés', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    setup(PATH, server.handlers, { language: 'fr' });
+    const region = await screen.findByRole('region', { name: fr.missionDetail.history.title });
+    expect(await within(region).findByText(fr.missionDetail.history.actions.mission_created)).toBeTruthy();
+    expect(screen.getByRole('button', { name: fr.missionDetail.lifecycle.activate })).toBeTruthy();
+    expect(screen.getByRole('button', { name: fr.missionDetail.lifecycle.duplicate })).toBeTruthy();
+  });
+});
+
+/** Pulsa sin tener a mano el `user` de `setup`. */
+async function userEventClick(element: HTMLElement) {
+  const { default: userEvent } = await import('@testing-library/user-event');
+  await userEvent.setup().click(element);
+}
+
+describe('activar misión (RF-207, D-H1-04)', () => {
+  it('sin ruta validada avisa y solo activa al confirmar; Escape devuelve el foco y no activa', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    let attempts = 0;
+    const { user, calls } = await openDetail(
+      {
+        [`POST ${PATH}/activate`]: ({ body }) => {
+          attempts += 1;
+          if (!(body as { confirmWithoutValidatedRoute?: boolean }).confirmWithoutValidatedRoute) return warning();
+          server.state.mission = detail({ status: 'active', activatedAt: '2026-10-31T11:00:00+00:00', actions: activeActions }) as Mission;
+          return json(200, server.state.mission);
+        },
+      },
+      server,
+    );
+    const activate = screen.getByRole('button', { name: L.activate });
+    await user.click(activate);
+
+    // El aviso es un diálogo modal con el foco en la opción segura; el resto de la página queda inerte.
+    const dialog = await screen.findByRole('dialog', { name: L.activateWarning.title });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(within(dialog).getByText(L.activateWarning.body)).toBeTruthy();
+    expect(dialog.getAttribute('aria-describedby')).toBeTruthy();
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: L.activateWarning.cancel }));
+    expect(document.body.querySelector('[inert]')).not.toBeNull();
+    expect(sends(calls(), 'POST', `${PATH}/activate`)).toHaveLength(1);
+    expect(sends(calls(), 'POST', `${PATH}/activate`)[0]!.body as object).toEqual({});
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.body.querySelector('[inert]')).toBeNull();
+    expect(document.activeElement).toBe(activate); // el foco vuelve al botón que lo abrió
+    expect(attempts).toBe(1); // cancelar no activa
+    expect(screen.getByText(T.status.planning)).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: L.activate }));
+    await user.click(await screen.findByRole('button', { name: L.activateWarning.confirm }));
+    await waitFor(() => expect(attempts).toBe(3));
+    expect(sends(calls(), 'POST', `${PATH}/activate`).at(-1)!.body).toEqual({ confirmWithoutValidatedRoute: true });
+    expect(await screen.findByText(L.activated)).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.active);
+    expect(screen.queryByRole('button', { name: L.activate })).toBeNull();
+    expect(screen.getByRole('button', { name: L.close })).toBeTruthy();
+    expect(document.activeElement?.id).toBe('mission-title');
+  });
+
+  it('con una ruta validada (sin aviso) activa a la primera y sin diálogo', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user, calls } = await openDetail({}, server);
+    await user.click(screen.getByRole('button', { name: L.activate }));
+    expect(await screen.findByText(L.activated)).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(sends(calls(), 'POST', `${PATH}/activate`)).toHaveLength(1);
+    // El historial se refresca con la acción nueva.
+    expect(await within(screen.getByRole('region', { name: H.title })).findByText(H.actions.mission_activated)).toBeTruthy();
+  });
+
+  it('INVALID_STATE_TRANSITION: explica que alguien se adelantó y vuelve a leer la misión', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user, calls } = await openDetail(
+      {
+        [`POST ${PATH}/activate`]: () => {
+          server.state.mission = detail({ status: 'active', actions: activeActions }) as Mission;
+          return apiError(409, 'INVALID_STATE_TRANSITION');
+        },
+      },
+      server,
+    );
+    const reads = missionReads(calls());
+    await user.click(screen.getByRole('button', { name: L.activate }));
+    expect(await screen.findByText(L.invalidTransition)).toBeTruthy();
+    await waitFor(() => expect(missionReads(calls())).toBe(reads + 1));
+    await waitFor(() => expect(screen.queryByRole('button', { name: L.activate })).toBeNull());
+    expect(screen.getByRole('button', { name: L.close })).toBeTruthy();
+  });
+
+  it('un fallo al repetir con confirmación se muestra dentro del diálogo, que sigue abierto', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user } = await openDetail(
+      { [`POST ${PATH}/activate`]: ({ body }) => ((body as { confirmWithoutValidatedRoute?: boolean }).confirmWithoutValidatedRoute ? apiError(500, 'INTERNAL') : warning()) },
+      server,
+    );
+    await user.click(screen.getByRole('button', { name: L.activate }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: L.activateWarning.confirm }));
+    expect(await within(dialog).findByText(es.errors.INTERNAL)).toBeTruthy();
+    expect(screen.getByRole('dialog')).toBeTruthy();
+  });
+
+  it('Tab y Mayús+Tab no sacan el foco del diálogo', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user } = await openDetail({ [`POST ${PATH}/activate`]: () => warning() }, server);
+    await user.click(screen.getByRole('button', { name: L.activate }));
+    const dialog = await screen.findByRole('dialog');
+    const confirm = within(dialog).getByRole('button', { name: L.activateWarning.confirm });
+    const cancel = within(dialog).getByRole('button', { name: L.activateWarning.cancel });
+    expect(document.activeElement).toBe(cancel);
+    await user.tab(); // «Ahora no» es el último: vuelve al primero
+    expect(document.activeElement).toBe(confirm);
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(cancel);
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(confirm);
+    await user.tab({ shift: true }); // desde el primero, al último
+    expect(document.activeElement).toBe(cancel);
+  });
+});
+
+describe('cerrar y reabrir (RF-202, RF-208 sin asistencia, RN-09)', () => {
+  it('cerrar solo pide confirmar (cero aceptados) y envía una asistencia vacía; después la misión es de solo lectura', async () => {
+    const server = lifecycleServer(detail({ status: 'active', activatedAt: '2026-10-31T11:00:00+00:00', actions: activeActions }));
+    const { user, calls } = await openDetail({}, server);
+    await user.click(screen.getByRole('button', { name: L.close }));
+    const dialog = await screen.findByRole('dialog', { name: L.closeDialog.title });
+    expect(within(dialog).getByText(L.closeDialog.noParticipants)).toBeTruthy();
+    expect(within(dialog).queryByRole('checkbox')).toBeNull();
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: L.closeDialog.cancel }));
+
+    await user.click(within(dialog).getByRole('button', { name: L.closeDialog.confirm }));
+    expect(await screen.findByText(L.closed)).toBeTruthy();
+    expect(sends(calls(), 'POST', `${PATH}/close`)).toHaveLength(1);
+    expect(sends(calls(), 'POST', `${PATH}/close`)[0]!.body).toEqual({ attendance: [] });
+    expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.closed);
+    expect(screen.getByText(D.readOnlyClosed)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: L.close })).toBeNull();
+    expect(screen.queryByRole('button', { name: D.editData })).toBeNull();
+    expect(screen.getByRole('button', { name: L.reopen })).toBeTruthy();
+    expect(document.activeElement?.id).toBe('mission-title');
+  });
+
+  it('cancelar el diálogo de cierre deja la misión activa y no llama al servidor', async () => {
+    const server = lifecycleServer(detail({ status: 'active', actions: activeActions }));
+    const { user, calls } = await openDetail({}, server);
+    const close = screen.getByRole('button', { name: L.close });
+    await user.click(close);
+    await user.click(await screen.findByRole('button', { name: L.closeDialog.cancel }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(sends(calls(), 'POST', `${PATH}/close`)).toHaveLength(0);
+    expect(document.activeElement).toBe(close);
+    expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.active);
+  });
+
+  it('cerrar con la misión ya cerrada por otra persona: INVALID_STATE_TRANSITION, mensaje y datos recargados', async () => {
+    const server = lifecycleServer(detail({ status: 'active', actions: activeActions }));
+    const { user } = await openDetail(
+      {
+        [`POST ${PATH}/close`]: () => {
+          server.state.mission = detail({ status: 'closed', actions: closedActions }) as Mission;
+          return apiError(409, 'INVALID_STATE_TRANSITION');
+        },
+      },
+      server,
+    );
+    await user.click(screen.getByRole('button', { name: L.close }));
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: L.closeDialog.confirm }));
+    expect(await screen.findByText(L.invalidTransition)).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.closed));
+  });
+
+  it('ATTENDANCE_INCOMPLETE se explica dentro del diálogo, que sigue abierto', async () => {
+    const server = lifecycleServer(detail({ status: 'active', actions: activeActions }));
+    const { user } = await openDetail({ [`POST ${PATH}/close`]: () => apiError(422, 'ATTENDANCE_INCOMPLETE', { missingParticipationIds: [] }) }, server);
+    await user.click(screen.getByRole('button', { name: L.close }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: L.closeDialog.confirm }));
+    expect(await within(dialog).findByText(es.errors.ATTENDANCE_INCOMPLETE)).toBeTruthy();
+    expect(screen.getByRole('dialog')).toBeTruthy();
+  });
+
+  it('reabrir vuelve a Activa y devuelve las acciones; DUPLICATE_NAME explica el choque y la misión sigue cerrada', async () => {
+    const server = lifecycleServer(detail({ status: 'closed', closedAt: '2026-10-31T12:00:00+00:00', actions: closedActions }));
+    let first = true;
+    const { user, calls } = await openDetail(
+      {
+        [`POST ${PATH}/reopen`]: () => {
+          if (first) {
+            first = false;
+            return apiError(409, 'DUPLICATE_NAME');
+          }
+          server.state.mission = detail({ status: 'active', actions: activeActions }) as Mission;
+          return json(200, server.state.mission);
+        },
+      },
+      server,
+    );
+    await user.click(screen.getByRole('button', { name: L.reopen }));
+    expect(await screen.findByText(L.reopenDuplicateName)).toBeTruthy();
+    expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.closed);
+    expect(screen.getByRole('button', { name: L.reopen })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: L.reopen }));
+    expect(await screen.findByText(L.reopened)).toBeTruthy();
+    expect(sends(calls(), 'POST', `${PATH}/reopen`)).toHaveLength(2);
+    expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.active);
+    expect(screen.queryByText(L.reopenDuplicateName)).toBeNull();
+    expect(screen.getByRole('button', { name: D.editData })).toBeTruthy();
+    expect(screen.getByRole('button', { name: L.close })).toBeTruthy();
+  });
+});
+
+describe('duplicar (RF-203, D-H1-05)', () => {
+  it('pide el nombre de la copia, con foco y texto seleccionado, y lleva al detalle de la copia en planificación', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user, calls } = await openDetail({}, server);
+    await user.click(screen.getByRole('button', { name: L.duplicate }));
+    const dialog = await screen.findByRole('dialog', { name: L.duplicateDialog.title });
+    const name = within(dialog).getByLabelText(L.duplicateDialog.name) as HTMLInputElement;
+    expect(document.activeElement).toBe(name);
+    expect(name.value).toBe('Rescate en el Aneto (copia)');
+    expect(name.selectionStart).toBe(0);
+    expect(name.selectionEnd).toBe(name.value.length);
+
+    await user.clear(name);
+    await user.type(name, '  Rescate del Posets  ');
+    await user.click(within(dialog).getByRole('button', { name: L.duplicateDialog.confirm }));
+    await waitFor(() => expect(sends(calls(), 'POST', `${PATH}/duplicate`)).toHaveLength(1));
+    expect(sends(calls(), 'POST', `${PATH}/duplicate`)[0]!.body).toEqual({ name: 'Rescate del Posets' });
+    await waitFor(() => expect(currentPath()).toBe(`/missions/${COPY_ID}`));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Rescate en el Aneto (copia)' })).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.planning);
+    expect(screen.getByText(L.duplicated.replace('{{name}}', 'Rescate en el Aneto'))).toBeTruthy();
+  });
+
+  it('DUPLICATE_NAME se muestra en el campo y el diálogo sigue abierto; un nombre corto no se envía', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user, calls } = await openDetail({ [`POST ${PATH}/duplicate`]: () => apiError(409, 'DUPLICATE_NAME') }, server);
+    await user.click(screen.getByRole('button', { name: L.duplicate }));
+    const dialog = await screen.findByRole('dialog');
+    const name = within(dialog).getByLabelText(L.duplicateDialog.name);
+    await user.clear(name);
+    await user.type(name, 'ab');
+    await user.click(within(dialog).getByRole('button', { name: L.duplicateDialog.confirm }));
+    expect(await within(dialog).findByText(es.createMission.nameInvalid)).toBeTruthy();
+    expect(sends(calls(), 'POST', `${PATH}/duplicate`)).toHaveLength(0);
+
+    await user.type(name, 'c');
+    await user.click(within(dialog).getByRole('button', { name: L.duplicateDialog.confirm }));
+    expect(await within(dialog).findByText(es.createMission.duplicateName)).toBeTruthy();
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(currentPath()).toBe(PATH);
+    await user.type(name, 'd'); // escribir de nuevo quita el aviso
+    expect(within(dialog).queryByText(es.createMission.duplicateName)).toBeNull();
+  });
+
+  it('cancelar con Escape no crea nada', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user, calls } = await openDetail({}, server);
+    const button = screen.getByRole('button', { name: L.duplicate });
+    await user.click(button);
+    await screen.findByRole('dialog');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(sends(calls(), 'POST', `${PATH}/duplicate`)).toHaveLength(0);
+    expect(document.activeElement).toBe(button);
+  });
+
+  it('una misión cerrada también se puede duplicar', async () => {
+    const server = lifecycleServer(detail({ status: 'closed', actions: closedActions }));
+    await openDetail({}, server);
+    expect(screen.getByRole('button', { name: L.duplicate })).toBeTruthy();
+  });
+});
+
+describe('acciones del ciclo de vida según `actions`', () => {
+  it('sin permisos (administrador) no hay ninguna acción del ciclo de vida', async () => {
+    const server = lifecycleServer(detail({ actions: noActions }));
+    await openDetail({}, server, { user: admin() });
+    for (const name of [L.activate, L.close, L.reopen, L.duplicate]) expect(screen.queryByRole('button', { name })).toBeNull();
+    expect(screen.queryByRole('group', { name: L.groupLabel })).toBeNull();
+    // El administrador sí lee el historial.
+    expect(await screen.findByRole('region', { name: H.title })).toBeTruthy();
+  });
+
+  it('cada estado ofrece lo suyo: planificación activa y duplica; activa cierra y duplica; cerrada reabre y duplica', async () => {
+    const planning = lifecycleServer(detail({ actions: planningActions }));
+    const view = await openDetail({}, planning);
+    const labels = () =>
+      within(screen.getByRole('group', { name: L.groupLabel }))
+        .getAllByRole('button')
+        .map((button) => button.textContent);
+    expect(labels()).toEqual([L.activate, L.duplicate]);
+    view.unmount();
+
+    const active = lifecycleServer(detail({ status: 'active', actions: activeActions }));
+    const second = await openDetail({}, active);
+    expect(labels()).toEqual([L.close, L.duplicate]);
+    second.unmount();
+
+    const closed = lifecycleServer(detail({ status: 'closed', actions: closedActions }));
+    await openDetail({}, closed);
+    expect(labels()).toEqual([L.reopen, L.duplicate]);
+  });
+});

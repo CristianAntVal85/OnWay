@@ -1,4 +1,7 @@
-import type { ErrorCode } from '@onway/contracts';
+import type { ErrorCode, MissionHistoryAction } from '@onway/contracts';
+
+/** Nombre de cada acción del historial de una misión (doc 06): cada una lleva su texto en es y fr. */
+type HistoryActionName = (typeof MissionHistoryAction)['options'][number];
 
 /** Forma común de es y fr: si falta una clave en cualquiera de las dos, no compila. */
 export interface Messages {
@@ -166,6 +169,33 @@ export interface Messages {
       later: string;
     };
     edit: { title: string; saved: string; save: string; saving: string; cancel: string; stale: string; reload: string; noChanges: string };
+    lifecycle: {
+      groupLabel: string;
+      activate: string;
+      activating: string;
+      close: string;
+      closing: string;
+      reopen: string;
+      reopening: string;
+      duplicate: string;
+      activated: string;
+      closed: string;
+      reopened: string;
+      duplicated: string;
+      invalidTransition: string;
+      reopenDuplicateName: string;
+      activateWarning: { title: string; body: string; confirm: string; cancel: string };
+      closeDialog: { title: string; body: string; noParticipants: string; confirm: string; cancel: string };
+      duplicateDialog: { title: string; body: string; name: string; defaultName: string; confirm: string; creating: string; cancel: string };
+    };
+    history: {
+      title: string;
+      empty: string;
+      system: string;
+      by: string;
+      actions: Record<HistoryActionName, string>;
+      fields: Record<'name' | 'description' | 'coordinatorId' | 'target' | 'note' | 'location' | 'kind' | 'position', string>;
+    };
     points: {
       title: string;
       kinds: { origin: string; waypoint: string; rendezvous: string };

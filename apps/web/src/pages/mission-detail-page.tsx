@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import { ApiError, type OperationOutput } from '@onway/contracts/client';
 import { formatCoordinate } from '@onway/geo';
 import { ErrorState, LoadingState } from '../components/states';
@@ -10,7 +10,9 @@ import { useElevationLookup } from '../hooks/use-elevation-lookup';
 import { countryName } from '../i18n/country-name';
 import { MapView, type MapFocus, type MapMarker } from '../map';
 import { formatDate, formatDateTime, formatMeters } from '../missions/format';
+import { LifecycleActions } from '../missions/lifecycle-actions';
 import { MissionEditForm } from '../missions/mission-edit-form';
+import { MissionHistory } from '../missions/mission-history';
 import type { PickedPoint, PointKind } from '../missions/point';
 import { PointForm } from '../missions/point-form';
 import { PointRow } from '../missions/point-row';
@@ -83,7 +85,11 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
   const [picking, setPicking] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   // Aviso de lo último guardado, junto a lo que se ha tocado (cabecera o puntos); las regiones `status` existen siempre para que se anuncie.
-  const [saved, setSaved] = useState<{ area: 'head' | 'points'; text: string } | null>(null);
+  // Si se llega desde «Duplicar», la copia lo anuncia (la navegación lleva el nombre del original).
+  const arrival = useLocation().state as { duplicatedFrom?: string } | null;
+  const [saved, setSaved] = useState<{ area: 'head' | 'points'; text: string } | null>(
+    arrival?.duplicatedFrom ? { area: 'head', text: t('missionDetail.lifecycle.duplicated', { name: arrival.duplicatedFrom }) } : null,
+  );
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const nonce = useRef(1);
@@ -145,7 +151,9 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
           <Link className="back-link" to={PATHS.missions}>
             {t('missionDetail.back')}
           </Link>
-          <h1>{mission.name}</h1>
+          <h1 id="mission-title" tabIndex={-1}>
+            {mission.name}
+          </h1>
           <StatusBadge status={mission.status} />
           <div role="status" className="saved-message">
             {saved?.area === 'head' ? saved.text : null}
@@ -224,6 +232,17 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
                   {t('missionDetail.editData')}
                 </button>
               )}
+              <LifecycleActions
+                mission={mission}
+                onSettled={({ message }) => {
+                  setEditor(null);
+                  setDraft(null);
+                  setPicking(false);
+                  setRemoving(null);
+                  setSaved(message ? { area: 'head', text: message } : null);
+                  setFocusId('mission-title');
+                }}
+              />
             </>
           )}
           {readOnlyNotice && (
@@ -343,6 +362,8 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
             );
           })}
         </section>
+
+        <MissionHistory missionId={mission.id} locale={locale} />
 
         <div className="detail-map">
           <MapView
