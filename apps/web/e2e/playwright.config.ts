@@ -10,6 +10,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
+  // El runner del CI es lento (dos núcleos, WebGL por software y tres demostraciones con mapa en dos formatos): más margen que los 5 s por defecto.
+  expect: { timeout: process.env.CI ? 15_000 : 5_000 },
   workers: process.env.CI ? 2 : undefined,
   // Los informes y trazas se escriben junto a esta configuración (ignorados por git); el CI los sube solo si algo falla.
   outputDir: './test-results',
