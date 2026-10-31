@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { DEFAULT_NOMINATIM_CONTACT, userAgentOf } from '../../src/geo/config.js';
 import { GeocodingRateLimitedError, GeocodingUnavailableError } from '../../src/geo/geocoding.js';
 import { NominatimGeocoder, SEARCH_VIEWBOX } from '../../src/geo/nominatim.js';
 import { SpacedGate } from '../../src/geo/spaced-gate.js';
@@ -67,7 +68,7 @@ function build(responses: (() => Response | Promise<Response>)[], gateOptions: {
   }) as unknown as typeof fetch;
   const geocoder = new NominatimGeocoder({
     baseUrl: 'https://nominatim.invalid/search',
-    userAgent: 'OnWay/0.1 (portfolio demo; contact: onway-demo@example.org)',
+    userAgent: userAgentOf({}),
     clock,
     fetch: fetchImpl,
     gate: new SpacedGate({ intervalMs: 1000, maxWaitMs: 2000, ...gateOptions, now: time.now, sleep: time.sleep }),
@@ -81,8 +82,7 @@ describe('NominatimGeocoder (doc 04 §9: identified, 1 request/s, cached)', () =
     const items = await geocoder.search('  Torla ');
     expect(seen).toHaveLength(1);
     const { url, headers } = seen[0]!;
-    expect(headers['user-agent']).toBe('OnWay/0.1 (portfolio demo; contact: onway-demo@example.org)');
-    expect(headers['user-agent']).toMatch(/example\.org/);
+    expect(headers['user-agent']).toBe('OnWay/0.1 (+https://github.com/CristianAntVal85/OnWay)');
     expect(url.searchParams.get('q')).toBe('Torla');
     expect(url.searchParams.get('format')).toBe('jsonv2');
     expect(url.searchParams.get('addressdetails')).toBe('1');
@@ -195,5 +195,18 @@ describe('SpacedGate', () => {
     const before = time.now();
     await gate.acquire();
     expect(time.now() - before).toBe(0);
+  });
+});
+
+describe('how the application identifies itself to the public services', () => {
+  it('names the application with the public page of the project, never a made-up contact (Nominatim answered 403 to example.org)', () => {
+    expect(DEFAULT_NOMINATIM_CONTACT).toBe('https://github.com/CristianAntVal85/OnWay');
+    expect(userAgentOf({})).toBe('OnWay/0.1 (+https://github.com/CristianAntVal85/OnWay)');
+    expect(userAgentOf({ NOMINATIM_CONTACT: '' })).toBe(userAgentOf({}));
+    expect(userAgentOf({})).not.toMatch(/example\.org/);
+  });
+
+  it('uses the contact of whoever runs the deployment when `NOMINATIM_CONTACT` is set', () => {
+    expect(userAgentOf({ NOMINATIM_CONTACT: 'https://rescue.invalid/about' })).toBe('OnWay/0.1 (+https://rescue.invalid/about)');
   });
 });

@@ -35,7 +35,7 @@ Contratos 84 (75 + 9 del cliente generado), i18n 8, geo 64, api unitarias 101, w
 
 ## Pendientes y decisiones del usuario
 - (a) `coordinatorName` llega `null` al rescatista (la política `users_select` solo deja leer `users` al personal) y la web dice «Coordinación de tu organización». Decidir: función `SECURITY DEFINER` que devuelva solo `display_name` del responsable (migración 0011) o dejarlo.
-- (b) El Nominatim público devolvió 403 al contacto ficticio de `example.org`: la búsqueda real de direcciones no funciona (degrada bien a «no disponible»). Decidir: un `NOMINATIM_CONTACT` propio, o CartoCiudad/BAN/un Nominatim propio. Contradice lo previsto en D-H1-15 y R-10.
+- (b) **Resuelto (2026-10-31):** el 403 de Nominatim venía del contacto ficticio de `example.org`. La aplicación se identifica ahora con la página pública del proyecto (`OnWay/0.1 (+https://github.com/CristianAntVal85/OnWay)`), que Nominatim acepta (200), y `NOMINATIM_CONTACT` la sustituye. Doc 04 §9.0 (v0.8).
 - (c) `getEnvironment` no tiene límite por usuario (R-09): cada celda nueva es una llamada a Open-Meteo (10 000/día); la caché y la pausa de 60 s tras un fallo lo mitigan.
 - (d) `.mcp.json` lleva una ruta de Chrome de esta máquina (`--executable-path=/usr/bin/google-chrome`); está en `.prettierignore` y no afecta al CI.
 - (e) La rama `poc/motor-rutas` (R-01 GraphHopper y R-06 AEMET) aún no se ha lanzado; debe estar hecha antes de H3.

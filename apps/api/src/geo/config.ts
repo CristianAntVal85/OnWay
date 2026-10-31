@@ -11,10 +11,14 @@ type Env = Record<string, string | undefined>;
 /** Where the sources are. Every URL comes from the configuration (D-H1-15): the end-to-end stack points them at `providers-stub`. */
 export const DEFAULT_OPEN_METEO_ELEVATION_URL = 'https://api.open-meteo.com/v1/elevation';
 export const DEFAULT_NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
-/** A made-up contact on `example.org` (R-10). Whoever runs a real deployment sets `NOMINATIM_CONTACT` to their own. */
-export const DEFAULT_NOMINATIM_CONTACT = 'onway-demo@example.org';
+/**
+ * How the application identifies itself to the public services (Nominatim's policy asks for a User-Agent that names the
+ * application): the project's public page, which holds no personal data (R-10). A made-up `example.org` contact was
+ * answered `403` by Nominatim. Whoever runs a real deployment sets `NOMINATIM_CONTACT` (a URL or an address) to their own.
+ */
+export const DEFAULT_NOMINATIM_CONTACT = 'https://github.com/CristianAntVal85/OnWay';
 
-export const userAgentOf = (env: Env) => `OnWay/0.1 (portfolio demo; contact: ${env.NOMINATIM_CONTACT || DEFAULT_NOMINATIM_CONTACT})`;
+export const userAgentOf = (env: Env) => `OnWay/0.1 (+${env.NOMINATIM_CONTACT || DEFAULT_NOMINATIM_CONTACT})`;
 
 export interface ElevationEnvOptions {
   /** `false` for jobs that must not reach the Internet (the seed): only the local DEM answers. */

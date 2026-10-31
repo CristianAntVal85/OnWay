@@ -174,11 +174,11 @@ describe('the real adapters, wired as main.ts wires them, against local servers'
     const outside = ElevationResponse.parse(await (await get(app, coordinator, '/geo/elevation?lat=45.5&lon=2.1')).json());
     expect(outside.elevationM).toBe(345);
     expect(received.filter((r) => r.path === '/v1/elevation')).toHaveLength(1);
-    expect(received.find((r) => r.path === '/v1/elevation')?.agent).toMatch(/^OnWay\/.* contact: tests@example\.org\)$/);
+    expect(received.find((r) => r.path === '/v1/elevation')?.agent).toBe('OnWay/0.1 (+tests@example.org)');
 
     const found = GeocodeResponse.parse(await (await get(app, coordinator, '/geo/geocode?q=Torla')).json());
     expect(found.items).toEqual([{ label: 'Torla (ficticio)', lat: 42.6297, lon: -0.1, country: 'ES' }]);
-    expect(received.find((r) => r.path === '/search')?.agent).toMatch(/^OnWay\/.* contact: tests@example\.org\)$/);
+    expect(received.find((r) => r.path === '/search')?.agent).toBe('OnWay/0.1 (+tests@example.org)');
 
     await new Promise((done) => setTimeout(done, 1100)); // the 1 request/s bucket of the real adapter
     await expectError(await get(app, coordinator, '/geo/geocode?q=caida503'), 'UPSTREAM_UNAVAILABLE');

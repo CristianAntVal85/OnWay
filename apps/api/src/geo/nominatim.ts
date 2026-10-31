@@ -83,7 +83,7 @@ export class NominatimGeocoder implements GeocodingProvider {
         signal: AbortSignal.timeout(this.options.timeoutMs ?? 8000),
       });
       if (!response.ok) {
-        // The status only, never the query (it can name a person's address). A 403 here usually means the service rejected our User-Agent: set NOMINATIM_CONTACT.
+        // The status only, never the query (it can name a person's address). A 403 here usually means the service rejected our User-Agent (a made-up contact was): see DEFAULT_NOMINATIM_CONTACT.
         this.logger.warn(`geocoder answered ${response.status}`);
         throw new GeocodingUnavailableError(`geocoder answered ${response.status}`);
       }
