@@ -38,6 +38,11 @@ const BUILT = [
   'uploadFile', // H2-T3
   'previewRouteImport',
   'importMissionPoints', // H2-T4
+  'createRoute',
+  'createRouteVersion',
+  'deriveRoute',
+  'validateRouteVersion',
+  'archiveRoute', // H2-T5
 ];
 
 let real: TestApp;
