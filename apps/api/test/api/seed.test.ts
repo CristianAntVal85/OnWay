@@ -249,7 +249,7 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
         applicants: demo.applicants.map((a) => ({ ...a, email: `catchup-${a.email}` })),
         missions: demo.missions.map((m) => ({ ...m, name: `${m.name} (catch-up)` })),
       };
-      const nothing: ElevationProvider = { elevationAt: async () => null };
+      const nothing: ElevationProvider = { elevationAt: async () => null, elevationsAt: async (points) => points.map(() => null) };
       const messages: string[] = [];
       const first = await seedDemo(owner, other, { elevation: nothing, warn: (m) => messages.push(m) });
       expect(first).toMatchObject({ seeded: true, missions: 0 });

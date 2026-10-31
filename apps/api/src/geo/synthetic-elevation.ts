@@ -20,4 +20,8 @@ export class SyntheticElevationProvider implements ElevationProvider {
     if (!(lat >= south && lat <= north && lon >= west && lon <= east)) return null;
     return Math.round(syntheticSurface(lat, lon) * 10) / 10;
   }
+
+  elevationsAt(points: readonly GroundPoint[]): Promise<(number | null)[]> {
+    return Promise.all(points.map((point) => this.elevationAt(point)));
+  }
 }

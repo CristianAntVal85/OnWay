@@ -11,6 +11,7 @@ import { HealthModule } from './health/health.module.js';
 import type { IdentityOptions } from './identity/config.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { MissionsModule } from './missions/missions.module.js';
+import { RoutesModule } from './routes/routes.module.js';
 import { WeatherModule, type WeatherOptions } from './weather/weather.module.js';
 
 export interface AppOptions {
@@ -42,6 +43,7 @@ export class AppModule {
         IdentityModule.register(options.identity),
         FilesModule.register(options.files),
         MissionsModule,
+        RoutesModule,
         WeatherModule.register(options.weather),
         CommonModule,
         HealthModule,

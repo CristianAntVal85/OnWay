@@ -11,6 +11,11 @@ export interface GroundPoint {
  */
 export interface ElevationProvider {
   elevationAt(point: GroundPoint): Promise<number | null>;
+  /**
+   * The altitudes of many points at once, in the same order (`null` where no source answers). Routes need thousands of
+   * them: the adapters group the reads (the DEM by block, Open-Meteo by request of 100) instead of asking one by one.
+   */
+  elevationsAt(points: readonly GroundPoint[]): Promise<(number | null)[]>;
 }
 
 /** Injection token, as `CLOCK` is: the domain asks for the port, never for an adapter. */

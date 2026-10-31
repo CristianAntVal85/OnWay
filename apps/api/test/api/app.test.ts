@@ -36,6 +36,8 @@ const BUILT = [
   'getElevation', // H1-T4
   'getEnvironment', // H1-T5
   'uploadFile', // H2-T3
+  'previewRouteImport',
+  'importMissionPoints', // H2-T4
 ];
 
 let real: TestApp;

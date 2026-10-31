@@ -4,6 +4,7 @@ import type {
   CloseMissionRequest,
   DuplicateMissionRequest,
   CreateMissionRequest,
+  ImportPointsRequest,
   ListMissionsQuery,
   ListMyMissionsQuery,
   OperationOutput,
@@ -79,6 +80,11 @@ export class MissionsController {
   @Operation('createMissionPoint')
   createPoint(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'createMissionPoint'>> {
     return this.points.create(request.principal!, (input.params as MissionParams).missionId, input.body as z.infer<typeof PointInput>);
+  }
+
+  @Operation('importMissionPoints')
+  importPoints(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'importMissionPoints'>> {
+    return this.points.importFromFile(request.principal!, (input.params as MissionParams).missionId, input.body as z.infer<typeof ImportPointsRequest>);
   }
 
   @Operation('updateMissionPoint')

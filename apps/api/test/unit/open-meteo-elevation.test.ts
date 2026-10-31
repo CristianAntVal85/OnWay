@@ -58,6 +58,10 @@ describe('CompositeElevationProvider', () => {
       this.calls += 1;
       return metres;
     },
+    async elevationsAt(points) {
+      this.calls += 1;
+      return points.map(() => metres);
+    },
   });
 
   it('answers with the first source that has the point and does not ask the rest', async () => {
@@ -92,5 +96,87 @@ describe('what OpenMeteoElevationProvider writes to the log', () => {
     const text = logged.join('\n');
     expect(text).toMatch(/elevation source unreachable: TypeError/); // the capture works and the warning is there
     for (const needle of ['42.123456', '-0.654321', 'latitude', 'longitude', 'elevation.invalid']) expect(text, needle).not.toContain(needle);
+  });
+});
+
+describe('OpenMeteoElevationProvider.elevationsAt: batches (H2-T4)', () => {
+  const answerFor = (url: URL) => {
+    const lats = url.searchParams.get('latitude')!.split(',');
+    return Response.json({ elevation: lats.map((lat) => Math.round(Number(lat) * 10) / 10) });
+  };
+
+  it('asks 100 points per request, keeps the order and does not repeat the points it already has', async () => {
+    const urls: URL[] = [];
+    const fetchImpl = async (url: URL) => {
+      urls.push(new URL(url));
+      return answerFor(new URL(url));
+    };
+    const provider = new OpenMeteoElevationProvider({ baseUrl: BASE, fetch: fetchImpl as unknown as typeof fetch });
+    const points = Array.from({ length: 250 }, (_, i) => ({ lat: 40 + i * 0.01, lon: 3 }));
+    const first = await provider.elevationsAt(points);
+    expect(urls).toHaveLength(3);
+    expect(urls.map((u) => u.searchParams.get('latitude')!.split(',').length)).toEqual([100, 100, 50]);
+    expect(first).toEqual(points.map((p) => Math.round(p.lat * 10) / 10));
+    await provider.elevationsAt(points.slice(0, 40));
+    expect(urls).toHaveLength(3);
+  });
+
+  it('asks once for points that repeat', async () => {
+    let asked = 0;
+    const provider = new OpenMeteoElevationProvider({
+      baseUrl: BASE,
+      fetch: (async (url: URL) => {
+        asked += new URL(url).searchParams.get('latitude')!.split(',').length;
+        return answerFor(new URL(url));
+      }) as unknown as typeof fetch,
+    });
+    await provider.elevationsAt([
+      { lat: 41, lon: 2 },
+      { lat: 41, lon: 2 },
+      { lat: 41.00001, lon: 2 },
+    ]);
+    expect(asked).toBe(1);
+  });
+
+  it('sends nothing and answers null when the request is over the limit of remote points', async () => {
+    let calls = 0;
+    const provider = new OpenMeteoElevationProvider({ baseUrl: BASE, maxBatchPoints: 50, fetch: (async () => (calls++, answerFor(new URL(BASE)))) as unknown as typeof fetch });
+    const points = Array.from({ length: 51 }, (_, i) => ({ lat: 40 + i * 0.01, lon: 3 }));
+    expect(await provider.elevationsAt(points)).toEqual(points.map(() => null));
+    expect(calls).toBe(0);
+  });
+
+  it('answers null for the points of a batch that fails or comes back with a different shape, and the others keep their answer', async () => {
+    const points = Array.from({ length: 150 }, (_, i) => ({ lat: 40 + i * 0.01, lon: 3 }));
+    let call = 0;
+    const provider = new OpenMeteoElevationProvider({
+      baseUrl: BASE,
+      fetch: (async (url: URL) => (++call === 2 ? new Response('down', { status: 503 }) : answerFor(new URL(url)))) as unknown as typeof fetch,
+    });
+    const answers = await provider.elevationsAt(points);
+    expect(answers.slice(0, 100).every((m) => m !== null)).toBe(true);
+    expect(answers.slice(100)).toEqual(Array(50).fill(null));
+    const short = new OpenMeteoElevationProvider({ baseUrl: BASE, fetch: (async () => Response.json({ elevation: [1] })) as unknown as typeof fetch });
+    expect(await short.elevationsAt(points.slice(0, 3))).toEqual([null, null, null]);
+  });
+});
+
+describe('CompositeElevationProvider.elevationsAt', () => {
+  it('asks each source only for the points the previous ones could not answer', async () => {
+    const asked: number[][] = [];
+    const source = (known: Set<number>, tag: number): ElevationProvider => ({
+      elevationAt: async () => null,
+      elevationsAt: async (points) => {
+        asked.push(points.map((p) => p.lat));
+        return points.map((p) => (known.has(p.lat) ? p.lat * 10 + tag : null));
+      },
+    });
+    const composite = new CompositeElevationProvider([source(new Set([1, 3]), 0), source(new Set([2, 3]), 1)]);
+    const answers = await composite.elevationsAt([1, 2, 3, 4].map((lat) => ({ lat, lon: 0 })));
+    expect(answers).toEqual([10, 21, 30, null]);
+    expect(asked).toEqual([
+      [1, 2, 3, 4],
+      [2, 4],
+    ]);
   });
 });
