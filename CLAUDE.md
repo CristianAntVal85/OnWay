@@ -61,7 +61,7 @@ pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (
 db/tests/run-postgis.sh                     # las 118 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-Recuentos de `pnpm -r test`: contratos 84 (75 de contrato y 9 del cliente generado), i18n 8, geo 64, api unitarias 101, web 113. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
+Recuentos de `pnpm -r test`: contratos 84 (75 de contrato y 9 del cliente generado), i18n 8, geo 64, api unitarias 101, web 145. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). Se apunta a otra dirección con `E2E_BASE_URL`.
 
 `docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen.
 

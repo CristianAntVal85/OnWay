@@ -116,6 +116,87 @@ export interface Messages {
     formErrors: string;
     mapRegion: string;
   };
+  missions: {
+    title: string;
+    createCta: string;
+    searchLabel: string;
+    searchSubmit: string;
+    tabsLabel: string;
+    tabs: { planning: string; active: string; closed: string };
+    status: { planning: string; active: string; closed: string };
+    summary: string;
+    empty: { planning: string; active: string; closed: string };
+    emptySearch: string;
+    clearSearch: string;
+    fields: { coordinator: string; noCoordinator: string; objective: string; origins: string; noOrigins: string; routes: string; participants: string; created: string };
+    routesValue: string;
+    participantsValue: string;
+    pagination: { label: string; previous: string; next: string; page: string };
+  };
+  missionDetail: {
+    back: string;
+    mapRegion: string;
+    fields: {
+      coordinator: string;
+      noCoordinator: string;
+      objective: string;
+      altitude: string;
+      altitudeValue: string;
+      country: string;
+      description: string;
+      noDescription: string;
+      created: string;
+      activated: string;
+      closed: string;
+    };
+    editData: string;
+    readOnlyClosed: string;
+    readOnlyRole: string;
+    closedMeanwhile: string;
+    readiness: {
+      title: string;
+      hint: string;
+      done: string;
+      pending: string;
+      targetDefined: string;
+      hasOrigins: string;
+      hasParticipants: string;
+      hasValidatedRoute: string;
+      addOrigin: string;
+      later: string;
+    };
+    edit: { title: string; saved: string; save: string; saving: string; cancel: string; stale: string; reload: string; noChanges: string };
+    points: {
+      title: string;
+      kinds: { origin: string; waypoint: string; rendezvous: string };
+      groups: { origin: string; waypoint: string; rendezvous: string };
+      empty: { origin: string; waypoint: string; rendezvous: string };
+      add: { origin: string; waypoint: string; rendezvous: string };
+      addTitle: { origin: string; waypoint: string; rendezvous: string };
+      editTitle: string;
+      name: string;
+      nameRequired: string;
+      note: string;
+      locationRequired: string;
+      save: string;
+      saving: string;
+      cancel: string;
+      edit: string;
+      editShort: string;
+      remove: string;
+      removeShort: string;
+      removeConfirm: string;
+      removeYes: string;
+      removing: string;
+      removeNo: string;
+      added: string;
+      updated: string;
+      removed: string;
+      altitude: string;
+      noAltitude: string;
+      noChanges: string;
+    };
+  };
   /** Un texto por cada código de ERROR_HTTP (doc 06 AC-05: el cliente elige el texto por `code`). */
   errors: Record<ErrorCode, string>;
 }

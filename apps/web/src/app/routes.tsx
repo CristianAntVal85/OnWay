@@ -7,6 +7,8 @@ import { AccountPage } from '../pages/account-page';
 import { CreateMissionPage } from '../pages/create-mission-page';
 import { HomePage } from '../pages/home-page';
 import { LaterPage } from '../pages/later-page';
+import { MissionDetailPage } from '../pages/mission-detail-page';
+import { MissionsPage } from '../pages/missions-page';
 import { LoginPage } from '../pages/login-page';
 import { NotFoundPage } from '../pages/not-found-page';
 import { ProfilePage } from '../pages/profile-page';
@@ -36,7 +38,7 @@ export function AppRoutes() {
                 path={PATHS.missions}
                 element={
                   <RoleGate route="missions">
-                    <LaterPage section="nav.missions" />
+                    <MissionsPage />
                   </RoleGate>
                 }
               />
@@ -48,12 +50,11 @@ export function AppRoutes() {
                   </RoleGate>
                 }
               />
-              {/* El detalle de la misión llega en T7; hasta entonces «Crear misión» termina aquí. */}
               <Route
                 path={`${PATHS.missions}/:missionId`}
                 element={
                   <RoleGate route="missions">
-                    <LaterPage section="nav.missions" />
+                    <MissionDetailPage />
                   </RoleGate>
                 }
               />

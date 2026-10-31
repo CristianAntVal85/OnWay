@@ -1,5 +1,8 @@
 import type { OperationInput } from '@onway/contracts/client';
 
+/** Tipo de un punto de la misión: origen, intermedio obligatorio o de reunión. */
+export type PointKind = OperationInput<'createMissionPoint'>['body']['kind'];
+
 /** Un punto ya elegido, sea cual sea la forma de entrada (RF-401): mismas coordenadas, mismo objeto. */
 export interface PickedPoint {
   lat: number;

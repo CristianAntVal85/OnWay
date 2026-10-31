@@ -37,6 +37,8 @@ export interface MapViewProps {
   /** Sin esta función (rescatista) el indicador muestra solo coordenadas. */
   elevationLookup?: ElevationLookup;
   focus?: MapFocus | null;
+  /** Al montarse, encuadra los marcadores que haya (uno: centrado; varios: todos a la vista). Sin marcadores, los Pirineos. */
+  fitToMarkers?: boolean;
   defaultLayer?: MapLayerId;
   /** Nombre accesible de la región del mapa. */
   label?: string;

@@ -6,7 +6,7 @@ export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'teams'
 
 export type NextStep = 'home' | 'complete-profile' | 'awaiting-approval';
 
-/** Detalle de una misión (llega en T7; hasta entonces la ruta muestra «llega en un hito posterior»). */
+/** Dirección del detalle de una misión. */
 export const missionPath = (missionId: string) => `${'/missions'}/${missionId}`;
 
 export const PATHS = {

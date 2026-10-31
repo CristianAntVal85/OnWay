@@ -11,6 +11,7 @@ import { createQueryClient, type SessionUser } from '../src/session/session';
 export interface Call {
   method: string;
   path: string;
+  query: URLSearchParams;
   headers: Headers;
   body: unknown;
 }
@@ -32,6 +33,7 @@ export function fakeApi(handlers: Record<string, Handler>) {
     const call: Call = {
       method,
       path: url.pathname.replace(/^\/api\/v1/, ''),
+      query: url.searchParams,
       headers: new Headers(init?.headers),
       body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
     };

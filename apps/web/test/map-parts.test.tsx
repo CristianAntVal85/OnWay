@@ -9,6 +9,7 @@ import { ES_ORTHO, FR_ORTHO, FR_STRIPS, IGN_HOSTS, topographicSources } from '..
 import { SATELLITE_TILES, frenchUrl, keyOutBlank, parseTileUrl, sourcesFor, spanishUrl, tileBounds } from '../src/map/ign-mix';
 import { Readout } from '../src/map/readout';
 import { buildStyle } from '../src/map/style';
+import { PYRENEES_BOUNDS, initialViewFor } from '../src/map/view';
 
 const wrap = (node: React.ReactNode) => render(<I18nextProvider i18n={createI18n('es')}>{node}</I18nextProvider>);
 
@@ -179,5 +180,25 @@ describe('satélite compuesto por tesela (RF-304)', () => {
     const rgba = new Uint8ClampedArray([255, 255, 255, 255, /* sin datos */ 254, 253, 255, 255, /* casi blanco (JPEG) */ 120, 130, 90, 255, /* imagen */ 255, 255, 200, 255 /* nieve amarillenta */]);
     expect(keyOutBlank(rgba)).toBe(2);
     expect([rgba[3], rgba[7], rgba[11], rgba[15]]).toEqual([0, 0, 255, 255]);
+  });
+});
+
+describe('encuadre inicial del mapa (T7)', () => {
+  it('sin marcadores, los Pirineos; con uno, centrado en él; con varios, la caja que los contiene', () => {
+    expect(initialViewFor([])).toMatchObject({ bounds: PYRENEES_BOUNDS });
+    expect(initialViewFor([{ lat: 42.6, lon: 0.65 }])).toEqual({ longitude: 0.65, latitude: 42.6, zoom: 12 });
+    expect(
+      initialViewFor([
+        { lat: 42.6, lon: 0.65 },
+        { lat: 42.6, lon: 0.65 },
+      ]),
+    ).toEqual({ longitude: 0.65, latitude: 42.6, zoom: 12 });
+    expect(
+      initialViewFor([
+        { lat: 42.6, lon: 0.65 },
+        { lat: 42.7, lon: 0.5 },
+        { lat: 42.5, lon: 0.9 },
+      ]),
+    ).toMatchObject({ bounds: [0.5, 42.5, 0.9, 42.7], fitBoundsOptions: { maxZoom: 14 } });
   });
 });

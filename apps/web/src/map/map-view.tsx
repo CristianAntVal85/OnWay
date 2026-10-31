@@ -10,20 +10,19 @@ import { SATELLITE_PROTOCOL, satelliteTile } from './ign-mix.js';
 import { Readout, type Cursor } from './readout.js';
 import { ROADS_SOURCE, buildStyle } from './style.js';
 import { MAP_LAYERS, type MapLayerId, type MapViewProps } from './types.js';
+import { initialViewFor } from './view.js';
 
 // Registro único: el protocolo `pmtiles://` (extracto propio) y el trabajador de MapLibre, desde el propio origen (CSP `worker-src 'self'`).
 maplibre.setWorkerUrl(workerUrl);
 maplibre.addProtocol('pmtiles', new Protocol().tile);
 maplibre.addProtocol(SATELLITE_PROTOCOL, satelliteTile);
 
-/** Los Pirineos: la caja de `geodata` (lon −2…4, lat 42…44). El mapa no se limita a ella: sigue a ambos lados de la frontera (RF-304). */
-const INITIAL_BOUNDS: [number, number, number, number] = [-2, 42, 4, 44];
 const PICK_ZOOM = 12;
 
 const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
 /** Mapa con las tres capas, controles, indicador de coordenadas y altitud, y atribuciones. Único sitio que importa MapLibre. */
-export default function MapView({ markers = [], onPick, picking = false, elevationLookup, focus, defaultLayer = 'topographic', label, className }: MapViewProps) {
+export default function MapView({ markers = [], onPick, picking = false, elevationLookup, focus, fitToMarkers = false, defaultLayer = 'topographic', label, className }: MapViewProps) {
   const { t, i18n } = useTranslation();
   const mapRef = useRef<MapRef>(null);
   const [layer, setLayer] = useState<MapLayerId>(defaultLayer);
@@ -31,6 +30,8 @@ export default function MapView({ markers = [], onPick, picking = false, elevati
   const [roadsFailed, setRoadsFailed] = useState(false);
   const [tilesFailed, setTilesFailed] = useState(false);
   const frame = useRef(0);
+  // Solo al montar: después el mapa no se mueve solo (lo mueve la persona o una petición de `focus`).
+  const [initialViewState] = useState(() => initialViewFor(fitToMarkers ? markers : []));
 
   const language = i18n.resolvedLanguage ?? 'es';
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
@@ -106,7 +107,7 @@ export default function MapView({ markers = [], onPick, picking = false, elevati
           ref={mapRef}
           mapLib={maplibre}
           mapStyle={style}
-          initialViewState={{ bounds: INITIAL_BOUNDS, fitBoundsOptions: { padding: 24 } }}
+          initialViewState={initialViewState}
           minZoom={4}
           maxZoom={18}
           attributionControl={false}
