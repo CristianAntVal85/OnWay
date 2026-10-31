@@ -44,7 +44,7 @@ docker compose up --wait                    # todo en local: http://localhost:80
 docker compose down                         # para; conserva datos y descargas (con -v los borra, también las contraseñas generadas y los ~843 MB de geodata)
 infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 4 cuentas, altitud del servidor, entorno (tiempo, luz y luna) y roles de la base (sin superusuario ni BYPASSRLS)
 COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --wait   # pila de pruebas: sin descargas (DEM sintético) y proveedores falsos (providers-stub)
-pnpm --filter @onway/web e2e                # 43 pruebas de Playwright (Chromium; 25 de escritorio y 18 de móvil 375 px: 21 de H0 y la demostración de H1 en los dos formatos) contra la pila levantada (con la superposición, como en el CI)
+pnpm --filter @onway/web e2e                # 63 pruebas de Playwright (Chromium; 35 de escritorio y 28 de móvil 375 px: las 21 de H0, la demostración de H1 y la de H2 en los dos formatos) contra la pila levantada (con la superposición, como en el CI)
 
 pnpm install                                # pnpm 9.12 vía corepack, Node >= 24.7
 pnpm lint                                  # ESLint plano en la raíz; incluye la regla de límites del mapa (apps/web/src fuera de src/map/)
@@ -61,7 +61,7 @@ pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (
 db/tests/run-postgis.sh                     # las 194 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-Recuentos de `pnpm -r test`: contratos 89 (80 de contrato y 9 del cliente generado), i18n 8, geo 116, api unitarias 132, web 270. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y casi deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). La demostración de H1 crea en cada ejecución cuatro misiones «E2E …» (dos por proyecto) y las deja **cerradas** (el registro de auditoría es de solo añadir, así que no se pueden borrar; `docker compose down -v` las borra con la pila); si una ejecución se interrumpe, la siguiente (o el cierre) cierra las que queden abiertas. Se apunta a otra dirección con `E2E_BASE_URL`.
+`FILES_DIR` (`/files` en la imagen) es la carpeta de los archivos subidos; en compose es el volumen `files` (`down -v` lo borra con la pila). Recuentos de `pnpm -r test`: contratos 89 (80 de contrato y 9 del cliente generado), i18n 8, geo 116, api unitarias 132, web 270. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y casi deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). La demostración de H1 crea en cada ejecución cuatro misiones «E2E …» (dos por proyecto) y las deja **cerradas** (el registro de auditoría es de solo añadir, así que no se pueden borrar; `docker compose down -v` las borra con la pila); si una ejecución se interrumpe, la siguiente (o el cierre) cierra las que queden abiertas. Se apunta a otra dirección con `E2E_BASE_URL`.
 
 `docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen.
 

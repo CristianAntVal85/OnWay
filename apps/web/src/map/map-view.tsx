@@ -96,6 +96,35 @@ export default function MapView({
 
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
+  // Arrastre de un vértice: sigue al puntero y, al soltar (si se movió de verdad), el editor recibe el punto nuevo.
+  const [drag, setDrag] = useState<{ index: number; lon: number; lat: number } | null>(null);
+  const startDrag = useCallback((event: React.PointerEvent<HTMLButtonElement>, index: number) => {
+    const map = mapRef.current?.getMap();
+    if (!map || event.button !== 0) return;
+    const rect = map.getCanvas().getBoundingClientRect();
+    const origin = { x: event.clientX, y: event.clientY };
+    const at = (e: PointerEvent) => map.unproject([e.clientX - rect.left, e.clientY - rect.top]);
+    let moved = false;
+    const onMove = (e: PointerEvent) => {
+      if (!moved && Math.hypot(e.clientX - origin.x, e.clientY - origin.y) < 4) return;
+      moved = true;
+      const p = at(e);
+      setDrag({ index, lon: p.lng, lat: p.lat });
+    };
+    const onUp = (e: PointerEvent) => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointercancel', onUp);
+      setDrag(null);
+      if (moved) {
+        const p = at(e);
+        editorRef.current?.onMove(index, { lat: p.lat, lon: p.lng });
+      }
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+    window.addEventListener('pointercancel', onUp, { once: true });
+  }, []);
+
   const editorRef = useRef(editor);
   editorRef.current = editor;
 
@@ -198,20 +227,17 @@ export default function MapView({
             </Source>
           )}
           {editor?.vertices.slice(0, MAX_HANDLES).map((vertex, index) => (
-            <Marker
-              key={`vertex-${index}`}
-              longitude={vertex[0]}
-              latitude={vertex[1]}
-              anchor="center"
-              draggable
-              onDragEnd={(event) => editor.onMove(index, { lat: event.lngLat.lat, lon: event.lngLat.lng })}
-            >
+            <Marker key={`vertex-${index}`} longitude={drag?.index === index ? drag.lon : vertex[0]} latitude={drag?.index === index ? drag.lat : vertex[1]} anchor="center">
               <button
                 type="button"
                 className="vertex-handle"
                 data-end={index === 0 ? 'start' : index === editor.vertices.length - 1 ? 'end' : undefined}
                 aria-label={editor.labelFor(index)}
                 aria-pressed={editor.selected === index}
+                // El arrastre es propio (eventos de puntero): el mapa no debe empezar a desplazarse con el mismo gesto.
+                onMouseDown={(event) => event.stopPropagation()}
+                onTouchStart={(event) => event.stopPropagation()}
+                onPointerDown={(event) => startDrag(event, index)}
                 onClick={(event) => {
                   event.stopPropagation();
                   editor.onSelect(editor.selected === index ? null : index);

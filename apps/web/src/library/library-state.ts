@@ -1,6 +1,6 @@
 // El estado de la biblioteca vive en la dirección (filtros, orden, página, vista): «atrás» y los enlaces funcionan.
 // La zona del mapa y la selección viven en la página: dependen de lo que se ve, no de un enlace.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 export const SORTS = ['updated_desc', 'name_asc', 'distance_asc', 'distance_desc', 'ascent_desc'] as const;
@@ -76,18 +76,19 @@ export function useLibraryState() {
   const filters = parseFilters(params);
   const view: View = params.get('view') === 'map' ? 'map' : 'list';
 
-  const update = (changes: Record<string, string | null>) =>
-    setParams(
-      (previous) => {
-        const next = new URLSearchParams(previous);
-        for (const [key, value] of Object.entries(changes)) {
-          if (value === null || value === '') next.delete(key);
-          else next.set(key, value);
-        }
-        return next;
-      },
-      { replace: true },
-    );
+  // Cada cambio parte de lo último que se pidió, no de lo que se pintó: dos cambios seguidos (escribir y, enseguida, elegir un filtro)
+  // no se pisan aunque React Router aún no haya vuelto a pintar entre uno y otro.
+  const latest = useRef(params);
+  latest.current = params;
+  const update = (changes: Record<string, string | null>) => {
+    const next = new URLSearchParams(latest.current);
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === null || value === '') next.delete(key);
+      else next.set(key, value);
+    }
+    latest.current = next;
+    setParams(next, { replace: true });
+  };
 
   // La búsqueda por nombre se aplica al dejar de teclear (o al enviarla); cambiarla vuelve a la página 1.
   const [draft, setDraft] = useState(filters.q);
@@ -100,5 +101,15 @@ export function useLibraryState() {
     // `update` cambia en cada render; solo importa lo que se ha escrito.
   }, [draft, filters.q]);
 
-  return { filters, view, draft, setDraft, update, clear: () => setParams(new URLSearchParams(view === 'map' ? { view: 'map' } : {}), { replace: true }) };
+  return {
+    filters,
+    view,
+    draft,
+    setDraft,
+    update,
+    clear: () => {
+      latest.current = new URLSearchParams(view === 'map' ? { view: 'map' } : {});
+      setParams(latest.current, { replace: true });
+    },
+  };
 }

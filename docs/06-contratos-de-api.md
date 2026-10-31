@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 0.9 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
+**Versión:** 1.0 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -813,7 +813,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 - El OpenAPI no se ha pasado por un validador oficial (no hay acceso a internet desde el entorno de trabajo; solo comprobaciones propias).
 - ~~Se probó con Zod 4 instalado localmente.~~ Confirmado con `pnpm install` desde el registro de npm: Zod 4.6.7 se comporta igual.
 - `nestjs-zod` no se usa: la API valida con un interceptor propio sobre los mismos esquemas (H0). El generador del cliente (`gen:client`) sí está integrado y lo consume la web.
-- Lo geoespacial de **puntos y altitud** sí se ha ejecutado en H1 (puntos de misión con `PointZ` en PostGIS, altitud del DEM de Copernicus, o la sintética en pruebas, y de Open-Meteo fuera de la caja de los Pirineos); los **candidatos, perfiles de elevación y bbox contra PostGIS** de las rutas siguen siendo formas de datos hasta H3.
+- Lo geoespacial de **puntos y altitud** sí se ha ejecutado en H1 (puntos de misión con `PointZ` en PostGIS, altitud del DEM de Copernicus, o la sintética en pruebas, y de Open-Meteo fuera de la caja de los Pirineos); y en H2 también lo de **rutas**: líneas `LineStringZ` con GiST, `ST_MakeEnvelope` (`listRoutes` por área visible, con un plan que usa el índice sobre 10 000 rutas sintéticas), `ST_SimplifyPreserveTopology` para la vista previa, perfiles de elevación y exportación a GPX/KML, todo contra PostGIS real. Siguen siendo formas de datos hasta H3 los **candidatos del motor** (`snapRoute`, `generateRoutes`, `adaptRoute`).
 - Las tablas generadas de `gen:doc` coinciden con este documento salvo dos filas que se mantienen a mano (`createRoute` y `getJob`, cuyo cuerpo y respuesta el generador no sabe describir por ser uniones) y los nombres de tipo traducidos (`texto` por `string`).
 
 ## 12. Preguntas y suposiciones
@@ -836,6 +836,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.0 | 2026-10-31 | Cierre de H2 (T10): las 13 operaciones de H2 montadas y probadas (`test:api` con 274 pruebas; AC-02 compara con las 36 exactas de H0, H1 y H2); §11 con lo geoespacial de rutas verificado contra PostGIS. El cuerpo JSON admite hasta 2 MB (una línea de 20 000 vértices son ~0,6 MB) y Caddy corta lo que pase de 12 MB con un `413` que no sigue el formato único (el cliente lo trata como `FILE_TOO_LARGE`). OpenAPI, tablas y cliente regenerados sin diferencias: ningún cambio de esquema en esta tarea |
 | 0.9 | 2026-10-31 | H2-T1. `exportRoutes` (`GET /routes/export`, varias rutas de la biblioteca en un solo GPX/KML, RF-511; H2 pasa a 13 operaciones y el registro a 96). `OUTSIDE_COVERAGE` en `previewRouteImport`, `createRoute`, `createRouteVersion` y `deriveRoute` (el servidor mide todo trazado, RN-10). `INVALID_STATE_TRANSITION` en `archiveRoute`, `createRouteVersion` y `validateRouteVersion` (una ruta archivada es de solo lectura; derivar sí se permite). `RoadType` + `unknown` («sin clasificar»: migración 0012, doc. 05). Notas de `uploadFile` (solo `route_import` hasta H5), `createRoute` y `deriveRoute` (`addToMission` y `calculationJobId` se rechazan hasta H4/H9) y `exportRoute` (versión por defecto: la más reciente). 5 pruebas nuevas del paquete (89) |
 | 0.8 | 2026-10-31 | Q-14 resuelta (no): el administrador lee misiones y rutas y no las escribe; `MISSION_WRITERS` y la base de datos lo reflejan (migración 0011, doc. 05). Solo cambia un comentario del registro de endpoints; sin cambios de esquema: OpenAPI, tablas y cliente regenerados sin diferencias. Pruebas al día: `test:api` 191, base de datos 194 comprobaciones SQL + 19 de Vitest |
 | 0.7 | 2026-10-31 | Cierre de H1 (T10): sección 11 al día (84 pruebas del paquete; las 18 operaciones de H1 montadas y probadas en `test:api` con 189 pruebas; la demostración de H1 como prueba de extremo a extremo; lo geoespacial de puntos y altitud verificado, no el de rutas). OpenAPI, tablas y cliente regenerados sin diferencias: ningún cambio de esquema en esta tarea |

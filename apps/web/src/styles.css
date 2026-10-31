@@ -2349,6 +2349,7 @@ h4 {
 /* ---------- editar y dibujar rutas (H2-T9) ---------- */
 
 .vertex-handle {
+  touch-action: none;
   inline-size: 1.5rem;
   block-size: 1.5rem;
   padding: 0;

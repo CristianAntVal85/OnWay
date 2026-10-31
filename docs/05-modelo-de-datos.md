@@ -619,7 +619,7 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 | Datos sensibles | Documentos y direcciones inventados, con letra de DNI válida, cifrados | H5 |
 | Cursos y habilidades | 20, algunos con certificado ficticio (un PDF de una página) | H5 |
 | Misiones | 6: dos en planificación, dos activas, dos cerradas. Las cerradas con participación confirmada y alguna desmarcada. **H1 siembra 3 (una por estado, ficticias; la activa con origen, intermedio y reunión; la cerrada sin participaciones, que llegan en H6)**, cada una con sus filas de `audit_log` y la altitud calculada por el `ElevationProvider`; las 6 completas, con participaciones, son de H6 | H1 (3 de 6) |
-| Rutas | 8 en la biblioteca, con 1 a 3 versiones. Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada | H3 |
+| Rutas | 8 en la biblioteca, con 1 a 3 versiones. Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada. **H2 siembra 6** (una validada de una versión, una con tres versiones, una con borrador más nuevo que la validada, una derivada, una archivada y una con la validación de hace más de 90 días), a partir de GPX inventados de `data/seed/gpx/`, con sus filas de `audit_log` y las métricas que calcula el servidor; las 2 que faltan, generadas por el motor, llegan con H3 | H2 (6 de 8) |
 | Objetivos | En el Pirineo, escogidos con la prueba técnica del motor de rutas (documento 04, sección 7.3); la geometría de las rutas de ejemplo sale de esa prueba. Los 3 objetivos de H1 son inventados y caen dentro de la caja de `geodata` (lon −2…4, lat 42…44) | H1 (inventados) |
 
 ## 11. Pruebas de la base de datos
@@ -681,6 +681,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**0.8 (2026-10-31)** H2-T10. §10: las 6 rutas de demostración de H2 (P6) y su origen (GPX inventados); las 2 generadas, en H3. Sin cambios de esquema.
 
 **0.7 (2026-10-31)** H2-T1. Migración 0012: valor `unknown` («sin clasificar») en `road_type` y política `files_insert` solo para el coordinador cuando `purpose = 'route_import'` (la lectura de archivos sigue abierta al personal). Matriz de §6.3 al día (`files`: el coordinador escribe los GPX/KML de importación).
 

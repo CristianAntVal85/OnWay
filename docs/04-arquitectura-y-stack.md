@@ -1,6 +1,6 @@
 # OnWay — Documento 04: Arquitectura y stack
 
-Versión: 0.8 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7), 02 (v0.5) y 03 (v0.4)
+Versión: 0.9 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7), 02 (v0.5) y 03 (v0.4)
 
 Este documento decide **con qué y cómo** se construye OnWay: lenguaje, frameworks, base de datos, despliegue, proveedores externos, seguridad y estrategia para la futura app móvil. Parte de las restricciones de un proyecto didáctico (documento 03, sección 14).
 
@@ -107,6 +107,8 @@ Puntos clave:
 
 **Versiones reales tras H1** (2026-10-31, lo que fija `pnpm-lock.yaml`): lo de H0 más MapLibre GL JS 6.16, react-map-gl 8.1, pmtiles 4.5 (en el navegador) y 1.31.2 (herramienta de `geodata`), @protomaps/basemaps 5.7, geotiff 3.0 (lectura del DEM en el API), SunCalc 2.1 (sol y luna en `packages/geo`), ESLint 10.14, typescript-eslint 8.72, Vitest 3.2, Playwright 1.64 y TypeScript 5.9. Son las dependencias que aprobó el usuario para H1 y ninguna más; `pnpm audit --prod` sin avisos.
 
+**Dependencias de H2** (aprobadas el 2026-10-31): `fast-xml-parser` 5.11 en `packages/geo` (lectura de GPX y KML; MIT, 6 dependencias directas también MIT, `pnpm audit` limpio; la línea 4.x tiene una sola pero está marcada como heredada) y `@types/multer` en desarrollo (tipos del `multer` que ya trae `@nestjs/platform-express`, con `pnpm.overrides.multer = ^2.5.0`). La escritura de GPX y KML es propia, sin librería.
+
 ---
 
 ## 4. Estructura del repositorio
@@ -153,11 +155,11 @@ Cada módulo del dominio (documento 03, sección 2) es un módulo de NestJS con 
 | `teams` | Equipos y su localidad |
 | `missions` | Misiones, puntos, ciclo de vida, cierre y confirmación de participación |
 | `participation` | Ofertas de voluntariado, estados, acciones en bloque |
-| `routes` | Biblioteca, versiones, derivación, validación, importación y exportación GPX |
+| `routes` | Biblioteca, versiones, derivación, validación, importación y exportación GPX/KML. **H2:** `RouteMeasurement` (la medición de todo trazado), lecturas con `bbox`, escrituras con candado de fila y exportación; el acceso a `routes`, `route_versions` y `route_segments` es SQL propio |
 | `calculation` | Trabajos de cálculo, progreso, resultados |
 | `weather` | Pronóstico a la altitud del punto, caché, luz y luna |
 | `audit` | Registro de auditoría, consulta para el administrador |
-| `files` | Almacenamiento privado de GPX y certificados |
+| `files` | Almacenamiento privado de GPX y certificados. **H2:** subida (`uploadFile`) con tipo por contenido y tope de 10 MB, `FileStorage` y apertura de un archivo por su id (`ImportedTracks`); los certificados llegan en H5 |
 
 ### 5.2 Puertos (interfaces hacia lo externo)
 
@@ -169,7 +171,7 @@ Principio 7 del documento 03: lo externo se puede cambiar sin tocar el dominio. 
 | `ElevationProvider` | **Compuesto (H1)**: archivos Copernicus GLO-30 del servidor (lectura por ventanas, interpolación bilineal) dentro de la caja de los Pirineos y, fuera de ella, la API de elevación de Open-Meteo (Copernicus GLO-90). Si ninguna responde, `OUTSIDE_COVERAGE` | MDT del IGN español, RGE ALTI francés |
 | `WeatherProvider` | **Open-Meteo (H1)**: pronóstico a la altitud propia del punto (`elevation`), horario y diario de 7 días, isoterma de 0 °C; caché por celda y banda en `forecast_cache` | Meteoblue |
 | `GeocodingProvider` | **Nominatim público (H1)**: `User-Agent` con contacto, 1 petición/s en toda la API, caché de 24 h | CartoCiudad (España), Base Adresse Nationale (Francia) |
-| `FileStorage` | Disco del servidor (volumen) | Almacenamiento compatible con S3 |
+| `FileStorage` | **Disco del servidor (H2)**: volumen `files` montado en `/files` del `api` (que es de solo lectura salvo ahí y `/tmp`), clave aleatoria `<aa>/<uuid>`, escritura atómica y permisos 0600; en pruebas, en memoria | Almacenamiento compatible con S3 |
 | `Clock` | Reloj del sistema | Reloj fijo en pruebas |
 | `Mailer` | **Resend** (recuperar contraseña). En desarrollo y pruebas, registro en consola o Mailpit | SMTP propio, Brevo |
 
@@ -255,6 +257,9 @@ Antes de comprometer la implementación, una prueba aislada de unos pocos días.
 - Base global: Copernicus DEM GLO-30, 30 m, formato GeoTIFF optimizado, descarga gratuita sin cuenta. **Limitación a tener en cuenta:** es un modelo de **superficie** (incluye bosque y edificios), no de terreno desnudo. Para pendientes en senderos bajo arbolado puede introducir error.
 - Mejora prevista: modelos de terreno nacionales de mayor resolución de IGN España e IGN Francia *(a verificar disponibilidad, resolución y licencia)*.
 - Las métricas de una ruta importada se recalculan siempre con el modelo propio (R-07).
+- **`ElevationProvider` por lotes (H2):** `elevationsAt(puntos)`. El modelo local agrupa por tesela y lee bloques de 256 píxeles una sola vez; Open-Meteo, de 100 en 100 con un tope de 1 500 puntos remotos por petición (por encima, `OUTSIDE_COVERAGE`); el compuesto pregunta a cada fuente solo por lo que falta.
+- **Cómo se mide una ruta (H2, D-H2-01/03):** redondeo a 7 decimales (~1 cm), depurado de vértices a menos de 5 m, densificado a 30 m (la resolución del modelo), altitud de cada vértice, remuestreo cada 30 m, **mediana de 3**, **umbral de 3 m** para el desnivel y pendiente máxima sobre una **ventana de 60 m**; perfil de 500 puntos como mucho y un decimal. La altitud y las métricas de un archivo o del cliente no se usan nunca.
+- **Precisión (calibrada con ruido simulado de ±1 a ±5 m):** rampa del 10 % con ruido de ±5 m, desnivel con error de menos del 5 %; colina de 300 m con ruido de ±3 m, menos del 3 %; terreno llano con ruido de ±2 m, desnivel cero. Peor caso, ruido de ±5 m: una colina da un 7 % de más y un terreno llano inventa del orden de 69 m en 6 km. **Límite del modelo:** un relieve de menos de unos 200 m de longitud de onda se subestima entre un 14 % y un 30 % con un modelo de 30 m (quitar el suavizado lo evitaría, pero con ruido de ±5 m inventaría cientos de metros de desnivel: se prefiere subestimar). Medido en la pila: una pista de 20 000 vértices se mide en 0,4 s con ~90 MiB en el `api`.
 
 ### 7.5 Campo a través (v2) y el lenguaje
 
@@ -409,7 +414,7 @@ Registros estructurados, endpoint de salud para API, worker y motor de rutas, y 
 | Invariantes | Una prueba por cada INV-xx del documento 03, especialmente las de aislamiento, inmutabilidad de versiones y visibilidad de datos | Vitest + base real |
 | Integración | Consultas espaciales, RLS, cola de trabajos | Testcontainers con PostGIS |
 | Contrato | El API respeta los esquemas Zod y el OpenAPI | Generado desde los esquemas |
-| Extremo a extremo | Flujos de las vistas: crear misión, ofrecerse, aceptar, cerrar con asistencia, aprobar cuenta. En H0: la demostración completa contra `docker compose up`, en escritorio y a 375 px. En H1 (`apps/web/e2e/h1-demo.spec.ts`, 11 pruebas por proyecto): con `compose.yml` + `infra/compose.e2e.yml` (DEM sintético y `providers-stub`, sin salir a Internet) el coordinador crea una misión pinchando el objetivo en el mapa, añade orígenes por coordenadas (decimal y GMS) y por dirección, un intermedio y una reunión (esta en otro país, con confirmación), cambia las tres capas con sus atribuciones a la vista, ve el tiempo, la luz y la luna de una ubicación concedida y del objetivo y la tarjeta «no disponible» con el proveedor caído, activa con el aviso de «sin ruta validada», cierra y reabre; el rescatista ve la misión activa sin rutas y no la ve en planificación; el historial lo refleja; una organización ajena recibe 404; y un recorrido solo con teclado y en francés. Una vigilancia de red comprueba en cada prueba que el navegador solo habla con el propio origen y con los servicios de IGN (las teselas se sustituyen por una imagen vacía). Cada ejecución crea misiones «E2E …» y las deja cerradas: el registro de auditoría es de solo añadir | Playwright |
+| Extremo a extremo | Flujos de las vistas: crear misión, ofrecerse, aceptar, cerrar con asistencia, aprobar cuenta. En H0: la demostración completa contra `docker compose up`, en escritorio y a 375 px. En H1 (`apps/web/e2e/h1-demo.spec.ts`, 11 pruebas por proyecto): con `compose.yml` + `infra/compose.e2e.yml` (DEM sintético y `providers-stub`, sin salir a Internet) el coordinador crea una misión pinchando el objetivo en el mapa, añade orígenes por coordenadas (decimal y GMS) y por dirección, un intermedio y una reunión (esta en otro país, con confirmación), cambia las tres capas con sus atribuciones a la vista, ve el tiempo, la luz y la luna de una ubicación concedida y del objetivo y la tarjeta «no disponible» con el proveedor caído, activa con el aviso de «sin ruta validada», cierra y reabre; el rescatista ve la misión activa sin rutas y no la ve en planificación; el historial lo refleja; una organización ajena recibe 404; y un recorrido solo con teclado y en francés. Una vigilancia de red comprueba en cada prueba que el navegador solo habla con el propio origen y con los servicios de IGN (las teselas se sustituyen por una imagen vacía). Cada ejecución crea misiones «E2E …» y las deja cerradas: el registro de auditoría es de solo añadir. En H2 (`apps/web/e2e/h2-demo.spec.ts`, 10 pruebas por proyecto): el coordinador ve la biblioteca de demostración en lista y mapa, mueve el mapa y la lista pide la zona, filtra y busca; importa un GPX inventado con altitudes falsas (rechaza uno de más de 10 MB y un PDF que se llama `.gpx`), ve la vista previa con las métricas del servidor y lo guarda en Borrador; edita (escribiendo una coordenada y, en escritorio, arrastrando un vértice) y se crea la versión 2; las compara y valida la 2 con el aviso; deriva una copia, exporta varias rutas en un GPX sin autor, exporta una versión, la vuelve a importar y obtiene la misma geometría; archiva una ruta; importa puntos en una misión; el administrador lee sin botones de escritura y el rescatista no tiene acceso; una organización ajena no ve nada (404); y un recorrido con teclado y en francés. Las rutas «E2E …» quedan archivadas | Playwright |
 | Motor de rutas | Casos de la prueba técnica, guardados como regresión | Vitest con el contenedor |
 
 ---
@@ -463,6 +468,7 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 0.9 | 2026-10-31 | H2-T10: §5.1 y §5.2 con `files` y `routes` implementados y el `FileStorage` en disco (volumen `files`); §7.4 con el `ElevationProvider` por lotes, cómo se mide una ruta, sus parámetros y su precisión; §3 y §12 con `fast-xml-parser` y `@types/multer` y las pruebas de H2 (E2E `h2-demo.spec.ts`); Caddy limita el cuerpo de `/api` a 12 MB y la API acepta JSON de hasta 2 MB |
 | 0.8 | 2026-10-31 | H1, validación: §9.0 corrige la causa del `403` de Nominatim (el contacto ficticio de `example.org`, no la red ni la IP): el `User-Agent` por defecto pasa a ser la página pública del proyecto, comprobado con `200`. Q-26 y el resto, sin cambios |
 | 0.7 | 2026-10-31 | H1-T10: §3 con ESLint incorporado y las versiones reales tras H1; §12 con la prueba de extremo a extremo de H1 y su vigilancia de red; Q-26 queda resuelta en lo de H1 y abierta solo en lo offline (v2.1), como ya figuraba. H1-T6: §8.1 con las tres capas tal como se construyeron (PMTiles propio en `/tiles/`; satélite compuesto por tesela; topográfico apilado), §8.2 con los `GetCapabilities` leídos el 2026-10-31 (capas, formatos, licencias, sin SCAN 25 público francés, teselas blancas de IGN Francia fuera de su país), §8.3 y Q-26 (parte de H1 resuelta), §8.5 con las atribuciones y el hueco de Andorra, CSP con los dos anfitriones de IGN. H1-T5: §5.2 con `WeatherProvider` Open-Meteo, caché por celda y banda, degradación (`stale`/`unavailable`), salud pasiva, redondeo de la ubicación y registro sin consulta; §9.0 con el pronóstico de Open-Meteo y SunCalc; §9.1 con el presupuesto de llamadas. H1-T4: §5.2 con `ElevationProvider` compuesto (GLO-30 local + Open-Meteo) y `GeocodingProvider` Nominatim implementados; §9.0 con las fuentes de `geodata` verificadas (URL oficiales, licencias, atribuciones, tamaños, caja lon −2…4 / lat 42…44) y el rechazo de Nominatim al `User-Agent` con contacto de `example.org` |
 | 0.6 | 2026-10-30 | Cierre de H0: sección 3 con lo realmente elegido (driver `pg`, `react-router`, Prettier, Argon2id de `crypto.argon2` de Node, migrador de Drizzle sobre SQL a mano sin `drizzle-kit`, validación sin `nestjs-zod`, componentes propios, jsdom y Testing Library, Testcontainers 12) y versiones reales. Sección 12: la prueba E2E de H0 |

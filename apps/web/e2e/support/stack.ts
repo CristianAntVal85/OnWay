@@ -101,5 +101,17 @@ export async function removeOrganizationB(): Promise<void> {
  * de añadir). Solo toca misiones cuyo nombre empieza por «E2E » y que siguen abiertas.
  */
 export async function closeLeftoverE2eMissions(): Promise<void> {
-  await psqlAsOwner(`UPDATE missions SET status = 'closed', closed_at = COALESCE(closed_at, now()), activated_at = COALESCE(activated_at, now()) WHERE name LIKE 'E2E %' AND status <> 'closed';`);
+  // El disparador solo admite planificación → activa → cerrada: primero se activan las que siguen en planificación.
+  await psqlAsOwner(`
+UPDATE missions SET status = 'active', activated_at = COALESCE(activated_at, now()) WHERE name LIKE 'E2E %' AND status = 'planning';
+UPDATE missions SET status = 'closed', closed_at = COALESCE(closed_at, now()) WHERE name LIKE 'E2E %' AND status <> 'closed';`);
+}
+
+/**
+ * Las rutas que crea la demostración de H2 se llaman «E2E …» y las deja archivadas (no se borran: RN-14). Si una ejecución se
+ * interrumpe, esto archiva las que sigan activas para que la biblioteca de demostración quede como estaba.
+ */
+export async function archiveLeftoverE2eRoutes(): Promise<void> {
+  await psqlAsOwner(`UPDATE routes SET status = 'archived' WHERE name LIKE 'E2E %' AND status <> 'archived' AND NOT EXISTS (
+    SELECT 1 FROM mission_routes mr JOIN missions m ON m.id = mr.mission_id WHERE mr.route_id = routes.id AND m.status <> 'closed');`);
 }

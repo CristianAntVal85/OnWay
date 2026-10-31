@@ -128,9 +128,11 @@ Los atributos son conceptuales. Nombres, tipos y restricciones concretas se fija
 |---|---|---|
 | **Ruta** | organización, nombre, estado (Activa, Archivada), derivada de (ruta y versión), versión más reciente, versión validada más reciente, etiquetas (Q-21) | Es la identidad estable: "esta ruta" a lo largo del tiempo |
 | **Versión de ruta** | ruta, número, estado (Borrador, Validada), geometría con altitud, métricas, procedencia, marca de modificada manualmente, parámetros de generación, trabajo de cálculo que la produjo, quién la creó y cuándo, quién la validó y cuándo, nota | **Inmutable una vez guardada** (RN-12). Métricas: distancia, desnivel positivo y negativo, altitud mínima y máxima, pendiente máxima |
-| **Tramo de ruta** | versión, orden, geometría, tipo de vía (carretera, pista, sendero, sin camino), distancia, desnivel | Hace posible la composición de la ruta (RF-503) y el campo a través en v2 |
+| **Tramo de ruta** | versión, orden, geometría, tipo de vía (carretera, pista, sendero, sin camino o **sin clasificar**), distancia, desnivel | Hace posible la composición de la ruta (RF-503) y el campo a través en v2 |
 | **Ruta en misión** | misión, ruta, **versión fijada**, origen de la misión opcional, equipo opcional, estado (Añadida, No disponible), nota, quién la añadió y cuándo | Única por misión y ruta (RF-513, RF-805, RF-508) |
 | **Trabajo de cálculo** | organización, solicitado por, tipo (generar, adaptar), parámetros, estado (Pendiente, Calculando, Completado, Fallido), motivo del fallo, versiones producidas, fechas | Soporta el cálculo asíncrono (sección 8.2) |
+
+**Tipo «sin clasificar» (H2):** una ruta importada, dibujada o editada a mano no pasa por el motor, así que no se sabe qué tipo de vía recorre: toda versión de H2 tiene un único tramo de tipo *sin clasificar*. La clasificación llega con el motor en H3.
 
 **Procedencia de una versión:** generada, importada, dibujada, editada o adaptada. Para las importadas se conserva una referencia al archivo original, por trazabilidad (RF-510).
 
@@ -573,6 +575,9 @@ La arquitectura y el stack están en el documento 04, el modelo de datos en el 0
 Consultadas el 29 de octubre de 2026. Las condiciones y precios de terceros pueden cambiar. Hay que confirmarlas directamente con cada proveedor antes de publicar la demo.
 
 ## 19. Registro de cambios
+
+**0.6 (2026-10-31)**
+- H2: nuevo tipo de vía «sin clasificar» en el tramo de ruta (§4.4); el modelo no cambia en nada más.
 
 **0.5 (2026-10-31)**
 - Q-14 resuelta (no): el administrador no escribe misiones; solo los coordinadores. INV-03 precisa que el responsable nunca es un administrador y que lo comprueba también la base de datos (documento 05, migración 0011). Sin cambios en el modelo ni en lo que ve cada rol.
