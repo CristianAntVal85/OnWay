@@ -372,5 +372,56 @@ export interface Messages {
       routeLine: string;
     };
   };
+  routeDetail: {
+    back: string;
+    mapLabel: string;
+    archivedNotice: string;
+    staleNotice: string;
+    metrics: {
+      title: string;
+      distance: string;
+      ascent: string;
+      descent: string;
+      minElevation: string;
+      maxElevation: string;
+      maxSlope: string;
+      slopeValue: string;
+      roadMix: string;
+      roadTypes: { road: string; track: string; path: string; offtrail: string; unknown: string };
+    };
+    profile: { title: string; description: string; showTable: string; tableCaption: string; columnDistance: string; columnElevation: string };
+    versions: {
+      title: string;
+      number: string;
+      shown: string;
+      show: string;
+      validatedBy: string;
+      createdBy: string;
+      draft: string;
+      validated: string;
+      noNote: string;
+      manuallyModified: string;
+      provenance: { generated: string; imported: string; drawn: string; edited: string; adapted: string };
+    };
+    compare: {
+      title: string;
+      intro: string;
+      a: string;
+      b: string;
+      metric: string;
+      difference: string;
+      same: string;
+      legendA: string;
+      legendB: string;
+      versionOption: string;
+      start: string;
+      stop: string;
+    };
+    relations: { derivedFrom: string; derivatives: string; usedIn: string; usedInRow: string; notUsed: string; noDerivatives: string };
+    actions: { validate: string; derive: string; archive: string; newVersion: string; exportGpx: string; exportKml: string; exporting: string; exportError: string; readOnly: string };
+    validate: { title: string; description: string; warning: string; acknowledge: string; confirm: string; working: string; cancel: string; needsAcknowledge: string; immutable: string };
+    derive: { title: string; description: string; nameLabel: string; nameRequired: string; confirm: string; working: string; cancel: string };
+    archive: { title: string; description: string; confirm: string; working: string; cancel: string; inUse: string };
+  };
   errors: Record<ErrorCode, string>;
 }

@@ -12,6 +12,8 @@ export const TONE_COLORS: Record<MapRouteTone, string> = {
   draft: '#8a5a00',
   stale: '#b3261e',
   archived: '#5f6b73',
+  'compare-a': '#0b5cad',
+  'compare-b': '#7b2d8e',
 };
 
 /** El GeoJSON mínimo que MapLibre lee: una línea por ruta con lo que la pintura necesita. */
@@ -48,8 +50,23 @@ export const lineLayer = {
   type: 'line',
   layout: { 'line-cap': 'round', 'line-join': 'round' },
   paint: {
-    'line-color': ['match', ['get', 'tone'], 'validated', TONE_COLORS.validated, 'draft', TONE_COLORS.draft, 'stale', TONE_COLORS.stale, TONE_COLORS.archived],
+    'line-color': [
+      'match',
+      ['get', 'tone'],
+      'validated',
+      TONE_COLORS.validated,
+      'draft',
+      TONE_COLORS.draft,
+      'stale',
+      TONE_COLORS.stale,
+      'compare-a',
+      TONE_COLORS['compare-a'],
+      'compare-b',
+      TONE_COLORS['compare-b'],
+      TONE_COLORS.archived,
+    ],
     'line-width': width,
+    'line-dasharray': ['match', ['get', 'tone'], 'draft', ['literal', [2, 1.5]], 'compare-b', ['literal', [2, 1.5]], 'archived', ['literal', [0.5, 2]], ['literal', [1, 0]]],
   },
 } as unknown as LayerProps;
 

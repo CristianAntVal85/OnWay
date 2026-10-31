@@ -29,7 +29,7 @@ export interface MapFocus extends MapPoint {
 }
 
 /** Cómo se pinta una ruta: borrador, validada, validación antigua o archivada. Además del color cambia el trazo (sólido, discontinuo, punteado). */
-export type MapRouteTone = 'draft' | 'validated' | 'stale' | 'archived';
+export type MapRouteTone = 'draft' | 'validated' | 'stale' | 'archived' | 'compare-a' | 'compare-b';
 
 /** Una ruta de la biblioteca sobre el mapa: la línea ya viene simplificada del servidor (`previewGeometry`). */
 export interface MapRoute {
