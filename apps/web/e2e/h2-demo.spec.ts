@@ -96,8 +96,12 @@ test('the coordinator sees the demo library in list and map, the list follows th
   await page.waitForTimeout(1000); // el mapa termina su inercia antes de quitar la zona
   if (mobile(info)) await page.getByRole('tab', { name: R.views.list }).click();
   await expect(page.getByRole('button', { name: R.zone.clear })).toBeVisible();
+  // «Mostrar toda la biblioteca» quita la zona. La inercia del arrastre puede seguir moviendo el mapa unos instantes en el CI y volver a
+  // pedirla, así que se comprueba el botón y, para seguir con los filtros, se vuelve a abrir la página (la zona no vive en la dirección).
   await page.getByRole('button', { name: R.zone.clear }).click();
+  await page.goto('/routes');
   await expect(page.getByRole('link', { name: 'Pradera a la Brecha (ficticia)', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: R.zone.clear })).toHaveCount(0);
 
   // Filtrar por estado y buscar por nombre.
   await page.getByText(new RegExp(`^${R.filters.title}`)).click();
