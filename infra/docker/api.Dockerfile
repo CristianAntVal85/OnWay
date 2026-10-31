@@ -36,6 +36,9 @@ COPY --from=build --chown=node:node /out/ ./
 COPY --chown=node:node db/migrations db/migrations
 COPY --chown=node:node data/seed/demo.json data/seed/demo.json
 ENV MIGRATIONS_DIR=/app/db/migrations SEED_FILE=/app/data/seed/demo.json
+# Carpeta de los archivos subidos (GPX/KML): el volumen `files` del compose se monta aquí y hereda el dueño `node`. Es lo único que la API escribe además de /tmp.
+RUN mkdir /files && chown node:node /files && chmod 700 /files
+ENV FILES_DIR=/files
 USER node
 EXPOSE 3000
 CMD ["node", "dist/src/main.js"]

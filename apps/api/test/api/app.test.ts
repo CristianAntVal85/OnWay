@@ -8,8 +8,8 @@ import { TEST_PASSWORD } from '../support/fixtures.js';
 import { TestOnlyController } from '../support/test-controllers.js';
 
 /**
- * Operations built so far: the five of H0 plus those of H1 that earlier tasks have mounted. AC-02 compares the routes
- * Express mounts with this list; each H1 task appends its operations here; T5 leaves exactly the 23 of the milestone (5 of H0 + 18 of H1).
+ * Operations built so far: the five of H0, the 18 of H1 and those of H2 that earlier tasks have mounted. AC-02 compares the routes
+ * Express mounts with this list; each H2 task appends its operations here; H2-T6 leaves exactly the 36 (23 of H0 and H1 + 13 of H2).
  */
 const BUILT = [
   'getHealth',
@@ -35,6 +35,7 @@ const BUILT = [
   'geocode',
   'getElevation', // H1-T4
   'getEnvironment', // H1-T5
+  'uploadFile', // H2-T3
 ];
 
 let real: TestApp;
@@ -65,10 +66,13 @@ async function expectError(response: Response, code: keyof typeof ERROR_HTTP) {
 }
 
 describe('routes come from the registry (AC-02, rule 7)', () => {
-  it('mounts exactly the 23 operations of H0 and H1, and all of them are in the registry (H1-T5)', () => {
+  it('mounts every operation of H0 and H1 (23) plus the ones of H2 built so far, and all of them are in the registry (H2-T3)', () => {
     const ofMilestones = ENDPOINTS.filter((e) => e.milestone === 'H0' || e.milestone === 'H1').map((e) => e.id);
     expect(ofMilestones).toHaveLength(23);
-    expect([...BUILT].sort()).toEqual([...ofMilestones].sort());
+    const ofH2 = ENDPOINTS.filter((e) => e.milestone === 'H2').map((e) => e.id);
+    expect(ofH2).toHaveLength(13);
+    expect(BUILT.filter((id) => ofMilestones.includes(id)).sort()).toEqual([...ofMilestones].sort());
+    expect(BUILT.filter((id) => !ofMilestones.includes(id)).every((id) => ofH2.includes(id))).toBe(true);
   });
 
   it('mounts exactly the operations built so far, and all of them are in the registry', () => {
@@ -77,10 +81,10 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing that belongs to a later milestone than H1, test controllers included', () => {
-    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H1')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
+  it('mounts nothing that belongs to a later milestone than H2, test controllers included', () => {
+    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H2')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
-    expect(later.length).toBeGreaterThan(70);
+    expect(later.length).toBeGreaterThan(55);
     expect(later.filter((route) => mounted.has(route))).toEqual([]);
   });
 

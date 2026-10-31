@@ -21,6 +21,8 @@ export const testIdentity = (overrides: Partial<IdentityOptions> = {}): Identity
 });
 
 export async function startApp(options: StartOptions): Promise<TestApp> {
+  // Every app closes with its own shutdown hooks (signal listeners): a test process holds many apps in a row.
+  process.setMaxListeners(100);
   const identity = testIdentity(options.identity);
   const app = await createApp({ logger: process.env.TEST_LOGS ? ['error', 'warn'] : false, ...options, identity });
   await app.listen(0, '127.0.0.1');

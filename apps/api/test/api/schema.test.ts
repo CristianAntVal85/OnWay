@@ -20,9 +20,10 @@ const normalize = (type: string) => type.replace(/^char\((\d+)\)$/, 'character($
 describe('the Drizzle schema matches the migrated database (D-H0-01)', () => {
   const tables = Object.values(schemaModule.schema) as PgTable[];
 
-  it('covers the tables the API uses (H0, plus the mission tables of H1)', () => {
+  it('covers the tables the API uses (H0, plus the mission tables of H1 and `files` of H2)', () => {
     expect(tables.map((t) => getTableConfig(t).name).sort()).toEqual([
       'audit_log',
+      'files',
       'memberships',
       'mission_points',
       'missions',
@@ -60,7 +61,7 @@ describe('the Drizzle schema matches the migrated database (D-H0-01)', () => {
 
   it('declares the enums with the same values and order', async () => {
     const enums = Object.values(schemaModule.enums);
-    expect(enums.length).toBe(8);
+    expect(enums.length).toBe(9);
     for (const e of enums) {
       const rows = await fixtures.query<{ label: string }>(`SELECT e.enumlabel AS label FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname = $1 ORDER BY e.enumsortorder`, [
         e.enumName,

@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger, type CallHandler, type ExecutionContext, type NestInterceptor } from '@nestjs/common';
-import type { Endpoint } from '@onway/contracts';
-import { from, lastValueFrom, type Observable } from 'rxjs';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { MAX_FILE_BYTES, type Endpoint } from '@onway/contracts';
+import { from, lastValueFrom, of, type Observable } from 'rxjs';
 import type { ZodError } from 'zod';
 import { DatabaseService } from '../db/database.service.js';
 import { DomainError } from './domain-error.js';
@@ -11,6 +12,12 @@ export function validationFailed(error: ZodError): DomainError {
     issues: error.issues.map((i) => ({ path: i.path.join('.'), code: i.code, message: i.message })),
   });
 }
+
+/**
+ * Reads `multipart/form-data` into `request.body` (the fields) and `request.file`. Multer keeps the file in memory and stops at the
+ * limit: past it the error is a 413 (`FILE_TOO_LARGE`), a second file, an unexpected field or a broken body is a 400. One file, a few fields.
+ */
+const multipartReader = new (FileInterceptor('file', { limits: { fileSize: MAX_FILE_BYTES, files: 1, fields: 4, parts: 6 } }))();
 
 /**
  * Per operation: validates params, query and body with the registry schemas (400 `VALIDATION_FAILED` with
@@ -31,6 +38,8 @@ export class OperationInterceptor implements NestInterceptor {
     const endpoint = operationOf(context.getHandler());
     if (!endpoint) throw new DomainError('INTERNAL', 'handler is not mounted through @Operation');
     const request = context.switchToHttp().getRequest<OnwayRequest>();
+    // Before the transaction opens: a slow upload must not hold a database connection. The guard has already checked session, CSRF and role.
+    if (endpoint.multipart) await lastValueFrom(await multipartReader.intercept(context, { handle: () => of(undefined) }), { defaultValue: undefined });
     request.input = this.parse(endpoint, request);
 
     const run = () => lastValueFrom(next.handle(), { defaultValue: undefined });
@@ -48,7 +57,7 @@ export class OperationInterceptor implements NestInterceptor {
     return {
       params: parse(endpoint.params, request.params),
       query: parse(endpoint.query, request.query),
-      body: parse(endpoint.body, request.body ?? {}),
+      body: parse(endpoint.body ?? endpoint.multipart, request.body ?? {}),
     };
   }
 

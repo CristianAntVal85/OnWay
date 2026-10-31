@@ -33,6 +33,7 @@
   "devDependencies": {
     "@testcontainers/postgresql": "^12.2.1",
     "@types/express": "^5.0.6",
+    "@types/multer": "^2.3.0",
     "@types/node": "^24.0.0",
     "@types/pg": "^8.11.0",
     "testcontainers": "^12.2.1",

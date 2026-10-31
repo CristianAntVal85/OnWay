@@ -1,4 +1,4 @@
-// Drizzle schema of the tables the API reads and writes (H0, plus the mission tables from H1). The SQL migrations (db/migrations) are the source of truth;
+// Drizzle schema of the tables the API reads and writes (H0, plus the mission tables from H1 and `files` from H2). The SQL migrations (db/migrations) are the source of truth;
 // test/api/schema.test.ts compares this file with information_schema so they cannot drift apart.
 import { bigint, boolean, char, customType, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 
@@ -19,6 +19,7 @@ export const teamStatus = pgEnum('team_status', ['active', 'archived']);
 export const missionStatus = pgEnum('mission_status', ['planning', 'active', 'closed']);
 export const pointKind = pgEnum('point_kind', ['origin', 'waypoint', 'rendezvous']);
 export const targetSource = pgEnum('target_source', ['coordinates', 'map', 'address']);
+export const filePurpose = pgEnum('file_purpose', ['certificate', 'route_import']);
 
 export const organizations = pgTable('organizations', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -131,6 +132,20 @@ export const missionPoints = pgTable('mission_points', {
   createdAt: timestamptz('created_at').notNull().defaultNow(),
 });
 
+export const files = pgTable('files', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull(),
+  ownerUserId: uuid('owner_user_id'),
+  purpose: filePurpose('purpose').notNull(),
+  contentType: text('content_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  storageKey: text('storage_key').notNull().unique(),
+  sha256: bytea('sha256').notNull(),
+  createdBy: uuid('created_by').notNull(),
+  createdAt: timestamptz('created_at').notNull().defaultNow(),
+  deletedAt: timestamptz('deleted_at'),
+});
+
 export const auditLog = pgTable('audit_log', {
   id: bigint('id', { mode: 'number' }).primaryKey().generatedAlwaysAsIdentity(),
   organizationId: uuid('organization_id').notNull(),
@@ -143,6 +158,6 @@ export const auditLog = pgTable('audit_log', {
   detail: jsonb('detail').notNull().default({}),
 });
 
-export const enums = { accountStatus, memberRole, memberStatus, profileStatus, teamStatus, missionStatus, pointKind, targetSource };
+export const enums = { accountStatus, memberRole, memberStatus, profileStatus, teamStatus, missionStatus, pointKind, targetSource, filePurpose };
 
-export const schema = { organizations, users, sessions, memberships, rescuerProfiles, teams, teamMembers, missions, missionPoints, auditLog };
+export const schema = { organizations, users, sessions, memberships, rescuerProfiles, teams, teamMembers, missions, missionPoints, files, auditLog };

@@ -158,6 +158,8 @@ services:
       - { type: volume, source: secrets, target: /run/onway/app, read_only: true, volume: { subpath: app } }
       - { type: volume, source: secrets, target: /run/onway/csrf, read_only: true, volume: { subpath: csrf } }
       - geodata:/geodata:ro
+      # Archivos subidos (GPX/KML para importar rutas, H2). La API es la única que escribe; `down -v` los borra con la pila.
+      - files:/files
     depends_on:
       seed:
         condition: service_completed_successfully
@@ -212,5 +214,7 @@ networks:
 volumes:
   secrets: {}
   db-data: {}
+  # GPX y KML subidos por los coordinadores (contenido en disco, fila en la tabla `files`). Se copia con el volumen en una copia de seguridad.
+  files: {}
   # DEM y mapa base descargados por `geodata`. Se puede borrar sola (`docker volume rm onway_geodata`): se vuelve a descargar.
   geodata: {}
