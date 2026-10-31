@@ -67,10 +67,12 @@ test('the coordinator sees the demo library in list and map, the list follows th
   if (mobile(info)) {
     await expect(mapRegion).toBeHidden();
     await page.getByRole('tab', { name: R.views.map }).click();
+    await expect(page.getByRole('tab', { name: R.views.map })).toHaveAttribute('aria-selected', 'true');
   }
-  await expect(mapRegion).toBeVisible();
+  // El mapa se carga aparte (MapLibre es un trozo propio): en el CI, con la pila ocupada, puede tardar más de los 5 s por defecto.
+  await expect(mapRegion).toBeVisible({ timeout: 30_000 });
   const canvas = mapRegion.locator('canvas.maplibregl-canvas');
-  await expect(canvas).toBeVisible();
+  await expect(canvas).toBeVisible({ timeout: 30_000 });
 
   // Mover el mapa (arrastrarlo) filtra la lista por la zona visible: la petición lleva `bbox`.
   // Con la pila cargada el primer arrastre puede perderse mientras el mapa termina de pintar: se repite hasta que la lista pide la zona.
