@@ -102,11 +102,19 @@ export function useLibraryState() {
 
   // La búsqueda por nombre se aplica al dejar de teclear (o al enviarla); cambiarla vuelve a la página 1.
   const [draft, setDraft] = useState(filters.q);
-  useEffect(() => setDraft(filters.q), [filters.q]);
+  // Lo último que esta página puso en la dirección: si la dirección llega tarde con ese mismo valor, no pisa lo que se haya vuelto a escribir.
+  const pushed = useRef(filters.q);
+  useEffect(() => {
+    if (filters.q !== pushed.current) setDraft(filters.q);
+    pushed.current = filters.q;
+  }, [filters.q]);
   useEffect(() => {
     const text = draft.trim();
     if (text === filters.q) return;
-    const timer = setTimeout(() => update({ q: text, page: null }), SEARCH_DELAY_MS);
+    const timer = setTimeout(() => {
+      pushed.current = text;
+      update({ q: text, page: null });
+    }, SEARCH_DELAY_MS);
     return () => clearTimeout(timer);
     // `update` cambia en cada render; solo importa lo que se ha escrito.
   }, [draft, filters.q]);

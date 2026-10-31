@@ -108,9 +108,12 @@ test('the coordinator sees the demo library in list and map, the list follows th
   await page.getByLabel(R.filters.status).selectOption('archived');
   // Las rutas «E2E …» de ejecuciones anteriores también están archivadas: se busca por nombre.
   await page.getByLabel(R.searchLabel).fill('Camino antiguo');
+  await expect(page).toHaveURL(/[?&]q=Camino/); // la búsqueda ya está aplicada (con otra lista antes, la tarjeta podría verse sin ella)
+  await expect(page.locator('.route-card')).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Camino antiguo (ficticia)', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Pradera a la Brecha (ficticia)', exact: true })).toHaveCount(0);
   await page.getByLabel(R.searchLabel).fill('');
+  await expect(page).not.toHaveURL(/[?&]q=/);
   await page.getByLabel(R.filters.status).selectOption('active');
   await page.getByLabel(R.filters.version).selectOption('draft');
   await expect(page.getByRole('link', { name: 'Variante de la Pradera (ficticia)', exact: true })).toBeVisible();
