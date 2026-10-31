@@ -107,7 +107,7 @@ export function RoutesPage() {
       <Link className="button button-primary" to={PATHS.routeImport}>
         {t('routes.importCta')}
       </Link>
-      <Link className="button button-secondary" to={PATHS.routeDraw}>
+      <Link className="button button-secondary" to={PATHS.createRoute}>
         {t('routes.drawCta')}
       </Link>
     </div>

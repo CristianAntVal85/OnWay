@@ -2,7 +2,7 @@
 // Es una ayuda de interfaz: quien decide los permisos es el servidor (RF-103).
 import type { MemberRole } from '@onway/contracts';
 
-export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'teams' | 'admin' | 'profile' | 'account';
+export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'createRoute' | 'teams' | 'admin' | 'profile' | 'account';
 
 export type NextStep = 'home' | 'complete-profile' | 'awaiting-approval';
 
@@ -19,13 +19,13 @@ export const PATHS = {
   missions: '/missions',
   createMission: '/missions/new',
   routes: '/routes',
+  createRoute: '/routes/draw',
   routeImport: '/routes/import',
-  routeDraw: '/routes/draw',
   teams: '/teams',
   admin: '/admin',
   profile: '/profile',
   account: '/account',
-} as const satisfies Record<'login' | 'waiting' | 'routeImport' | 'routeDraw' | RouteId, string>;
+} as const satisfies Record<'login' | 'waiting' | 'routeImport' | RouteId, string>;
 
 const STAFF: readonly MemberRole[] = ['admin', 'coordinator'];
 /** Quien escribe sobre misiones: Q-14 = no, el administrador las lee pero no las crea ni las edita (D-H1-13). */
@@ -38,6 +38,7 @@ export const ROUTE_ROLES: Readonly<Record<RouteId, readonly MemberRole[]>> = {
   missions: EVERYONE,
   createMission: MISSION_WRITERS,
   routes: STAFF,
+  createRoute: MISSION_WRITERS,
   teams: STAFF,
   admin: ['admin'],
   profile: ['rescuer'],

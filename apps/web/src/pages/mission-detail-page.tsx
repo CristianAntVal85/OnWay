@@ -14,6 +14,7 @@ import { LifecycleActions } from '../missions/lifecycle-actions';
 import { MissionEditForm } from '../missions/mission-edit-form';
 import { MissionHistory } from '../missions/mission-history';
 import type { PickedPoint, PointKind } from '../missions/point';
+import { ImportPointsDialog } from '../missions/import-points-dialog';
 import { PointForm } from '../missions/point-form';
 import { PointRow } from '../missions/point-row';
 import { StatusBadge } from '../missions/status-badge';
@@ -84,6 +85,7 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
   const [draft, setDraft] = useState<PickedPoint | null>(null);
   const [picking, setPicking] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
   // Aviso de lo último guardado, junto a lo que se ha tocado (cabecera o puntos); las regiones `status` existen siempre para que se anuncie.
   // Si se llega desde «Duplicar», la copia lo anuncia (la navegación lleva el nombre del original).
   const arrival = useLocation().state as { duplicatedFrom?: string } | null;
@@ -277,6 +279,11 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
           <h2 id="points-title" tabIndex={-1}>
             {t('missionDetail.points.title')}
           </h2>
+          {canEdit && (
+            <button type="button" className="button button-secondary" onClick={() => setImporting(true)}>
+              {t('missionDetail.importPoints.cta')}
+            </button>
+          )}
           <div role="status" className="saved-message">
             {saved?.area === 'points' ? saved.text : null}
           </div>
@@ -377,6 +384,9 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
           />
         </div>
       </div>
+      {importing && canEdit && (
+        <ImportPointsDialog missionId={mission.id} onClose={() => setImporting(false)} onImported={(count) => setSaved({ area: 'points', text: t('missionDetail.importPoints.done', { count }) })} />
+      )}
     </div>
   );
 }

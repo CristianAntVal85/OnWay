@@ -8,6 +8,7 @@ import MapGL, { Layer, Marker, NavigationControl, Source, type MapLayerMouseEven
 import { Attribution } from './attribution.js';
 import { SATELLITE_PROTOCOL, satelliteTile } from './ign-mix.js';
 import { Readout, type Cursor } from './readout.js';
+import { nearestSegment, type Vertex } from './edit.js';
 import { ROUTES_LINE_LAYER, ROUTES_SOURCE, casingLayer, lineLayer, routesBounds, routesGeoJson } from './route-layers.js';
 import { ROADS_SOURCE, buildStyle } from './style.js';
 import { MAP_LAYERS, type MapLayerId, type MapViewProps } from './types.js';
@@ -19,6 +20,8 @@ maplibre.addProtocol('pmtiles', new Protocol().tile);
 maplibre.addProtocol(SATELLITE_PROTOCOL, satelliteTile);
 
 const PICK_ZOOM = 12;
+/** Más vértices que esto no se dibujan como controles (la lista de coordenadas sigue teniéndolos todos). */
+const MAX_HANDLES = 400;
 
 const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
@@ -39,6 +42,7 @@ export default function MapView({
   onRouteClick,
   onViewChange,
   fitRoutesKey,
+  editor,
 }: MapViewProps) {
   const { t, i18n } = useTranslation();
   const mapRef = useRef<MapRef>(null);
@@ -92,6 +96,9 @@ export default function MapView({
 
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
+
   const routeData = useMemo(() => routesGeoJson(routes ?? [], highlightedRouteId, selectedRouteIds), [routes, highlightedRouteId, selectedRouteIds]);
 
   // Solo los movimientos de la persona (con evento original) cuentan: un encuadre pedido por la página no debe cambiar la lista.
@@ -116,6 +123,12 @@ export default function MapView({
       cancelAnimationFrame(frame.current);
       setCursor({ lat, lon: lng, immediate: true });
       const routeId = event.features?.find((feature) => feature.layer.id === ROUTES_LINE_LAYER)?.properties?.id;
+      // Con el editor, tocar la línea inserta un vértice en el tramo tocado; fuera de la línea, `onPick` añade uno al final.
+      if (typeof routeId === 'string' && editorRef.current) {
+        const at = nearestSegment(editorRef.current.vertices as Vertex[], [lng, lat]);
+        if (at !== null) editorRef.current.onInsert(at + 1, { lat, lon: lng });
+        return;
+      }
       if (typeof routeId === 'string' && onRouteClick) {
         onRouteClick(routeId);
         return;
@@ -184,6 +197,34 @@ export default function MapView({
               <Layer {...lineLayer} />
             </Source>
           )}
+          {editor?.vertices.slice(0, MAX_HANDLES).map((vertex, index) => (
+            <Marker
+              key={`vertex-${index}`}
+              longitude={vertex[0]}
+              latitude={vertex[1]}
+              anchor="center"
+              draggable
+              onDragEnd={(event) => editor.onMove(index, { lat: event.lngLat.lat, lon: event.lngLat.lng })}
+            >
+              <button
+                type="button"
+                className="vertex-handle"
+                data-end={index === 0 ? 'start' : index === editor.vertices.length - 1 ? 'end' : undefined}
+                aria-label={editor.labelFor(index)}
+                aria-pressed={editor.selected === index}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  editor.onSelect(editor.selected === index ? null : index);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Delete' || event.key === 'Backspace') {
+                    event.preventDefault();
+                    editor.onRemove(index);
+                  }
+                }}
+              />
+            </Marker>
+          ))}
           {markers.map((marker) => (
             <Marker key={marker.id} longitude={marker.lon} latitude={marker.lat} anchor="bottom">
               <div className="map-marker" data-kind={marker.kind} role="img" aria-label={marker.label ?? t(`map.markers.${marker.kind}`)} />

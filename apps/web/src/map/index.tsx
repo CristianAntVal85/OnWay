@@ -18,6 +18,7 @@ export {
   MAP_LAYERS,
   type ElevationLookup,
   type MapBounds,
+  type MapEditor,
   type MapFocus,
   type MapLayerId,
   type MapMarker,
@@ -27,3 +28,4 @@ export {
   type MapViewProps,
   type MarkerKind,
 } from './types.js';
+export { editReducer, initialEdit, nearestSegment, simplifyVertices, type EditAction, type EditState, type Vertex } from './edit.js';

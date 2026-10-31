@@ -50,6 +50,7 @@ describe('cada ruta rechaza los roles no permitidos (RF-103 en interfaz)', () =>
     missions: ['admin', 'coordinator', 'rescuer'],
     createMission: ['coordinator'],
     routes: ['admin', 'coordinator'],
+    createRoute: ['coordinator'],
     teams: ['admin', 'coordinator'],
     admin: ['admin'],
     profile: ['rescuer'],
