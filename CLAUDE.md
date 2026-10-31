@@ -52,7 +52,7 @@ pnpm format:check | typecheck | test | build   # recursivos sobre todo el monore
 pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
 pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
-pnpm --filter @onway/api test:db            # 19 pruebas de Vitest sobre PostGIS: las 194 comprobaciones SQL del esquema + 8 de la política 0010 + 6 de la 0011 (Testcontainers, necesita Docker)
+pnpm --filter @onway/api test:db            # 25 pruebas de Vitest sobre PostGIS: las 194 comprobaciones SQL del esquema + 8 de la política 0010 + 6 de la 0011 + 6 de la 0012 (Testcontainers, necesita Docker)
 pnpm --filter @onway/api test:api           # 191 pruebas del API sobre PostGIS (Testcontainers)
 pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME (seed: ELEVATION_DEM_DIR para la altitud de las misiones)
 pnpm --filter @onway/api synthetic-dem      # regenera data/seed/dem (terreno inventado del E2E)
@@ -61,7 +61,7 @@ pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (
 db/tests/run-postgis.sh                     # las 194 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-Recuentos de `pnpm -r test`: contratos 84 (75 de contrato y 9 del cliente generado), i18n 8, geo 64, api unitarias 105, web 201. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y casi deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). La demostración de H1 crea en cada ejecución cuatro misiones «E2E …» (dos por proyecto) y las deja **cerradas** (el registro de auditoría es de solo añadir, así que no se pueden borrar; `docker compose down -v` las borra con la pila); si una ejecución se interrumpe, la siguiente (o el cierre) cierra las que queden abiertas. Se apunta a otra dirección con `E2E_BASE_URL`.
+Recuentos de `pnpm -r test`: contratos 89 (80 de contrato y 9 del cliente generado), i18n 8, geo 64, api unitarias 105, web 201. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y casi deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). La demostración de H1 crea en cada ejecución cuatro misiones «E2E …» (dos por proyecto) y las deja **cerradas** (el registro de auditoría es de solo añadir, así que no se pueden borrar; `docker compose down -v` las borra con la pila); si una ejecución se interrumpe, la siguiente (o el cierre) cierra las que queden abiertas. Se apunta a otra dirección con `E2E_BASE_URL`.
 
 `docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen.
 

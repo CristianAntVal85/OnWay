@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 0.6 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
+Versión: 0.7 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -411,7 +411,7 @@ Además del filtro de organización, que se aplica siempre. C = lectura, E = esc
 | `rescuer_contact` | C | C (solo con participación pendiente o aceptada) | C, E (la suya) |
 | `rescuer_sensitive` | **nada directo** (función auditada) | — | C, E (la suya) |
 | `skills` | C | C | C, E (las suyas) |
-| `files` | C | C | C, E (los suyos) |
+| `files` | C | C, E (los GPX/KML de importación de rutas, migración 0012) | C, E (los suyos) |
 | `teams`, `team_members` | C, E | C, E | C (los suyos) |
 | `missions` | C | C, E | C (solo activas y cerradas) |
 | `mission_points` | C | C, E | C (de misiones visibles) |
@@ -596,10 +596,11 @@ Las migraciones son aditivas y se ejecutan en orden. Cada entrega solo estrena l
 | 0009 | 1 | Recuperar contraseña: `password_resets` y dos funciones (Q-33) | Pedir, usar, caducar, límite por hora |
 | 0010 | 1 (H1) | Política `audit_mission_staff`: el personal lee las filas `entity_type = 'mission'` de `audit_log` de su organización (§6.3) | `apps/api/test/db/audit-policy.test.ts` |
 | 0011 | 1 (H1) | Q-14 = no: función `app_is_coordinator()`; en las nueve tablas de misión y ruta, lectura para el personal y escritura solo para el coordinador (§6.3); `missions_guard` solo acepta a un coordinador como responsable (INV-03) | `db/tests/run_tests.sql` (sección Q-14) y `apps/api/test/db/mission-writers-policy.test.ts` |
-| 0012+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
+| 0012 | 1 (H2) | Tipo de vía `unknown` («sin clasificar») en `road_type`: las rutas importadas, dibujadas o editadas a mano no tienen clasificación hasta que exista el motor (H3, RF-503). `files_insert`: los archivos `route_import` solo los inserta el coordinador (defensa en profundidad de Q-14) | `apps/api/test/db/routes-h2-policy.test.ts` |
+| 0013+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
 
 Orden de ejecución y responsabilidades:
-- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0011** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
+- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0012** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
 - Las contraseñas de `onway_owner`, `onway_app` y `onway_platform` se fijan en el despliegue con `ALTER ROLE ... PASSWORD`, leídas de archivos de secretos, nunca del repositorio. En local las genera al azar el servicio `secrets` de `docker compose`.
 - Las tablas internas de la cola (pg-boss) las crea la propia biblioteca en su esquema `pgboss`. `onway_app` recibe permisos sobre ese esquema en el despliegue.
 - Cada migración debe poder aplicarse sobre una base vacía en CI con la imagen de PostGIS, y las pruebas de la sección 11 deben pasar después de la última.
@@ -680,6 +681,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**0.7 (2026-10-31)** H2-T1. Migración 0012: valor `unknown` («sin clasificar») en `road_type` y política `files_insert` solo para el coordinador cuando `purpose = 'route_import'` (la lectura de archivos sigue abierta al personal). Matriz de §6.3 al día (`files`: el coordinador escribe los GPX/KML de importación).
 
 **0.6 (2026-10-31)** Q-14 resuelta (no) y cerrada también en la base de datos. Migración 0011: función `app_is_coordinator()`; en `missions`, `mission_points`, `mission_team_assignments`, `participations`, `mission_routes`, `routes`, `route_versions`, `route_segments` y `avoid_zones` la lectura es del personal y la escritura solo del coordinador; `missions_guard` (INV-03) acepta como responsable solo a un coordinador. §5 (INV-03), §6.3 (matriz y nota), §9, §11 (194 comprobaciones SQL y 19 pruebas de Vitest) y §13 al día. Motivo: defensa en profundidad (regla 2): lo decide el servidor y también la base.
 

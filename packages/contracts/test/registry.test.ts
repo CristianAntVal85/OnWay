@@ -23,6 +23,12 @@ test('los enums de Zod coinciden con los ENUM de db/migrations (valores y orden)
       [...m[2]!.matchAll(/'([^']+)'/g)].map((x) => x[1]!),
     );
   }
+  // Las migraciones posteriores pueden añadir valores (ALTER TYPE … ADD VALUE): se aplican al final, en el orden de los archivos.
+  for (const m of sql.matchAll(/ALTER TYPE\s+(\w+)\s+ADD VALUE\s+(?:IF NOT EXISTS\s+)?'([^']+)'/g)) {
+    const values = found.get(m[1]!);
+    assert.ok(values, `ALTER TYPE sobre un tipo desconocido: ${m[1]}`);
+    if (!values.includes(m[2]!)) values.push(m[2]!);
+  }
   assert.ok(found.size >= 20, 'no se leyeron los tipos de las migraciones');
   for (const [name, values] of found) {
     const schema = (C.SQL_ENUMS as Record<string, z.ZodEnum<any>>)[name];
@@ -260,4 +266,42 @@ test('toda escritura que calcula una altitud en el servidor declara OUTSIDE_COVE
     const endpoint = C.ENDPOINTS.find((e) => e.id === id)!;
     assert.ok(endpoint.errors?.includes('OUTSIDE_COVERAGE'), `${id} debe declarar OUTSIDE_COVERAGE`);
   }
+});
+
+test('las escrituras de ruta que miden una geometría declaran OUTSIDE_COVERAGE (H2, AC-10)', () => {
+  // El servidor calcula altitud y métricas de todo trazado (RN-10): si ninguna fuente cubre un vértice, responde 422.
+  for (const id of ['previewRouteImport', 'createRoute', 'createRouteVersion', 'deriveRoute']) {
+    const endpoint = C.ENDPOINTS.find((e) => e.id === id)!;
+    assert.ok(endpoint.errors?.includes('OUTSIDE_COVERAGE'), `${id} debe declarar OUTSIDE_COVERAGE`);
+  }
+});
+
+test('una ruta archivada es de solo lectura: editar, validar y archivar declaran INVALID_STATE_TRANSITION (D-H2-08)', () => {
+  for (const id of ['archiveRoute', 'createRouteVersion', 'validateRouteVersion']) {
+    const endpoint = C.ENDPOINTS.find((e) => e.id === id)!;
+    assert.ok(endpoint.errors?.includes('INVALID_STATE_TRANSITION'), `${id} debe declarar INVALID_STATE_TRANSITION`);
+  }
+  assert.ok(!C.ENDPOINTS.find((e) => e.id === 'deriveRoute')!.errors?.includes('INVALID_STATE_TRANSITION'), 'derivar una archivada está permitido');
+});
+
+test('H2 monta 13 operaciones y exportRoutes va antes que /routes/{routeId}', () => {
+  const h2 = C.ENDPOINTS.filter((e) => e.milestone === 'H2').map((e) => e.id);
+  assert.equal(h2.length, 13);
+  assert.ok(h2.includes('exportRoutes'));
+  const order = C.ENDPOINTS.map((e) => e.id);
+  assert.ok(order.indexOf('exportRoutes') < order.indexOf('getRoute'));
+});
+
+test('la consulta de exportRoutes acepta de 1 a 50 ids y rechaza lo demás', () => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  assert.ok(C.ExportRoutesQuery.safeParse({ ids: id }).success);
+  assert.ok(C.ExportRoutesQuery.safeParse({ ids: Array(50).fill(id).join(','), format: 'kml', validatedOnly: 'true' }).success);
+  assert.ok(!C.ExportRoutesQuery.safeParse({ ids: Array(51).fill(id).join(',') }).success);
+  assert.ok(!C.ExportRoutesQuery.safeParse({}).success);
+  assert.ok(!C.ExportRoutesQuery.safeParse({ ids: id, extra: 1 }).success);
+});
+
+test('el tipo de vía «sin clasificar» existe y las rutas importadas lo usan (P1)', () => {
+  assert.ok(C.RoadType.options.includes('unknown'));
+  assert.ok(C.RoadMix.safeParse([{ roadType: 'unknown', distanceM: 1200 }]).success);
 });

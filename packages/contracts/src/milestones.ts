@@ -45,6 +45,7 @@ export const MILESTONE_OF: Record<string, Milestone> = {
   deriveRoute: 'H2',
   validateRouteVersion: 'H2',
   exportRoute: 'H2',
+  exportRoutes: 'H2',
 
   // H3 · Generación automática con el motor de rutas
   generateRoutes: 'H3',
