@@ -50,7 +50,8 @@ export class OpenMeteoElevationProvider implements ElevationProvider {
       this.remember(key, rounded);
       return rounded;
     } catch (error) {
-      this.logger.warn(`elevation source unreachable: ${error instanceof Error ? error.message : String(error)}`);
+      // The error's name only: its message can carry the URL, and the URL carries the point asked for.
+      this.logger.warn(`elevation source unreachable: ${error instanceof Error ? error.name : 'error'}`);
       return null;
     }
   }

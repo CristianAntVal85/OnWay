@@ -73,3 +73,24 @@ describe('CompositeElevationProvider', () => {
     expect(await new CompositeElevationProvider([]).elevationAt({ lat: 1, lon: 1 })).toBeNull();
   });
 });
+
+describe('what OpenMeteoElevationProvider writes to the log', () => {
+  it('never carries the point asked for when the source cannot be reached', async () => {
+    const logged: string[] = [];
+    const collect = (...args: unknown[]) => void logged.push(args.map(String).join(' '));
+    Logger.overrideLogger({ log: collect, warn: collect, error: collect, debug: collect, verbose: collect, fatal: collect });
+    try {
+      // The kind of error a network failure raises: its message names the URL, and the URL names the point.
+      const failing = (async (input: URL) => {
+        throw new TypeError(`fetch failed: ${input.href}`);
+      }) as unknown as typeof fetch;
+      const provider = new OpenMeteoElevationProvider({ baseUrl: BASE, fetch: failing });
+      expect(await provider.elevationAt({ lat: 42.123456, lon: -0.654321 })).toBeNull();
+    } finally {
+      Logger.overrideLogger(false);
+    }
+    const text = logged.join('\n');
+    expect(text).toMatch(/elevation source unreachable: TypeError/); // the capture works and the warning is there
+    for (const needle of ['42.123456', '-0.654321', 'latitude', 'longitude', 'elevation.invalid']) expect(text, needle).not.toContain(needle);
+  });
+});

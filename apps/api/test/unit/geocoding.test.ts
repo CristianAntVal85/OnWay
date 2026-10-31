@@ -210,3 +210,27 @@ describe('how the application identifies itself to the public services', () => {
     expect(userAgentOf({ NOMINATIM_CONTACT: 'https://rescue.invalid/about' })).toBe('OnWay/0.1 (+https://rescue.invalid/about)');
   });
 });
+
+describe('what NominatimGeocoder says when the source cannot be reached', () => {
+  it("never carries the search in the error it raises or in the log (it can name a person's address)", async () => {
+    const logged: string[] = [];
+    const collect = (...args: unknown[]) => void logged.push(args.map(String).join(' '));
+    Logger.overrideLogger({ log: collect, warn: collect, error: collect, debug: collect, verbose: collect, fatal: collect });
+    let raised = '';
+    try {
+      const failing = (async (input: URL) => {
+        throw new TypeError(`fetch failed: ${input.href}`);
+      }) as unknown as typeof fetch;
+      const time = new FixedClock(new Date('2026-10-30T10:00:00Z'));
+      const geocoder = new NominatimGeocoder({ baseUrl: 'https://nominatim.invalid/search', userAgent: 'OnWay/0.1 (test)', clock: time, fetch: failing });
+      await geocoder.search('Calle Mayor 12, Torla').catch((error: Error) => void (raised = `${error.name}: ${error.message}`));
+    } finally {
+      Logger.overrideLogger(false);
+    }
+    expect(raised).toMatch(/^GeocodingUnavailableError: geocoder unreachable: TypeError$/);
+    for (const needle of ['Calle', 'Mayor', 'Torla', 'nominatim.invalid']) {
+      expect(raised, needle).not.toContain(needle);
+      expect(logged.join('\n'), needle).not.toContain(needle);
+    }
+  });
+});

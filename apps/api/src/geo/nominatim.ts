@@ -90,7 +90,8 @@ export class NominatimGeocoder implements GeocodingProvider {
       body = await response.json();
     } catch (error) {
       if (error instanceof GeocodingUnavailableError) throw error;
-      throw new GeocodingUnavailableError(`geocoder unreachable: ${error instanceof Error ? error.message : String(error)}`);
+      // The error's name only: its message can carry the URL, and the URL carries the search (it can name a person's address).
+      throw new GeocodingUnavailableError(`geocoder unreachable: ${error instanceof Error ? error.name : 'error'}`);
     }
 
     const list = Answer.safeParse(body);
