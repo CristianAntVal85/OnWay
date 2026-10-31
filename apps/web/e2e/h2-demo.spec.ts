@@ -358,10 +358,14 @@ test('the library works with the keyboard only and in French', async ({ page }) 
   await expect(page.getByRole('heading', { level: 1, name: fr.routes.title })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  // Con Tab se llega a una tarjeta y con Intro se abre su detalle, en francés.
+  // La búsqueda por nombre deja una sola tarjeta (la lista cambia con otras pruebas en marcha). Con Tab se llega a ella y con Intro
+  // se abre su detalle, en francés.
+  await page.getByLabel(fr.routes.searchLabel).fill('Senda del Circo');
+  await expect(page.locator('.route-card')).toHaveCount(1);
   const link = page.getByRole('link', { name: 'Senda del Circo (ficticia)', exact: true });
   await tabTo(page, link, 140);
   await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Senda del Circo (ficticia)' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: fr.routeDetail.versions.title })).toBeVisible();
   await expect(page.getByRole('button', { name: fr.routeDetail.actions.exportGpx })).toBeVisible();
