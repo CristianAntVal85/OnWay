@@ -61,12 +61,12 @@ describe('límite del mapa: apps/web/src fuera de src/map/', () => {
     expect(await rulesBroken(baseline, COMPONENT, "import maplibregl from 'maplibre-gl';\nexport const x = maplibregl;\n")).toHaveLength(1);
   });
 
-  it('la lista real de @onway/geo es solo lectura y formato de coordenadas, y lo demás falla en una página', async () => {
-    expect(config.ALLOWED_GEO_IMPORTS).toEqual(['parseCoordinates', 'formatCoordinate', 'CoordinateError']);
+  it('la lista real de @onway/geo es lectura y formato de coordenadas más el redondeo de privacidad (INV-30), y lo demás falla en una página', async () => {
+    expect(config.ALLOWED_GEO_IMPORTS).toEqual(['parseCoordinates', 'formatCoordinate', 'CoordinateError', 'roundToCell']);
     const allowed =
-      "import { parseCoordinates, formatCoordinate, type CoordinateError } from '@onway/geo';\nexport const x = [parseCoordinates, formatCoordinate, undefined as CoordinateError | undefined];\n";
+      "import { parseCoordinates, formatCoordinate, roundToCell, type CoordinateError } from '@onway/geo';\nexport const x = [parseCoordinates, formatCoordinate, roundToCell, undefined as CoordinateError | undefined];\n";
     expect(await rulesBroken(baseline, PAGE, allowed)).toEqual([]);
-    for (const name of ['haversine', 'roundToCell', 'sunLight', 'toUtm', 'fromUtm', 'formatDms']) {
+    for (const name of ['haversine', 'elevationBand', 'sunLight', 'moonLight', 'toUtm', 'fromUtm', 'formatDms']) {
       const problems = await rulesBroken(baseline, PAGE, `import { ${name} } from '@onway/geo';\nexport const x = ${name};\n`);
       expect(problems, name).toHaveLength(1);
       expect(problems[0]).toMatch(/@onway\/geo/);

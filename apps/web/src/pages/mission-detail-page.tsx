@@ -20,7 +20,7 @@ import { StatusBadge } from '../missions/status-badge';
 import { PATHS } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { useCurrentUser } from '../session/session';
-import { LaterPage } from './later-page';
+import { MyMissionDetailPage } from './my-mission-detail-page';
 
 type Mission = OperationOutput<'getMission'>;
 type Point = Mission['points'][number];
@@ -32,11 +32,11 @@ type Editor = { type: 'mission' } | { type: 'add'; kind: PointKind } | { type: '
 
 /**
  * Detalle de misión (boceto 6, RF-205): cabecera, lista de preparación, mapa y puntos. El rescatista tiene su propia vista
- * (detalle en solo lectura, T9): aquí no tiene `getMission`.
+ * (detalle en solo lectura, RF-602): aquí no tiene `getMission`.
  */
 export function MissionDetailPage() {
   const user = useCurrentUser();
-  if (user.role === 'rescuer') return <LaterPage section="nav.missions" />;
+  if (user.role === 'rescuer') return <MyMissionDetailPage />;
   return <StaffMissionDetail />;
 }
 

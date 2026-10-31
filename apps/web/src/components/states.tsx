@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { errorMessage } from '../i18n/error-message';
 
 /** Cargando: anunciado a los lectores de pantalla sin mover el foco. */
-export function LoadingState() {
+export function LoadingState({ label }: { label?: string } = {}) {
   const { t } = useTranslation();
   return (
     <div className="state state-loading" role="status">
       <span className="spinner" aria-hidden="true" />
-      <p>{t('state.loading')}</p>
+      <p>{label ?? t('state.loading')}</p>
     </div>
   );
 }

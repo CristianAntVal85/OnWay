@@ -206,9 +206,9 @@ describe('lista de misiones: pestañas y búsqueda (RF-204)', () => {
     expect(await screen.findByText(fr.missions.empty.planning)).toBeTruthy();
   });
 
-  it('el rescatista no usa esta lista (tiene la suya en T9): no se llama a listMissions', async () => {
-    const { calls } = setup('/missions', {}, { user: rescuer({ profileStatus: 'complete', nextStep: 'home' }) });
-    expect(await screen.findByText(es.later.title)).toBeTruthy();
+  it('el rescatista no usa esta lista (tiene la suya, Mis misiones): no se llama a listMissions', async () => {
+    const { calls } = setup('/missions', { 'GET /my/missions': () => json(200, page([])) }, { user: rescuer({ profileStatus: 'complete', nextStep: 'home' }) });
+    expect(await screen.findByRole('heading', { level: 1, name: es.myMissions.title })).toBeTruthy();
     expect(listCalls(calls())).toHaveLength(0);
   });
 });
@@ -315,9 +315,9 @@ describe('detalle de misión: lectura (RF-205)', () => {
     expect(screen.queryByRole('button', { name: P.remove.replace('{{name}}', 'Collado de Coronas') })).toBeNull();
   });
 
-  it('el rescatista no usa este detalle (T9): no se llama a getMission', async () => {
-    const { calls } = setup(PATH, {}, { user: rescuer({ profileStatus: 'complete', nextStep: 'home' }) });
-    expect(await screen.findByText(es.later.title)).toBeTruthy();
+  it('el rescatista no usa este detalle (tiene el suyo, solo lectura): no se llama a getMission', async () => {
+    const { calls } = setup(PATH, { [`GET /my${PATH}`]: () => apiError(404, 'NOT_FOUND') }, { user: rescuer({ profileStatus: 'complete', nextStep: 'home' }) });
+    expect(await screen.findByText(es.errors.NOT_FOUND)).toBeTruthy();
     expect(missionReads(calls())).toBe(0);
   });
 });

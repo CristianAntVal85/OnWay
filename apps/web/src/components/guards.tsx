@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
+import { DeviceLocationProvider } from '../environment/device-location';
 import { PATHS, canAccess, landingPath, type RouteId } from '../nav/navigation';
 import { CurrentUserContext, useCurrentUser, useSession } from '../session/session';
 import { ForbiddenPage } from '../pages/forbidden-page';
@@ -38,11 +39,18 @@ export function RequireSession() {
   );
 }
 
-/** Una cuenta pendiente (INV-25) solo ve la pantalla de espera: cualquier otra vista la devuelve allí. */
+/**
+ * Una cuenta pendiente (INV-25) solo ve la pantalla de espera: cualquier otra vista la devuelve allí. Quien sí puede entrar recibe aquí
+ * la ubicación del dispositivo (RF-708): se pide una vez mientras dure la sesión y vive solo en memoria (INV-30).
+ */
 export function RequireActive() {
   const user = useCurrentUser();
   if (user.nextStep === 'awaiting-approval' || !user.role) return <Navigate to={PATHS.waiting} replace />;
-  return <Outlet />;
+  return (
+    <DeviceLocationProvider>
+      <Outlet />
+    </DeviceLocationProvider>
+  );
 }
 
 /** La ruta existe, pero este rol no puede abrirla: se queda en la dirección y se explica (D-H0-20). El servidor la rechazaría igual. */
