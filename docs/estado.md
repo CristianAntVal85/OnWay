@@ -26,7 +26,7 @@ Contratos 89 (80 + 9 del cliente generado), i18n 8, geo 127, api unitarias 161, 
 | 9 | Cumple | Solo códigos de `ERROR_HTTP`; `MISSION_CLOSED` y `NOT_FOUND` añadidos al contrato y al doc 06 |
 | 10 | Cumple | Red y relieve inventados en CI y E2E; la red y el relieve reales viven en volúmenes (ODbL y Copernicus), nunca versionados; sin secretos |
 | 11 | Cumple | Docs 01 a 07, `CLAUDE.md` y `data/seed/README.md` al día con su registro (01 v1.2, 02 v0.8, 03 v0.7, 04 v1.1, 05 v0.9, 06 v1.2, 07 v0.6); Q-05 resuelta |
-| 12 | Pendiente de CI | CI de la rama en verde hasta el commit de T9; el de T10 se anota al terminar |
+| 12 | Cumple | CI de la rama en verde en `d322261` (T10): los 6 trabajos (`verify`, `api`, `audit`, `stack`, `e2e` y `routing`); `main` compila y arranca sin cambios hasta la fusión |
 
 ## Hechos que conviene recordar
 - **Una sola organización en la demostración** (D-H0-18): la B la crean las pruebas (`apps/web/e2e/global-setup.ts`) y las retira el cierre. La demostración E2E de H1 crea misiones «E2E …» y las deja **cerradas** (la auditoría es de solo añadir); si una ejecución se interrumpe, la siguiente las cierra. `down -v` las borra con la pila. El test de teclado de H0 (`access.spec.ts`) sube su tope de tabulaciones de 12 a 60: el inicio ya lleva misiones activas.
