@@ -8,7 +8,7 @@ import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import { DatabaseService, type Tx } from '../db/database.service.js';
 import { isoUtc, viewerOf } from '../missions/mission-support.js';
-import { readRouteDetail, versionView, versionColumns, VERSION_FROM, type VersionRow } from './route-reads.js';
+import { readRouteDetail, readSegments, versionView, versionColumns, VERSION_FROM, type VersionRow } from './route-reads.js';
 
 type Query = z.infer<typeof ListRoutesQuery>;
 type Page = OperationOutput<'listRoutes'>;
@@ -130,15 +130,10 @@ export class RouteLibrary {
     const row = rows[0] as (VersionRow & { geojson: string }) | undefined;
     if (!row) throw new DomainError('NOT_FOUND');
     const coordinates = (JSON.parse(row.geojson) as { coordinates: Position3D[] }).coordinates;
-    const segments = (
-      await this.tx.execute(sql`
-        SELECT position, road_type::text AS road_type, distance_m::float8 AS distance_m, ascent_m::float8 AS ascent_m, descent_m::float8 AS descent_m
-          FROM route_segments WHERE version_id = ${versionId} ORDER BY position`)
-    ).rows as { position: number; road_type: OperationOutput<'getRouteVersion'>['segments'][number]['roadType']; distance_m: number; ascent_m: number; descent_m: number }[];
     return {
       ...versionView(row),
       geometry: { type: 'LineString', coordinates },
-      segments: segments.map((s) => ({ position: s.position, roadType: s.road_type, distanceM: s.distance_m, ascentM: s.ascent_m, descentM: s.descent_m })),
+      segments: await readSegments(this.tx, versionId),
       elevationProfile: computeMetrics(coordinates).profile,
     };
   }

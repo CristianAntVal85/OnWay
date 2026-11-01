@@ -121,3 +121,19 @@ export async function readRouteDetail(tx: Tx, orgId: string, routeId: string): P
     updatedAt: route.updated_at,
   };
 }
+
+type Segment = OperationOutput<'getRouteVersion'>['segments'][number];
+
+/** The stretches of a version, in order: the road type, the length and the climb of each (RF-503). */
+export async function readSegments(tx: Tx, versionId: string): Promise<Segment[]> {
+  const { rows } = await tx.execute(sql`
+    SELECT position, road_type::text AS road_type, distance_m::float8 AS distance_m, ascent_m::float8 AS ascent_m, descent_m::float8 AS descent_m
+      FROM route_segments WHERE version_id = ${versionId} ORDER BY position`);
+  return (rows as { position: number; road_type: Segment['roadType']; distance_m: number; ascent_m: number; descent_m: number }[]).map((s) => ({
+    position: s.position,
+    roadType: s.road_type,
+    distanceM: s.distance_m,
+    ascentM: s.ascent_m,
+    descentM: s.descent_m,
+  }));
+}
