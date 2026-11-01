@@ -32,7 +32,7 @@ Estado: **aprobadas por el usuario (2026-11-01)** · Plan aprobado el 2026-11-01
 - Hecho cuando: hay veredicto por criterio y por motor en `results/`; si ninguno cumple, **paro y te consulto** antes de seguir (no se empieza pgRouting).
 - Cierre: commit `test(PoC): T6 compare engines and choose one` + push.
 
-- [ ] **T7. Informe y documentos.** Plan §2.
+- [x] **T7. Informe y documentos.** Plan §2. (Validación con el `reviewer` en 2 vueltas, el máximo del flujo: la 1.ª pidió cambios de fondo, ya corregidos; la 2.ª cerró todos los hallazgos y pidió solo retoques de texto, aplicados sin 3.ª vuelta. Veredicto final del `reviewer`: CAMBIOS NECESARIOS por esos retoques, no APROBADO.)
 - Doc 04 §7.6 «Resultado de la prueba técnica» (motor, pesos del perfil, cifras, memoria, licencias), §7.3 (criterios 6–8 y los 3 pares) y §11.1 (memoria medida) con su registro de cambios; doc 07 §6 (prueba resuelta) y «Antes de empezar» de H3; doc 01 R-01; lo que `RoutingProvider` necesita (plan §3); `docs/estado.md`; los casos quedan como regresión para H3.
 - Hecho cuando: `pnpm format:check` y los documentos coinciden entre sí; validación con el `reviewer` contra los criterios del plan §4 (máx. 2 vueltas) y, tras tu aprobación, PR `poc/motor-rutas` → `main` con commit de fusión (lo fusionas tú).
 - Cierre: commit `docs(PoC): T7 record the engine decision and update documents` + push.

@@ -18,7 +18,7 @@ Tres pares del usuario (`coronas-aneto`, `bujaruelo-brecha`, `ordesa-perdido`) y
 | 2 | ≥ 90 % en pista o sendero | **Cumple** (100 %, 100 %, 99 %) | **Cumple** (100 %, 100 %, 99 %) |
 | 3 | Pendiente configurable: la pendiente máxima medida baja con el límite y no pasa de él salvo si no hay otra salida (y avisa) | **Solo en la sonda** `bujaruelo-goriz` y con un umbral relativo (baja a ≤ 0,7 × la inicial): 97,8 % → 44,9 % con un límite de 25 %. **No cumple el literal del plan**: 44,9 % supera el 25 % y el aviso no se evalúa. En los tres pares apenas cambia (67,1 → 68,7 %, 54,8 → 53,9 %, 97,1 → 94,1 %) | **Solo en la sonda**, sin límite de pendiente: 71,1 % → 45,5 % moviendo `use_hills` de 1 a 0. En los tres pares no cambia nada |
 | 4 | p95 ≤ 5 s | **Cumple** (47, 137 y 77 ms) | **Cumple** (36, 105 y 97 ms) |
-| 5 | Memoria ≤ 2 GB sirviendo | **Cumple** (1198 MiB en la medición guardada; una pasada anterior dio 588 MiB y otras hasta ≈1170: el montón de la JVM con `-Xmx2g` crece con las consultas). Carga: 1907 MiB | **Cumple** (705 MiB; 693–715 en las demás). Carga: 2569 MiB (8 hilos) |
+| 5 | Memoria ≤ 2 GB sirviendo | **Cumple** (1198 MiB en la medición guardada; una pasada anterior dio 588 MiB y las demás 1183–1198: el montón de la JVM con `-Xmx2g` crece con las consultas). Carga: 1907 MiB | **Cumple** (705 MiB; 715 con el par francés). Carga: 2569 MiB (8 hilos) |
 | 6 | Zona a evitar (solo cuenta un «no hay camino» limpio como alternativa a esquivarla) | **Cumple**: evitada, rodeos +14,18 / +1,85 / +4,00 km | **Cumple**: evitada; rodeos −2,46 / +1,19 / −2,69 km (su ruta principal no era la más corta) |
 | 7 | Ajuste a la red de un dibujo burdo | **Cumple** (100 %, 99 %, 98 % sobre la red, orden conservado) | **Cumple** (100 %, 99 %, 100 %, orden conservado) |
 | 8 | Composición sin «desconocido» | **Cumple** (0 %) | **Cumple** (0 %) |
@@ -44,7 +44,7 @@ El inicio de ese par es un aparcamiento del pueblo, no el inicio del sendero, as
 | `bujaruelo-brecha` | 8,7 km · +1462 m · máx. 55 % | 8,8 km · +1469 m · máx. 52 % |
 | `ordesa-perdido` | 14,9 km · +2032 m · máx. 97 % | 18,9 km · +2248/−247 m · máx. 93 % |
 
-Las dos rutas principales de `bujaruelo-brecha` pasan **a 0 m del Puerto de Bujaruelo / Port de Boucharo**, el collado de la frontera (`node/668991342`): cruzan al lado francés y llegan a la Brecha, que también está sobre la frontera. Es el único cruce medido (RF-304); ningún par tiene el origen y el destino en países distintos.
+Las dos rutas principales de `bujaruelo-brecha` pasan **a 0 m del Puerto de Bujaruelo / Port de Boucharo**, el collado de la frontera (`node/668991342`): y llegan a la Brecha, que también está sobre la frontera (no se comprobó en qué país queda cada tramo). Es lo único medido de RF-304; ningún par tiene el origen y el destino en países distintos.
 
 ## 3. Por qué GraphHopper
 

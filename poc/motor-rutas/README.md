@@ -43,7 +43,7 @@ Tres pares fijados por el usuario el 2026-11-01. Las coordenadas son las de los 
 | Par | Origen | Destino | Nota |
 |---|---|---|---|
 | `coronas-aneto` | Refugio de Coronas (`way/374407667`, 1965 m) | Aneto (`node/4252339778`, 3404 m, «Tuca d'Aneto / Maladeta de Corones») | El origen ya es un refugio de montaña: el «inicio del sendero» es el propio origen |
-| `bujaruelo-brecha` | Aparcamiento de Bujaruelo (`way/140315162`) | Brèche de Roland (`node/2191612631`, 2807 m) | El destino está sobre la frontera (`touchesBorder`); las rutas principales de los dos motores pasan a 0 m del Puerto de Bujaruelo / Port de Boucharo (`node/668991342`, el collado de la frontera): cruzan al lado francés (`results/rutas-principales.json`) |
+| `bujaruelo-brecha` | Aparcamiento de Bujaruelo (`way/140315162`) | Brèche de Roland (`node/2191612631`, 2807 m) | El destino está sobre la frontera (`touchesBorder`); las rutas principales de los dos motores pasan a 0 m del Puerto de Bujaruelo / Port de Boucharo (`node/668991342`, el collado de la frontera): pasan por el collado de la frontera (`results/rutas-principales.json`; no se comprobó en qué país queda cada tramo) |
 | `ordesa-perdido` | Aparcamiento de la Pradera de Ordesa (`way/97212138`) | Monte Perdido (`node/948790896`, 3349 m en OSM) | Ver supuestos |
 
 Supuestos a confirmar con el usuario:
@@ -135,7 +135,7 @@ Lo que este resultado **no** dice, para que nadie lo lea de más:
 - **Perfil:** costing `pedestrian` con `max_hiking_difficulty: 4` (el valor por defecto, 1, prohibiría casi todo sendero de montaña), `use_tracks: 1` y `use_hills: 0.5`. Se fijan esos cuatro (con `step_penalty: 0`); Valhalla documenta unas 16 opciones de peatón (`walkway_factor`, `sidewalk_factor`, `alley_factor`, `driveway_factor`, `service_factor`, `service_penalty`…), pero **no hay pendiente máxima**, ni pesos por nivel SAC (solo un máximo), ni forma de penalizar las carreteras `unclassified` o `secondary`, como sí permite el *custom model* de GraphHopper. Se probaron `service_factor`, `service_penalty`, `driveway_factor`, `alley_factor` y `use_hills` en el par francés y la composición no cambió de forma apreciable. Este perfil no está tan afinado como el de GraphHopper. El criterio 3 se mide moviendo `use_hills` entre 1 (indiferente) y 0 (evitar cuestas).
 - **Diferencias de uso:** `/route` no devuelve el tipo de vía por tramo, así que cada ruta necesita una segunda llamada a `/trace_attributes` para la composición; las zonas a evitar son `exclude_polygons` y el ajuste a caminos es `/trace_route` con `shape_match: map_snap`.
 
-Resultado con el mismo corredor (`results/valhalla.json`): **cumple los 8 criterios**, también con matices:
+Resultado con el mismo corredor (`results/valhalla.json`): **cumple 7 de los 8 criterios sobre los tres pares; el 3 solo en la sonda**, igual que GraphHopper, y con más matices:
 
 - Criterio 1: sus alternativas propias (`alternates: 2`) no aportaron ninguna ruta suficientemente distinta en ningún par; las tres segundas rutas vienen de la estrategia de bloqueo.
 - Criterio 3: no hay límite de pendiente; baja la pendiente máxima medida de 71,1 % a 45,5 % al pasar `use_hills` de 1 a 0 en la sonda.
@@ -145,11 +145,11 @@ Resultado con el mismo corredor (`results/valhalla.json`): **cumple los 8 criter
 
 | | GraphHopper 11.1 | Valhalla 3.9.1 |
 |---|---|---|
-| Criterios cumplidos | 8 de 8 | 8 de 8 |
+| Criterios cumplidos (tres pares) | 7 de 8; el 3 solo en la sonda | 7 de 8; el 3 solo en la sonda |
 | 1 · segunda alternativa | nativa en 2 pares; por bloqueo en `ordesa-perdido` | por bloqueo en los 3 pares |
 | 3 · pendiente (sonda) | 97,8 % → 44,9 % con límite de 25 % | 71,1 % → 45,5 % con `use_hills` 1 → 0 |
 | 4 · p95 | 47–137 ms | 36–105 ms |
-| 5 · memoria sirviendo (pico) | 588–1198 MiB (JVM con `-Xmx2g`, según la pasada) | 693–715 MiB |
+| 5 · memoria sirviendo (pico) | 588–1198 MiB (JVM con `-Xmx2g`, según la pasada) | 705–715 MiB |
 | 5 · memoria al cargar (pico) | 1907 MiB | 2569 MiB (8 hilos, tope de 3 GB) |
 | 6 · rodeo por zona evitada | +14,2 / +1,9 / +4,0 km | −2,5 / +1,2 / −2,7 km |
 | 7 · ajuste a la red | 98–100 % | 99–100 % |
