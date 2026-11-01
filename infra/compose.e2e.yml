@@ -64,6 +64,11 @@ services:
 
   routing:
     mem_limit: 1g
+    # Para `pnpm --filter @onway/api test:routing` desde el equipo (solo en la superposición de pruebas). La red `data` es interna
+    # (no admite puertos publicados), así que aquí el motor también está en `edge`.
+    networks: [data, edge]
+    ports:
+      - '127.0.0.1:18989:8989'
     environment:
       ROUTING_HEAP: 512m
       ROUTING_OSM_FILE: /data/network/network.osm

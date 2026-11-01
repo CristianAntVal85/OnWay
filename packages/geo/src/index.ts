@@ -5,6 +5,7 @@ export { moonLight, moonPhaseName, sunLight, type Instant, type MoonLight, type 
 export { formatCoordinate, formatDecimal, formatDms, formatUtm, parseCoordinates, type CoordinateError, type CoordinateFormat, type ParsedCoordinates } from './coordinates.js';
 export { fromUtm, toUtm, utmBandOf, utmZoneOf, type Utm } from './utm.js';
 export { COORDINATE_DECIMALS, EARTH_RADIUS_M, MAX_SPACING_M, MIN_SPACING_M, densify, haversineM, lengthM, prepareLine, quantize, thin, type Position2D, type Position3D } from './geometry.js';
+export { distanceToLineM, resampleLine, sharedShare, squareRing } from './overlap.js';
 export { ELEVATION_THRESHOLD_M, MAX_PROFILE_POINTS, PROFILE_STEP_M, SLOPE_WINDOW_M, computeMetrics, type MeasuredRoute, type RouteMetrics } from './metrics.js';
 export {
   MAX_XML_CHARS,

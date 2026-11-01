@@ -7,6 +7,7 @@ import type { DbConnection } from './db/config.js';
 import { DatabaseModule } from './db/database.module.js';
 import { FilesModule, type FilesOptions } from './files/files.module.js';
 import { GeoModule, type GeoOptions } from './geo/geo.module.js';
+import { RoutingModule, type RoutingOptions } from './routing/routing.module.js';
 import { HealthModule } from './health/health.module.js';
 import type { IdentityOptions } from './identity/config.js';
 import { IdentityModule } from './identity/identity.module.js';
@@ -22,6 +23,7 @@ export interface AppOptions {
   clock?: Clock;
   /** Altitude source, address search and the per-user altitude limit. Without them the test implementations answer; `main.ts` passes the real ones. */
   geo?: GeoOptions;
+  routing?: RoutingOptions;
   /** Where uploaded files live. Without it they stay in memory; `main.ts` passes the disk store. */
   files?: FilesOptions;
   /** Weather provider. Without it the test implementation answers; `main.ts` passes the real one. */
@@ -38,6 +40,7 @@ export class AppModule {
       imports: [
         ClockModule.register(options.clock),
         GeoModule.register(options.geo),
+        RoutingModule.register(options.routing),
         DatabaseModule.register(options.database),
         AuditModule,
         IdentityModule.register(options.identity),

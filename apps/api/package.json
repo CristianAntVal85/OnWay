@@ -11,6 +11,7 @@
     "test": "vitest run --config vitest.config.ts",
     "test:db": "vitest run --config vitest.db.config.ts",
     "test:api": "vitest run --config vitest.api.config.ts",
+    "test:routing": "vitest run --config vitest.routing.config.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/src/main.js",
     "migrate": "pnpm build && node dist/src/cli/migrate.js",
