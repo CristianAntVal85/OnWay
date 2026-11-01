@@ -56,6 +56,9 @@ const BUILT = [
   'generateRoutes', // H3-T7
   'listMissionRoutes',
   'getMissionRouteGeometry', // H4-T1
+  'addMissionRoutes',
+  'updateMissionRoute',
+  'removeMissionRoute', // H4-T2
 ];
 
 let real: TestApp;

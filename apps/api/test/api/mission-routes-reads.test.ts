@@ -88,8 +88,6 @@ async function addDrawn(member: Member, missionId: string, extra: { originPointI
     `INSERT INTO mission_routes (organization_id, mission_id, route_id, pinned_version_id, origin_point_id, team_id, added_by) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
     [member.orgId, missionId, created.routeId, created.versionId, extra.originPointId ?? null, extra.teamId ?? null, member.userId],
   );
-  // Rows added one after the other get the order they were added in (`added_at` is the transaction's time).
-  await new Promise((resolve) => setTimeout(resolve, 5));
   return { ...created, missionRouteId: added[0]!.id };
 }
 const validate = async (member: Member, routeId: string, versionId: string) =>

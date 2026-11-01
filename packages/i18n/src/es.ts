@@ -423,6 +423,7 @@ export const es: Messages = {
         route_added: 'Ruta añadida',
         route_removed: 'Ruta quitada',
         route_version_changed: 'Versión de ruta cambiada',
+        route_updated: 'Ruta modificada en la misión',
         route_marked_unavailable: 'Ruta marcada como no disponible',
         route_reactivated: 'Ruta reactivada',
         route_version_validated: 'Versión de ruta validada',

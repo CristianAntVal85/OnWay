@@ -423,6 +423,7 @@ export const fr: Messages = {
         route_added: 'Itinéraire ajouté',
         route_removed: 'Itinéraire retiré',
         route_version_changed: 'Version d’itinéraire changée',
+        route_updated: 'Itinéraire modifié dans la mission',
         route_marked_unavailable: 'Itinéraire marqué comme indisponible',
         route_reactivated: 'Itinéraire réactivé',
         route_version_validated: 'Version d’itinéraire validée',

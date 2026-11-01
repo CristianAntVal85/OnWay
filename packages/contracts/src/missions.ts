@@ -168,6 +168,7 @@ export const MissionHistoryAction = z.enum([
   'route_added',
   'route_removed',
   'route_version_changed',
+  'route_updated',
   'route_marked_unavailable',
   'route_reactivated',
   'route_version_validated',
