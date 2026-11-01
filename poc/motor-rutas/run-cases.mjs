@@ -140,6 +140,19 @@ async function capabilities(engine, url, pair, main, ours) {
     slope.limitedMaxSlopePct = (await ours(limited.paths[0].coords)).maxSlopePct;
     slope.routeChanged = sharedShare(limited.paths[0].coords, main.coords) < 0.9;
   }
+  // 3, literal text of the plan (T1 of H3): with a limit that binds (75 % of the maximum slope of the main route, capped at what the engine can express), the measured maximum
+  // does not pass the limit unless there is no other way, and then the engine says so. Not every engine has a hard limit.
+  if (engine.slopeHardModel) {
+    const limitPct = Math.min(engine.MAX_SLOPE_LIMIT_PCT ?? Infinity, Math.max(10, Math.round(base.maxSlopePct * 0.75)));
+    const hard = await engine.route({ url, from: pair.from, to: pair.to, customModel: engine.slopeHardModel(limitPct) });
+    if (hard.paths.length === 0) {
+      const clean = engine.isNoRoute(hard.error);
+      out['3L'] = check({ limitPct, baseMaxSlopePct: base.maxSlopePct, outcome: clean ? 'unavoidable' : 'error', message: hard.error ?? null }, clean);
+    } else {
+      const measuredMax = (await ours(hard.paths[0].coords)).maxSlopePct;
+      out['3L'] = check({ limitPct, baseMaxSlopePct: base.maxSlopePct, measuredMaxSlopePct: measuredMax, outcome: measuredMax <= limitPct ? 'respected' : 'exceeded' }, measuredMax <= limitPct);
+    }
+  }
   return { criteria: out, slope };
 }
 
@@ -225,9 +238,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const report = await measure(engineName);
   const mark = (criterion) => (criterion ? (criterion.pass ? 'PASS' : 'FAIL') : '  - ');
   console.log(`\n${engineName}  runs=${report.runs}  peak memory ${report.peakMemoryMiB.value} MiB (${mark(report.peakMemoryMiB)})`);
-  console.log('pair'.padEnd(20), ['c1', 'c2', 'c4', 'c6', 'c7', 'c8'].map((c) => c.padEnd(6)).join(''), 'paths  p95 s');
+  console.log('pair'.padEnd(20), ['c1', 'c2', 'c3L', 'c4', 'c6', 'c7', 'c8'].map((c) => c.padEnd(6)).join(''), 'paths  p95 s');
   for (const result of report.results) {
-    console.log(result.id.padEnd(20), [1, 2, 4, 6, 7, 8].map((c) => mark(result.criteria[c]).padEnd(6)).join(''), String(result.paths?.length ?? 0).padEnd(6), result.seconds?.p95 ?? result.error);
+    console.log(
+      result.id.padEnd(20),
+      [1, 2, '3L', 4, 6, 7, 8].map((c) => mark(result.criteria[c]).padEnd(6)).join(''),
+      String(result.paths?.length ?? 0).padEnd(6),
+      result.seconds?.p95 ?? result.error,
+    );
   }
   console.log(`c3 slope probe ${report.slopeProbe.id}: ${mark(report.slopeProbe)} ${JSON.stringify(report.slopeProbe.value)}`);
   const out = resolve(dirname(fileURLToPath(import.meta.url)), argOf('out', `results/${engineName}.json`)); // an absolute --out is used as given

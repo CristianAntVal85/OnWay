@@ -94,3 +94,9 @@ export async function proposeRoutes({ url, from, to, minAlternatives = 2, maxSha
 
 /** True when the engine says there is no way between the points (not when it failed for any other reason). */
 export const isNoRoute = (message) => /Connection between locations not found/i.test(message ?? '');
+
+/** GraphHopper stores `max_slope` in 5 bits, so every slope from 31 % up reads as 31: a limit above 30 % cannot be expressed. */
+export const MAX_SLOPE_LIMIT_PCT = 30;
+
+/** Hard slope limit: edges steeper than `limitPct` (up or down) are forbidden. The engine answers "no way" when there is no other exit. */
+export const slopeHardModel = (limitPct) => ({ priority: [{ if: `max_slope > ${limitPct} || max_slope < -${limitPct}`, multiply_by: '0' }] });

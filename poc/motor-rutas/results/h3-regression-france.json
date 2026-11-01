@@ -1,0 +1,135 @@
+{
+  "engine": "graphhopper",
+  "date": "2026-11-01T16:11:55.418Z",
+  "extract": {
+    "geofabrikSnapshot": "261031",
+    "bbox": [
+      -1.9,
+      41.9,
+      3.3,
+      43.2
+    ],
+    "licence": "© OpenStreetMap contributors, ODbL"
+  },
+  "thresholds": {
+    "minAlternatives": 2,
+    "maxSharedShare": 0.7,
+    "minTrailShare": 0.9,
+    "p95Seconds": 5,
+    "peakMemoryMb": 2048
+  },
+  "alternatives": {
+    "maxPaths": 3,
+    "maxShareFactor": 0.8,
+    "maxWeightFactor": 2.5
+  },
+  "runs": 5,
+  "slopeProbe": {
+    "id": "bujaruelo-goriz",
+    "value": {
+      "limitPct": 25,
+      "baseMaxSlopePct": 94.5,
+      "limitedMaxSlopePct": 44.9,
+      "routeChanged": true
+    },
+    "pass": true
+  },
+  "peakMemoryMiB": {
+    "value": 1770,
+    "pass": true
+  },
+  "results": [
+    {
+      "id": "gavarnie-vignemale",
+      "paths": [
+        {
+          "distanceKm": 17.36,
+          "timeH": 7.51,
+          "ascentM": 2228,
+          "descentM": 384,
+          "mix": {
+            "road": 0.043,
+            "track": 0.236,
+            "path": 0.721,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 36.82,
+          "timeH": 16.76,
+          "ascentM": 3820,
+          "descentM": 1975,
+          "mix": {
+            "road": 0.02,
+            "track": 0.071,
+            "path": 0.908,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.121,
+        "p95": 0.126,
+        "max": 0.126
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "blocking"
+            ],
+            "sharedWithMain": [
+              0.28
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 0.957,
+          "pass": true
+        },
+        "4": {
+          "value": 0.13,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 0.89
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 0.99,
+            "covered": 0.99,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        },
+        "3L": {
+          "value": {
+            "limitPct": 30,
+            "baseMaxSlopePct": 61.5,
+            "outcome": "unavoidable",
+            "message": "Connection between locations not found"
+          },
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 61.5,
+        "limitedMaxSlopePct": 55,
+        "routeChanged": true
+      }
+    }
+  ]
+}

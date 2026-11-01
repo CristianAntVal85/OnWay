@@ -275,6 +275,29 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
           </ul>
         </section>
 
+        {canEdit && (
+          <section className="detail-generate" aria-labelledby="generate-title">
+            <h2 id="generate-title" tabIndex={-1}>
+              {t('generate.title')}
+            </h2>
+            {pointsByKind.origin.length === 0 ? (
+              <>
+                {/* RN-08, INV-14: sin origen no se genera; se explica por qué y se lleva a donde se arregla (doc 02 §8). */}
+                <button type="button" className="button button-secondary" disabled aria-describedby="generate-hint">
+                  {t('generate.cta')}
+                </button>
+                <p id="generate-hint" className="field-help">
+                  {t('generate.noOrigin')} <a href="#points-title">{t('generate.addOrigin')}</a>
+                </p>
+              </>
+            ) : (
+              <Link className="button button-secondary" to={`${PATHS.generateRoutes}?mission=${mission.id}`}>
+                {t('generate.cta')}
+              </Link>
+            )}
+          </section>
+        )}
+
         <section className="detail-points" aria-labelledby="points-title">
           <h2 id="points-title" tabIndex={-1}>
             {t('missionDetail.points.title')}

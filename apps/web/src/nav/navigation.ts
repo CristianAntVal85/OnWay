@@ -2,7 +2,7 @@
 // Es una ayuda de interfaz: quien decide los permisos es el servidor (RF-103).
 import type { MemberRole } from '@onway/contracts';
 
-export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'createRoute' | 'teams' | 'admin' | 'profile' | 'account';
+export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'createRoute' | 'generateRoutes' | 'teams' | 'admin' | 'profile' | 'account';
 
 export type NextStep = 'home' | 'complete-profile' | 'awaiting-approval';
 
@@ -20,6 +20,7 @@ export const PATHS = {
   createMission: '/missions/new',
   routes: '/routes',
   createRoute: '/routes/draw',
+  generateRoutes: '/routes/generate',
   routeImport: '/routes/import',
   teams: '/teams',
   admin: '/admin',
@@ -39,6 +40,7 @@ export const ROUTE_ROLES: Readonly<Record<RouteId, readonly MemberRole[]>> = {
   createMission: MISSION_WRITERS,
   routes: STAFF,
   createRoute: MISSION_WRITERS,
+  generateRoutes: MISSION_WRITERS,
   teams: STAFF,
   admin: ['admin'],
   profile: ['rescuer'],

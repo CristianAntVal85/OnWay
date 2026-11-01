@@ -13,15 +13,16 @@ interface Editor {
   onRemove: (i: number) => void;
   labelFor: (i: number) => string;
 }
-const map: { editor?: Editor; onPick?: (p: { lat: number; lon: number }) => void } = {};
+const map: { editor?: Editor; onPick?: (p: { lat: number; lon: number }) => void; routes?: { id: string; tone: string; line: unknown[] }[] } = {};
 vi.mock('../src/map', async () => {
   const edit = await vi.importActual<typeof import('../src/map/edit')>('../src/map/edit');
   return {
     MAP_LAYERS: [],
     ...edit,
-    MapView: (props: { editor?: Editor; onPick?: (p: { lat: number; lon: number }) => void }) => {
+    MapView: (props: { editor?: Editor; onPick?: (p: { lat: number; lon: number }) => void; routes?: { id: string; tone: string; line: unknown[] }[] }) => {
       map.editor = props.editor;
       map.onPick = props.onPick;
+      map.routes = props.routes;
       return <div data-testid="map" />;
     },
   };
@@ -107,6 +108,7 @@ describe('dibujar una ruta', () => {
     expect(body).toEqual({
       source: 'drawn',
       name: 'A mano',
+      snapToPaths: true,
       geometry: {
         type: 'LineString',
         coordinates: [
@@ -215,5 +217,132 @@ describe('editar una versión (RF-516)', () => {
     await user.click(screen.getByRole('button', { name: T.saveVersion }));
     expect(await screen.findByText(es.errors.OUTSIDE_COVERAGE)).toBeTruthy();
     expect(map.editor!.vertices.length).toBe(before);
+  });
+});
+
+describe('dibujar uniendo los puntos por los caminos (H3-T9, RF-503)', () => {
+  const candidate = {
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [0.65, 42.6, 1500],
+        [0.655, 42.603, 1560],
+        [0.66, 42.61, 1700],
+      ],
+    },
+    metrics: { distanceM: 2400, ascentM: 210, descentM: 10, minElevationM: 1500, maxElevationM: 1700, maxSlopePct: 22 },
+    roadMix: [
+      { roadType: 'road', distanceM: 600 },
+      { roadType: 'path', distanceM: 1800 },
+    ],
+    offTrailShare: 0,
+  };
+  const snapHandlers = (answer: () => Response = () => json(200, candidate)): Record<string, (call: Call) => Response | Promise<Response>> => ({
+    'POST /routes/snap': answer,
+    'POST /routes': () => json(201, created),
+    [`GET /routes/${NEW}`]: () => json(200, detail({ id: NEW })),
+  });
+  const snaps = (calls: Call[]) => calls.filter((c) => c.path === '/routes/snap');
+
+  it('está activada de serie; calcula la ruta por los caminos con los puntos en orden y enseña métricas y composición del servidor', async () => {
+    const { user, calls } = setup('/routes/draw', snapHandlers());
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    const checkbox = screen.getByRole('checkbox', { name: T.snapLabel }) as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+    const calculate = screen.getByRole('button', { name: T.snapPreview }) as HTMLButtonElement;
+    expect(calculate.disabled).toBe(true);
+    pick(42.6, 0.65);
+    pick(42.61, 0.66);
+    await user.click(calculate);
+    await waitFor(() => expect(snaps(calls())).toHaveLength(1));
+    expect(snaps(calls())[0]!.body).toEqual({
+      points: [
+        { lat: 42.6, lon: 0.65 },
+        { lat: 42.61, lon: 0.66 },
+      ],
+    });
+    expect(await screen.findByText(/Ruta por los caminos: 2,4 km · subida 210 m · bajada 10 m/)).toBeTruthy();
+    expect(screen.getByRole('img', { name: /Carretera 25 %.*Sendero 75 %/ })).toBeTruthy();
+    expect(map.routes?.some((r) => r.id === 'snapped' && r.tone === 'compare-a')).toBe(true);
+  });
+
+  it('si se cambian los puntos, la vista previa se retira para no enseñar una ruta que ya no corresponde', async () => {
+    const { user } = setup('/routes/draw', snapHandlers());
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    pick(42.6, 0.65);
+    pick(42.61, 0.66);
+    await user.click(screen.getByRole('button', { name: T.snapPreview }));
+    await screen.findByText(/Ruta por los caminos/);
+    pick(42.62, 0.67);
+    await waitFor(() => expect(screen.queryByText(/Ruta por los caminos/)).toBeNull());
+    expect(map.routes?.some((r) => r.id === 'snapped')).toBe(false);
+  });
+
+  it('guarda los puntos de control con snapToPaths: el servidor es quien los une y los mide', async () => {
+    const { user, calls } = setup('/routes/draw', snapHandlers());
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    pick(42.6, 0.65);
+    pick(42.61, 0.66);
+    await user.type(screen.getByLabelText(T.nameLabel), 'Por caminos');
+    await user.click(screen.getByRole('button', { name: T.save }));
+    await waitFor(() => expect(posts(calls()).filter((c) => c.path === '/routes')).toHaveLength(1));
+    const body = posts(calls()).find((c) => c.path === '/routes')!.body as { snapToPaths: boolean; geometry: { coordinates: number[][] } };
+    expect(body.snapToPaths).toBe(true);
+    expect(body.geometry.coordinates).toEqual([
+      [0.65, 42.6],
+      [0.66, 42.61],
+    ]);
+    expect(hasKey(body, 'roadMix')).toBe(false);
+  });
+
+  it('sin la opción, guarda la línea recta y no ofrece calcular por los caminos', async () => {
+    const { user, calls } = setup('/routes/draw', snapHandlers());
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    await user.click(screen.getByRole('checkbox', { name: T.snapLabel }));
+    expect(screen.queryByRole('button', { name: T.snapPreview })).toBeNull();
+    pick(42.6, 0.65);
+    pick(42.61, 0.66);
+    await user.type(screen.getByLabelText(T.nameLabel), 'Recta');
+    await user.click(screen.getByRole('button', { name: T.save }));
+    await waitFor(() => expect(posts(calls()).filter((c) => c.path === '/routes')).toHaveLength(1));
+    expect((posts(calls()).find((c) => c.path === '/routes')!.body as { snapToPaths: boolean }).snapToPaths).toBe(false);
+    expect(snaps(calls())).toHaveLength(0);
+  });
+
+  it('con más de 50 puntos avisa, no deja calcular ni guardar, y desmarcar la opción lo permite', async () => {
+    const { user } = setup('/routes/draw', snapHandlers());
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    for (let i = 0; i < 51; i++) pick(42.6 + i * 0.001, 0.65);
+    expect(await screen.findByText(T.snapTooMany.replace('{{max}}', '50'))).toBeTruthy();
+    expect((screen.getByRole('button', { name: T.snapPreview }) as HTMLButtonElement).disabled).toBe(true);
+    await user.type(screen.getByLabelText(T.nameLabel), 'Larga');
+    await user.click(screen.getByRole('button', { name: T.save }));
+    expect(screen.getByText(T.snapTooMany.replace('{{max}}', '50'))).toBeTruthy();
+    await user.click(screen.getByRole('checkbox', { name: T.snapLabel }));
+    expect(screen.queryByText(T.snapTooMany.replace('{{max}}', '50'))).toBeNull();
+  });
+
+  it.each([
+    ['NO_ROUTE_POSSIBLE', 422, es.errors.NO_ROUTE_POSSIBLE],
+    ['ROUTING_UNAVAILABLE', 503, es.errors.ROUTING_UNAVAILABLE],
+    ['OUTSIDE_COVERAGE', 422, es.errors.OUTSIDE_COVERAGE],
+  ] as const)('si el servidor no puede unir los puntos (%s), lo dice y propone guardar en línea recta', async (code, status, message) => {
+    const { user } = setup(
+      '/routes/draw',
+      snapHandlers(() => apiError(status, code)),
+    );
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    pick(42.6, 0.65);
+    pick(42.61, 0.66);
+    await user.click(screen.getByRole('button', { name: T.snapPreview }));
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts.some((alert) => alert.textContent?.includes(message))).toBe(true);
+    expect(screen.getByText(T.snapFailedHint)).toBeTruthy();
+  });
+
+  it('al editar una versión no hay unión por caminos: los vértices se guardan como están', async () => {
+    setup(`/routes/${ROUTE}/edit`);
+    await screen.findByRole('heading', { level: 1, name: T.editTitle.replace('{{name}}', 'Senda del Circo') });
+    expect(screen.queryByRole('checkbox', { name: T.snapLabel })).toBeNull();
   });
 });

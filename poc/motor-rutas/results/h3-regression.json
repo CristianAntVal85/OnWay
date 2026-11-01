@@ -1,0 +1,319 @@
+{
+  "engine": "graphhopper",
+  "date": "2026-11-01T16:11:46.465Z",
+  "extract": {
+    "geofabrikSnapshot": "261031",
+    "bbox": [
+      -1.9,
+      41.9,
+      3.3,
+      43.2
+    ],
+    "licence": "© OpenStreetMap contributors, ODbL"
+  },
+  "thresholds": {
+    "minAlternatives": 2,
+    "maxSharedShare": 0.7,
+    "minTrailShare": 0.9,
+    "p95Seconds": 5,
+    "peakMemoryMb": 2048
+  },
+  "alternatives": {
+    "maxPaths": 3,
+    "maxShareFactor": 0.8,
+    "maxWeightFactor": 2.5
+  },
+  "runs": 5,
+  "slopeProbe": {
+    "id": "bujaruelo-goriz",
+    "value": {
+      "limitPct": 25,
+      "baseMaxSlopePct": 94.5,
+      "limitedMaxSlopePct": 44.9,
+      "routeChanged": true
+    },
+    "pass": true
+  },
+  "peakMemoryMiB": {
+    "value": 1760,
+    "pass": true
+  },
+  "results": [
+    {
+      "id": "coronas-aneto",
+      "paths": [
+        {
+          "distanceKm": 5.59,
+          "timeH": 3.48,
+          "ascentM": 1426,
+          "descentM": 21,
+          "mix": {
+            "road": 0,
+            "track": 0.077,
+            "path": 0.923,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 8.09,
+          "timeH": 4.8,
+          "ascentM": 1618,
+          "descentM": 213,
+          "mix": {
+            "road": 0,
+            "track": 0.158,
+            "path": 0.842,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.014,
+        "p95": 0.017,
+        "max": 0.017
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "native"
+            ],
+            "sharedWithMain": [
+              0.43
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 1,
+          "pass": true
+        },
+        "4": {
+          "value": 0.02,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 14.16
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 1,
+            "covered": 1,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        },
+        "3L": {
+          "value": {
+            "limitPct": 30,
+            "baseMaxSlopePct": 67.1,
+            "outcome": "unavoidable",
+            "message": "Connection between locations not found"
+          },
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 67.1,
+        "limitedMaxSlopePct": 68.7,
+        "routeChanged": false
+      }
+    },
+    {
+      "id": "bujaruelo-brecha",
+      "paths": [
+        {
+          "distanceKm": 9.09,
+          "timeH": 5.23,
+          "ascentM": 1572,
+          "descentM": 122,
+          "mix": {
+            "road": 0,
+            "track": 0.006,
+            "path": 0.994,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 10.94,
+          "timeH": 5.74,
+          "ascentM": 1774,
+          "descentM": 324,
+          "mix": {
+            "road": 0,
+            "track": 0.005,
+            "path": 0.995,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.039,
+        "p95": 0.048,
+        "max": 0.048
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "blocking"
+            ],
+            "sharedWithMain": [
+              0.68
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 1,
+          "pass": true
+        },
+        "4": {
+          "value": 0.05,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 1.86
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 0.99,
+            "covered": 0.99,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        },
+        "3L": {
+          "value": {
+            "limitPct": 30,
+            "baseMaxSlopePct": 54.8,
+            "outcome": "unavoidable",
+            "message": "Connection between locations not found"
+          },
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 54.8,
+        "limitedMaxSlopePct": 53.7,
+        "routeChanged": false
+      }
+    },
+    {
+      "id": "ordesa-perdido",
+      "paths": [
+        {
+          "distanceKm": 15.46,
+          "timeH": 6.74,
+          "ascentM": 2293,
+          "descentM": 292,
+          "mix": {
+            "road": 0.009,
+            "track": 0.117,
+            "path": 0.874,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 19.64,
+          "timeH": 8.19,
+          "ascentM": 2641,
+          "descentM": 640,
+          "mix": {
+            "road": 0.007,
+            "track": 0.248,
+            "path": 0.745,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.044,
+        "p95": 0.053,
+        "max": 0.053
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "blocking"
+            ],
+            "sharedWithMain": [
+              0.24
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 0.991,
+          "pass": true
+        },
+        "4": {
+          "value": 0.05,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 4.18
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 0.99,
+            "covered": 0.99,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        },
+        "3L": {
+          "value": {
+            "limitPct": 30,
+            "baseMaxSlopePct": 99.8,
+            "outcome": "unavoidable",
+            "message": "Connection between locations not found"
+          },
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 99.8,
+        "limitedMaxSlopePct": 96.3,
+        "routeChanged": true
+      }
+    }
+  ]
+}

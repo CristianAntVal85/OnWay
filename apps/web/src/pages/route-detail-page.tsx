@@ -8,6 +8,7 @@ import { usePageTitle } from '../components/use-page-title';
 import { ComparePanel } from '../library/compare-panel';
 import { saveBlob } from '../library/download';
 import { ElevationProfile } from '../library/elevation-profile';
+import { RoadMix } from '../library/road-mix';
 import { formatKm } from '../library/format';
 import { ArchiveDialog, DeriveDialog, ValidateDialog } from '../library/route-dialogs';
 import { MapView, type MapRoute } from '../map';
@@ -237,6 +238,8 @@ export function RouteDetailPage() {
                       <div className="facts-wide">
                         <dt>{t('routeDetail.metrics.roadMix')}</dt>
                         <dd>
+                          <RoadMix mix={version.data.roadMix} />
+                          <br />
                           {version.data.roadMix.map((part) => `${t(`routeDetail.metrics.roadTypes.${part.roadType}`)} · ${t('units.km', { value: formatKm(part.distanceM, locale) })}`).join(', ')}
                         </dd>
                       </div>

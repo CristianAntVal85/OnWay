@@ -93,4 +93,44 @@ describe('RouteMeasurement (D-H2-01: round, thin, densify, altitude in one batch
       ]),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', details: { issues: [{ code: 'too_long' }] } });
   });
+
+  it('carries the road types of the engine to the prepared line, stretch by stretch, and keeps the figures consistent (D-H3-04)', async () => {
+    const { line } = await fixture('ficticio-sendero.gpx');
+    const half = Math.floor(line.length / 2);
+    const measured = await measurement.measure(line, [
+      { fromIndex: 0, toIndex: half, roadType: 'road' },
+      { fromIndex: half, toIndex: line.length - 1, roadType: 'path' },
+    ]);
+    expect(measured.segments.map((segment) => segment.roadType)).toEqual(['road', 'path']);
+    expect(measured.segments.map((segment) => segment.position)).toEqual([0, 1]);
+    // The stretches cover the whole prepared line and share their boundary vertex.
+    expect(measured.segmentLines[0]![0]).toEqual(measured.coordinates[0]);
+    expect(measured.segmentLines[1]![measured.segmentLines[1]!.length - 1]).toEqual(measured.coordinates[measured.coordinates.length - 1]);
+    expect(measured.segmentLines[0]![measured.segmentLines[0]!.length - 1]).toEqual(measured.segmentLines[1]![0]);
+    expect(measured.segmentLines.flat().length).toBe(measured.coordinates.length + 1);
+    // The composition adds up to the distance of the route.
+    const total = measured.roadMix.reduce((sum, part) => sum + part.distanceM, 0);
+    expect(Math.abs(total - measured.metrics.distanceM)).toBeLessThan(1);
+    expect(measured.roadMix.map((part) => part.roadType).sort()).toEqual(['path', 'road']);
+  });
+
+  it('joins consecutive stretches of the same type and never uses the altitude the engine put in the vertices', async () => {
+    const { line } = await fixture('ficticio-sendero.gpx');
+    const withFalseAltitude = line.map(([lon, lat]) => [lon!, lat!, 999]);
+    const measured = await measurement.measure(withFalseAltitude, [
+      { fromIndex: 0, toIndex: 3, roadType: 'path' },
+      { fromIndex: 3, toIndex: line.length - 1, roadType: 'path' },
+    ]);
+    expect(measured.segments).toHaveLength(1);
+    expect(measured.roadMix).toEqual([{ roadType: 'path', distanceM: measured.metrics.distanceM }]);
+    expect(measured.coordinates.some(([, , height]) => height === 999)).toBe(false);
+    for (const [lon, lat, height] of measured.coordinates) expect(height).toBe(await synthetic.elevationAt({ lat, lon }));
+  });
+
+  it('leaves what the engine did not label as unknown', async () => {
+    const { line } = await fixture('ficticio-sendero.gpx');
+    const measured = await measurement.measure(line, [{ fromIndex: 0, toIndex: 2, roadType: 'track' }]);
+    expect(measured.segments[0]!.roadType).toBe('track');
+    expect(measured.segments[measured.segments.length - 1]!.roadType).toBe('unknown');
+  });
 });

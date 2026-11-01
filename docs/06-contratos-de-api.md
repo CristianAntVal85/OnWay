@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.1 · **Estado:** borrador para revisión · **Fecha:** 1 de noviembre de 2026
+**Versión:** 1.2 · **Estado:** borrador para revisión · **Fecha:** 1 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -230,10 +230,10 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | Operación | Petición | Quién | Entrada | Respuesta | Errores propios |
 |---|---|---|---|---|---|
 | `listRoutes` · **H2**<br>Biblioteca: rutas del área visible, con filtros | `GET /routes` | Coordinador, Admin | consulta: page?, pageSize?, bbox?, q?, status?, versionStatus?, minDistanceM?, maxDistanceM?, minAscentM?, … | 200: items, page, pageSize, total | — |
-| `createRoute` · **H2**<br>Crear ruta importada o dibujada (versión 1 en Borrador) *(auditado)* | `POST /routes` | Coordinador | cuerpo: source?, name?, fileId?, note?, addToMission?, geometry? | 201: routeId, versionId, versionNumber, missionRouteId | `INVALID_FILE_CONTENT` `MISSION_HAS_NO_ORIGIN` `MISSION_CLOSED` `OUTSIDE_COVERAGE` |
+| `createRoute` · **H2**<br>Crear ruta importada o dibujada (versión 1 en Borrador) *(auditado)* | `POST /routes` | Coordinador | cuerpo: source?, name?, fileId?, note?, addToMission?, geometry?, snapToPaths? | 201: routeId, versionId, versionNumber, missionRouteId | `INVALID_FILE_CONTENT` `MISSION_HAS_NO_ORIGIN` `MISSION_CLOSED` `OUTSIDE_COVERAGE` `NO_ROUTE_POSSIBLE` `ROUTING_UNAVAILABLE` |
 | `snapRoute` · **H3**<br>Unir puntos siguiendo caminos (vista previa, no guarda) | `POST /routes/snap` | Coordinador, Admin | cuerpo: points | 200: geometry, metrics, roadMix, offTrailShare | `NO_ROUTE_POSSIBLE` `OUTSIDE_COVERAGE` `ROUTING_UNAVAILABLE` |
 | `previewRouteImport` · **H2**<br>Vista previa de un GPX/KML subido (no guarda) | `POST /routes/import/preview` | Coordinador, Admin | cuerpo: fileId | 200: trackName, candidate, waypointCount, warnings | `INVALID_FILE_CONTENT` `OUTSIDE_COVERAGE` |
-| `generateRoutes` · **H3**<br>Generar alternativas en segundo plano *(auditado)* | `POST /routes/generate` | Coordinador | cuerpo: from, to, via?, avoidZoneIds?, alternatives?, namePrefix?, addToMission? | 202: jobId | `MISSION_HAS_NO_ORIGIN` `MISSION_CLOSED` `ROUTING_UNAVAILABLE` |
+| `generateRoutes` · **H3**<br>Generar alternativas en segundo plano *(auditado)* | `POST /routes/generate` | Coordinador | cuerpo: from, to, via?, avoidZoneIds?, alternatives?, namePrefix?, addToMission? | 202: jobId | `MISSION_HAS_NO_ORIGIN` `MISSION_CLOSED` `ROUTING_UNAVAILABLE` `NOT_FOUND` |
 | `listNearRoutes` · **H8** (2.ª entrega)<br>Rutas que pasan cerca de un punto | `GET /routes/near` | Coordinador, Admin | consulta: lat, lon, radiusM?, limit? | 200: items | — |
 | `exportRoutes` · **H2**<br>Exportar varias rutas de la biblioteca en un solo GPX/KML | `GET /routes/export` | Coordinador, Admin | consulta: ids, format?, validatedOnly? | 200 archivo | — |
 | `getRoute` · **H2**<br>Detalle de ruta: versiones, derivadas, uso | `GET /routes/{routeId}` | Coordinador, Admin | ruta: routeId | 200: id, name, status, versions, derivedFrom, derivatives, usedIn, createdAt, updatedAt | — |
@@ -246,8 +246,8 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | `exportRoute` · **H2**<br>Descargar una versión como GPX o KML | `GET /routes/{routeId}/export` | Coordinador, Admin | ruta: routeId<br>consulta: versionId?, format? | 200 archivo | — |
 | `getJob` · **H3**<br>Progreso y resultado de un cálculo | `GET /jobs/{jobId}` | Coordinador, Admin | ruta: jobId | 200: id?, status?, progress?, errorCode?, createdAt?, finishedAt?, kind?, result? | — |
 | `listAvoidZones` · **H3**<br>Zonas a evitar de la organización o de una misión | `GET /avoid-zones` | Coordinador, Admin | consulta: missionId? | 200: items | — |
-| `createAvoidZone` · **H3**<br>Dibujar una zona a evitar *(auditado)* | `POST /avoid-zones` | Coordinador | cuerpo: missionId?, geometry, reason? | 201: id, missionId, geometry, reason, createdAt | — |
-| `deleteAvoidZone` · **H3**<br>Borrar una zona a evitar *(auditado)* | `DELETE /avoid-zones/{zoneId}` | Coordinador | ruta: zoneId | 204 | — |
+| `createAvoidZone` · **H3**<br>Dibujar una zona a evitar *(auditado)* | `POST /avoid-zones` | Coordinador | cuerpo: missionId?, geometry, reason? | 201: id, missionId, geometry, reason, createdAt | `MISSION_CLOSED` |
+| `deleteAvoidZone` · **H3**<br>Borrar una zona a evitar *(auditado)* | `DELETE /avoid-zones/{zoneId}` | Coordinador | ruta: zoneId | 204 | `MISSION_CLOSED` |
 
 ### Rutas de la misión
 
@@ -803,7 +803,8 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 ### 10.3 Lo que el contrato no cubre
 
-- **Cálculo real de rutas** (`snap`, `generate`, `adapt`), geocodificación y altitud: el contrato fija la forma, no el motor. Siguen sujetos al motor de rutas (GraphHopper 11.1, elegido en la prueba técnica, tras el puerto `RoutingProvider`; doc. 04 §7.6).
+- **La calidad de las rutas que propone el motor**: el contrato fija la forma, no el motor. `snapRoute`, `generateRoutes` y la composición de `createRoute` con `snapToPaths` (H3) están montadas y probadas con el motor real (GraphHopper 11.1, tras el puerto `RoutingProvider`; doc. 04 §7.6 y §12), pero qué rutas prefiere un rescatista, y los pesos del perfil de montaña, los juzga una persona del dominio (doc. 07, H3). `adaptRoute` sigue siendo solo la forma (H9).
+- **Auditoría de H3** (`audit_log`, sin datos personales ni el texto de los motivos): `generate_requested` (entidad `calculation_job`, con el número de alternativas, de puntos intermedios y de zonas y la misión; no las coordenadas), `avoid_zone_created` y `avoid_zone_deleted` (entidad `avoid_zone`); las rutas que crea el trabajo llevan su `route_created` como las demás.
 
 ## 11. Qué está verificado y qué no
 
@@ -813,7 +814,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 - El OpenAPI no se ha pasado por un validador oficial (no hay acceso a internet desde el entorno de trabajo; solo comprobaciones propias).
 - ~~Se probó con Zod 4 instalado localmente.~~ Confirmado con `pnpm install` desde el registro de npm: Zod 4.6.7 se comporta igual.
 - `nestjs-zod` no se usa: la API valida con un interceptor propio sobre los mismos esquemas (H0). El generador del cliente (`gen:client`) sí está integrado y lo consume la web.
-- Lo geoespacial de **puntos y altitud** sí se ha ejecutado en H1 (puntos de misión con `PointZ` en PostGIS, altitud del DEM de Copernicus, o la sintética en pruebas, y de Open-Meteo fuera de la caja de los Pirineos); y en H2 también lo de **rutas**: líneas `LineStringZ` con GiST, `ST_MakeEnvelope` (`listRoutes` por área visible, con un plan que usa el índice sobre 10 000 rutas sintéticas), `ST_SimplifyPreserveTopology` para la vista previa, perfiles de elevación y exportación a GPX/KML, todo contra PostGIS real. Siguen siendo formas de datos hasta H3 los **candidatos del motor** (`snapRoute`, `generateRoutes`, `adaptRoute`).
+- Lo geoespacial de **puntos y altitud** sí se ha ejecutado en H1 (puntos de misión con `PointZ` en PostGIS, altitud del DEM de Copernicus, o la sintética en pruebas, y de Open-Meteo fuera de la caja de los Pirineos); y en H2 también lo de **rutas**: líneas `LineStringZ` con GiST, `ST_MakeEnvelope` (`listRoutes` por área visible, con un plan que usa el índice sobre 10 000 rutas sintéticas), `ST_SimplifyPreserveTopology` para la vista previa, perfiles de elevación y exportación a GPX/KML, todo contra PostGIS real. En H3 también lo del **motor**: `snapRoute`, `generateRoutes` y el trabajo en segundo plano (`pg-boss`, `getJob`) se ejecutan contra GraphHopper real sobre una red inventada (`test:routing`, E2E) y, a mano o con el workflow de regresión, sobre los datos reales de los Pirineos. Sigue siendo solo una forma de datos `adaptRoute` (H9).
 - Las tablas generadas de `gen:doc` coinciden con este documento salvo dos filas que se mantienen a mano (`createRoute` y `getJob`, cuyo cuerpo y respuesta el generador no sabe describir por ser uniones) y los nombres de tipo traducidos (`texto` por `string`).
 
 ## 12. Preguntas y suposiciones
@@ -836,6 +837,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.2 | 2026-11-01 | Cierre de H3 (T10): las 6 operaciones de H3 montadas y probadas (`snapRoute`, `generateRoutes`, `getJob`, `listAvoidZones`, `createAvoidZone`, `deleteAvoidZone`; 42 en el API con las de H0 a H2). Durante el hito se añadieron al contrato `MISSION_CLOSED` en las operaciones de zonas y `NOT_FOUND` en `generateRoutes` (la misión, el origen, el equipo o las zonas de otra organización), y `snapToPaths` (2 a 50 puntos) en `createRoute`; auditoría `generate_requested` y `avoid_zone_*` (§10.3). OpenAPI y tablas sin diferencias (96 operaciones, 79 rutas). Q-05 resuelta (doc. 01) |
 | 1.1 | 2026-11-01 | Prueba técnica del motor cerrada: el motor tras `RoutingProvider` es GraphHopper 11.1 (doc. 04 §7.6). Solo cambia un comentario; sin cambios de esquema |
 | 1.0 | 2026-10-31 | Cierre de H2 (T10): las 13 operaciones de H2 montadas y probadas (`test:api` con 274 pruebas; AC-02 compara con las 36 exactas de H0, H1 y H2); §11 con lo geoespacial de rutas verificado contra PostGIS. El cuerpo JSON admite hasta 2 MB (una línea de 20 000 vértices son ~0,6 MB) y Caddy corta lo que pase de 12 MB con un `413` que no sigue el formato único (el cliente lo trata como `FILE_TOO_LARGE`). OpenAPI, tablas y cliente regenerados sin diferencias: ningún cambio de esquema en esta tarea |
 | 0.9 | 2026-10-31 | H2-T1. `exportRoutes` (`GET /routes/export`, varias rutas de la biblioteca en un solo GPX/KML, RF-511; H2 pasa a 13 operaciones y el registro a 96). `OUTSIDE_COVERAGE` en `previewRouteImport`, `createRoute`, `createRouteVersion` y `deriveRoute` (el servidor mide todo trazado, RN-10). `INVALID_STATE_TRANSITION` en `archiveRoute`, `createRouteVersion` y `validateRouteVersion` (una ruta archivada es de solo lectura; derivar sí se permite). `RoadType` + `unknown` («sin clasificar»: migración 0012, doc. 05). Notas de `uploadFile` (solo `route_import` hasta H5), `createRoute` y `deriveRoute` (`addToMission` y `calculationJobId` se rechazan hasta H4/H9) y `exportRoute` (versión por defecto: la más reciente). 5 pruebas nuevas del paquete (89) |

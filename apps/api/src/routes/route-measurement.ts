@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { z } from 'zod';
 import type { RoadMix, RouteMetrics, RouteSegment } from '@onway/contracts';
-import { computeMetrics, lengthM, prepareLine, type Position3D } from '@onway/geo';
+import { computeMetrics, groupIntervals, labelIntervals, lengthM, prepareLine, type Position3D } from '@onway/geo';
 import { DomainError } from '../common/domain-error.js';
 import { ELEVATION_PROVIDER, type ElevationProvider } from '../geo/elevation.js';
+import type { EngineSegment } from '../routing/routing.js';
 
 /** Most vertices a measured route can have after `prepareLine` (about 1 800 km at 30 m): a guard for memory and time, not a rule of the domain. */
 export const MAX_MEASURED_VERTICES = 60_000;
@@ -16,6 +17,8 @@ export interface MeasuredPath {
   profile: [number, number][];
   roadMix: z.infer<typeof RoadMix>;
   segments: z.infer<typeof RouteSegment>[];
+  /** The line of each stretch of `segments`, in the same order: the vertices it covers, with their altitude. */
+  segmentLines: Position3D[][];
 }
 
 /**
@@ -27,7 +30,11 @@ export interface MeasuredPath {
 export class RouteMeasurement {
   constructor(@Inject(ELEVATION_PROVIDER) private readonly elevation: ElevationProvider) {}
 
-  async measure(vertices: readonly (readonly number[])[]): Promise<MeasuredPath> {
+  /**
+   * `stretches` are the road types the routing engine gave to its own vertices (D-H3-04); they are carried to the prepared line by
+   * share of the length. Without them (an imported, drawn or edited line) the route is one `unknown` stretch (P1 of H2).
+   */
+  async measure(vertices: readonly (readonly number[])[], stretches?: readonly EngineSegment[]): Promise<MeasuredPath> {
     const prepared = prepareLine(vertices);
     if (prepared.length < 2 || !(lengthM(prepared) > 0)) {
       throw new DomainError('VALIDATION_FAILED', 'Request validation failed', {
@@ -49,12 +56,25 @@ export class RouteMeasurement {
     }
 
     const { metrics, profile } = computeMetrics(coordinates);
-    return {
-      coordinates,
-      metrics,
-      profile,
-      roadMix: [{ roadType: 'unknown', distanceM: metrics.distanceM }],
-      segments: [{ position: 0, roadType: 'unknown', distanceM: metrics.distanceM, ascentM: metrics.ascentM, descentM: metrics.descentM }],
-    };
+    const labels = labelIntervals(
+      vertices,
+      prepared,
+      (stretches ?? []).map(({ fromIndex, toIndex, roadType }) => ({ fromIndex, toIndex, value: roadType })),
+      'unknown' as RoadTypeValue,
+    );
+    const runs = stretches ? groupIntervals(labels) : [{ fromIndex: 0, toIndex: coordinates.length - 1, value: 'unknown' as RoadTypeValue }];
+    const segmentLines = runs.map((run) => coordinates.slice(run.fromIndex, run.toIndex + 1));
+    const segments = runs.map((run, position) => {
+      const line = segmentLines[position]!;
+      // A single stretch is the whole route and keeps the route's own figures; a part is measured on its own line.
+      const part = runs.length === 1 ? metrics : computeMetrics(line).metrics;
+      return { position, roadType: run.value, distanceM: runs.length === 1 ? metrics.distanceM : part.distanceM, ascentM: part.ascentM, descentM: part.descentM };
+    });
+    const mix = new Map<RoadTypeValue, number>();
+    for (const segment of segments) mix.set(segment.roadType, (mix.get(segment.roadType) ?? 0) + segment.distanceM);
+    const roadMix = [...mix].map(([roadType, distanceM]) => ({ roadType, distanceM }));
+    return { coordinates, metrics, profile, roadMix, segments, segmentLines };
   }
 }
+
+type RoadTypeValue = z.infer<typeof RouteSegment>['roadType'];
