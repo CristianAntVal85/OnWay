@@ -1,0 +1,57 @@
+# Routing-engine PoC (specs/PoC-motor-rutas): nothing here belongs to the app stack. Run from the repository root:
+#   mkdir -p poc/motor-rutas/.data/{graphhopper,elevation,valhalla} && ln -f poc/motor-rutas/.data/pyrenees.osm.pbf poc/motor-rutas/.data/valhalla/
+#   docker compose -f poc/motor-rutas/compose.yml up --build --wait graphhopper   # or: valhalla (T3)
+name: onway-poc
+
+services:
+  graphhopper:
+    build: ./docker/graphhopper
+    # Same user as the files in .data/, so nothing is left owned by root.
+    user: '${POC_UID:-1000}:${POC_GID:-1000}'
+    # Memory budget of the PoC (doc 04 §11.1: 1-2 GB for the engine). The import is allowed more than the serving.
+    mem_limit: ${GH_MEM_LIMIT:-3g}
+    command:
+      - -Xmx${GH_HEAP:-2g}
+      - -jar
+      - graphhopper-web.jar
+      - server
+      - /app/conf/config.yml
+    ports:
+      - '127.0.0.1:8989:8989'
+    volumes:
+      - ./.data/pyrenees.osm.pbf:/data/pyrenees.osm.pbf:ro
+      - ./.data/graphhopper:/graph
+      - ./.data/elevation:/elevation
+      - ./graphhopper:/app/conf:ro
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:8989/health']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30m
+
+  # Valhalla 3.9.1 (MIT), the project's own "scripted" image pinned by digest. It builds the tiles from the .pbf found in
+  # /custom_files on the first start, downloads the elevation tiles (Skadi, the same ones GraphHopper uses) and serves on 8002.
+  # Admin and time-zone databases are off: they need boundary relations and a download, and walking needs neither.
+  valhalla:
+    image: ghcr.io/valhalla/valhalla-scripted:3.9.1@sha256:6238809f9dc3057743d70a20efd3911ec38e458bfa13a0601909b58f68dfd956
+    user: '${POC_UID:-1000}:${POC_GID:-1000}'
+    mem_limit: ${VH_MEM_LIMIT:-3g}
+    environment:
+      build_elevation: 'True'
+      build_admins: 'False'
+      build_time_zones: 'False'
+      use_default_speeds_config: 'False'
+      build_tar: 'True'
+      serve_tiles: 'True'
+      server_threads: '${VH_THREADS:-8}'
+    ports:
+      - '127.0.0.1:8002:8002'
+    volumes:
+      - ./.data/valhalla:/custom_files
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:8002/status']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 40m

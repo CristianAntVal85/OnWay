@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "id": "bujaruelo-goriz",
+  "name": "Parking de Bujaruelo → Refugio de Góriz (sonda de pendiente)",
+  "note": "No es uno de los tres pares del usuario. Se eligió en T5 después de ver que en los tres pares el límite de pendiente casi no cambia la ruta (la subida final es inevitable): aquí existe un rodeo más suave y la sonda comprueba el mecanismo, no el motor sobre las rutas del usuario.",
+  "from": { "name": "Aparcamiento de Bujaruelo", "lat": 42.69431, "lon": -0.10683, "osm": "way/140315162" },
+  "to": { "name": "Refugio de Góriz", "lat": 42.66331, "lon": 0.01501, "osm": "way/227444568" },
+  "limitPct": 25,
+  "maxSlopeRatio": 0.7
+}

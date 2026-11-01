@@ -1,0 +1,290 @@
+{
+  "engine": "valhalla",
+  "date": "2026-11-01T11:25:41.766Z",
+  "extract": {
+    "geofabrikSnapshot": "261031",
+    "bbox": [
+      -1.9,
+      41.9,
+      3.3,
+      43.2
+    ],
+    "licence": "© OpenStreetMap contributors, ODbL"
+  },
+  "thresholds": {
+    "minAlternatives": 2,
+    "maxSharedShare": 0.7,
+    "minTrailShare": 0.9,
+    "p95Seconds": 5,
+    "peakMemoryMb": 2048
+  },
+  "alternatives": {
+    "alternates": 2
+  },
+  "runs": 10,
+  "slopeProbe": {
+    "id": "bujaruelo-goriz",
+    "value": {
+      "limitPct": 25,
+      "baseMaxSlopePct": 71.1,
+      "limitedMaxSlopePct": 45.5,
+      "routeChanged": true
+    },
+    "pass": true
+  },
+  "peakMemoryMiB": {
+    "value": 705,
+    "pass": true
+  },
+  "results": [
+    {
+      "id": "coronas-aneto",
+      "paths": [
+        {
+          "distanceKm": 7.73,
+          "timeH": 5.51,
+          "ascentM": 0,
+          "descentM": 0,
+          "mix": {
+            "road": 0,
+            "track": 0.16,
+            "path": 0.84,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 5.27,
+          "timeH": 4.99,
+          "ascentM": 0,
+          "descentM": 0,
+          "mix": {
+            "road": 0,
+            "track": 0.078,
+            "path": 0.922,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.023,
+        "p95": 0.036,
+        "max": 0.036
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "blocking"
+            ],
+            "sharedWithMain": [
+              0.63
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 1,
+          "pass": true
+        },
+        "4": {
+          "value": 0.04,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": -2.46
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 1,
+            "covered": 1,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 72.6,
+        "limitedMaxSlopePct": 72.6,
+        "routeChanged": false
+      }
+    },
+    {
+      "id": "bujaruelo-brecha",
+      "paths": [
+        {
+          "distanceKm": 8.88,
+          "timeH": 4.49,
+          "ascentM": 0,
+          "descentM": 0,
+          "mix": {
+            "road": 0,
+            "track": 0.006,
+            "path": 0.994,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 10.54,
+          "timeH": 5.44,
+          "ascentM": 0,
+          "descentM": 0,
+          "mix": {
+            "road": 0,
+            "track": 0.005,
+            "path": 0.995,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.081,
+        "p95": 0.105,
+        "max": 0.105
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "blocking"
+            ],
+            "sharedWithMain": [
+              0.4
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 1,
+          "pass": true
+        },
+        "4": {
+          "value": 0.11,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 1.19
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 0.99,
+            "covered": 1,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 52.2,
+        "limitedMaxSlopePct": 52.2,
+        "routeChanged": false
+      }
+    },
+    {
+      "id": "ordesa-perdido",
+      "paths": [
+        {
+          "distanceKm": 18.97,
+          "timeH": 9.15,
+          "ascentM": 0,
+          "descentM": 0,
+          "mix": {
+            "road": 0.007,
+            "track": 0.249,
+            "path": 0.745,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 16.29,
+          "timeH": 9.04,
+          "ascentM": 0,
+          "descentM": 0,
+          "mix": {
+            "road": 0.009,
+            "track": 0.226,
+            "path": 0.766,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.082,
+        "p95": 0.097,
+        "max": 0.097
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "blocking"
+            ],
+            "sharedWithMain": [
+              0.24
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 0.993,
+          "pass": true
+        },
+        "4": {
+          "value": 0.1,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": -2.69
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 1,
+            "covered": 1,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 92.7,
+        "limitedMaxSlopePct": 92.7,
+        "routeChanged": false
+      }
+    }
+  ]
+}

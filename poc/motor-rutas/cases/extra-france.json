@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "note": "Par extra de T6 (plan P3): no es uno de los tres del usuario y no forma parte de la aceptación. Mide el lado francés de OSM (R-02, RF-304), que los tres pares del usuario no tocan.",
+  "extract": {
+    "geofabrikSnapshot": "261031",
+    "bbox": [-1.9, 41.9, 3.3, 43.2],
+    "licence": "© OpenStreetMap contributors, ODbL"
+  },
+  "thresholds": {
+    "minAlternatives": 2,
+    "maxSharedShare": 0.7,
+    "minTrailShare": 0.9,
+    "p95Seconds": 5,
+    "peakMemoryMb": 2048
+  },
+  "pairs": [
+    {
+      "id": "gavarnie-vignemale",
+      "name": "Aparcamiento de Gavarnie → Vignemale (lado francés)",
+      "from": { "name": "Aparcamiento de Gavarnie", "lat": 42.73692, "lon": -0.0116, "osm": "way/179645815" },
+      "trailhead": { "name": "Aparcamiento de Gavarnie", "lat": 42.73692, "lon": -0.0116, "osm": "way/179645815" },
+      "to": { "name": "Vignemale", "lat": 42.77394, "lon": -0.14734, "osm": "node/626639517" },
+      "touchesBorder": false
+    }
+  ]
+}

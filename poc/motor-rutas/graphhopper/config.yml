@@ -1,0 +1,41 @@
+# GraphHopper for the routing PoC (specs/PoC-motor-rutas). The graph is built once from the Pyrenees extract and
+# cached in /graph; the elevation tiles (Skadi: AWS terrain tiles, public data) are downloaded once into /elevation.
+graphhopper:
+  datareader.file: /data/pyrenees.osm.pbf
+  graph.location: /graph/cache
+
+  # The elevation of the engine only feeds its slope weights. Slopes of the results are judged with OnWay's own
+  # measurement (D-PoC-01), never with this one.
+  graph.elevation.provider: skadi
+  graph.elevation.cache_dir: /elevation
+  graph.elevation.interpolate: bilinear
+  graph.elevation.long_edge_sampling_distance: 60
+  graph.elevation.way_point_max_distance: 10
+
+  # Walking only: motorways and trunks are never walkable, so they stay out of the graph.
+  import.osm.ignored_highways: motorway,trunk
+
+  custom_models.directory: /app/conf
+
+  profiles:
+    - name: mountain
+      custom_model_files: [mountain.json]
+
+  # Flexible mode only (no CH/LM): alternative routes and per-request custom models need it.
+  profiles_ch: []
+  profiles_lm: []
+
+  graph.encoded_values: foot_access, foot_average_speed, foot_priority, foot_road_access, hike_rating, average_slope, max_slope, road_class, road_environment, surface, track_type
+
+server:
+  application_connectors:
+    - type: http
+      port: 8989
+      bind_host: 0.0.0.0
+      max_request_header_size: 50k
+  request_log:
+    appenders: []
+  admin_connectors:
+    - type: http
+      port: 8990
+      bind_host: 0.0.0.0

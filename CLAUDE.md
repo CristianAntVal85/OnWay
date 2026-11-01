@@ -33,6 +33,7 @@ packages/i18n    Textos es / fr
 infra/           compose.yml, Caddyfile, motor de rutas
 db/              Migraciones SQL escritas a mano + pruebas del esquema
 data/seed        Datos de demostración ficticios
+poc/             Pruebas técnicas aisladas (motor de rutas, doc 04 §7.6): fuera del workspace, de compose.yml y del CI; ver poc/motor-rutas/README.md
 ```
 
 PostgreSQL 16 + PostGIS, Drizzle (SQL propio para lo espacial), pg-boss para trabajos largos, Argon2id, sesión por cookie + CSRF, Caddy. Lo externo va detrás de puertos: `FileStorage`, `GeocodingProvider`, `WeatherProvider`, `ElevationProvider`, `RoutingProvider`, `Mailer`, `Clock`.

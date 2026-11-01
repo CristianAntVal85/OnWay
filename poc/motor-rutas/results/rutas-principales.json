@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-01T11:25:04.304Z",
+  "borderPass": {
+    "name": "Puerto de Bujaruelo / Port de Boucharo",
+    "osm": "node/668991342",
+    "lon": -0.06415,
+    "lat": 42.70388
+  },
+  "routes": [
+    {
+      "pair": "coronas-aneto",
+      "engine": "graphhopper",
+      "distanceKm": 5.3,
+      "ascentM": 1408,
+      "descentM": 4,
+      "maxSlopePct": 67.1,
+      "mix": {
+        "road": 0,
+        "track": 0.077,
+        "path": 0.923,
+        "unknown": 0
+      }
+    },
+    {
+      "pair": "coronas-aneto",
+      "engine": "valhalla",
+      "distanceKm": 7.7,
+      "ascentM": 1593,
+      "descentM": 189,
+      "maxSlopePct": 72.6,
+      "mix": {
+        "road": 0,
+        "track": 0.16,
+        "path": 0.84,
+        "unknown": 0
+      }
+    },
+    {
+      "pair": "bujaruelo-brecha",
+      "engine": "graphhopper",
+      "distanceKm": 8.7,
+      "ascentM": 1462,
+      "descentM": 15,
+      "maxSlopePct": 54.8,
+      "mix": {
+        "road": 0,
+        "track": 0.006,
+        "path": 0.994,
+        "unknown": 0
+      },
+      "distanceToBorderPassM": 0
+    },
+    {
+      "pair": "bujaruelo-brecha",
+      "engine": "valhalla",
+      "distanceKm": 8.8,
+      "ascentM": 1469,
+      "descentM": 19,
+      "maxSlopePct": 52.2,
+      "mix": {
+        "road": 0,
+        "track": 0.006,
+        "path": 0.994,
+        "unknown": 0
+      },
+      "distanceToBorderPassM": 0
+    },
+    {
+      "pair": "ordesa-perdido",
+      "engine": "graphhopper",
+      "distanceKm": 14.9,
+      "ascentM": 2032,
+      "descentM": 34,
+      "maxSlopePct": 97.1,
+      "mix": {
+        "road": 0.009,
+        "track": 0.117,
+        "path": 0.874,
+        "unknown": 0
+      }
+    },
+    {
+      "pair": "ordesa-perdido",
+      "engine": "valhalla",
+      "distanceKm": 18.9,
+      "ascentM": 2248,
+      "descentM": 247,
+      "maxSlopePct": 92.7,
+      "mix": {
+        "road": 0.007,
+        "track": 0.249,
+        "path": 0.745,
+        "unknown": 0
+      }
+    }
+  ]
+}

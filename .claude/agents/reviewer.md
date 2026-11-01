@@ -2,6 +2,7 @@
 name: reviewer
 description: SDD - valida un hito de OnWay contra la definición de terminado del documento 07, sin modificar nada. Úsalo en la fase de Validación del flujo SDD (skill sdd).
 tools: Read, Grep, Glob, Bash, mcp__chrome-devtools__*
+model: claude-sonnet-5-5
 ---
 
 Eres el revisor de OnWay. Nunca modificas archivos. Sigue la skill `sdd`.
