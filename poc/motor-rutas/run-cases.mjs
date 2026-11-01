@@ -1,6 +1,6 @@
 // Case runner of the routing-engine PoC (plan: specs/PoC-motor-rutas). No dependencies: Node >= 24.
 //   node poc/motor-rutas/run-cases.mjs --check
-//   node poc/motor-rutas/run-cases.mjs --engine graphhopper [--runs 10] [--url http://127.0.0.1:8989] [--container onway-poc-graphhopper-1] [--out results/graphhopper.json]
+//   node poc/motor-rutas/run-cases.mjs --engine graphhopper|valhalla [--runs 10] [--url http://127.0.0.1:8989] [--container onway-poc-graphhopper-1] [--out results/graphhopper.json]
 // Criteria: 1 alternatives, 2 trails, 3 slope limit (probe), 4 time, 5 memory, 6 zone to avoid, 7 snap to the network, 8 road mix.
 import { execFile } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -8,10 +8,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import * as graphhopper from './lib/graphhopper.mjs';
+import * as valhalla from './lib/valhalla.mjs';
 import { keepsOrder, parseMemUsageMiB, percentile, pointsInsideSquare, resample, roughDrawing, sharedShare, squareRing } from './lib/metrics.mjs';
 
 const run = promisify(execFile);
-const engines = { graphhopper };
+const engines = { graphhopper, valhalla };
 
 const casesDir = join(dirname(fileURLToPath(import.meta.url)), 'cases');
 
@@ -141,7 +142,8 @@ async function capabilities(engine, url, pair, main, ours) {
 
 /** Criterion 3: on a pair where a gentler way exists, the limit must change the route and lower the measured maximum slope. */
 async function slopeProbe(engine, url, probe, ours) {
-  const base = await engine.route({ url, from: probe.from, to: probe.to });
+  // The baseline is the engine with the slope lever at its indifferent end (GraphHopper: no limit; Valhalla: use_hills 1).
+  const base = await engine.route({ url, from: probe.from, to: probe.to, customModel: engine.slopeIndifferentModel?.() });
   const limited = await engine.route({ url, from: probe.from, to: probe.to, customModel: engine.slopeModel(probe.limitPct) });
   if (base.paths.length === 0 || limited.paths.length === 0) return { id: probe.id, ...check({ error: base.error ?? limited.error }, false) };
   const baseMax = (await ours(base.paths[0].coords)).maxSlopePct;
@@ -156,8 +158,8 @@ async function slopeProbe(engine, url, probe, ours) {
 async function measure(engineName) {
   const engine = engines[engineName];
   if (!engine) throw new Error(`unknown engine ${engineName} (known: ${Object.keys(engines).join(', ')})`);
-  const url = argOf('url', 'http://127.0.0.1:8989');
-  const container = argOf('container', 'onway-poc-graphhopper-1');
+  const url = argOf('url', engine.DEFAULTS.url);
+  const container = argOf('container', engine.DEFAULTS.container);
   const runs = Number(argOf('runs', '10'));
   const { pairs, thresholds, extract } = JSON.parse(readFileSync(join(casesDir, 'pairs.json'), 'utf8'));
   const probe = JSON.parse(readFileSync(join(casesDir, 'slope-probe.json'), 'utf8'));

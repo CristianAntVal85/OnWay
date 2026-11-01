@@ -5,6 +5,7 @@ import { mixFromDetails, resample, sharedShare, squareRing } from './metrics.mjs
 export const ALTERNATIVES = { maxPaths: 3, maxShareFactor: 0.8, maxWeightFactor: 2.5 };
 
 export const NAME = 'graphhopper';
+export const DEFAULTS = { url: 'http://127.0.0.1:8989', container: 'onway-poc-graphhopper-1' };
 
 export async function route({ url, from, to, alternatives = ALTERNATIVES, customModel }) {
   const body = {

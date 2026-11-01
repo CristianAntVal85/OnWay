@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { decodePolyline } from './polyline.mjs';
 import {
   arcPositionM,
   distanceToPolylineM,
@@ -109,4 +110,13 @@ test('roughDrawing is repeatable and stays within ~25 m of the line (20 m along,
   const first = roughDrawing(coords);
   assert.deepEqual(first, roughDrawing(coords));
   for (const point of first) assert.ok(distanceToPolylineM(point, coords) <= 26);
+});
+
+test('decodePolyline reads the reference example of the algorithm', () => {
+  const points = decodePolyline('_p~iF~ps|U_ulLnnqC_mqNvxq`@', 5);
+  assert.deepEqual(points, [
+    [-120.2, 38.5],
+    [-120.95, 40.7],
+    [-126.453, 43.252],
+  ]);
 });

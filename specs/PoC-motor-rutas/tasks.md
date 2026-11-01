@@ -12,7 +12,7 @@ Estado: **aprobadas por el usuario (2026-11-01)** · Plan aprobado el 2026-11-01
 - Hecho cuando: `docker compose -f poc/motor-rutas/compose.yml up --wait graphhopper` arranca desde cero, responde a los 3 pares con ≥ 1 ruta y se ve su composición; memoria de carga anotada; sin tocar `compose.yml` de la raíz.
 - Cierre: commit `feat(PoC): T2 add GraphHopper with a mountain profile` + push.
 
-- [ ] **T3. Valhalla (condicional, P7).** Mismos criterios que T2. Solo si tras T5 GraphHopper no cumple algún criterio; si cumple todos, se omite y se anota en T6.
+- [x] **T3. Valhalla (condicional, P7; el usuario decidió hacerla aunque GraphHopper cumplía).** Mismos criterios que T2.
 - Servicio de Valhalla en el mismo compose con su tope de memoria; teselas construidas con el extracto; costing peatonal ajustado a montaña (opciones de pendiente, pistas y dificultad, nombres comprobados en la documentación de la versión fijada); primera consulta de los 3 pares con alternativas.
 - Hecho cuando: `up --wait valhalla` arranca desde cero y responde a los 3 pares; memoria de carga anotada.
 - Cierre: commit `feat(PoC): T3 add Valhalla with a mountain profile` + push.

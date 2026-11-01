@@ -10,11 +10,12 @@ Esto **no es parte de la aplicación**: no está en el workspace de pnpm, ni en 
 poc/motor-rutas/scripts/fetch-extract.sh     # baja los extractos regionales (~1,3 GB), comprueba su MD5 y deja .data/pyrenees.osm.pbf + pyrenees.sha256
 node poc/motor-rutas/run-cases.mjs --check   # valida cases/*.json
 node --test poc/motor-rutas/lib/metrics.test.mjs   # pruebas de las métricas (solapamiento, composición, percentiles); no están en el CI
-mkdir -p poc/motor-rutas/.data/{graphhopper,elevation}
+mkdir -p poc/motor-rutas/.data/{graphhopper,elevation,valhalla} && ln -f poc/motor-rutas/.data/pyrenees.osm.pbf poc/motor-rutas/.data/valhalla/
 docker compose -f poc/motor-rutas/compose.yml up --build --wait graphhopper   # GraphHopper en http://127.0.0.1:8989 (T2)
+docker compose -f poc/motor-rutas/compose.yml up --wait valhalla               # Valhalla en http://127.0.0.1:8002 (T3); construye las teselas y baja la altitud la primera vez
 poc/motor-rutas/scripts/fetch-dem.sh          # 2 teselas Copernicus GLO-30 (85 MB) para la medición propia (T5)
 pnpm build                                    # la medición propia importa packages/geo y apps/api ya compilados
-node poc/motor-rutas/run-cases.mjs --engine graphhopper --runs 10 --out results/graphhopper.json   # mide los 8 criterios (T4 y T5)
+node poc/motor-rutas/run-cases.mjs --engine graphhopper|valhalla --runs 10 --out results/<motor>.json   # mide los 8 criterios (T4 y T5)
 poc/motor-rutas/scripts/peak-memory.sh onway-poc-graphhopper-1 300             # pico de memoria del contenedor, en MiB (para medir la carga)
 docker compose -f poc/motor-rutas/compose.yml down                             # para; .data/ se conserva
 ```
@@ -124,3 +125,37 @@ Lo que este resultado **no** dice, para que nadie lo lea de más:
 - **Criterio 6:** si el polígono corta el único camino, el motor responde «Connection between locations not found» (un `NO_ROUTE_POSSIBLE` limpio), como pasó al bloquear el último cuarto de `coronas-aneto`.
 - **Criterio 7:** `/match` ajusta bien un dibujo burdo y ordenado, pero se probó con dibujos hechos a partir de la propia ruta del motor (mismo grafo), que es el caso favorable; no se probó con un dibujo a mano real.
 - Solo tres pares, todos del lado español y del Pirineo central: el lado francés de OSM (R-02, RF-304) sigue sin medirse.
+
+## Valhalla (T3, por decisión del usuario tras ver que GraphHopper cumplía)
+
+- **Imagen:** `ghcr.io/valhalla/valhalla-scripted:3.9.1`, la que documenta el propio proyecto (`docker/README.md` de su repositorio), fijada por huella `sha256:6238809f…`. Construye los teselas del extracto y baja la altitud (las mismas teselas Skadi que GraphHopper) en la primera arrancada: ~1 min y 150 teselas de grafo (286 MB en un `.tar`). Se apagan las bases de administración y de zonas horarias (necesitan relaciones de frontera y una descarga, y caminar no las usa) y la configuración de velocidades remota.
+- **Perfil:** costing `pedestrian` con `max_hiking_difficulty: 4` (el valor por defecto, 1, prohibiría casi todo sendero de montaña), `use_tracks: 1` y `use_hills: 0.5`. Son las únicas palancas documentadas: **no hay pendiente máxima** ni reglas por tipo de vía como en el *custom model* de GraphHopper. El criterio 3 se mide moviendo `use_hills` entre 1 (indiferente) y 0 (evitar cuestas).
+- **Diferencias de uso:** `/route` no devuelve el tipo de vía por tramo, así que cada ruta necesita una segunda llamada a `/trace_attributes` para la composición; las zonas a evitar son `exclude_polygons` y el ajuste a caminos es `/trace_route` con `shape_match: map_snap`.
+
+Resultado con el mismo corredor (`results/valhalla.json`): **cumple los 8 criterios**, también con matices:
+
+- Criterio 1: sus alternativas propias (`alternates: 2`) no aportaron ninguna ruta suficientemente distinta en ningún par; las tres segundas rutas vienen de la estrategia de bloqueo.
+- Criterio 3: no hay límite de pendiente; baja la pendiente máxima medida de 71,1 % a 45,5 % al pasar `use_hills` de 1 a 0 en la sonda.
+- Criterio 6: los rodeos salen *negativos* en dos pares (−2,5 y −2,7 km): su ruta principal no es la más corta, porque optimiza un coste con penalización de cuestas, y bloquear su tramo medio da una ruta más corta.
+
+### Comparación (mismos pares, mismos criterios, misma máquina)
+
+| | GraphHopper 11.1 | Valhalla 3.9.1 |
+|---|---|---|
+| Criterios cumplidos | 8 de 8 | 8 de 8 |
+| 1 · segunda alternativa | nativa en 2 pares; por bloqueo en `ordesa-perdido` | por bloqueo en los 3 pares |
+| 3 · pendiente (sonda) | 97,8 % → 44,9 % con límite de 25 % | 71,1 % → 45,5 % con `use_hills` 1 → 0 |
+| 4 · p95 | 10–50 ms | 36–86 ms |
+| 5 · memoria sirviendo (pico) | 787–1136 MiB (JVM con `-Xmx2g`) | 688–693 MiB |
+| 5 · memoria al cargar (pico) | 1907 MiB | 2569 MiB (8 hilos, tope de 3 GB) |
+| 6 · rodeo por zona evitada | +14,2 / +1,9 / +4,0 km | −2,5 / +1,2 / −2,7 km |
+| 7 · ajuste a la red | 98–100 % | 99–100 % |
+| Grafo en disco | 190 MB | 286 MB (+ altitud) |
+| Ruta principal, medida con OnWay | `coronas-aneto` 5,3 km, +1408 m, 67 % máx.; `bujaruelo-brecha` 8,7 km, +1462 m, 55 %; `ordesa-perdido` 14,9 km, +2032 m, 97 % | 7,7 km, +1593/−189 m, 73 %; 8,8 km, +1469 m, 52 %; 18,9 km, +2248/−247 m, 93 % |
+
+Cómo leerlo:
+
+- **Las dos cumplen**; la diferencia no está en pasar o no pasar, sino en cuánto control da cada una. GraphHopper escribe reglas por dificultad SAC, tipo de vía y pendiente; Valhalla expone cuatro números.
+- **Las rutas principales de Valhalla son más largas** en dos de los tres pares (7,7 frente a 5,3 km y 18,9 frente a 14,9 km, con más subida y con bajadas que GraphHopper no hace). No se puede decir cuál es «mejor» sin que alguien que conozca esas rutas las mire; el perfil de GraphHopper está ajustado a mano y el de Valhalla solo tiene cuatro parámetros, así que la comparación no es entre perfiles igual de afinados.
+- **Memoria:** Valhalla sirve con menos (~700 MiB) y carga con más (2,5 GiB); la carga es un paso que se puede hacer fuera del servidor y copiar el grafo, así que pesa menos que lo que ocupa sirviendo. GraphHopper con `-Xmx2g` está dentro del tope en ambos momentos.
+- **Lo que no se midió:** el lado francés, el comportamiento con muchas peticiones a la vez, ni una comparación a ciegas de qué ruta prefiere un rescatista.
