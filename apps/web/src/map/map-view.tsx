@@ -6,7 +6,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { Protocol } from 'pmtiles';
 import MapGL, { Layer, Marker, NavigationControl, Source, type MapLayerMouseEvent, type MapRef, type ViewStateChangeEvent } from 'react-map-gl/maplibre';
 import { Attribution } from './attribution.js';
-import { SATELLITE_PROTOCOL, satelliteTile } from './ign-mix.js';
+import { SATELLITE_PROTOCOL, TOPOGRAPHIC_PROTOCOL, satelliteTile, topographicTile } from './ign-mix.js';
 import { Readout, type Cursor } from './readout.js';
 import { nearestSegment, type Vertex } from './edit.js';
 import { ROUTES_LINE_LAYER, ROUTES_SOURCE, casingLayer, lineLayer, routesBounds, routesGeoJson } from './route-layers.js';
@@ -18,6 +18,7 @@ import { initialViewFor } from './view.js';
 maplibre.setWorkerUrl(workerUrl);
 maplibre.addProtocol('pmtiles', new Protocol().tile);
 maplibre.addProtocol(SATELLITE_PROTOCOL, satelliteTile);
+maplibre.addProtocol(TOPOGRAPHIC_PROTOCOL, topographicTile);
 
 const PICK_ZOOM = 12;
 /** Más vértices que esto no se dibujan como controles (la lista de coordenadas sigue teniéndolos todos). */

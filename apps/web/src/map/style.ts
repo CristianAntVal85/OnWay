@@ -2,8 +2,8 @@
 // `geodata`) pintado con @protomaps/basemaps; satélite y topográfico son teselas WMTS de IGN España y Francia (ign.ts).
 import { layers as protomapsLayers, namedFlavor } from '@protomaps/basemaps';
 import type { StyleSpecification } from 'maplibre-gl';
-import { SATELLITE_MAX_ZOOM, topographicSources } from './ign.js';
-import { SATELLITE_TILES } from './ign-mix.js';
+import { SATELLITE_MAX_ZOOM, TOPOGRAPHIC_MAX_ZOOM } from './ign.js';
+import { SATELLITE_TILES, TOPOGRAPHIC_TILES } from './ign-mix.js';
 import type { MapLayerId } from './types.js';
 
 /** Dónde sirve Caddy el extracto PMTiles, las fuentes y los sprites (`infra/Caddyfile`, ruta `/tiles/`). */
@@ -33,10 +33,9 @@ export function buildStyle(layer: MapLayerId, language: string, origin: string):
     };
   }
 
-  const raster = topographicSources();
   return {
     version: 8,
-    sources: Object.fromEntries(raster.map((source) => [source.id, { type: 'raster', tiles: [source.tiles], tileSize: 256, maxzoom: source.maxzoom, bounds: [...source.bounds] }])),
-    layers: [background, ...raster.map((source) => ({ id: source.id, type: 'raster' as const, source: source.id }))],
+    sources: { topographic: { type: 'raster', tiles: [TOPOGRAPHIC_TILES], tileSize: 256, maxzoom: TOPOGRAPHIC_MAX_ZOOM } },
+    layers: [background, { id: 'topographic', type: 'raster', source: 'topographic' }],
   };
 }
