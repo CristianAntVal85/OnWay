@@ -5,7 +5,7 @@ import type { AlternativesRequest, EngineRoute, LatLon, RoutingProvider } from '
 export interface InMemoryRoutingOptions {
   /** The engine fails with this error on every call (a `DomainError` code, or `'INTERNAL'` for a plain `Error`). */
   failWith?: 'NO_ROUTE_POSSIBLE' | 'OUTSIDE_COVERAGE' | 'ROUTING_UNAVAILABLE' | 'INTERNAL';
-  /** Awaited before every answer: lets a test stop a worker in the middle of a job. */
+  /** Awaited before every answer: lets a test stop a worker in the middle of a job, or make the engine fail once. */
   beforeAnswer?: () => Promise<void>;
   /** Altitude written in the third value of every vertex: the proof that the server never uses the engine's (INV-15). */
   falseElevationM?: number;
@@ -20,6 +20,11 @@ export class InMemoryRouting implements RoutingProvider {
   readonly calls: { method: 'alternatives' | 'snap'; points: LatLon[]; avoid: Position2D[][] }[] = [];
 
   constructor(private readonly options: InMemoryRoutingOptions = {}) {}
+
+  /** Changes what happens before each answer (see the option of the same name). */
+  setBeforeAnswer(beforeAnswer: InMemoryRoutingOptions['beforeAnswer']): void {
+    this.options.beforeAnswer = beforeAnswer;
+  }
 
   setFailure(failWith: InMemoryRoutingOptions['failWith']): void {
     (this.options as { failWith?: InMemoryRoutingOptions['failWith'] }).failWith = failWith;

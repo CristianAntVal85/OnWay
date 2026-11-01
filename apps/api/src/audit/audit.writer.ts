@@ -25,6 +25,15 @@ export interface RouteAuditEntry {
   detail?: Record<string, unknown>;
 }
 
+/** A calculation was asked for (H3). */
+export interface JobAuditEntry {
+  orgId: string;
+  jobId: string;
+  actorUserId: string;
+  /** Counts and ids, never the points themselves: where a team goes is not for the log. */
+  detail?: Record<string, unknown>;
+}
+
 /** What happened to a zone to avoid (H3, doc 06 §10). */
 export type AvoidZoneAuditAction = 'avoid_zone_created' | 'avoid_zone_deleted';
 
@@ -83,6 +92,20 @@ export class AuditWriter {
         entityType: 'avoid_zone',
         entityId: entry.zoneId,
         action: entry.action,
+        actorUserId: entry.actorUserId,
+        detail: entry.detail ?? {},
+      });
+  }
+
+  async recordJobRequested(entry: JobAuditEntry): Promise<void> {
+    await this.database
+      .current()
+      .insert(auditLog)
+      .values({
+        organizationId: entry.orgId,
+        entityType: 'calculation_job',
+        entityId: entry.jobId,
+        action: 'generate_requested',
         actorUserId: entry.actorUserId,
         detail: entry.detail ?? {},
       });

@@ -4,6 +4,7 @@ import type {
   CreateVersionRequest,
   DeriveRouteRequest,
   ExportRouteQuery,
+  GenerateRoutesRequest,
   ExportRoutesQuery,
   ImportPreviewRequest,
   ListRoutesQuery,
@@ -15,6 +16,7 @@ import type { Response } from 'express';
 import type { z } from 'zod';
 import { Input, Operation, type OnwayRequest, type OperationInput } from '../common/operation.js';
 import { RouteExports, type ExportedFile } from './route-exports.service.js';
+import { RouteGeneration } from './route-generation.service.js';
 import { RouteImports } from './route-imports.service.js';
 import { RouteLibrary } from './route-library.service.js';
 import { RouteSnapping } from './route-snapping.service.js';
@@ -39,6 +41,7 @@ export class RoutesController {
     @Inject(RouteLibrary) private readonly library: RouteLibrary,
     @Inject(RouteExports) private readonly exports: RouteExports,
     @Inject(RouteSnapping) private readonly snapping: RouteSnapping,
+    @Inject(RouteGeneration) private readonly generation: RouteGeneration,
   ) {}
 
   @Operation('listRoutes')
@@ -76,6 +79,11 @@ export class RoutesController {
   @Operation('snapRoute')
   snap(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'snapRoute'>> {
     return this.snapping.snap(request.principal!, input.body as z.infer<typeof SnapRequest>);
+  }
+
+  @Operation('generateRoutes')
+  generate(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'generateRoutes'>> {
+    return this.generation.request(request.principal!, input.body as z.infer<typeof GenerateRoutesRequest>);
   }
 
   @Operation('previewRouteImport')

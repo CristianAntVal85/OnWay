@@ -212,6 +212,45 @@ export class RouteWrites {
     return readRouteDetail(this.tx, viewer.orgId, routeId);
   }
 
+  /**
+   * The routes a calculation job proposes (H3, RF-501): each one a new route in Draft, version 1, `provenance = generated`, measured by
+   * the server and linked to the job. Idempotent per job (D-H3-06): if the job already created its routes — a retry after a crash —
+   * those are returned and nothing is written. Runs in the transaction of the caller, so all the routes of a job exist or none does.
+   */
+  async createGenerated(input: { orgId: string; userId: string; jobId: string; names: string[]; measured: MeasuredPath[] }): Promise<{ routeId: string; versionId: string; name: string }[]> {
+    const existing = await this.generatedBy(input.jobId);
+    if (existing.length > 0) return existing;
+    const created: { routeId: string; versionId: string; name: string }[] = [];
+    for (const [index, measured] of input.measured.entries()) {
+      const name = input.names[index]!;
+      const routeId = await this.insertRoute(input.orgId, input.userId, name);
+      const versionId = await this.insertVersion({
+        orgId: input.orgId,
+        userId: input.userId,
+        routeId,
+        number: 1,
+        measured,
+        provenance: 'generated',
+        manuallyModified: false,
+        sourceFileId: null,
+        note: undefined,
+        calculationJobId: input.jobId,
+      });
+      await this.setLatest(routeId, versionId);
+      await this.audit.recordRoute({ orgId: input.orgId, routeId, action: 'route_created', actorUserId: input.userId, detail: { name, versionNumber: 1, source: 'generated', jobId: input.jobId } });
+      created.push({ routeId, versionId, name });
+    }
+    return created;
+  }
+
+  /** The routes (and their first versions) a job already created, in the order it created them. */
+  async generatedBy(jobId: string): Promise<{ routeId: string; versionId: string; name: string }[]> {
+    const { rows } = await this.tx.execute(sql`
+      SELECT v.route_id, v.id AS version_id, r.name FROM route_versions v JOIN routes r ON r.id = v.route_id
+       WHERE v.calculation_job_id = ${jobId}::uuid ORDER BY v.created_at, v.id`);
+    return (rows as unknown as { route_id: string; version_id: string; name: string }[]).map((row) => ({ routeId: row.route_id, versionId: row.version_id, name: row.name }));
+  }
+
   // ---------- Pieces ----------
 
   /** Takes the row lock of a route of the caller's organization (its writers go one at a time) or answers `NOT_FOUND`: another organization's route is not there (INV-01). */
@@ -251,10 +290,12 @@ export class RouteWrites {
     routeId: string;
     number: number;
     measured: MeasuredPath;
-    provenance: 'imported' | 'drawn' | 'edited';
+    provenance: 'imported' | 'drawn' | 'edited' | 'generated';
     manuallyModified: boolean;
     sourceFileId: string | null;
     note: string | undefined;
+    /** The calculation that proposed this version (H3): how a retried job knows what it already did. */
+    calculationJobId?: string;
   }): Promise<string> {
     const { measured } = input;
     const { metrics } = measured;
@@ -262,9 +303,10 @@ export class RouteWrites {
     const [row] = (
       await this.tx.execute(sql`
       INSERT INTO route_versions (organization_id, route_id, version_number, geom, distance_m, ascent_m, descent_m, min_elevation_m, max_elevation_m, max_slope_pct,
-                                  provenance, manually_modified, source_file_id, note, created_by)
+                                  provenance, manually_modified, source_file_id, note, created_by, calculation_job_id)
       VALUES (${input.orgId}::uuid, ${input.routeId}::uuid, ${input.number}, ${geom}, ${metrics.distanceM}, ${metrics.ascentM}, ${metrics.descentM}, ${metrics.minElevationM},
-              ${metrics.maxElevationM}, ${metrics.maxSlopePct}, ${input.provenance}::provenance, ${input.manuallyModified}, ${input.sourceFileId}::uuid, ${input.note || null}, ${input.userId}::uuid)
+              ${metrics.maxElevationM}, ${metrics.maxSlopePct}, ${input.provenance}::provenance, ${input.manuallyModified}, ${input.sourceFileId}::uuid, ${input.note || null}, ${input.userId}::uuid,
+              ${input.calculationJobId ?? null}::uuid)
       RETURNING id`)
     ).rows as { id: string }[];
     const versionId = row!.id;
