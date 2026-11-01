@@ -12,6 +12,7 @@ import { MissionsPage } from '../pages/missions-page';
 import { LoginPage } from '../pages/login-page';
 import { NotFoundPage } from '../pages/not-found-page';
 import { ProfilePage } from '../pages/profile-page';
+import { GenerateRoutesPage } from '../pages/generate-routes-page';
 import { ImportRoutePage } from '../pages/import-route-page';
 import { RouteDetailPage } from '../pages/route-detail-page';
 import { RouteEditorPage } from '../pages/route-editor-page';
@@ -75,6 +76,14 @@ export function AppRoutes() {
                 element={
                   <RoleGate route="createRoute">
                     <ImportRoutePage />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={PATHS.generateRoutes}
+                element={
+                  <RoleGate route="generateRoutes">
+                    <GenerateRoutesPage />
                   </RoleGate>
                 }
               />

@@ -104,7 +104,10 @@ export function RoutesPage() {
   const filtered = activeFilterCount(filters) > 0;
   const writeActions = canWrite ? (
     <div className="page-actions">
-      <Link className="button button-primary" to={PATHS.routeImport}>
+      <Link className="button button-primary" to={PATHS.generateRoutes}>
+        {t('generate.cta')}
+      </Link>
+      <Link className="button button-secondary" to={PATHS.routeImport}>
         {t('routes.importCta')}
       </Link>
       <Link className="button button-secondary" to={PATHS.createRoute}>
