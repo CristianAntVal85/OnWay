@@ -8,10 +8,12 @@ Esto **no es parte de la aplicación**: no está en el workspace de pnpm, ni en 
 
 ```
 poc/motor-rutas/scripts/fetch-extract.sh     # baja los extractos regionales (~1,3 GB), comprueba su MD5 y deja .data/pyrenees.osm.pbf + pyrenees.sha256
-node poc/motor-rutas/run-cases.mjs --check   # valida cases/*.json (los motores llegan en T2–T5)
+node poc/motor-rutas/run-cases.mjs --check   # valida cases/*.json
+node --test poc/motor-rutas/lib/metrics.test.mjs   # pruebas de las métricas (solapamiento, composición, percentiles); no están en el CI
 mkdir -p poc/motor-rutas/.data/{graphhopper,elevation}
 docker compose -f poc/motor-rutas/compose.yml up --build --wait graphhopper   # GraphHopper en http://127.0.0.1:8989 (T2)
-poc/motor-rutas/scripts/peak-memory.sh onway-poc-graphhopper-1 300             # pico de memoria del contenedor, en MiB
+node poc/motor-rutas/run-cases.mjs --engine graphhopper --runs 10 --out results/graphhopper.json   # mide los criterios 1, 2, 4, 5 y 8 (T4)
+poc/motor-rutas/scripts/peak-memory.sh onway-poc-graphhopper-1 300             # pico de memoria del contenedor, en MiB (para medir la carga)
 docker compose -f poc/motor-rutas/compose.yml down                             # para; .data/ se conserva
 ```
 
@@ -63,3 +65,25 @@ Primera pasada (3 pares, pesos sin ajustar; no son conclusiones):
 Con `max_paths=3`, `max_share_factor=0.7` y `max_weight_factor=1.6` solo el par 2 devuelve una segunda alternativa; el criterio 1 se mide y se ajusta en T4–T6.
 
 Tiempos y memoria (equipo de desarrollo, 12 núcleos): importar el extracto tarda ~32 s con las teselas ya bajadas (~2 min la primera vez, con la descarga); 1,18 M de nodos y 1,50 M de aristas en el grafo. Pico de memoria del contenedor con `-Xmx2g`: **1907 MiB durante la carga** y 1,85 GiB ya sirviendo, porque la JVM no devuelve el montón; es una primera lectura, no el mínimo: en T4 se mide con montones menores (el criterio 5 pide ≤ 2 GB en consulta).
+
+## Corredor de casos (T4)
+
+`run-cases.mjs --engine graphhopper` pregunta a cada motor los 3 pares (una petición de calentamiento y `--runs` medidas), calcula los criterios del plan §4 y escribe un JSON en `results/`. Las métricas puras viven en `lib/metrics.mjs` (con pruebas en `lib/metrics.test.mjs`) y el adaptador del motor en `lib/graphhopper.mjs`:
+
+- **Solapamiento** (criterio 1): se remuestrea la alternativa cada 25 m y se cuenta qué parte queda a ≤ 15 m de la ruta principal.
+- **Composición** (criterios 2 y 8): la longitud de cada tramo `road_class` se reparte en `road` (carreteras de coche), `track` (pistas y caminos de herradura) y `path` (senderos, vías peatonales, escaleras). Lo que no encaja es `unknown` y debe ser ≤ 2 %.
+- **Tiempo** (criterio 4): p95 de `--runs` peticiones tras calentar, en segundos, medido en el cliente.
+- **Memoria** (criterio 5): pico de `docker stats` del contenedor durante las consultas (la carga se mide aparte con `scripts/peak-memory.sh`).
+
+Primera medición de GraphHopper (`results/graphhopper-t4-xmx2g.json`, pesos y parámetros de alternativas sin ajustar, `-Xmx2g`):
+
+| Criterio | `coronas-aneto` | `bujaruelo-brecha` | `ordesa-perdido` |
+|---|---|---|---|
+| 1 · ≥ 2 alternativas, la segunda comparte ≤ 70 % | **FALLA** (1 ruta) | cumple (2 rutas) | **FALLA** (1 ruta) |
+| 2 · ≥ 90 % en pista o sendero | cumple | cumple | cumple |
+| 4 · p95 ≤ 5 s | cumple (0,01 s) | cumple (0,03 s) | cumple (0,01 s) |
+| 8 · composición sin «desconocido» (≤ 2 %) | cumple | cumple | cumple |
+
+Memoria (criterio 5): **563–588 MiB de pico en consulta** (cumple, tope 2048), tras una carga que llegó a 1907 MiB con el mismo montón. El tiempo, de milisegundos, es tan holgado que no será un factor de decisión.
+
+El resultado importante es el criterio 1: en dos de los tres pares solo sale una ruta con `max_paths=3`, `max_share_factor=0.7` y `max_weight_factor=1.6`. Hay que ver en T5/T6 si es una limitación del terreno (un solo valle de subida, RF-501 pide alternativas «cuando el terreno lo permita») o de los parámetros.

@@ -68,6 +68,7 @@ export default defineConfig([
         process: 'readonly',
         console: 'readonly',
         fetch: 'readonly',
+        performance: 'readonly',
         AbortSignal: 'readonly',
         setTimeout: 'readonly',
         setInterval: 'readonly',

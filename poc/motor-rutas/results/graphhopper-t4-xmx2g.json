@@ -1,0 +1,176 @@
+{
+  "engine": "graphhopper",
+  "date": "2026-11-01T09:56:19.055Z",
+  "extract": {
+    "geofabrikSnapshot": "261031",
+    "bbox": [
+      -1.9,
+      41.9,
+      3.3,
+      43.2
+    ],
+    "licence": "© OpenStreetMap contributors, ODbL"
+  },
+  "thresholds": {
+    "minAlternatives": 2,
+    "maxSharedShare": 0.7,
+    "minTrailShare": 0.9,
+    "p95Seconds": 5,
+    "peakMemoryMb": 2048
+  },
+  "alternatives": {
+    "maxPaths": 3,
+    "maxShareFactor": 0.7,
+    "maxWeightFactor": 1.6
+  },
+  "runs": 10,
+  "peakMemoryMiB": {
+    "value": 588,
+    "pass": true
+  },
+  "results": [
+    {
+      "id": "coronas-aneto",
+      "paths": [
+        {
+          "distanceKm": 5.58,
+          "timeH": 3.5,
+          "ascentM": 1418,
+          "descentM": 23,
+          "mix": {
+            "road": 0,
+            "track": 0.077,
+            "path": 0.923,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.008,
+        "p95": 0.009,
+        "max": 0.009
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 1,
+            "sharedWithMain": []
+          },
+          "pass": false
+        },
+        "2": {
+          "value": 1,
+          "pass": true
+        },
+        "4": {
+          "value": 0.01,
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      }
+    },
+    {
+      "id": "bujaruelo-brecha",
+      "paths": [
+        {
+          "distanceKm": 9.13,
+          "timeH": 5.24,
+          "ascentM": 1629,
+          "descentM": 189,
+          "mix": {
+            "road": 0,
+            "track": 0.006,
+            "path": 0.994,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 10.88,
+          "timeH": 5.99,
+          "ascentM": 2121,
+          "descentM": 682,
+          "mix": {
+            "road": 0,
+            "track": 0.005,
+            "path": 0.995,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.01,
+        "p95": 0.026,
+        "max": 0.026
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sharedWithMain": [
+              0.02
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 1,
+          "pass": true
+        },
+        "4": {
+          "value": 0.03,
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      }
+    },
+    {
+      "id": "ordesa-perdido",
+      "paths": [
+        {
+          "distanceKm": 15.74,
+          "timeH": 6.84,
+          "ascentM": 2539,
+          "descentM": 758,
+          "mix": {
+            "road": 0.009,
+            "track": 0.117,
+            "path": 0.874,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.008,
+        "p95": 0.01,
+        "max": 0.01
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 1,
+            "sharedWithMain": []
+          },
+          "pass": false
+        },
+        "2": {
+          "value": 0.991,
+          "pass": true
+        },
+        "4": {
+          "value": 0.01,
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      }
+    }
+  ]
+}
