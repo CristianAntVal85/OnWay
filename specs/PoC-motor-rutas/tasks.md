@@ -27,7 +27,7 @@ Estado: **aprobadas por el usuario (2026-11-01)** · Plan aprobado el 2026-11-01
 - Hecho cuando: el corredor evalúa los tres criterios en los dos motores; se anota cuáles no soporta un motor; sin código nuevo en `apps/` ni en `packages/` (solo se importa lo que exista).
 - Cierre: commit `feat(PoC): T5 add slope, avoid-area and snap cases` + push.
 
-- [ ] **T6. Comparación y corte.** Plan §0 P5 y P3.
+- [x] **T6. Comparación y corte.** (propuesta escrita en `results/veredicto.md`; la elección del motor es del usuario) Plan §0 P5 y P3.
 - Tabla completa con los 8 criterios; motor elegido con su razón, o parada. Si el lado francés queda sin medir (plan P3), decisión sobre añadir un par extra (por ejemplo Gavarnie → Vignemale).
 - Hecho cuando: hay veredicto por criterio y por motor en `results/`; si ninguno cumple, **paro y te consulto** antes de seguir (no se empieza pgRouting).
 - Cierre: commit `test(PoC): T6 compare engines and choose one` + push.

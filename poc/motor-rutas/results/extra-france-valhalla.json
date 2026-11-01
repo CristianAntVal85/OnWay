@@ -1,0 +1,124 @@
+{
+  "engine": "valhalla",
+  "date": "2026-11-01T10:33:50.316Z",
+  "extract": {
+    "geofabrikSnapshot": "261031",
+    "bbox": [
+      -1.9,
+      41.9,
+      3.3,
+      43.2
+    ],
+    "licence": "© OpenStreetMap contributors, ODbL"
+  },
+  "thresholds": {
+    "minAlternatives": 2,
+    "maxSharedShare": 0.7,
+    "minTrailShare": 0.9,
+    "p95Seconds": 5,
+    "peakMemoryMb": 2048
+  },
+  "alternatives": {
+    "alternates": 2
+  },
+  "runs": 10,
+  "slopeProbe": {
+    "id": "bujaruelo-goriz",
+    "value": {
+      "limitPct": 25,
+      "baseMaxSlopePct": 71.1,
+      "limitedMaxSlopePct": 45.5,
+      "routeChanged": true
+    },
+    "pass": true
+  },
+  "peakMemoryMiB": {
+    "value": 695,
+    "pass": true
+  },
+  "results": [
+    {
+      "id": "gavarnie-vignemale",
+      "paths": [
+        {
+          "distanceKm": 16.67,
+          "timeH": 8.39,
+          "ascentM": 0,
+          "descentM": 0,
+          "mix": {
+            "road": 0.305,
+            "track": 0.242,
+            "path": 0.453,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 36.34,
+          "timeH": 15.35,
+          "ascentM": 0,
+          "descentM": 0,
+          "mix": {
+            "road": 0.14,
+            "track": 0.071,
+            "path": 0.789,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.301,
+        "p95": 0.325,
+        "max": 0.325
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "blocking"
+            ],
+            "sharedWithMain": [
+              0.29
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 0.695,
+          "pass": false
+        },
+        "4": {
+          "value": 0.32,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 0.91
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 0.99,
+            "covered": 0.99,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 61.5,
+        "limitedMaxSlopePct": 61.5,
+        "routeChanged": false
+      }
+    }
+  ]
+}

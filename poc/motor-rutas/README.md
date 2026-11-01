@@ -159,3 +159,7 @@ Cómo leerlo:
 - **Las rutas principales de Valhalla son más largas** en dos de los tres pares (7,7 frente a 5,3 km y 18,9 frente a 14,9 km, con más subida y con bajadas que GraphHopper no hace). No se puede decir cuál es «mejor» sin que alguien que conozca esas rutas las mire; el perfil de GraphHopper está ajustado a mano y el de Valhalla solo tiene cuatro parámetros, así que la comparación no es entre perfiles igual de afinados.
 - **Memoria:** Valhalla sirve con menos (~700 MiB) y carga con más (2,5 GiB); la carga es un paso que se puede hacer fuera del servidor y copiar el grafo, así que pesa menos que lo que ocupa sirviendo. GraphHopper con `-Xmx2g` está dentro del tope en ambos momentos.
 - **Lo que no se midió:** el lado francés, el comportamiento con muchas peticiones a la vez, ni una comparación a ciegas de qué ruta prefiere un rescatista.
+
+## Par extra del lado francés y veredicto (T6)
+
+`cases/extra-france.json` (Aparcamiento de Gavarnie → Vignemale, `--pairs extra-france.json`) mide el lado francés de OSM, que los tres pares del usuario no tocan. No forma parte de la aceptación. GraphHopper cumple todo (2 rutas, 97,2 % en pista o sendero); Valhalla **falla el criterio 2** (30,5 % de la ruta principal por carretera). La propuesta de motor, el veredicto por criterio y las condiciones para H3 están en `results/veredicto.md`.

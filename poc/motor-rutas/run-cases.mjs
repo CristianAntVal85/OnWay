@@ -1,6 +1,6 @@
 // Case runner of the routing-engine PoC (plan: specs/PoC-motor-rutas). No dependencies: Node >= 24.
 //   node poc/motor-rutas/run-cases.mjs --check
-//   node poc/motor-rutas/run-cases.mjs --engine graphhopper|valhalla [--runs 10] [--url http://127.0.0.1:8989] [--container onway-poc-graphhopper-1] [--out results/graphhopper.json]
+//   node poc/motor-rutas/run-cases.mjs --engine graphhopper|valhalla [--runs 10] [--pairs extra-france.json] [--url http://127.0.0.1:8989] [--container onway-poc-graphhopper-1] [--out results/graphhopper.json]
 // Criteria: 1 alternatives, 2 trails, 3 slope limit (probe), 4 time, 5 memory, 6 zone to avoid, 7 snap to the network, 8 road mix.
 import { execFile } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -30,13 +30,13 @@ const isPoint = (point) =>
   /^(node|way|relation)\/\d+$/.test(point.osm ?? '');
 
 /** Returns the list of problems of a `pairs.json` document (empty when it is valid). */
-export function checkPairs(document) {
+export function checkPairs(document, expectedPairs = 3) {
   const problems = [];
   if (!isObject(document)) return ['the document is not an object'];
   const { thresholds, pairs } = document;
   const numbers = ['minAlternatives', 'maxSharedShare', 'minTrailShare', 'p95Seconds', 'peakMemoryMb'];
   for (const key of numbers) if (!Number.isFinite(thresholds?.[key])) problems.push(`thresholds.${key} is missing`);
-  if (!Array.isArray(pairs) || pairs.length !== 3) return [...problems, 'there must be exactly 3 pairs'];
+  if (!Array.isArray(pairs) || pairs.length !== expectedPairs) return [...problems, `there must be exactly ${expectedPairs} pairs`];
   const ids = new Set();
   for (const pair of pairs) {
     const label = `pair ${pair?.id}`;
@@ -161,7 +161,7 @@ async function measure(engineName) {
   const url = argOf('url', engine.DEFAULTS.url);
   const container = argOf('container', engine.DEFAULTS.container);
   const runs = Number(argOf('runs', '10'));
-  const { pairs, thresholds, extract } = JSON.parse(readFileSync(join(casesDir, 'pairs.json'), 'utf8'));
+  const { pairs, thresholds, extract } = JSON.parse(readFileSync(join(casesDir, argOf('pairs', 'pairs.json')), 'utf8'));
   const probe = JSON.parse(readFileSync(join(casesDir, 'slope-probe.json'), 'utf8'));
   const { measureLikeOnWay: ours } = await import('./lib/ours.mjs'); // needs `pnpm build` and .data/dem (scripts/fetch-dem.sh)
 
@@ -207,7 +207,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     let failed = false;
     for (const file of readdirSync(casesDir).filter((name) => name.endsWith('.json'))) {
       const document = JSON.parse(readFileSync(join(casesDir, file), 'utf8'));
-      const problems = file === 'pairs.json' ? checkPairs(document) : file === 'slope-probe.json' ? checkProbe(document) : [];
+      const problems = file === 'pairs.json' ? checkPairs(document) : file === 'extra-france.json' ? checkPairs(document, 1) : file === 'slope-probe.json' ? checkProbe(document) : [];
       for (const problem of problems) console.error(`${file}: ${problem}`);
       console.log(`${file}: ${problems.length === 0 ? 'ok' : 'FAILED'}`);
       failed ||= problems.length > 0;
