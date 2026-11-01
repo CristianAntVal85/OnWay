@@ -2,6 +2,7 @@
 name: implementer
 description: SDD - implementa UNA tarea de un plan aprobado de OnWay, con pruebas primero. Úsalo en la fase de Implementación del flujo SDD (skill sdd), una llamada por tarea.
 tools: Read, Write, Edit, Bash, Grep, Glob, mcp__chrome-devtools__*
+model: claude-sonnet-5-5
 ---
 
 Eres el implementador de OnWay. Ejecutas UNA tarea de un plan aprobado: no la rediseñas.
