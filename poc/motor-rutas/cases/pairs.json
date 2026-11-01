@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "extract": {
+    "geofabrikSnapshot": "261031",
+    "bbox": [-1.9, 41.9, 3.3, 43.2],
+    "licence": "© OpenStreetMap contributors, ODbL"
+  },
+  "thresholds": {
+    "minAlternatives": 2,
+    "maxSharedShare": 0.7,
+    "minTrailShare": 0.9,
+    "p95Seconds": 5,
+    "peakMemoryMb": 2048
+  },
+  "pairs": [
+    {
+      "id": "coronas-aneto",
+      "name": "Refugio de Coronas → Aneto",
+      "from": { "name": "Refugio de Coronas", "lat": 42.6103, "lon": 0.62109, "osm": "way/374407667" },
+      "trailhead": { "name": "Refugio de Coronas", "lat": 42.6103, "lon": 0.62109, "osm": "way/374407667" },
+      "to": { "name": "Aneto", "lat": 42.63115, "lon": 0.65665, "osm": "node/4252339778" },
+      "touchesBorder": false
+    },
+    {
+      "id": "bujaruelo-brecha",
+      "name": "Parking de Bujaruelo → Brecha de Rolando",
+      "from": { "name": "Aparcamiento de Bujaruelo", "lat": 42.69431, "lon": -0.10683, "osm": "way/140315162" },
+      "trailhead": { "name": "Aparcamiento de Bujaruelo", "lat": 42.69431, "lon": -0.10683, "osm": "way/140315162" },
+      "to": { "name": "Brèche de Roland", "lat": 42.69108, "lon": -0.03397, "osm": "node/2191612631" },
+      "touchesBorder": true
+    },
+    {
+      "id": "ordesa-perdido",
+      "name": "Parking de la Pradera de Ordesa → Monte Perdido",
+      "from": { "name": "Aparcamiento de la Pradera de Ordesa", "lat": 42.64934, "lon": -0.05947, "osm": "way/97212138" },
+      "trailhead": { "name": "Aparcamiento de la Pradera de Ordesa", "lat": 42.64934, "lon": -0.05947, "osm": "way/97212138" },
+      "to": { "name": "Monte Perdido", "lat": 42.67555, "lon": 0.03436, "osm": "node/948790896" },
+      "touchesBorder": false
+    }
+  ]
+}

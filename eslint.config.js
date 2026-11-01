@@ -61,8 +61,8 @@ export default defineConfig([
     },
   },
   {
-    // Scripts de Node sin transpilar (infra/): los globales de Node que usan, declarados a mano (sin añadir el paquete `globals`).
-    files: ['infra/**/*.mjs'],
+    // Scripts de Node sin transpilar (infra/ y la prueba técnica poc/): los globales de Node que usan, declarados a mano (sin añadir el paquete `globals`).
+    files: ['infra/**/*.mjs', 'poc/**/*.mjs'],
     languageOptions: {
       globals: {
         process: 'readonly',

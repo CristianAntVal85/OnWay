@@ -9,3 +9,6 @@ __pycache__/
 gen/
 apps/web/e2e/test-results/
 apps/web/e2e/report/
+
+# PoC del motor de rutas: extracto OSM, grafos y teselas (cientos de MB, ODbL; se regeneran con el script)
+poc/motor-rutas/.data/
