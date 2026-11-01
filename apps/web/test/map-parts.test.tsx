@@ -5,8 +5,22 @@ import { I18nextProvider } from 'react-i18next';
 import { es } from '@onway/i18n';
 import { createI18n } from '../src/i18n';
 import { Attribution, attributionKeys } from '../src/map/attribution';
-import { ES_ORTHO, FR_ORTHO, FR_STRIPS, IGN_HOSTS, topographicSources } from '../src/map/ign';
-import { SATELLITE_TILES, frenchUrl, keyOutBlank, parseTileUrl, sourcesFor, spanishUrl, tileBounds } from '../src/map/ign-mix';
+import { ES_ORTHO, ES_TOPO, FR_ORTHO, FR_STRIPS, FR_TOPO, IGN_HOSTS } from '../src/map/ign';
+import {
+  NO_DATA_DETAIL,
+  SATELLITE_TILES,
+  TOPOGRAPHIC_TILES,
+  detailOf,
+  frenchTopoUrl,
+  frenchUrl,
+  keyOutBlank,
+  keyOutFlatBlocks,
+  parseTileUrl,
+  sourcesFor,
+  spanishTopoUrl,
+  spanishUrl,
+  tileBounds,
+} from '../src/map/ign-mix';
 import { Readout } from '../src/map/readout';
 import { buildStyle } from '../src/map/style';
 import { PYRENEES_BOUNDS, initialViewFor } from '../src/map/view';
@@ -96,11 +110,12 @@ describe('atribuciones siempre visibles (doc 04 §8.5, D-H1-17)', () => {
 describe('estilos de las capas (RF-301)', () => {
   const hostsOf = (templates: string[]) => [...new Set(templates.map((u) => new URL(u.replace(/[{}]/g, '')).host))].sort();
 
-  it('el topográfico solo pide a los dos anfitriones de IGN, con sus capas verificadas', () => {
-    const urls = topographicSources().map((s) => s.tiles);
-    expect(hostsOf(urls)).toEqual([...IGN_HOSTS].sort());
-    expect(urls.join()).toContain('layer=MTN');
-    expect(urls.join()).toContain('LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2');
+  it('el topográfico pide por el protocolo propio y sus dos fuentes son los dos anfitriones de IGN, con sus capas verificadas', () => {
+    const style = buildStyle('topographic', 'es', 'http://x.test');
+    expect(style.sources['topographic']).toMatchObject({ type: 'raster', tiles: [TOPOGRAPHIC_TILES] });
+    expect(hostsOf([ES_TOPO, FR_TOPO])).toEqual([...IGN_HOSTS].sort());
+    expect(ES_TOPO).toContain('layer=MTN');
+    expect(FR_TOPO).toContain('LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2');
   });
 
   it('el satélite pide por el protocolo propio y sus dos fuentes son las capas verificadas de IGN', () => {
@@ -111,10 +126,9 @@ describe('estilos de las capas (RF-301)', () => {
     expect(FR_ORTHO).toContain('LAYER=ORTHOIMAGERY.ORTHOPHOTOS');
   });
 
-  it('topográfico: la española va debajo y las franjas francesas encima, cada una con sus límites', () => {
+  it('topográfico: una sola capa compuesta por tesela (el MTN español encima del Plan IGN), no franjas apiladas', () => {
     const style = buildStyle('topographic', 'es', 'http://x.test');
-    expect(style.layers.map((l) => l.id).slice(0, 2)).toEqual(['background', 'topo-es']);
-    expect(style.layers.length).toBe(2 + FR_STRIPS.length);
+    expect(style.layers.map((l) => l.id)).toEqual(['background', 'topographic']);
   });
 
   it('las franjas francesas se tocan sin huecos de longitud y cubren la caja de los Pirineos al norte de la frontera', () => {
@@ -169,11 +183,38 @@ describe('satélite compuesto por tesela (RF-304)', () => {
 
   it('lee la dirección de la tesela y rellena las plantillas de cada servicio', () => {
     expect(parseTileUrl('ign-sat://tiles/14/8193/6041')).toEqual({ z: 14, x: 8193, y: 6041 });
+    expect(parseTileUrl('ign-topo://tiles/14/8193/6041')).toEqual({ z: 14, x: 8193, y: 6041 });
     expect(parseTileUrl('ign-sat://tiles/14/8193')).toBeNull();
+    expect(spanishTopoUrl({ z: 15, x: 16, y: 17 })).toContain('layer=MTN&style=default&format=image/jpeg&tilematrixset=GoogleMapsCompatible&tilematrix=15&tilerow=17&tilecol=16');
+    expect(frenchTopoUrl({ z: 15, x: 16, y: 17 })).toContain('LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2');
+    expect(frenchTopoUrl({ z: 15, x: 16, y: 17 })).toContain('TILEMATRIX=15&TILEROW=17&TILECOL=16');
     expect(spanishUrl({ z: 14, x: 8193, y: 6041 })).toBe(
       'https://www.ign.es/wmts/pnoa-ma?service=WMTS&request=GetTile&version=1.0.0&layer=OI.OrthoimageCoverage&style=default&format=image/jpeg&tilematrixset=GoogleMapsCompatible&tilematrix=14&tilerow=6041&tilecol=8193',
     );
     expect(frenchUrl({ z: 14, x: 8193, y: 6041 })).toContain('TILEMATRIX=14&TILEROW=6041&TILECOL=8193');
+  });
+
+  it('el relieve de relleno del MTN fuera de su cobertura (liso) se distingue de un mapa real, y una tesela lisa sin nada debajo no es «sin datos»', () => {
+    const rgba = (value: (index: number) => number) => {
+      const data = new Uint8ClampedArray(256 * 256 * 4);
+      for (let i = 0; i < 256 * 256; i += 1) data.set([value(i), value(i), value(i), 255], i * 4);
+      return data;
+    };
+    expect(detailOf(rgba(() => 200))).toBe(0); // liso (mar, lago o relleno)
+    expect(detailOf(rgba((i) => 200 - Math.floor(i / 256) / 8))).toBeLessThan(NO_DATA_DETAIL); // degradado suave: relleno
+    expect(detailOf(rgba((i) => (i % 8 < 4 ? 40 : 220)))).toBeGreaterThan(NO_DATA_DETAIL); // líneas y rótulos: mapa real
+  });
+
+  it('en una tesela del borde de la cobertura solo se quitan los bloques de relleno, no los de mapa real', () => {
+    const data = new Uint8ClampedArray(256 * 256 * 4);
+    for (let row = 0; row < 256; row += 1)
+      for (let column = 0; column < 256; column += 1) {
+        const value = column < 128 ? (column % 8 < 4 ? 40 : 220) : 200; // izquierda: líneas de mapa; derecha: relleno liso
+        data.set([value, value, value, 255], (row * 256 + column) * 4);
+      }
+    expect(keyOutFlatBlocks(data)).toBe(32); // 4 columnas de bloques × 8 filas
+    expect(data[(10 * 256 + 10) * 4 + 3]).toBe(255); // mapa real
+    expect(data[(10 * 256 + 200) * 4 + 3]).toBe(0); // relleno
   });
 
   it('el blanco puro de «sin datos» se hace transparente y la imagen real no se toca', () => {

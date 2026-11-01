@@ -15,25 +15,17 @@ export const IGN_HOSTS = ['www.ign.es', 'data.geopf.fr'] as const;
 
 export type Bounds = readonly [west: number, south: number, east: number, north: number];
 
-export interface RasterSource {
-  id: string;
-  /** Plantilla de teselas con {z}/{x}/{y}. */
-  tiles: string;
-  bounds: Bounds;
-  maxzoom: number;
-}
-
 const es = (service: string, layer: string, style: string, format: string, tms: string) =>
   `https://www.ign.es/wmts/${service}?service=WMTS&request=GetTile&version=1.0.0&layer=${layer}&style=${style}&format=${format}&tilematrixset=${tms}&tilematrix={z}&tilerow={y}&tilecol={x}`;
 const fr = (layer: string, format: string) =>
   `https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=${layer}&STYLE=normal&FORMAT=${format}&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}`;
 
 export const ES_ORTHO = es('pnoa-ma', 'OI.OrthoimageCoverage', 'default', 'image/jpeg', 'GoogleMapsCompatible');
-const ES_TOPO = es('mapa-raster', 'MTN', 'default', 'image/jpeg', 'GoogleMapsCompatible');
+export const ES_TOPO = es('mapa-raster', 'MTN', 'default', 'image/jpeg', 'GoogleMapsCompatible');
 export const FR_ORTHO = fr('ORTHOIMAGERY.ORTHOPHOTOS', 'image/jpeg');
-const FR_TOPO = fr('GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2', 'image/png');
+export const FR_TOPO = fr('GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2', 'image/png');
 
-/** España peninsular y Baleares. Debajo de la francesa: lo que IGN Francia no tiene (404) deja ver esta. */
+/** España peninsular y Baleares. */
 export const ES_BOUNDS: Bounds = [-9.5, 35.8, 4.5, 43.9];
 
 /**
@@ -52,20 +44,13 @@ export const FR_STRIPS: readonly Bounds[] = [
 
 const MAX_ZOOM = 18;
 
-function sources(prefix: string, spanish: string, french: string): RasterSource[] {
-  return [
-    { id: `${prefix}-es`, tiles: spanish, bounds: ES_BOUNDS, maxzoom: MAX_ZOOM },
-    ...FR_STRIPS.map((bounds, index) => ({ id: `${prefix}-fr-${index + 1}`, tiles: french, bounds, maxzoom: MAX_ZOOM })),
-  ];
-}
-
-/** Topográfico, de abajo arriba: IGN España y encima las franjas de IGN Francia (el Plan IGN responde 404 donde no tiene datos). */
-export function topographicSources(): RasterSource[] {
-  return sources('topo', ES_TOPO, FR_TOPO);
-}
-
 /**
- * El satélite NO se apila: IGN Francia contesta con teselas completamente blancas (200, no 404) del otro lado de la frontera y taparían
- * a IGN España. Se pide a través del protocolo `ign-sat://` (ign-mix.ts), que compone por tesela las dos fuentes y quita ese blanco.
+ * Ninguna de las dos capas se apila: cada tesela se compone en el navegador a través de los protocolos `ign-sat://` y `ign-topo://`
+ * (ign-mix.ts), que piden las dos fuentes y quitan el blanco de «sin datos».
+ *  - Satélite: IGN Francia contesta con teselas completamente blancas (200, no 404) del otro lado de su frontera y taparían a IGN España.
+ *  - Topográfico: el MTN de IGN España es mucho mejor que el Plan IGN en todo el Pirineo, y además cubre una franja del lado francés
+ *    (Gavarnie, Luchón, Andorra con detalle; Lourdes, Pau y Perpiñán ya no). El Plan IGN, que sobre España pierde el detalle y en
+ *    zoom alto responde en blanco o 404, queda debajo y solo se ve donde el MTN está en blanco.
  */
 export const SATELLITE_MAX_ZOOM = MAX_ZOOM;
+export const TOPOGRAPHIC_MAX_ZOOM = MAX_ZOOM;
