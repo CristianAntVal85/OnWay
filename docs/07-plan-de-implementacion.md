@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.3 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
+**Versión:** 0.4 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
