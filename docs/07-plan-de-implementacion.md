@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.5 · **Estado:** borrador para revisión · **Fecha:** 1 de noviembre de 2026
+**Versión:** 0.6 · **Estado:** borrador para revisión · **Fecha:** 1 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -117,6 +117,7 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 | **Salida** | INV-14. Los casos de la prueba técnica pasan como regresión. Un trabajo sobrevive a un reinicio del *worker*. `MISSION_HAS_NO_ORIGIN`, `NO_ROUTE_POSSIBLE`, `OUTSIDE_COVERAGE` y `ROUTING_UNAVAILABLE` se muestran con un mensaje útil. Con el motor caído, el resto de la app sigue (documento 04, §11.4). Memoria dentro del presupuesto de 8 GB |
 | **Fuera** | Campo a través (v2.2), adaptar el tramo final (H9) |
 | **Riesgos** | R-01 (calidad del motor), R-12 (memoria), perfil de montaña. Si el motor no alcanza la calidad: el MVP se entrega igualmente con H2 y se documenta la limitación |
+| **Tal como se construyó** | Las 6 operaciones montadas y probadas (42 con las de H0 a H2). **Motor:** servicio `routing` (GraphHopper 11.1 con el perfil de `infra/routing/mountain.json`) y servicio de un solo uso `routing-data` (descarga la red de Geofabrik, la recorta con osmium y convierte el DEM de OnWay al formato del motor con `build-hgt`, de modo que el motor ve la misma altitud que mide OnWay); detrás del puerto `RoutingProvider` (documento 04, §5.2), con la estrategia de alternativas en el servidor. Sin red de caminos el motor queda en reposo y la API responde `ROUTING_UNAVAILABLE`. **Trabajos:** pg-boss 12 en el esquema `pgboss` (instalado por el migrador, sin migración SQL), envío transaccional, servicio `worker` (mismo código, otro punto de entrada, sin puertos), supervivencia a la muerte del *worker* probada con pg-boss real. **Zonas a evitar** de la organización con misión opcional (Q-05, resuelta). **Web:** vista `/routes/generate` (zonas, progreso, comparación con la composición), sección «Generar rutas» en la misión, y dibujar a mano uniendo los puntos a los caminos. **Pruebas:** `test:routing` (10, contra el motor real sobre la red inventada `data/seed/network.osm`, en el CI), `test:api` con INV-14 y los trabajos, y la demostración `h3-demo.spec.ts` (6 pruebas por proyecto, escritorio y 375 px) más `h3-engine-down.spec.ts` (con el motor parado). **Regresión con datos reales** (a mano o con el workflow `routing-regression`): los tres pares y el francés cumplen los 8 criterios (documento 04, §7.6). Desviaciones respecto al plan: *ajustar a los caminos* une los puntos con una ruta del motor y no usa `/match`; `createRoute` ganó `snapToPaths`; el límite de pendiente no se expone (el motor satura en 31 %); la misión de dos orígenes la crea el E2E por API y no está en la semilla; la segunda alternativa por bloqueo no tiene tope de longitud (hoja de revisión de pesos). **Memoria de la pila completa con datos reales** (clon limpio, `docker stats` tras generar 3 rutas del Pirineo en 2 s): motor 1,83 GiB, API 79 MiB, *worker* 78 MiB, PostgreSQL 79 MiB, Caddy 24 MiB, unos 2,1 GiB en total; los topes de `compose.yml` suman 4,9 GiB, dentro de los 8 GB (R-12). La primera puesta en marcha tarda unos 35 minutos en esta conexión (relieve ~11 min, descarga de Geofabrik ~22 min, el recorte y el grafo, unos minutos); las siguientes, segundos. **Pendiente de una persona:** revisión de los pesos del perfil (`specs/H3-generacion-rutas/revision-pesos.md`) |
 
 ### H4 · Rutas en la misión y vista del rescatista · M — *cierra el MVP*
 
@@ -224,7 +225,9 @@ Cada bloque tendrá su propio documento de diseño cuando llegue su turno. Aquí
 | Q-31 qué misiones ve el rescatista | H1 | Todas las activas de su organización |
 | Q-32 punto base para el tiempo | H1 | Sin punto base: si deniega la ubicación, se pide elegir un punto |
 | Q-28 dominio | H7 | Desarrollo con Mailpit y sin HTTPS público |
-| Q-04, Q-05, Q-06, Q-21 | Detalles de H1–H3 | Valores por defecto del documento 02: puntos de reunión con nombre, ubicación y notas; zonas a evitar de la biblioteca; sin etiquetas |
+| ~~Q-05~~ | ~~H3~~ | **Resuelta (2026-11-01):** las zonas a evitar son de la organización, con misión opcional; las ve el personal (documento 01) |
+| Q-04, Q-06, Q-21 | Detalles de H1–H4 | Valores por defecto del documento 02: puntos de reunión con nombre, ubicación y notas; sin etiquetas |
+| Revisión de los pesos del perfil de montaña (P6) | Dar H3 por buena para uso real; no bloquea el desarrollo de H4 | Los pesos de la prueba técnica; hoja de revisión en `specs/H3-generacion-rutas/` |
 
 ---
 
@@ -245,6 +248,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.6 | 2026-11-01 | H3 (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con el motor, los trabajos, las desviaciones y la regresión real; Q-05 resuelta y la revisión de los pesos (P6) anotada como pendiente en la sección 6 |
 | 0.5 | 2026-11-01 | Prueba técnica del motor cerrada (documento 04, §7.6): H3 «Antes de empezar» con el motor elegido (GraphHopper 11.1) y su primera tarea (alimentar el motor con el DEM de OnWay) y la fila de la sección 6 resuelta |
 | 0.4 | 2026-10-31 | H2 (sección 3) al día tras construirlo (T10): «GPX de ejemplo ficticio» en lugar de «GPX real» (decisión P2: ningún track procede de un servicio público ni de una persona), 13 operaciones con `exportRoutes` (P3) y la fila «Tal como se construyó» |
 | 0.3 | 2026-10-31 | Q-14 resuelta (no): el administrador no escribe misiones (H1-T6; documentos 01 y 02 actualizados). H1 (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con las capas de IGN, `geodata`, las tres misiones de demostración, las dependencias aprobadas y la demostración como prueba E2E; Q-26 (sección 6) resuelta en lo de H1 |

@@ -24,7 +24,7 @@ if [ -n "${ROUTING_NETWORK_FILE:-}" ]; then
   exit 0
 fi
 
-MARK="$SNAPSHOT|$BBOX|$REGIONS"
+MARK="$SNAPSHOT|$BBOX|$REGIONS|simple"
 if [ -s "$OUT/network/pyrenees.osm.pbf" ] && [ "$(cat "$OUT/network/.source" 2>/dev/null)" = "$MARK" ]; then
   echo "routing-data: network up to date"
   status true "network up to date"
@@ -51,7 +51,9 @@ echo "routing-data: cutting the network"
 # Only roads, barriers and turn restrictions: filtering before cutting keeps long ways (ferries, borders) from stretching the box.
 osmium merge --overwrite -o "$OUT/work/merged.osm.pbf" $inputs || degrade "osmium merge failed"
 osmium tags-filter --overwrite -o "$OUT/work/network.osm.pbf" "$OUT/work/merged.osm.pbf" w/highway n/barrier r/type=restriction || degrade "osmium tags-filter failed"
-osmium extract --overwrite --bbox "$BBOX" --strategy complete_ways -o "$OUT/network/pyrenees.osm.pbf.part" "$OUT/work/network.osm.pbf" || degrade "osmium extract failed"
+# `simple` (not `complete_ways`): a way that crosses the box keeps only its nodes inside it. With `complete_ways` the extract held
+# nodes down to latitude 41,9, where OnWay has no elevation tile, and the engine tried to download one and stopped.
+osmium extract --overwrite --bbox "$BBOX" --strategy simple --output-format pbf -o "$OUT/network/pyrenees.osm.pbf.part" "$OUT/work/network.osm.pbf" || degrade "osmium extract failed"
 mv "$OUT/network/pyrenees.osm.pbf.part" "$OUT/network/pyrenees.osm.pbf"
 printf '%s' "$MARK" > "$OUT/network/.source"
 rm -rf "$OUT/work"

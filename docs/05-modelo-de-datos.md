@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 0.8 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
+Versión: 0.9 (borrador) · Fecha: 2026-11-01 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -322,12 +322,12 @@ El documento 03 es conceptual. Al bajarlo a tablas hubo que tomar estas decision
 | `mission_points` | Misiones | Orígenes, intermedios y puntos de reunión | cientos | Sí |
 | `mission_team_assignments` | Misiones | Equipos asignados | decenas | Sí |
 | `participations` | Participación | Voluntarios y participantes, con asistencia confirmada | cientos | Sí |
-| `calculation_jobs` | Planificación | Trabajos de cálculo | cientos | Sí |
+| `calculation_jobs` | Planificación | Trabajos de cálculo (H3: `generate`; `pending → running → completed/failed`, con `progress`, el código del fallo y `queue_job_id` de pg-boss) | cientos | Sí |
 | `routes` | Biblioteca | Identidad estable de cada ruta | decenas a miles | Sí |
 | `route_versions` | Biblioteca | Versiones inmutables con geometría y métricas | decenas a miles | Sí |
 | `route_segments` | Biblioteca | Tramos de cada versión | miles | Sí |
 | `mission_routes` | Misiones | Rutas añadidas a una misión, con versión fijada | cientos | Sí |
-| `avoid_zones` | Planificación | Zonas a evitar | pocas | Sí |
+| `avoid_zones` | Planificación | Zonas a evitar (H3: de la organización, con `mission_id` opcional; polígonos de hasta 200 vértices sin cortarse a sí mismos) | pocas | Sí |
 | `audit_log` | Auditoría | Registro de solo añadir | miles | Sí |
 | `forecast_cache` | Información ambiental | Caché de pronóstico | cientos | No |
 | `password_resets` | Identidad | Tokens de recuperación de contraseña (solo hash, un uso, caducan). Sin permisos para `onway_app`: se usa por funciones | decenas | Activada, sin políticas |
@@ -602,7 +602,7 @@ Las migraciones son aditivas y se ejecutan en orden. Cada entrega solo estrena l
 Orden de ejecución y responsabilidades:
 - **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0012** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
 - Las contraseñas de `onway_owner`, `onway_app` y `onway_platform` se fijan en el despliegue con `ALTER ROLE ... PASSWORD`, leídas de archivos de secretos, nunca del repositorio. En local las genera al azar el servicio `secrets` de `docker compose`.
-- Las tablas internas de la cola (pg-boss) las crea la propia biblioteca en su esquema `pgboss`. `onway_app` recibe permisos sobre ese esquema en el despliegue.
+- Las tablas internas de la cola (pg-boss 12) las crea la propia biblioteca en su esquema `pgboss`, **no una migración SQL**: el migrador (`apps/api/src/jobs/install-queue.ts`, como `onway_owner`, tras las migraciones) instala el esquema y la cola `calculate` y da a `onway_app` solo USAGE del esquema y SELECT/INSERT/UPDATE/DELETE, secuencias y EXECUTE, con privilegios por defecto para lo que cree una migración futura de pg-boss; `onway_app` no crea nada (hay una prueba). Los procesos en marcha arrancan con `createSchema: false, migrate: false`. La cola solo guarda identificadores (trabajo, organización, usuario). El envío es transaccional con la fila de `calculation_jobs`. H3 no añade ninguna migración SQL.
 - Cada migración debe poder aplicarse sobre una base vacía en CI con la imagen de PostGIS, y las pruebas de la sección 11 deben pasar después de la última.
 
 ## 10. Datos de ejemplo
@@ -619,7 +619,7 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 | Datos sensibles | Documentos y direcciones inventados, con letra de DNI válida, cifrados | H5 |
 | Cursos y habilidades | 20, algunos con certificado ficticio (un PDF de una página) | H5 |
 | Misiones | 6: dos en planificación, dos activas, dos cerradas. Las cerradas con participación confirmada y alguna desmarcada. **H1 siembra 3 (una por estado, ficticias; la activa con origen, intermedio y reunión; la cerrada sin participaciones, que llegan en H6)**, cada una con sus filas de `audit_log` y la altitud calculada por el `ElevationProvider`; las 6 completas, con participaciones, son de H6 | H1 (3 de 6) |
-| Rutas | 8 en la biblioteca, con 1 a 3 versiones. Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada. **H2 siembra 6** (una validada de una versión, una con tres versiones, una con borrador más nuevo que la validada, una derivada, una archivada y una con la validación de hace más de 90 días), a partir de GPX inventados de `data/seed/gpx/`, con sus filas de `audit_log` y las métricas que calcula el servidor; las 2 que faltan, generadas por el motor, llegan con H3 | H2 (6 de 8) |
+| Rutas | 8 en la biblioteca, con 1 a 3 versiones. Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada. **H2 siembra 6** (una validada de una versión, una con tres versiones, una con borrador más nuevo que la validada, una derivada, una archivada y una con la validación de hace más de 90 días), a partir de GPX inventados de `data/seed/gpx/`, con sus filas de `audit_log` y las métricas que calcula el servidor; las 2 que faltan, generadas por el motor: **H3 no las siembra**, porque la semilla no depende del motor ni de su red; las produce el botón *Generar* (la demostración E2E crea por API una misión «E2E …» con un origen a cada lado de la frontera inventada y genera desde ella, y las deja archivadas) | H2 (6 de 8) |
 | Objetivos | En el Pirineo, escogidos con la prueba técnica del motor de rutas (documento 04, sección 7.3); la geometría de las rutas de ejemplo sale de esa prueba. Los 3 objetivos de H1 son inventados y caen dentro de la caja de `geodata` (lon −2…4, lat 42…44) | H1 (inventados) |
 
 ## 11. Pruebas de la base de datos
@@ -681,6 +681,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**0.9 (2026-11-01)** H3. Sin migraciones SQL nuevas: `calculation_jobs` y `avoid_zones` (0005) pasan a usarse, y las políticas de 0008/0011 bastan (el personal lee y el coordinador escribe; el rescatista no accede a ninguna de las dos). §3.3 y §4 con el uso real; la cola (pg-boss) y sus permisos las instala el migrador (§9); §10: la semilla no incluye rutas generadas.
 
 **0.8 (2026-10-31)** H2-T10. §10: las 6 rutas de demostración de H2 (P6) y su origen (GPX inventados); las 2 generadas, en H3. Sin cambios de esquema.
 

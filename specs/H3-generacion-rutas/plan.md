@@ -148,3 +148,17 @@ COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --wait && pnpm 
 10. **T10 · Semilla, demostración E2E, regresión real y documentos.** Misión de dos orígenes, E2E en escritorio y móvil, regresión de los casos reales (manual), memoria de la pila, hoja de revisión de pesos (P6) y documentos.
 
 Un commit y un push por tarea, igual que en H2. Al terminar: validación con el `reviewer` contra los 12 criterios del doc 07 §4 y la demostración (máx. 2 vueltas) y PR `hito/H3-generacion-rutas` → `main` con commit de fusión (lo fusionas tú).
+
+## 9. Cambios durante la construcción (desviaciones respecto a este plan)
+
+| # | Qué cambió | Por qué | Dónde queda anotado |
+|---|---|---|---|
+| C1 | «Ajustar a los caminos» une los puntos en orden con una ruta del motor y no usa `/match` | `/match` pide trazas densas y falla con puntos dispersos; el doc 02 dice «los une siguiendo caminos» | doc 04 §5.2 |
+| C2 | `createRoute` gana el campo `snapToPaths` (2 a 50 puntos de control) | Guardar la ruta dibujada con su composición sin que el cliente mande una línea ya calculada (regla 6) | doc 06 v1.2 |
+| C3 | El límite de pendiente no se expone en `generateRoutes` | El motor guarda `max_slope` en 5 bits y satura en el 31 %: con un límite ≤ 30 % los tres pares no tienen ruta (el «no hay otra salida» del criterio 3) | doc 04 §7.6 |
+| C4 | `MISSION_CLOSED` (zonas) y `NOT_FOUND` (`generateRoutes`) añadidos al contrato | Los casos existían y no estaban en la tabla de errores | doc 06 v1.2 |
+| C5 | El motor de pruebas se publica en `127.0.0.1:18989` y el servicio `routing` se une a la red `edge`, **solo** en la superposición E2E; la regresión real usa `infra/compose.regression.yml` (18990) | `test:routing` y el corredor de la prueba técnica necesitan hablar con él desde el equipo; la pila normal sigue sin puertos del motor | `CLAUDE.md`, doc 04 §12 |
+| C6 | Recorte de la red con `osmium extract --strategy simple --output-format pbf` | Con datos reales (no con la red inventada) `complete_ways` dejaba nodos bajo la latitud 42,0, sin teselas de altitud, y el motor se caía; `.part` impedía a osmium reconocer el formato | doc 04 §7.6 |
+| C7 | La misión de dos orígenes **no va en la semilla**: la crea el E2E por la API | La semilla (3 misiones, 6 rutas) no debe depender del motor ni cambiar sus recuentos; para verla a mano, `data/seed/README.md` | `data/seed/README.md`, doc 05 §10 |
+| C8 | El E2E exige de 2 a 3 alternativas por origen, no exactamente 3, y cierra las misiones «E2E …» y archiva sus rutas al terminar | El motor pone el tope según la red (el plan pedía «al menos 2 por par»); sin la limpieza, las rutas generadas llenaban la biblioteca que ve la demostración de H2 | `CLAUDE.md` |
+| C9 | **Abierto:** el rodeo por bloqueo no tiene tope de longitud (solo el reparto máximo del 70 %); el par francés da una segunda alternativa del doble de longitud | Se vio al medir la regresión real; decidirlo exige criterio de dominio | `revision-pesos.md` |

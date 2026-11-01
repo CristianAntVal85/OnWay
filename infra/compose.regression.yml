@@ -1,0 +1,10 @@
+# Superposición de la regresión REAL del motor (H3, P3): el extracto de los Pirineos y el DEM GLO-30 de verdad, en un proyecto aparte
+# (`onway-regression`: sus propios volúmenes, nada se mezcla con la pila de demostración). Solo publica el motor en 127.0.0.1:18990
+# para que el corredor de la prueba técnica (poc/motor-rutas/run-cases.mjs) lo consulte. Úsala con infra/scripts/routing-regression.sh.
+#   docker compose -p onway-regression -f compose.yml -f infra/compose.regression.yml up --build --wait routing
+services:
+  routing:
+    # Los mismos 2 GB de montón que la pila normal: la memoria medida es la de producción.
+    networks: [data, edge]
+    ports:
+      - '127.0.0.1:18990:8989'
