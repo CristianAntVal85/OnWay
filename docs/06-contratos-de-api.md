@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.0 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
+**Versión:** 1.1 · **Estado:** borrador para revisión · **Fecha:** 1 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -803,7 +803,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 ### 10.3 Lo que el contrato no cubre
 
-- **Cálculo real de rutas** (`snap`, `generate`, `adapt`), geocodificación y altitud: el contrato fija la forma, no el motor. Siguen sujetos al motor de rutas (candidato GraphHopper tras el puerto `RoutingProvider`, doc. 04).
+- **Cálculo real de rutas** (`snap`, `generate`, `adapt`), geocodificación y altitud: el contrato fija la forma, no el motor. Siguen sujetos al motor de rutas (GraphHopper 11.1, elegido en la prueba técnica, tras el puerto `RoutingProvider`; doc. 04 §7.6).
 
 ## 11. Qué está verificado y qué no
 
@@ -836,6 +836,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.1 | 2026-11-01 | Prueba técnica del motor cerrada: el motor tras `RoutingProvider` es GraphHopper 11.1 (doc. 04 §7.6). Solo cambia un comentario; sin cambios de esquema |
 | 1.0 | 2026-10-31 | Cierre de H2 (T10): las 13 operaciones de H2 montadas y probadas (`test:api` con 274 pruebas; AC-02 compara con las 36 exactas de H0, H1 y H2); §11 con lo geoespacial de rutas verificado contra PostGIS. El cuerpo JSON admite hasta 2 MB (una línea de 20 000 vértices son ~0,6 MB) y Caddy corta lo que pase de 12 MB con un `413` que no sigue el formato único (el cliente lo trata como `FILE_TOO_LARGE`). OpenAPI, tablas y cliente regenerados sin diferencias: ningún cambio de esquema en esta tarea |
 | 0.9 | 2026-10-31 | H2-T1. `exportRoutes` (`GET /routes/export`, varias rutas de la biblioteca en un solo GPX/KML, RF-511; H2 pasa a 13 operaciones y el registro a 96). `OUTSIDE_COVERAGE` en `previewRouteImport`, `createRoute`, `createRouteVersion` y `deriveRoute` (el servidor mide todo trazado, RN-10). `INVALID_STATE_TRANSITION` en `archiveRoute`, `createRouteVersion` y `validateRouteVersion` (una ruta archivada es de solo lectura; derivar sí se permite). `RoadType` + `unknown` («sin clasificar»: migración 0012, doc. 05). Notas de `uploadFile` (solo `route_import` hasta H5), `createRoute` y `deriveRoute` (`addToMission` y `calculationJobId` se rechazan hasta H4/H9) y `exportRoute` (versión por defecto: la más reciente). 5 pruebas nuevas del paquete (89) |
 | 0.8 | 2026-10-31 | Q-14 resuelta (no): el administrador lee misiones y rutas y no las escribe; `MISSION_WRITERS` y la base de datos lo reflejan (migración 0011, doc. 05). Solo cambia un comentario del registro de endpoints; sin cambios de esquema: OpenAPI, tablas y cliente regenerados sin diferencias. Pruebas al día: `test:api` 191, base de datos 194 comprobaciones SQL + 19 de Vitest |

@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.5 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
+**Versión:** 0.5 · **Estado:** borrador para revisión · **Fecha:** 1 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -44,7 +44,7 @@ flowchart LR
   V1 --> H8[H8 Buscar rutas por punto]
   H8 --> H9[H9 Adaptar rutas y filtros]
   H9 --> V2((v2))
-  P[Prueba técnica del motor de rutas] -.durante H1 y H2.-> H3
+  P[Prueba técnica del motor de rutas] -.hecha antes de H3.-> H3
 ```
 
 **Por qué este orden**

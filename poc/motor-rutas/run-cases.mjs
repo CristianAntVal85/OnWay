@@ -4,7 +4,7 @@
 // Criteria: 1 alternatives, 2 trails, 3 slope limit (probe), 4 time, 5 memory, 6 zone to avoid, 7 snap to the network, 8 road mix.
 import { execFile } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import * as graphhopper from './lib/graphhopper.mjs';
@@ -114,8 +114,11 @@ async function capabilities(engine, url, pair, main, ours) {
   const middle = resample(main.coords, 10);
   const ring = squareRing(middle[Math.floor(middle.length / 2)], 100);
   const avoided = await engine.route({ url, from: pair.from, to: pair.to, customModel: engine.avoidModel(ring) });
-  if (avoided.paths.length === 0) out[6] = check({ outcome: 'no_route', message: avoided.error ?? null }, true);
-  else {
+  if (avoided.paths.length === 0) {
+    // Only a clean "no way" counts; any other failure of the engine is a FAIL.
+    const clean = engine.isNoRoute(avoided.error);
+    out[6] = check({ outcome: clean ? 'no_route' : 'error', message: avoided.error ?? null }, clean);
+  } else {
     const inside = pointsInsideSquare(avoided.paths[0].coords, ring, 5);
     out[6] = check({ outcome: inside === 0 ? 'avoided' : 'crossed', pointsInside: inside, detourKm: Number(((avoided.paths[0].distanceM - main.distanceM) / 1000).toFixed(2)) }, inside === 0);
   }
@@ -227,7 +230,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.log(result.id.padEnd(20), [1, 2, 4, 6, 7, 8].map((c) => mark(result.criteria[c]).padEnd(6)).join(''), String(result.paths?.length ?? 0).padEnd(6), result.seconds?.p95 ?? result.error);
   }
   console.log(`c3 slope probe ${report.slopeProbe.id}: ${mark(report.slopeProbe)} ${JSON.stringify(report.slopeProbe.value)}`);
-  const out = join(dirname(fileURLToPath(import.meta.url)), argOf('out', `results/${engineName}.json`));
+  const out = resolve(dirname(fileURLToPath(import.meta.url)), argOf('out', `results/${engineName}.json`)); // an absolute --out is used as given
   writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
   console.log(`written ${out}`);
 }

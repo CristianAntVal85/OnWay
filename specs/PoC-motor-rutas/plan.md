@@ -92,3 +92,17 @@ Mismos datos y mismas preguntas para los dos motores: **un extracto OSM de los P
 7. **T7 · Informe y documentos:** doc 04 §7.6, §7.3 y §11.1; doc 07 §6 y H3; doc 01 R-01; `docs/estado.md`; casos como regresión.
 
 Un commit y un push por tarea, igual que en los hitos. Al terminar: validación con el `reviewer` contra los criterios de §4 y el PR de P6.
+
+## 9. Cambios respecto a lo aprobado, anotados durante la ejecución
+
+Lo que se hizo distinto o se añadió a lo que aprobó el usuario el 2026-11-01. Ninguno cambia las decisiones P1–P7; los dos primeros afectan a cómo se lee el veredicto.
+
+| # | Cambio | Dónde |
+|---|---|---|
+| C1 | **Criterio 3 (pendiente):** el umbral del plan §4 («no pasa del límite salvo si no hay otra salida, y avisa») no se cumple ni se evalúa. Se aplicó otro, relativo (la pendiente máxima medida baja a ≤ 0,7 × la inicial), y sobre una **sonda** (`cases/slope-probe.json`) elegida después de ver que los tres pares no discriminaban. Se anota como cumplido solo en la sonda y como primera comprobación de H3 | T5, `results/veredicto.md` §2 y §5 |
+| C2 | **Criterio 1:** la segunda alternativa de `ordesa-perdido` (y las tres de Valhalla) sale de una estrategia nuestra (`proposeRoutes`: bloquear 200 m en medio de la ruta principal y volver a preguntar), no de la búsqueda de alternativas del motor | T5, `lib/*.mjs` |
+| C3 | **Par francés extra** (`cases/extra-france.json`, Gavarnie → Vignemale), fuera de la aceptación, medido en T6 por la advertencia de P3 | T6 |
+| C4 | **Frontera (pregunta de T1):** las rutas principales de `bujaruelo-brecha` de los dos motores pasan a 0 m del Port de Boucharo, el collado de la frontera. Ningún par tiene origen y destino en países distintos | `results/rutas-principales.json` |
+| C5 | **Criterio 6:** solo cuenta como «sin camino» un mensaje limpio del motor (`isNoRoute`); cualquier otro error es un fallo | T7, tras la validación |
+| C6 | **Fuera de `poc/`:** una línea en `eslint.config.js` (globales de Node para `poc/**/*.mjs`), una en `.prettierignore` (`poc/motor-rutas/results`) y `.claude/agents/*.md` con el modelo fijado (commit `3873b5b`, previo a este plan) | commits `d9e5707`, `5a6d806`, `3873b5b` |
+

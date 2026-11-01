@@ -91,3 +91,6 @@ export async function proposeRoutes({ url, from, to, minAlternatives = 2, maxSha
   }
   return { ms: performance.now() - started, paths, error: native.error };
 }
+
+/** True when the engine says there is no way between the points (not when it failed for any other reason). */
+export const isNoRoute = (message) => /Connection between locations not found|Cannot find point/i.test(message ?? '');

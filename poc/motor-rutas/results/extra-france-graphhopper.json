@@ -1,6 +1,6 @@
 {
   "engine": "graphhopper",
-  "date": "2026-11-01T10:33:44.264Z",
+  "date": "2026-11-01T11:25:45.780Z",
   "extract": {
     "geofabrikSnapshot": "261031",
     "bbox": [
@@ -35,7 +35,7 @@
     "pass": true
   },
   "peakMemoryMiB": {
-    "value": 1188,
+    "value": 1183,
     "pass": true
   },
   "results": [
@@ -68,9 +68,9 @@
         }
       ],
       "seconds": {
-        "p50": 0.064,
-        "p95": 0.108,
-        "max": 0.108
+        "p50": 0.058,
+        "p95": 0.154,
+        "max": 0.154
       },
       "criteria": {
         "1": {
@@ -91,7 +91,7 @@
           "pass": true
         },
         "4": {
-          "value": 0.11,
+          "value": 0.15,
           "pass": true
         },
         "6": {

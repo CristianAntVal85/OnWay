@@ -1,0 +1,5 @@
+{
+  "note": "Picos de memoria del contenedor al construir/cargar el grafo, medidos con scripts/peak-memory.sh (docker stats, 1 muestra por segundo) el 2026-11-01. Muestreo, no cota: el pico real puede ser algo mayor. Los picos sirviendo están en los JSON de cada motor (peakMemoryMiB).",
+  "graphhopper": { "peakMiB": 1907, "heap": "-Xmx2g", "memLimit": "3g", "importSeconds": 32, "elevationTiles": "ya descargadas" },
+  "valhalla": { "peakMiB": 2569, "threads": 8, "memLimit": "3g", "buildSeconds": 43, "elevationTiles": "ya descargadas" }
+}

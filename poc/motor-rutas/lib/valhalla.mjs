@@ -138,3 +138,6 @@ export async function match({ url, points, accuracyM = 40 }) {
   const coords = decodePolyline(json.trip.legs[0].shape, 6);
   return polylineLengthM(coords) > 0 ? { coords } : { coords: [], error: 'empty shape' };
 }
+
+/** True when the engine says there is no way between the points (not when it failed for any other reason). */
+export const isNoRoute = (message) => /No path could be found/i.test(message ?? '');

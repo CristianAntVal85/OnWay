@@ -1,6 +1,6 @@
 {
   "engine": "valhalla",
-  "date": "2026-11-01T10:33:50.316Z",
+  "date": "2026-11-01T11:25:51.831Z",
   "extract": {
     "geofabrikSnapshot": "261031",
     "bbox": [
@@ -33,7 +33,7 @@
     "pass": true
   },
   "peakMemoryMiB": {
-    "value": 695,
+    "value": 715,
     "pass": true
   },
   "results": [
@@ -66,9 +66,9 @@
         }
       ],
       "seconds": {
-        "p50": 0.301,
-        "p95": 0.325,
-        "max": 0.325
+        "p50": 0.26,
+        "p95": 0.38,
+        "max": 0.38
       },
       "criteria": {
         "1": {
@@ -89,7 +89,7 @@
           "pass": false
         },
         "4": {
-          "value": 0.32,
+          "value": 0.38,
           "pass": true
         },
         "6": {
