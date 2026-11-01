@@ -210,6 +210,8 @@ services:
       OPEN_METEO_FORECAST_URL: ${OPEN_METEO_FORECAST_URL:-https://api.open-meteo.com/v1/forecast}
       NOMINATIM_URL: ${NOMINATIM_URL:-https://nominatim.openstreetmap.org/search}
       NOMINATIM_CONTACT: ${NOMINATIM_CONTACT:-}
+      # Motor de rutas (H3): si no está, las operaciones que lo usan responden ROUTING_UNAVAILABLE y el resto sigue.
+      ROUTING_URL: http://routing:8989
     volumes:
       - { type: volume, source: secrets, target: /run/onway/app, read_only: true, volume: { subpath: app } }
       - { type: volume, source: secrets, target: /run/onway/csrf, read_only: true, volume: { subpath: csrf } }
@@ -229,6 +231,47 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+
+  # El mismo código que la `api` con otra entrada (AD-05, H3): toma los trabajos de cálculo de la cola (pg-boss, en la propia base de
+  # datos) y los lleva a cabo. No publica ningún puerto; solo escucha su comprobación de salud en la red interna.
+  worker:
+    <<: *hardened
+    build: *api-build
+    image: onway/api:local
+    command: ['node', 'dist/src/worker.js']
+    read_only: true
+    restart: unless-stopped
+    mem_limit: 512m
+    networks: [data]
+    tmpfs:
+      - /tmp
+    environment:
+      <<: *db-env
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      WORKER_PORT: '3001'
+      NODE_OPTIONS: --max-old-space-size=384
+      DB_APP_PASSWORD_FILE: /run/onway/app/password
+      CSRF_SECRET_FILE: /run/onway/csrf/secret
+      ELEVATION_DEM_DIR: /geodata/dem
+      ROUTING_URL: http://routing:8989
+    volumes:
+      - { type: volume, source: secrets, target: /run/onway/app, read_only: true, volume: { subpath: app } }
+      - { type: volume, source: secrets, target: /run/onway/csrf, read_only: true, volume: { subpath: csrf } }
+      - geodata:/geodata:ro
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
 
   web:
     <<: *hardened

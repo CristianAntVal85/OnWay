@@ -127,6 +127,16 @@ else
   echo "ok  onway_app, onway_platform and onway_owner: no superuser, no BYPASSRLS; the app roles own nothing and inherit nothing"
 fi
 
+# H3: el worker de cálculos está sano (toma los trabajos de la cola).
+if [ "${SMOKE_SKIP_ROUTING:-0}" = 1 ]; then
+  echo "skip worker check (SMOKE_SKIP_ROUTING=1)"
+else
+  root="$(cd "$(dirname "$0")/../.." && pwd)"
+  (cd "$root" && docker compose exec -T worker node -e "fetch('http://127.0.0.1:3001/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))") \
+    || fail "the worker does not answer /health: see docker compose logs worker"
+  echo "ok  the calculation worker answers /health"
+fi
+
 # H3: el motor de rutas responde y no está en reposo (si la descarga de la red de caminos falló, el motor espera y la API
 # responde ROUTING_UNAVAILABLE: una instalación sana no debería estar así).
 if [ "${SMOKE_SKIP_ROUTING:-0}" = 1 ]; then

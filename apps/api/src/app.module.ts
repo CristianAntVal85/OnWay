@@ -11,6 +11,7 @@ import { RoutingModule, type RoutingOptions } from './routing/routing.module.js'
 import { HealthModule } from './health/health.module.js';
 import type { IdentityOptions } from './identity/config.js';
 import { IdentityModule } from './identity/identity.module.js';
+import { JobsModule, type JobsOptions } from './jobs/jobs.module.js';
 import { MissionsModule } from './missions/missions.module.js';
 import { AvoidZonesModule } from './avoid-zones/avoid-zones.module.js';
 import { RoutesModule } from './routes/routes.module.js';
@@ -25,6 +26,8 @@ export interface AppOptions {
   /** Altitude source, address search and the per-user altitude limit. Without them the test implementations answer; `main.ts` passes the real ones. */
   geo?: GeoOptions;
   routing?: RoutingOptions;
+  /** The calculation queue. Without it the in-memory one answers; `main.ts` and the worker pass pg-boss. */
+  jobs?: JobsOptions;
   /** Where uploaded files live. Without it they stay in memory; `main.ts` passes the disk store. */
   files?: FilesOptions;
   /** Weather provider. Without it the test implementation answers; `main.ts` passes the real one. */
@@ -42,6 +45,7 @@ export class AppModule {
         ClockModule.register(options.clock),
         GeoModule.register(options.geo),
         RoutingModule.register(options.routing),
+        JobsModule.register(options.jobs),
         DatabaseModule.register(options.database),
         AuditModule,
         IdentityModule.register(options.identity),
