@@ -127,4 +127,15 @@ else
   echo "ok  onway_app, onway_platform and onway_owner: no superuser, no BYPASSRLS; the app roles own nothing and inherit nothing"
 fi
 
+# H3: el motor de rutas responde y no está en reposo (si la descarga de la red de caminos falló, el motor espera y la API
+# responde ROUTING_UNAVAILABLE: una instalación sana no debería estar así).
+if [ "${SMOKE_SKIP_ROUTING:-0}" = 1 ]; then
+  echo "skip routing engine check (SMOKE_SKIP_ROUTING=1)"
+else
+  root="$(cd "$(dirname "$0")/../.." && pwd)"
+  (cd "$root" && docker compose exec -T routing sh -c 'test ! -e /tmp/degraded && curl -fsS http://127.0.0.1:8989/health >/dev/null') \
+    || fail "the routing engine is not serving (no road network, or not healthy): see docker compose logs routing-data routing"
+  echo "ok  the routing engine answers /health"
+fi
+
 echo "smoke test passed"

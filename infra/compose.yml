@@ -116,6 +116,62 @@ services:
     volumes:
       - geodata:/geodata
 
+  # Motor de rutas (H3). `routing-data` deja en el volumen `routing-data` la red de caminos (extractos de Geofabrik recortados a los
+  # Pirineos, ~1,3 GB la primera vez) y las teselas de altitud de OnWay; `routing` es GraphHopper sobre ellas. Si algo falla, la pila
+  # sigue y la API responde ROUTING_UNAVAILABLE.
+  routing-data:
+    <<: *hardened
+    build:
+      context: ..
+      dockerfile: infra/docker/api.Dockerfile
+      target: routing-data
+    image: onway/routing-data:local
+    read_only: true
+    restart: 'no'
+    mem_limit: 2g
+    # Sale a Internet (download.geofabrik.de).
+    networks: [edge]
+    tmpfs:
+      - /tmp
+    environment:
+      ELEVATION_DEM_DIR: /geodata/dem
+    volumes:
+      - geodata:/geodata:ro
+      - routing-data:/routing
+    depends_on:
+      geodata:
+        condition: service_completed_successfully
+
+  routing:
+    <<: *hardened
+    build:
+      context: ..
+      dockerfile: infra/docker/routing.Dockerfile
+    image: onway/routing:local
+    read_only: true
+    restart: unless-stopped
+    mem_limit: 3g
+    networks: [data]
+    tmpfs:
+      - /tmp
+    environment:
+      ROUTING_HEAP: 2g
+      ROUTING_OSM_FILE: ${ROUTING_OSM_FILE:-/data/network/pyrenees.osm.pbf}
+      ROUTING_HGT_DIR: /data/hgt
+    volumes:
+      - routing-data:/data:ro
+      - routing-graph:/graph
+    depends_on:
+      routing-data:
+        condition: service_completed_successfully
+    healthcheck:
+      # En reposo (sin red de caminos, /tmp/degraded) el contenedor se da por sano: la API sabe si hay motor porque lo llama.
+      test: ['CMD-SHELL', 'test -e /tmp/degraded || curl -fsS http://127.0.0.1:8989/health']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15m
+
   seed:
     <<: *node-job
     command: ['node', 'dist/src/cli/seed.js']
@@ -218,3 +274,6 @@ volumes:
   files: {}
   # DEM y mapa base descargados por `geodata`. Se puede borrar sola (`docker volume rm onway_geodata`): se vuelve a descargar.
   geodata: {}
+  # Red de caminos y teselas de altitud del motor de rutas (`routing-data`); el grafo que construye GraphHopper vive en `routing-graph`. Se regeneran solos.
+  routing-data: {}
+  routing-graph: {}

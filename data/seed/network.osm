@@ -1,0 +1,488 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6' generator='onway-synthetic-network'>
+  <node id='1' lat='42.62' lon='-0.1'/>
+  <node id='2' lat='42.62' lon='-0.09'/>
+  <node id='3' lat='42.62' lon='-0.08'/>
+  <node id='4' lat='42.62' lon='-0.07'/>
+  <node id='5' lat='42.62' lon='-0.06'/>
+  <node id='6' lat='42.62' lon='-0.05'/>
+  <node id='7' lat='42.62' lon='-0.04'/>
+  <node id='8' lat='42.62' lon='-0.03'/>
+  <node id='9' lat='42.62' lon='-0.02'/>
+  <node id='10' lat='42.62' lon='-0.01'/>
+  <node id='11' lat='42.62' lon='0'/>
+  <node id='12' lat='42.62' lon='0.01'/>
+  <node id='13' lat='42.62' lon='0.02'/>
+  <node id='14' lat='42.62' lon='0.03'/>
+  <node id='15' lat='42.62' lon='0.04'/>
+  <node id='16' lat='42.62' lon='0.05'/>
+  <node id='17' lat='42.62' lon='0.06'/>
+  <node id='18' lat='42.62' lon='0.07'/>
+  <node id='19' lat='42.62' lon='0.08'/>
+  <node id='20' lat='42.63' lon='-0.1'/>
+  <node id='21' lat='42.63' lon='-0.09'/>
+  <node id='22' lat='42.63' lon='-0.08'/>
+  <node id='23' lat='42.63' lon='-0.07'/>
+  <node id='24' lat='42.63' lon='-0.06'/>
+  <node id='25' lat='42.63' lon='-0.05'/>
+  <node id='26' lat='42.63' lon='-0.04'/>
+  <node id='27' lat='42.63' lon='-0.03'/>
+  <node id='28' lat='42.63' lon='-0.02'/>
+  <node id='29' lat='42.63' lon='-0.01'/>
+  <node id='30' lat='42.63' lon='0'/>
+  <node id='31' lat='42.63' lon='0.01'/>
+  <node id='32' lat='42.63' lon='0.02'/>
+  <node id='33' lat='42.63' lon='0.03'/>
+  <node id='34' lat='42.63' lon='0.04'/>
+  <node id='35' lat='42.63' lon='0.05'/>
+  <node id='36' lat='42.63' lon='0.06'/>
+  <node id='37' lat='42.63' lon='0.07'/>
+  <node id='38' lat='42.63' lon='0.08'/>
+  <node id='39' lat='42.64' lon='-0.1'/>
+  <node id='40' lat='42.64' lon='-0.09'/>
+  <node id='41' lat='42.64' lon='-0.08'/>
+  <node id='42' lat='42.64' lon='-0.07'/>
+  <node id='43' lat='42.64' lon='-0.06'/>
+  <node id='44' lat='42.64' lon='-0.05'/>
+  <node id='45' lat='42.64' lon='-0.04'/>
+  <node id='46' lat='42.64' lon='-0.03'/>
+  <node id='47' lat='42.64' lon='-0.02'/>
+  <node id='48' lat='42.64' lon='-0.01'/>
+  <node id='49' lat='42.64' lon='0'/>
+  <node id='50' lat='42.64' lon='0.01'/>
+  <node id='51' lat='42.64' lon='0.02'/>
+  <node id='52' lat='42.64' lon='0.03'/>
+  <node id='53' lat='42.64' lon='0.04'/>
+  <node id='54' lat='42.64' lon='0.05'/>
+  <node id='55' lat='42.64' lon='0.06'/>
+  <node id='56' lat='42.64' lon='0.07'/>
+  <node id='57' lat='42.64' lon='0.08'/>
+  <node id='58' lat='42.65' lon='-0.1'/>
+  <node id='59' lat='42.65' lon='-0.09'/>
+  <node id='60' lat='42.65' lon='-0.08'/>
+  <node id='61' lat='42.65' lon='-0.07'/>
+  <node id='62' lat='42.65' lon='-0.06'/>
+  <node id='63' lat='42.65' lon='-0.05'/>
+  <node id='64' lat='42.65' lon='-0.04'/>
+  <node id='65' lat='42.65' lon='-0.03'/>
+  <node id='66' lat='42.65' lon='-0.02'/>
+  <node id='67' lat='42.65' lon='-0.01'/>
+  <node id='68' lat='42.65' lon='0'/>
+  <node id='69' lat='42.65' lon='0.01'/>
+  <node id='70' lat='42.65' lon='0.02'/>
+  <node id='71' lat='42.65' lon='0.03'/>
+  <node id='72' lat='42.65' lon='0.04'/>
+  <node id='73' lat='42.65' lon='0.05'/>
+  <node id='74' lat='42.65' lon='0.06'/>
+  <node id='75' lat='42.65' lon='0.07'/>
+  <node id='76' lat='42.65' lon='0.08'/>
+  <node id='77' lat='42.66' lon='-0.1'/>
+  <node id='78' lat='42.66' lon='-0.09'/>
+  <node id='79' lat='42.66' lon='-0.08'/>
+  <node id='80' lat='42.66' lon='-0.07'/>
+  <node id='81' lat='42.66' lon='-0.06'/>
+  <node id='82' lat='42.66' lon='-0.05'/>
+  <node id='83' lat='42.66' lon='-0.04'/>
+  <node id='84' lat='42.66' lon='-0.03'/>
+  <node id='85' lat='42.66' lon='-0.02'><tag k='name' v='Collado ficticio de la frontera'/><tag k='mountain_pass' v='yes'/><tag k='ele' v='1818'/></node>
+  <node id='86' lat='42.66' lon='-0.01'/>
+  <node id='87' lat='42.66' lon='0'/>
+  <node id='88' lat='42.66' lon='0.01'/>
+  <node id='89' lat='42.66' lon='0.02'/>
+  <node id='90' lat='42.66' lon='0.03'/>
+  <node id='91' lat='42.66' lon='0.04'/>
+  <node id='92' lat='42.66' lon='0.05'/>
+  <node id='93' lat='42.66' lon='0.06'/>
+  <node id='94' lat='42.66' lon='0.07'/>
+  <node id='95' lat='42.66' lon='0.08'/>
+  <node id='96' lat='42.67' lon='-0.1'/>
+  <node id='97' lat='42.67' lon='-0.09'/>
+  <node id='98' lat='42.67' lon='-0.08'/>
+  <node id='99' lat='42.67' lon='-0.07'/>
+  <node id='100' lat='42.67' lon='-0.06'/>
+  <node id='101' lat='42.67' lon='-0.05'/>
+  <node id='102' lat='42.67' lon='-0.04'/>
+  <node id='103' lat='42.67' lon='-0.03'/>
+  <node id='104' lat='42.67' lon='-0.02'/>
+  <node id='105' lat='42.67' lon='-0.01'/>
+  <node id='106' lat='42.67' lon='0'/>
+  <node id='107' lat='42.67' lon='0.01'/>
+  <node id='108' lat='42.67' lon='0.02'/>
+  <node id='109' lat='42.67' lon='0.03'/>
+  <node id='110' lat='42.67' lon='0.04'/>
+  <node id='111' lat='42.67' lon='0.05'/>
+  <node id='112' lat='42.67' lon='0.06'/>
+  <node id='113' lat='42.67' lon='0.07'/>
+  <node id='114' lat='42.67' lon='0.08'/>
+  <node id='115' lat='42.68' lon='-0.1'/>
+  <node id='116' lat='42.68' lon='-0.09'/>
+  <node id='117' lat='42.68' lon='-0.08'/>
+  <node id='118' lat='42.68' lon='-0.07'/>
+  <node id='119' lat='42.68' lon='-0.06'/>
+  <node id='120' lat='42.68' lon='-0.05'/>
+  <node id='121' lat='42.68' lon='-0.04'/>
+  <node id='122' lat='42.68' lon='-0.03'/>
+  <node id='123' lat='42.68' lon='-0.02'/>
+  <node id='124' lat='42.68' lon='-0.01'/>
+  <node id='125' lat='42.68' lon='0'/>
+  <node id='126' lat='42.68' lon='0.01'/>
+  <node id='127' lat='42.68' lon='0.02'/>
+  <node id='128' lat='42.68' lon='0.03'/>
+  <node id='129' lat='42.68' lon='0.04'/>
+  <node id='130' lat='42.68' lon='0.05'/>
+  <node id='131' lat='42.68' lon='0.06'/>
+  <node id='132' lat='42.68' lon='0.07'/>
+  <node id='133' lat='42.68' lon='0.08'/>
+  <node id='134' lat='42.69' lon='-0.1'/>
+  <node id='135' lat='42.69' lon='-0.09'/>
+  <node id='136' lat='42.69' lon='-0.08'/>
+  <node id='137' lat='42.69' lon='-0.07'/>
+  <node id='138' lat='42.69' lon='-0.06'/>
+  <node id='139' lat='42.69' lon='-0.05'/>
+  <node id='140' lat='42.69' lon='-0.04'/>
+  <node id='141' lat='42.69' lon='-0.03'/>
+  <node id='142' lat='42.69' lon='-0.02'/>
+  <node id='143' lat='42.69' lon='-0.01'/>
+  <node id='144' lat='42.69' lon='0'/>
+  <node id='145' lat='42.69' lon='0.01'/>
+  <node id='146' lat='42.69' lon='0.02'/>
+  <node id='147' lat='42.69' lon='0.03'/>
+  <node id='148' lat='42.69' lon='0.04'/>
+  <node id='149' lat='42.69' lon='0.05'/>
+  <node id='150' lat='42.69' lon='0.06'/>
+  <node id='151' lat='42.69' lon='0.07'/>
+  <node id='152' lat='42.69' lon='0.08'/>
+  <node id='153' lat='42.7' lon='-0.1'/>
+  <node id='154' lat='42.7' lon='-0.09'/>
+  <node id='155' lat='42.7' lon='-0.08'/>
+  <node id='156' lat='42.7' lon='-0.07'/>
+  <node id='157' lat='42.7' lon='-0.06'/>
+  <node id='158' lat='42.7' lon='-0.05'/>
+  <node id='159' lat='42.7' lon='-0.04'/>
+  <node id='160' lat='42.7' lon='-0.03'/>
+  <node id='161' lat='42.7' lon='-0.02'/>
+  <node id='162' lat='42.7' lon='-0.01'/>
+  <node id='163' lat='42.7' lon='0'/>
+  <node id='164' lat='42.7' lon='0.01'/>
+  <node id='165' lat='42.7' lon='0.02'/>
+  <node id='166' lat='42.7' lon='0.03'/>
+  <node id='167' lat='42.7' lon='0.04'/>
+  <node id='168' lat='42.7' lon='0.05'/>
+  <node id='169' lat='42.7' lon='0.06'/>
+  <node id='170' lat='42.7' lon='0.07'/>
+  <node id='171' lat='42.7' lon='0.08'/>
+  <way id='100001'><nd ref='1'/><nd ref='2'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100002'><nd ref='2'/><nd ref='3'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100003'><nd ref='3'/><nd ref='4'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100004'><nd ref='4'/><nd ref='5'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100005'><nd ref='5'/><nd ref='6'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100006'><nd ref='6'/><nd ref='7'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100007'><nd ref='7'/><nd ref='8'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100008'><nd ref='8'/><nd ref='9'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100009'><nd ref='9'/><nd ref='10'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100010'><nd ref='10'/><nd ref='11'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100011'><nd ref='11'/><nd ref='12'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100012'><nd ref='12'/><nd ref='13'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100013'><nd ref='13'/><nd ref='14'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100014'><nd ref='14'/><nd ref='15'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100015'><nd ref='15'/><nd ref='16'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100016'><nd ref='16'/><nd ref='17'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100017'><nd ref='17'/><nd ref='18'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100018'><nd ref='18'/><nd ref='19'/><tag k='highway' v='unclassified'/><tag k='surface' v='asphalt'/></way>
+  <way id='100019'><nd ref='20'/><nd ref='21'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100020'><nd ref='21'/><nd ref='22'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100021'><nd ref='22'/><nd ref='23'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100022'><nd ref='23'/><nd ref='24'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100023'><nd ref='24'/><nd ref='25'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100024'><nd ref='25'/><nd ref='26'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100025'><nd ref='26'/><nd ref='27'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100026'><nd ref='27'/><nd ref='28'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100027'><nd ref='28'/><nd ref='29'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100028'><nd ref='29'/><nd ref='30'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100029'><nd ref='30'/><nd ref='31'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100030'><nd ref='31'/><nd ref='32'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100031'><nd ref='32'/><nd ref='33'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100032'><nd ref='33'/><nd ref='34'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100033'><nd ref='34'/><nd ref='35'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100034'><nd ref='35'/><nd ref='36'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100035'><nd ref='36'/><nd ref='37'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100036'><nd ref='37'/><nd ref='38'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100037'><nd ref='39'/><nd ref='40'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100038'><nd ref='40'/><nd ref='41'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100039'><nd ref='41'/><nd ref='42'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100040'><nd ref='42'/><nd ref='43'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100041'><nd ref='43'/><nd ref='44'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100042'><nd ref='44'/><nd ref='45'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100043'><nd ref='45'/><nd ref='46'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100044'><nd ref='46'/><nd ref='47'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100045'><nd ref='47'/><nd ref='48'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100046'><nd ref='48'/><nd ref='49'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100047'><nd ref='49'/><nd ref='50'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100048'><nd ref='50'/><nd ref='51'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100049'><nd ref='51'/><nd ref='52'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100050'><nd ref='52'/><nd ref='53'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100051'><nd ref='53'/><nd ref='54'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100052'><nd ref='54'/><nd ref='55'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100053'><nd ref='55'/><nd ref='56'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100054'><nd ref='56'/><nd ref='57'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100055'><nd ref='58'/><nd ref='59'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100056'><nd ref='59'/><nd ref='60'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100057'><nd ref='60'/><nd ref='61'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100058'><nd ref='61'/><nd ref='62'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100059'><nd ref='62'/><nd ref='63'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100060'><nd ref='63'/><nd ref='64'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100061'><nd ref='64'/><nd ref='65'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100062'><nd ref='65'/><nd ref='66'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100063'><nd ref='66'/><nd ref='67'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100064'><nd ref='67'/><nd ref='68'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100065'><nd ref='68'/><nd ref='69'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100066'><nd ref='69'/><nd ref='70'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100067'><nd ref='70'/><nd ref='71'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100068'><nd ref='71'/><nd ref='72'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100069'><nd ref='72'/><nd ref='73'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100070'><nd ref='73'/><nd ref='74'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100071'><nd ref='74'/><nd ref='75'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100072'><nd ref='75'/><nd ref='76'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100073'><nd ref='77'/><nd ref='78'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100074'><nd ref='78'/><nd ref='79'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100075'><nd ref='79'/><nd ref='80'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100076'><nd ref='80'/><nd ref='81'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100077'><nd ref='81'/><nd ref='82'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100078'><nd ref='82'/><nd ref='83'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100079'><nd ref='83'/><nd ref='84'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100080'><nd ref='84'/><nd ref='85'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100081'><nd ref='85'/><nd ref='86'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100082'><nd ref='86'/><nd ref='87'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100083'><nd ref='87'/><nd ref='88'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100084'><nd ref='88'/><nd ref='89'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100085'><nd ref='89'/><nd ref='90'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100086'><nd ref='90'/><nd ref='91'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100087'><nd ref='91'/><nd ref='92'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100088'><nd ref='92'/><nd ref='93'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100089'><nd ref='93'/><nd ref='94'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100090'><nd ref='94'/><nd ref='95'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100091'><nd ref='96'/><nd ref='97'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100092'><nd ref='97'/><nd ref='98'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100093'><nd ref='98'/><nd ref='99'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100094'><nd ref='99'/><nd ref='100'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100095'><nd ref='100'/><nd ref='101'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100096'><nd ref='101'/><nd ref='102'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100097'><nd ref='102'/><nd ref='103'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100098'><nd ref='103'/><nd ref='104'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100099'><nd ref='104'/><nd ref='105'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100100'><nd ref='105'/><nd ref='106'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100101'><nd ref='106'/><nd ref='107'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100102'><nd ref='107'/><nd ref='108'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100103'><nd ref='108'/><nd ref='109'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100104'><nd ref='109'/><nd ref='110'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100105'><nd ref='110'/><nd ref='111'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100106'><nd ref='111'/><nd ref='112'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100107'><nd ref='112'/><nd ref='113'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100108'><nd ref='113'/><nd ref='114'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100109'><nd ref='115'/><nd ref='116'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100110'><nd ref='116'/><nd ref='117'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100111'><nd ref='117'/><nd ref='118'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100112'><nd ref='118'/><nd ref='119'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100113'><nd ref='119'/><nd ref='120'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100114'><nd ref='120'/><nd ref='121'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100115'><nd ref='121'/><nd ref='122'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100116'><nd ref='122'/><nd ref='123'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100117'><nd ref='123'/><nd ref='124'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100118'><nd ref='124'/><nd ref='125'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100119'><nd ref='125'/><nd ref='126'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100120'><nd ref='126'/><nd ref='127'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100121'><nd ref='127'/><nd ref='128'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100122'><nd ref='128'/><nd ref='129'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100123'><nd ref='129'/><nd ref='130'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100124'><nd ref='130'/><nd ref='131'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100125'><nd ref='131'/><nd ref='132'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100126'><nd ref='132'/><nd ref='133'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100127'><nd ref='134'/><nd ref='135'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100128'><nd ref='135'/><nd ref='136'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100129'><nd ref='136'/><nd ref='137'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100130'><nd ref='137'/><nd ref='138'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100131'><nd ref='138'/><nd ref='139'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100132'><nd ref='139'/><nd ref='140'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100133'><nd ref='140'/><nd ref='141'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100134'><nd ref='141'/><nd ref='142'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100135'><nd ref='142'/><nd ref='143'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100136'><nd ref='143'/><nd ref='144'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100137'><nd ref='144'/><nd ref='145'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100138'><nd ref='145'/><nd ref='146'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100139'><nd ref='146'/><nd ref='147'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100140'><nd ref='147'/><nd ref='148'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100141'><nd ref='148'/><nd ref='149'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100142'><nd ref='149'/><nd ref='150'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100143'><nd ref='150'/><nd ref='151'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100144'><nd ref='151'/><nd ref='152'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100145'><nd ref='153'/><nd ref='154'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100146'><nd ref='154'/><nd ref='155'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100147'><nd ref='155'/><nd ref='156'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100148'><nd ref='156'/><nd ref='157'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100149'><nd ref='157'/><nd ref='158'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100150'><nd ref='158'/><nd ref='159'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100151'><nd ref='159'/><nd ref='160'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100152'><nd ref='160'/><nd ref='161'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100153'><nd ref='161'/><nd ref='162'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100154'><nd ref='162'/><nd ref='163'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100155'><nd ref='163'/><nd ref='164'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100156'><nd ref='164'/><nd ref='165'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100157'><nd ref='165'/><nd ref='166'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100158'><nd ref='166'/><nd ref='167'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100159'><nd ref='167'/><nd ref='168'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100160'><nd ref='168'/><nd ref='169'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100161'><nd ref='169'/><nd ref='170'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100162'><nd ref='170'/><nd ref='171'/><tag k='highway' v='path'/><tag k='sac_scale' v='hiking'/></way>
+  <way id='100163'><nd ref='1'/><nd ref='20'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100164'><nd ref='20'/><nd ref='39'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100165'><nd ref='39'/><nd ref='58'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100166'><nd ref='58'/><nd ref='77'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100167'><nd ref='77'/><nd ref='96'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100168'><nd ref='96'/><nd ref='115'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100169'><nd ref='115'/><nd ref='134'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100170'><nd ref='134'/><nd ref='153'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100171'><nd ref='2'/><nd ref='21'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100172'><nd ref='21'/><nd ref='40'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100173'><nd ref='40'/><nd ref='59'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100174'><nd ref='59'/><nd ref='78'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100175'><nd ref='78'/><nd ref='97'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100176'><nd ref='97'/><nd ref='116'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100177'><nd ref='116'/><nd ref='135'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100178'><nd ref='135'/><nd ref='154'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100179'><nd ref='3'/><nd ref='22'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100180'><nd ref='22'/><nd ref='41'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100181'><nd ref='41'/><nd ref='60'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100182'><nd ref='60'/><nd ref='79'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100183'><nd ref='79'/><nd ref='98'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100184'><nd ref='98'/><nd ref='117'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100185'><nd ref='117'/><nd ref='136'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100186'><nd ref='136'/><nd ref='155'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100187'><nd ref='4'/><nd ref='23'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100188'><nd ref='23'/><nd ref='42'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100189'><nd ref='42'/><nd ref='61'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100190'><nd ref='61'/><nd ref='80'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100191'><nd ref='80'/><nd ref='99'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100192'><nd ref='99'/><nd ref='118'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100193'><nd ref='118'/><nd ref='137'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100194'><nd ref='137'/><nd ref='156'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100195'><nd ref='5'/><nd ref='24'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100196'><nd ref='24'/><nd ref='43'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100197'><nd ref='43'/><nd ref='62'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100198'><nd ref='62'/><nd ref='81'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100199'><nd ref='81'/><nd ref='100'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100200'><nd ref='100'/><nd ref='119'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100201'><nd ref='119'/><nd ref='138'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100202'><nd ref='138'/><nd ref='157'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100203'><nd ref='6'/><nd ref='25'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100204'><nd ref='25'/><nd ref='44'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100205'><nd ref='44'/><nd ref='63'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100206'><nd ref='63'/><nd ref='82'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100207'><nd ref='82'/><nd ref='101'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100208'><nd ref='101'/><nd ref='120'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100209'><nd ref='120'/><nd ref='139'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100210'><nd ref='139'/><nd ref='158'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100211'><nd ref='7'/><nd ref='26'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100212'><nd ref='26'/><nd ref='45'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100213'><nd ref='45'/><nd ref='64'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100214'><nd ref='64'/><nd ref='83'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100215'><nd ref='83'/><nd ref='102'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100216'><nd ref='102'/><nd ref='121'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100217'><nd ref='121'/><nd ref='140'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100218'><nd ref='140'/><nd ref='159'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100219'><nd ref='8'/><nd ref='27'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100220'><nd ref='27'/><nd ref='46'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100221'><nd ref='46'/><nd ref='65'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100222'><nd ref='65'/><nd ref='84'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100223'><nd ref='84'/><nd ref='103'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100224'><nd ref='103'/><nd ref='122'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100225'><nd ref='122'/><nd ref='141'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100226'><nd ref='141'/><nd ref='160'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100227'><nd ref='9'/><nd ref='28'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100228'><nd ref='28'/><nd ref='47'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100229'><nd ref='47'/><nd ref='66'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100230'><nd ref='66'/><nd ref='85'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100231'><nd ref='85'/><nd ref='104'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100232'><nd ref='104'/><nd ref='123'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100233'><nd ref='123'/><nd ref='142'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100234'><nd ref='142'/><nd ref='161'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100235'><nd ref='10'/><nd ref='29'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100236'><nd ref='29'/><nd ref='48'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100237'><nd ref='48'/><nd ref='67'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100238'><nd ref='67'/><nd ref='86'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100239'><nd ref='86'/><nd ref='105'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100240'><nd ref='105'/><nd ref='124'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100241'><nd ref='124'/><nd ref='143'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100242'><nd ref='143'/><nd ref='162'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100243'><nd ref='11'/><nd ref='30'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100244'><nd ref='30'/><nd ref='49'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100245'><nd ref='49'/><nd ref='68'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100246'><nd ref='68'/><nd ref='87'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100247'><nd ref='87'/><nd ref='106'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100248'><nd ref='106'/><nd ref='125'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100249'><nd ref='125'/><nd ref='144'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100250'><nd ref='144'/><nd ref='163'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100251'><nd ref='12'/><nd ref='31'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100252'><nd ref='31'/><nd ref='50'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100253'><nd ref='50'/><nd ref='69'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100254'><nd ref='69'/><nd ref='88'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100255'><nd ref='88'/><nd ref='107'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100256'><nd ref='107'/><nd ref='126'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100257'><nd ref='126'/><nd ref='145'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100258'><nd ref='145'/><nd ref='164'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100259'><nd ref='13'/><nd ref='32'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100260'><nd ref='32'/><nd ref='51'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100261'><nd ref='51'/><nd ref='70'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100262'><nd ref='70'/><nd ref='89'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100263'><nd ref='89'/><nd ref='108'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100264'><nd ref='108'/><nd ref='127'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100265'><nd ref='127'/><nd ref='146'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100266'><nd ref='146'/><nd ref='165'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100267'><nd ref='14'/><nd ref='33'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100268'><nd ref='33'/><nd ref='52'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100269'><nd ref='52'/><nd ref='71'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100270'><nd ref='71'/><nd ref='90'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100271'><nd ref='90'/><nd ref='109'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100272'><nd ref='109'/><nd ref='128'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100273'><nd ref='128'/><nd ref='147'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100274'><nd ref='147'/><nd ref='166'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100275'><nd ref='15'/><nd ref='34'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100276'><nd ref='34'/><nd ref='53'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100277'><nd ref='53'/><nd ref='72'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100278'><nd ref='72'/><nd ref='91'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100279'><nd ref='91'/><nd ref='110'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100280'><nd ref='110'/><nd ref='129'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100281'><nd ref='129'/><nd ref='148'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100282'><nd ref='148'/><nd ref='167'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100283'><nd ref='16'/><nd ref='35'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100284'><nd ref='35'/><nd ref='54'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100285'><nd ref='54'/><nd ref='73'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100286'><nd ref='73'/><nd ref='92'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100287'><nd ref='92'/><nd ref='111'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100288'><nd ref='111'/><nd ref='130'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100289'><nd ref='130'/><nd ref='149'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100290'><nd ref='149'/><nd ref='168'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100291'><nd ref='17'/><nd ref='36'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100292'><nd ref='36'/><nd ref='55'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100293'><nd ref='55'/><nd ref='74'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100294'><nd ref='74'/><nd ref='93'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100295'><nd ref='93'/><nd ref='112'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100296'><nd ref='112'/><nd ref='131'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100297'><nd ref='131'/><nd ref='150'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100298'><nd ref='150'/><nd ref='169'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100299'><nd ref='18'/><nd ref='37'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100300'><nd ref='37'/><nd ref='56'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100301'><nd ref='56'/><nd ref='75'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100302'><nd ref='75'/><nd ref='94'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100303'><nd ref='94'/><nd ref='113'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100304'><nd ref='113'/><nd ref='132'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100305'><nd ref='132'/><nd ref='151'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100306'><nd ref='151'/><nd ref='170'/><tag k='highway' v='path'/><tag k='sac_scale' v='mountain_hiking'/></way>
+  <way id='100307'><nd ref='19'/><nd ref='38'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100308'><nd ref='38'/><nd ref='57'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100309'><nd ref='57'/><nd ref='76'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100310'><nd ref='76'/><nd ref='95'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100311'><nd ref='95'/><nd ref='114'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100312'><nd ref='114'/><nd ref='133'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100313'><nd ref='133'/><nd ref='152'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+  <way id='100314'><nd ref='152'/><nd ref='171'/><tag k='highway' v='track'/><tag k='tracktype' v='grade2'/></way>
+</osm>
