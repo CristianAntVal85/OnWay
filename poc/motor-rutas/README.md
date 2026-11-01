@@ -92,7 +92,17 @@ El resultado importante es el criterio 1: en dos de los tres pares solo sale una
 
 ## Pendientes, zonas a evitar y ajuste a caminos (T5)
 
-Se añaden al corredor los criterios 3, 6 y 7. Las pendientes y los desniveles se miden con **la medición de OnWay** (`lib/ours.mjs` importa `prepareLine` y `computeMetrics` de `@onway/geo` y el lector de GLO-30 de `apps/api`, ya compilados; sin código nuevo en `apps/` ni en `packages/`), nunca con la altitud del motor. La altitud de GraphHopper (Skadi) discrepa de la nuestra: en `ordesa-perdido` da +2539 m de subida frente a +2032 m con GLO-30 (+25 %), y en el par 1 y el 2 la diferencia es del 1 % y del 11 %.
+Se añaden al corredor los criterios 3, 6 y 7. Las pendientes y los desniveles se miden con **la medición de OnWay** (`lib/ours.mjs` importa `prepareLine` y `computeMetrics` de `@onway/geo` y el lector de GLO-30 de `apps/api`, ya compilados; sin código nuevo en `apps/` ni en `packages/`), nunca con la altitud del motor. La altitud de GraphHopper (Skadi) discrepa de la nuestra, y no por contar otra cosa: **los dos medimos el desnivel acumulado** (la suma de todos los tramos de subida, incluida una bajada intermedia que obliga a subir más), no el desnivel neto de A a B. Descenso de 100 m y luego subida a 1500 m desde 1000 m cuenta 600 m de subida acumulada en los dos. El neto es `subida − bajada` y se comprueba solo. La diferencia viene de dos causas que se separan así (`scripts/compare-elevation.mjs`, mismas rutas del motor):
+
+| Par | Subida que dice GraphHopper | …con su altitud y nuestro algoritmo | …con nuestra altitud y nuestro algoritmo | Neto de A a B (GraphHopper / OnWay) |
+|---|---|---|---|---|
+| `coronas-aneto` | 1418 m | 1401 m | 1408 m | 1395 / 1407 m |
+| `bujaruelo-brecha` | 1629 m | 1470 m | 1462 m | 1439 / 1450 m |
+| `ordesa-perdido` | 2539 m | 2175 m | 2032 m | 1781 / 2001 m |
+
+- **El algoritmo** (la mayor parte): GraphHopper suma todas las subidas entre vértices sin filtro, así que cada pequeño rizado de la altitud engorda la subida y también la bajada (en `ordesa-perdido` da 758 m de bajada en una ruta que solo sube; nosotros 34 m). OnWay remuestrea cada 30 m, aplica mediana de 3 y descarta variaciones de menos de 3 m (R-07). Con nuestro algoritmo sobre la altitud de GraphHopper, la subida de `ordesa-perdido` baja de 2539 a 2175 m.
+- **La fuente de altitud** (el resto, solo notable en el cañón de Ordesa): en el aparcamiento de la Pradera de Ordesa, Skadi da 1535 m y GLO-30 1314 m. Hasta donde sé la Pradera está a unos 1300 m (no lo he contrastado con otra fuente en esta sesión), así que Skadi suaviza la pared del cañón y sube el fondo del valle unos 220 m. Por eso el neto de ese par sale 1781 m en GraphHopper y 2001 m en OnWay.
+- La coherencia interna se cumple en los dos: `subida − bajada` es igual al neto (OnWay: 2032 − 34 ≈ 2001).
 
 Resultado (`results/graphhopper.json`, `-Xmx2g`, parámetros `max_paths=3`, `max_share_factor=0.8`, `max_weight_factor=2.5`):
 
