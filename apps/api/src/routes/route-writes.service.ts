@@ -10,6 +10,7 @@ import { ImportedTracks } from '../files/imported-tracks.js';
 import { viewerOf } from '../missions/mission-support.js';
 import { translateRouteWriteError } from './errors.js';
 import { readRouteDetail, readVersion } from './route-reads.js';
+import { ROUTING_PROVIDER, type EngineSegment, type RoutingProvider } from '../routing/routing.js';
 import { RouteMeasurement, type MeasuredPath } from './route-measurement.js';
 
 type CreateBody = z.infer<typeof CreateRouteRequest>;
@@ -24,6 +25,14 @@ interface LockedRoute {
   status: 'active' | 'archived';
   latest_validated_version_id: string | null;
 }
+
+/** Most control points the engine joins at once (the same limit as `snapRoute`). */
+const MAX_SNAP_POINTS = 50;
+
+const tooManyPoints = (): DomainError =>
+  new DomainError('VALIDATION_FAILED', 'Request validation failed', {
+    issues: [{ path: 'geometry', code: 'too_many_points', message: `following the paths takes at most ${MAX_SNAP_POINTS} points` }],
+  });
 
 /** An input the contract carries for a later milestone: refused with the field named, as the points of H1 do with `teamIds` (D-H2-09). */
 function notYet(path: string, milestone: string): DomainError {
@@ -47,6 +56,7 @@ export class RouteWrites {
     @Inject(AuditWriter) private readonly audit: AuditWriter,
     @Inject(ImportedTracks) private readonly tracks: ImportedTracks,
     @Inject(RouteMeasurement) private readonly measurement: RouteMeasurement,
+    @Inject(ROUTING_PROVIDER) private readonly routing: RoutingProvider,
   ) {}
 
   private get tx(): Tx {
@@ -58,15 +68,22 @@ export class RouteWrites {
     if (body.addToMission) throw notYet('addToMission', 'the missions milestone (H4)');
 
     let vertices: readonly (readonly number[])[];
+    let stretches: readonly EngineSegment[] | undefined;
     let sourceFileId: string | null = null;
     if (body.source === 'import') {
       const { fileId, track } = await this.tracks.open(viewer.orgId, body.fileId);
       vertices = track.line;
       sourceFileId = fileId;
+    } else if (body.snapToPaths) {
+      // The points are control points: the engine joins them following the paths, and the server measures the result (rule 6).
+      if (body.geometry.coordinates.length > MAX_SNAP_POINTS) throw tooManyPoints();
+      const snapped = await this.routing.snap(body.geometry.coordinates.map(([lon, lat]) => ({ lat: lat!, lon: lon! })));
+      vertices = snapped.coordinates;
+      stretches = snapped.segments;
     } else {
       vertices = body.geometry.coordinates;
     }
-    const measured = await this.measurement.measure(vertices);
+    const measured = await this.measurement.measure(vertices, stretches);
 
     const routeId = await this.insertRoute(viewer.orgId, viewer.userId, body.name);
     const versionId = await this.insertVersion({
@@ -86,7 +103,7 @@ export class RouteWrites {
       routeId,
       action: 'route_created',
       actorUserId: viewer.userId,
-      detail: { name: body.name, versionNumber: 1, source: body.source },
+      detail: { name: body.name, versionNumber: 1, source: body.source, ...(body.source === 'drawn' && body.snapToPaths ? { snapToPaths: true } : {}) },
     });
     return { routeId, versionId, versionNumber: 1, missionRouteId: null };
   }
@@ -212,6 +229,45 @@ export class RouteWrites {
     return readRouteDetail(this.tx, viewer.orgId, routeId);
   }
 
+  /**
+   * The routes a calculation job proposes (H3, RF-501): each one a new route in Draft, version 1, `provenance = generated`, measured by
+   * the server and linked to the job. Idempotent per job (D-H3-06): if the job already created its routes — a retry after a crash —
+   * those are returned and nothing is written. Runs in the transaction of the caller, so all the routes of a job exist or none does.
+   */
+  async createGenerated(input: { orgId: string; userId: string; jobId: string; names: string[]; measured: MeasuredPath[] }): Promise<{ routeId: string; versionId: string; name: string }[]> {
+    const existing = await this.generatedBy(input.jobId);
+    if (existing.length > 0) return existing;
+    const created: { routeId: string; versionId: string; name: string }[] = [];
+    for (const [index, measured] of input.measured.entries()) {
+      const name = input.names[index]!;
+      const routeId = await this.insertRoute(input.orgId, input.userId, name);
+      const versionId = await this.insertVersion({
+        orgId: input.orgId,
+        userId: input.userId,
+        routeId,
+        number: 1,
+        measured,
+        provenance: 'generated',
+        manuallyModified: false,
+        sourceFileId: null,
+        note: undefined,
+        calculationJobId: input.jobId,
+      });
+      await this.setLatest(routeId, versionId);
+      await this.audit.recordRoute({ orgId: input.orgId, routeId, action: 'route_created', actorUserId: input.userId, detail: { name, versionNumber: 1, source: 'generated', jobId: input.jobId } });
+      created.push({ routeId, versionId, name });
+    }
+    return created;
+  }
+
+  /** The routes (and their first versions) a job already created, in the order it created them. */
+  async generatedBy(jobId: string): Promise<{ routeId: string; versionId: string; name: string }[]> {
+    const { rows } = await this.tx.execute(sql`
+      SELECT v.route_id, v.id AS version_id, r.name FROM route_versions v JOIN routes r ON r.id = v.route_id
+       WHERE v.calculation_job_id = ${jobId}::uuid ORDER BY v.created_at, v.id`);
+    return (rows as unknown as { route_id: string; version_id: string; name: string }[]).map((row) => ({ routeId: row.route_id, versionId: row.version_id, name: row.name }));
+  }
+
   // ---------- Pieces ----------
 
   /** Takes the row lock of a route of the caller's organization (its writers go one at a time) or answers `NOT_FOUND`: another organization's route is not there (INV-01). */
@@ -251,10 +307,12 @@ export class RouteWrites {
     routeId: string;
     number: number;
     measured: MeasuredPath;
-    provenance: 'imported' | 'drawn' | 'edited';
+    provenance: 'imported' | 'drawn' | 'edited' | 'generated';
     manuallyModified: boolean;
     sourceFileId: string | null;
     note: string | undefined;
+    /** The calculation that proposed this version (H3): how a retried job knows what it already did. */
+    calculationJobId?: string;
   }): Promise<string> {
     const { measured } = input;
     const { metrics } = measured;
@@ -262,16 +320,19 @@ export class RouteWrites {
     const [row] = (
       await this.tx.execute(sql`
       INSERT INTO route_versions (organization_id, route_id, version_number, geom, distance_m, ascent_m, descent_m, min_elevation_m, max_elevation_m, max_slope_pct,
-                                  provenance, manually_modified, source_file_id, note, created_by)
+                                  provenance, manually_modified, source_file_id, note, created_by, calculation_job_id)
       VALUES (${input.orgId}::uuid, ${input.routeId}::uuid, ${input.number}, ${geom}, ${metrics.distanceM}, ${metrics.ascentM}, ${metrics.descentM}, ${metrics.minElevationM},
-              ${metrics.maxElevationM}, ${metrics.maxSlopePct}, ${input.provenance}::provenance, ${input.manuallyModified}, ${input.sourceFileId}::uuid, ${input.note || null}, ${input.userId}::uuid)
+              ${metrics.maxElevationM}, ${metrics.maxSlopePct}, ${input.provenance}::provenance, ${input.manuallyModified}, ${input.sourceFileId}::uuid, ${input.note || null}, ${input.userId}::uuid,
+              ${input.calculationJobId ?? null}::uuid)
       RETURNING id`)
     ).rows as { id: string }[];
     const versionId = row!.id;
     for (const segment of measured.segments) {
+      // Each stretch keeps its own line (a route from the engine has several; one that has not passed through it has the whole line).
+      const segmentGeom = lineString(measured.segmentLines[segment.position]!);
       await this.tx.execute(sql`
         INSERT INTO route_segments (organization_id, version_id, position, geom, road_type, distance_m, ascent_m, descent_m)
-        VALUES (${input.orgId}::uuid, ${versionId}::uuid, ${segment.position}, ${geom}, ${segment.roadType}::road_type, ${segment.distanceM}, ${segment.ascentM}, ${segment.descentM})`);
+        VALUES (${input.orgId}::uuid, ${versionId}::uuid, ${segment.position}, ${segmentGeom}, ${segment.roadType}::road_type, ${segment.distanceM}, ${segment.ascentM}, ${segment.descentM})`);
     }
     return versionId;
   }

@@ -1,6 +1,6 @@
 # OnWay — Documento 03: Modelo de dominio y flujos clave
 
-Versión: 0.6 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7) y 02 (v0.5)
+Versión: 0.7 (borrador) · Fecha: 2026-11-01 · Depende de: documentos 01 (v0.7) y 02 (v0.5)
 
 Este documento traduce los requisitos y las vistas en un modelo conceptual: qué cosas existen en el sistema, cómo se relacionan, qué reglas deben cumplirse siempre y cómo fluyen los datos en los procesos clave. No fija tecnologías ni tablas: la arquitectura está en el documento 04 y el modelo de datos será el documento 05. Los IDs RF, RN, D y Q remiten al documento 01.
 
@@ -273,10 +273,11 @@ sequenceDiagram
     J-->>C: Trabajo Completado (progreso consultado o recibido)
 ```
 
-- El estado del trabajo (Pendiente, Calculando, Completado, Fallido) es consultable en cualquier momento. La interfaz muestra progreso sin bloquearse.
-- Si no hay ruta posible, el trabajo termina como *Fallido* con un motivo comprensible: sin ruta por la red, punto fuera de cobertura, zona a evitar imposible de esquivar (RF-501).
+- El estado del trabajo (`pending`, `running`, `completed`, `failed`; en la interfaz Pendiente, Calculando, Completado, Fallido) es consultable en cualquier momento (`getJob`) y lleva un progreso de 0 a 100. La interfaz lo sondea cada 1,5 s sin bloquearse. Un trabajo sobrevive a la muerte de su *worker*: otro lo retoma, y no se ejecuta dos veces.
+- Si no hay ruta posible, el trabajo termina como *Fallido* con un código y un motivo comprensible: `NO_ROUTE_POSSIBLE` (sin ruta por la red, o zonas a evitar imposibles de esquivar) y `OUTSIDE_COVERAGE` (punto fuera de cobertura) son definitivos; `ROUTING_UNAVAILABLE` e `INTERNAL` se reintentan dos veces antes de fallar (RF-501). Si el motor no responde al pedir el cálculo, no se crea ningún trabajo.
 - Cada alternativa produce una **ruta nueva** en la biblioteca, en *Borrador*, versión 1.
-- Si el trabajo se lanzó desde una misión, las rutas creadas pueden añadirse a la misión al terminar.
+- Si el trabajo se lanzó desde una misión, las rutas creadas se añaden a la misión al terminar, con su versión 1 fijada; si la misión se cierra mientras se calcula, quedan solo en la biblioteca. El trabajo es idempotente: si se reentrega, no duplica rutas.
+- Las altitudes del motor no se usan nunca: subida, bajada, pendiente y altitudes las mide el servidor con su modelo de elevación (INV-15); el motor solo aporta el trazado y el tipo de vía de cada tramo.
 
 ### 8.3 Buscar rutas por punto (segunda entrega)
 
@@ -575,6 +576,9 @@ La arquitectura y el stack están en el documento 04, el modelo de datos en el 0
 Consultadas el 29 de octubre de 2026. Las condiciones y precios de terceros pueden cambiar. Hay que confirmarlas directamente con cada proveedor antes de publicar la demo.
 
 ## 19. Registro de cambios
+
+**0.7 (2026-11-01)**
+- H3: §8.2 con los estados del trabajo tal como se construyeron y los motivos del fallo. Sin cambios en el modelo ni en las invariantes (INV-14 tiene su prueba).
 
 **0.6 (2026-10-31)**
 - H2: nuevo tipo de vía «sin clasificar» en el tramo de ruta (§4.4); el modelo no cambia en nada más.

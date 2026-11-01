@@ -98,12 +98,13 @@ export async function tabTo(page: Page, target: Locator, max = 90): Promise<void
   await expect(target).toBeFocused();
 }
 
-/** Pincha el centro del lienzo del mapa de una región del mapa. */
-export async function clickMapCenter(region: Locator): Promise<void> {
+/** Pincha el lienzo del mapa de una región del mapa: en el centro o desplazado `dx`, `dy` píxeles (para no caer sobre un vértice ya puesto). */
+export async function clickMapCenter(region: Locator, dx = 0, dy = 0): Promise<void> {
   const canvas = region.locator('canvas.maplibregl-canvas');
   await expect(canvas).toBeVisible();
   await canvas.scrollIntoViewIfNeeded();
-  await canvas.click();
+  const box = (await canvas.boundingBox())!;
+  await canvas.click({ position: { x: box.width / 2 + dx, y: box.height / 2 + dy } });
 }
 
 /** El elemento cabe en el ancho de la pantalla (nada queda recortado a los lados). */

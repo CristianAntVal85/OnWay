@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
+import { installJobQueue } from '../jobs/install-queue.js';
 import type { DbConnection } from './config.js';
 
 const JOURNAL = join('meta', '_journal.json');
@@ -22,8 +23,8 @@ export function resolveMigrationsFolder(env: Record<string, string | undefined> 
 }
 
 /**
- * Applies 0002-0012 as `onway_owner` with the Drizzle migrator. 0001 (extensions and roles) needs a
- * superuser and runs at database start-up (infra/db/init).
+ * Applies 0002-0012 as `onway_owner` with the Drizzle migrator, then installs the job queue (pg-boss: its own schema, created by
+ * the library, H3). 0001 (extensions and roles) needs a superuser and runs at database start-up (infra/db/init).
  */
 export async function runMigrations(connection: DbConnection, migrationsFolder = resolveMigrationsFolder()): Promise<void> {
   const pool = new pg.Pool({ ...connection, max: 1 });
@@ -32,4 +33,5 @@ export async function runMigrations(connection: DbConnection, migrationsFolder =
   } finally {
     await pool.end();
   }
+  await installJobQueue(connection);
 }

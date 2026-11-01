@@ -100,18 +100,53 @@ export async function removeOrganizationB(): Promise<void> {
  * activa o en planificación; esto la cierra para que la pila quede como estaba (las filas de `audit_log` no se pueden borrar: solo
  * de añadir). Solo toca misiones cuyo nombre empieza por «E2E » y que siguen abiertas.
  */
-export async function closeLeftoverE2eMissions(): Promise<void> {
+export async function closeLeftoverE2eMissions(like = 'E2E %'): Promise<void> {
   // El disparador solo admite planificación → activa → cerrada: primero se activan las que siguen en planificación.
+  // `like` acota a lo de una ejecución (con 2 trabajadores, otra demostración puede tener sus misiones abiertas a la vez).
+  assertSafeLike(like);
   await psqlAsOwner(`
-UPDATE missions SET status = 'active', activated_at = COALESCE(activated_at, now()) WHERE name LIKE 'E2E %' AND status = 'planning';
-UPDATE missions SET status = 'closed', closed_at = COALESCE(closed_at, now()) WHERE name LIKE 'E2E %' AND status <> 'closed';`);
+UPDATE missions SET status = 'active', activated_at = COALESCE(activated_at, now()) WHERE name LIKE '${like}' AND status = 'planning';
+UPDATE missions SET status = 'closed', closed_at = COALESCE(closed_at, now()) WHERE name LIKE '${like}' AND status <> 'closed';`);
+}
+
+/** Los patrones son texto fijo del propio E2E (letras, cifras, espacios y %): nunca llevan comillas. */
+function assertSafeLike(like: string): void {
+  if (!/^E2E [A-Za-z0-9 %]*$/.test(like)) throw new Error(`unsafe LIKE pattern for the E2E cleanup: ${like}`);
 }
 
 /**
  * Las rutas que crea la demostración de H2 se llaman «E2E …» y las deja archivadas (no se borran: RN-14). Si una ejecución se
  * interrumpe, esto archiva las que sigan activas para que la biblioteca de demostración quede como estaba.
  */
-export async function archiveLeftoverE2eRoutes(): Promise<void> {
-  await psqlAsOwner(`UPDATE routes SET status = 'archived' WHERE name LIKE 'E2E %' AND status <> 'archived' AND NOT EXISTS (
+export async function archiveLeftoverE2eRoutes(like = 'E2E %'): Promise<void> {
+  assertSafeLike(like);
+  await psqlAsOwner(`UPDATE routes SET status = 'archived' WHERE name LIKE '${like}' AND status <> 'archived' AND NOT EXISTS (
     SELECT 1 FROM mission_routes mr JOIN missions m ON m.id = mr.mission_id WHERE mr.route_id = routes.id AND m.status <> 'closed');`);
+}
+
+function compose(args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('docker', ['compose', ...args], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    let err = '';
+    child.stdout.on('data', (chunk: Buffer) => (out += chunk));
+    child.stderr.on('data', (chunk: Buffer) => (err += chunk));
+    child.on('error', reject);
+    child.on('close', (code) => (code === 0 ? resolve(out) : reject(new Error(`docker compose ${args.join(' ')} failed (${code}): ${err}`))));
+  });
+}
+
+/** Para el motor de rutas (la prueba de «con el motor parado el resto de la aplicación sigue», H3). */
+export const stopRoutingEngine = () => compose(['stop', 'routing']);
+
+/** Lo vuelve a arrancar y espera a que responda (el grafo ya está construido: tarda unos segundos). */
+export async function startRoutingEngine(): Promise<void> {
+  await compose(['start', 'routing']);
+  const deadline = Date.now() + 120_000;
+  while (Date.now() < deadline) {
+    const health = (await compose(['ps', '--format', '{{.Health}}', 'routing']).catch(() => '')).trim();
+    if (health === 'healthy') return;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new Error('the routing engine did not come back');
 }

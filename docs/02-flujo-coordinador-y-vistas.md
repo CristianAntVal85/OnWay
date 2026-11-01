@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 0.7 (borrador) · Fecha: 2026-10-31 · Depende de: documento 01 (v0.9)
+Versión: 0.8 (borrador) · Fecha: 2026-11-01 · Depende de: documento 01 (v1.2)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -184,7 +184,7 @@ Boceto 9. Vista nueva (RF-512). Es el fondo permanente de rutas de la organizaci
 - La lista muestra las rutas del **área visible del mapa** y se actualiza al moverlo. Una opción permite buscar solo al pulsar "Buscar en esta zona".
 - Pasar el ratón por una tarjeta resalta su trazado en el mapa, y al revés.
 - Filtros: estado, distancia, desnivel, antigüedad de la validación y búsqueda por nombre o lugar. Etiquetas si se acepta Q-21. Orden y paginación.
-- Acciones sobre la selección: **exportar** y archivar. Botones **Dibujar ruta** e **Importar ruta** (en H2 no hay «Generar»: llega con el motor, H3). La composición por tipo de vía se muestra como «sin clasificar» hasta entonces.
+- Acciones sobre la selección: **exportar** y archivar. Botones **Generar rutas**, **Dibujar ruta** e **Importar ruta**. La composición por tipo de vía (barra y texto) es real en lo generado o dibujado pegado a los caminos; en lo importado o dibujado en línea recta dice «sin clasificar».
 
 **Mapa (derecha)**
 - Capas satélite, topográfica y carreteras, conmutables.
@@ -194,13 +194,13 @@ Boceto 9. Vista nueva (RF-512). Es el fondo permanente de rutas de la organizaci
 
 **Nueva ruta** (tres vías)
 
-*A) Generar* (RF-501)
+*A) Generar* (RF-501, RF-507; vista `/routes/generate`)
 1. El coordinador elige punto de inicio y punto final con las tres formas de entrada.
-2. Opcionalmente, puntos intermedios obligatorios y zonas a evitar.
-3. Elige el número de alternativas.
-4. La app calcula y muestra progreso. La interfaz no se bloquea.
-5. Cada alternativa queda como una ruta nueva en *Borrador*, versión 1, con sus métricas.
-6. Si no hay ruta posible, un mensaje lo indica y propone ajustar puntos o zonas.
+2. Opcionalmente, puntos intermedios obligatorios y **zonas a evitar**: una lista con casillas de las zonas de la organización (y de la misión, si viene de una), **Dibujar una zona** (toques en el mapa; al menos tres vértices; la tabla de coordenadas es la alternativa de teclado), motivo opcional y borrar. Las rutas no cruzan las zonas marcadas.
+3. Elige el número de alternativas (1 a 4) y, si quiere, el nombre: se añade el número de la alternativa.
+4. La app pide el cálculo (un trabajo en segundo plano) y muestra el progreso, sondeando cada 1,5 s. La interfaz no se bloquea.
+5. Cada alternativa queda como una ruta nueva en *Borrador*, versión 1, con las métricas del servidor y su composición real. El resultado es una tabla comparable (distancia, subida, bajada, tipo de vía) con el enlace a cada ruta, el resaltado en el mapa y **Generar otras rutas**. El motor puede devolver menos alternativas de las pedidas si la red no ofrece más; nunca repite una.
+6. Si no hay ruta posible, un mensaje lo indica y propone mover los puntos o quitar alguna zona. Mensajes propios para «fuera de la zona que cubre el motor» y «el motor no responde» (el resto de la aplicación sigue).
 
 *B) Importar* (RF-510)
 1. Seleccionar un archivo GPX o KML.
@@ -210,8 +210,8 @@ Boceto 9. Vista nueva (RF-512). Es el fondo permanente de rutas de la organizaci
 5. Errores: archivo inválido, vacío o demasiado grande. No se guarda nada.
 
 *C) Dibujar a mano* *(propuesto, Should)*
-1. El coordinador marca puntos sobre el mapa y la app los une siguiendo caminos y senderos cuando existan.
-2. Se guarda como *Borrador*, marcada como modificada manualmente.
+1. El coordinador marca puntos sobre el mapa (2 a 50 si quiere que se unan) y, con la casilla **«Unir los puntos siguiendo los caminos»** (activada de serie), pulsa **Calcular la ruta por los caminos**: el servidor los une en orden por la red y devuelve la línea, las métricas y la composición como vista previa (nada se guarda; si se mueve un punto, la vista previa se retira).
+2. Se guarda como *Borrador*, marcada como modificada manualmente. Con la casilla desmarcada se guarda en línea recta y queda «sin clasificar». La edición posterior de vértices sigue siendo en línea recta.
 
 **Buscar rutas por punto** (RF-514, **segunda entrega**)
 1. El coordinador indica un punto (por defecto, el objetivo de la misión en la que está trabajando) o hace clic en el mapa.
@@ -402,9 +402,9 @@ Boceto 11. Desde *Rutas de la misión*, **Añadir ruta** abre un diálogo con tr
 4. La misión **fija la versión** elegida (D-19).
 
 **B) Crear una ruta nueva para esta misión**
-1. Generar, importar o dibujar (3.6), con los puntos rellenados con el objetivo y un origen de la misión.
-2. Si la misión no tiene origen, el botón de generar está desactivado con una explicación y enlace a *Añadir origen* (RN-08).
-3. Al terminar, la ruta queda en la biblioteca y se añade a la misión.
+1. Generar, importar o dibujar (3.6), con los puntos rellenados con el objetivo y un origen de la misión. En el detalle de la misión, la sección **Generar rutas** abre la vista de generar con `?mission=` (objetivo fijo, selector de origen, aviso de que las rutas se añadirán).
+2. Si la misión no tiene origen, el botón de generar está desactivado con una explicación y enlace a *Añadir origen* (RN-08). Una misión cerrada tampoco genera.
+3. Al terminar, la ruta queda en la biblioteca y se añade a la misión con su versión 1 fijada. Si la misión se cierra mientras se calcula, las rutas quedan solo en la biblioteca.
 
 **C) Adaptar una ruta cercana** (**segunda entrega**)
 1. Desde las sugerencias, **Adaptar** (3.6).
@@ -575,7 +575,9 @@ Boceto 14. Se detallará en un documento posterior, pero el recorrido base es:
 | Ruta fijada en una misión se archiva | No se puede archivar mientras esté en una misión no cerrada. Se explica en qué misiones se usa |
 | Se intenta eliminar una ruta usada | Solo se permite archivar (RN-14) |
 | Validación antigua | Marca "posiblemente desactualizada". Sigue usable, pero visible |
-| Objetivo en zona sin datos de caminos | La app avisa de que no hay red y, en v1, no genera rutas. Se puede importar o dibujar |
+| Objetivo en zona sin datos de caminos | El trabajo falla con «fuera de la zona que cubre el motor» (`OUTSIDE_COVERAGE`) y propone elegir puntos cerca de caminos de los Pirineos. Se puede importar o dibujar |
+| Sin ruta posible entre dos puntos, o con las zonas a evitar | «No hay ninguna ruta posible» (`NO_ROUTE_POSSIBLE`); propone mover los puntos o quitar alguna zona |
+| Motor de rutas caído | `ROUTING_UNAVAILABLE`: al pedir el cálculo no se crea ningún trabajo y se explica que el resto de la aplicación sigue; importar, dibujar en línea recta y la biblioteca funcionan |
 | Dirección que resuelve en otro país | Se muestra el país y se pide confirmación |
 | Coordinador responsable desactivado | La misión queda marcada como sin responsable y se obliga a reasignarla (RN-11) |
 | Importación con archivo inválido o enorme | Error claro, no se guarda nada |
@@ -640,6 +642,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**0.8 (2026-11-01)**
+- H3 (§3.6, §4.3, §8): «Generar rutas» (zonas a evitar, progreso, comparación con la composición real, generar desde la misión), dibujar a mano con la casilla de unir a los caminos, y los casos de misión sin origen, sin ruta posible, fuera de cobertura y motor caído.
 
 **0.7 (2026-10-31)**
 - H2 (§3.6): dibujar y editar a mano son líneas rectas, sin ajuste a caminos hasta H3; «Generar» no se muestra en H2; la composición por tipo de vía dice «sin clasificar»; la selección se conserva entre páginas y se exporta (GPX/KML) o se archiva; en pantalla estrecha, pestañas Lista y Mapa.

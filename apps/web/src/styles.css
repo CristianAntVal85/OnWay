@@ -2468,3 +2468,110 @@ h4 {
   margin: 0.75rem 0;
   padding-inline-start: 1.25rem;
 }
+
+/* Composición por tipo de vía (H3, RF-503): barra y texto. El color acompaña al texto, no lo sustituye. */
+.road-mix {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 10rem;
+}
+.road-mix-bar {
+  display: flex;
+  height: 0.6rem;
+  border: 1px solid var(--rock);
+  border-radius: 0.3rem;
+  overflow: hidden;
+  background: transparent;
+}
+.road-mix-part {
+  display: block;
+  height: 100%;
+}
+.road-mix-road {
+  background: #5f6b73;
+}
+.road-mix-track {
+  background: #8a5a00;
+}
+.road-mix-path {
+  background: #1f6b3a;
+}
+.road-mix-offtrail {
+  background: #7b2d8e;
+}
+.road-mix-unknown {
+  background: repeating-linear-gradient(45deg, #b8c0c5, #b8c0c5 3px, #ffffff 3px, #ffffff 6px);
+}
+.road-mix-text,
+.road-mix-none {
+  font-size: 0.85rem;
+}
+
+/* Generar rutas (H3): el conjunto de campos sin marco, la lista de zonas y la tabla de alternativas. */
+.plain-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.zone-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+.zone-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+.zone-editor {
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+}
+.generate-results {
+  margin-top: 1.5rem;
+}
+.results-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.results-table caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+}
+.results-table th,
+.results-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 0.4rem;
+  text-align: left;
+  vertical-align: top;
+}
+.results-table tr[data-highlighted] {
+  background: var(--signal-soft);
+}
+.detail-generate {
+  margin: 1rem 0;
+}
+
+/* Dibujar uniendo los puntos por los caminos (H3-T9). */
+.snap-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+.snap-panel h2 {
+  font-size: 1rem;
+}
+.snap-result {
+  margin-top: 0.5rem;
+}
+
+/* Una tabla más ancha que la pantalla se desplaza dentro de su región (que se puede enfocar y mover con el teclado), no la página. */
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}

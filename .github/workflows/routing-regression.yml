@@ -1,0 +1,48 @@
+name: routing-regression
+
+# Regresión REAL del motor de rutas (H3, P3): extracto de los Pirineos (~1,3 GB de Geofabrik) y DEM Copernicus GLO-30 de verdad, con los
+# casos de la prueba técnica (poc/motor-rutas/cases). Solo se lanza a mano: el CI de cada push usa la red inventada. Sin secretos.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    name: real Pyrenees data, PoC cases
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Regression against the real engine
+        run: infra/scripts/routing-regression.sh
+
+      - name: Results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: routing-regression
+          path: poc/motor-rutas/results/h3-regression*.json
+          if-no-files-found: ignore
+
+      - name: Service logs (on failure)
+        if: failure()
+        run: |
+          docker compose -p onway-regression ps -a
+          docker compose -p onway-regression logs --no-color routing-data routing
+
+      - name: Clean up
+        if: always()
+        run: docker compose -p onway-regression down -v

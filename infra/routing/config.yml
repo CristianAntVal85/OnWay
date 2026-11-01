@@ -1,0 +1,41 @@
+# GraphHopper del motor de rutas (H3). Mismo perfil de montaña que la prueba técnica (poc/motor-rutas/graphhopper).
+# El archivo de la red, la carpeta del grafo y la caché de altitud los fija `entrypoint.sh` con -Ddw.graphhopper.*.
+graphhopper:
+  datareader.file: /data/network/pyrenees.osm.pbf
+  graph.location: /graph/cache
+
+  # La altitud del motor es la de OnWay: teselas HGT que escribe `build-hgt` desde GLO-30. Solo alimentan los pesos de
+  # pendiente; las métricas que se guardan las calcula siempre el servidor (regla 6).
+  graph.elevation.provider: skadi
+  graph.elevation.cache_dir: /graph/elevation
+  graph.elevation.interpolate: bilinear
+  graph.elevation.long_edge_sampling_distance: 60
+  graph.elevation.way_point_max_distance: 10
+
+  # Solo caminar: autopistas y vías rápidas fuera del grafo.
+  import.osm.ignored_highways: motorway,trunk
+
+  custom_models.directory: /app/conf
+
+  profiles:
+    - name: mountain
+      custom_model_files: [mountain.json]
+
+  # Modo flexible solamente (sin CH ni LM): las alternativas y los modelos por petición lo exigen.
+  profiles_ch: []
+  profiles_lm: []
+
+  graph.encoded_values: foot_access, foot_average_speed, foot_priority, foot_road_access, hike_rating, average_slope, max_slope, road_class, road_environment, surface, track_type
+
+server:
+  application_connectors:
+    - type: http
+      port: 8989
+      bind_host: 0.0.0.0
+      max_request_header_size: 50k
+  request_log:
+    appenders: []
+  admin_connectors:
+    - type: http
+      port: 8990
+      bind_host: 0.0.0.0

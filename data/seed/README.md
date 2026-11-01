@@ -51,7 +51,13 @@ Seis rutas inventadas en el Pirineo central, todas con «ficticia» en el nombre
 | Camino antiguo (ficticia) | archivada |
 | Pista con validación antigua (ficticia) | validada hace 120 días: la biblioteca avisa de que ha caducado (límite de la organización: 90) |
 
-`gpx/ejemplo-importar.gpx` no se siembra: es el archivo para probar **Importar ruta** a mano y en el E2E. Lleva una altitud falsa de 999 m en todos los puntos y dos puntos con nombre; el servidor ignora la altitud (RN-10) y la vista previa lo avisa. Las dos rutas generadas por el motor (alternativas) llegan con H3.
+`gpx/ejemplo-importar.gpx` no se siembra: es el archivo para probar **Importar ruta** a mano y en el E2E. Lleva una altitud falsa de 999 m en todos los puntos y dos puntos con nombre; el servidor ignora la altitud (RN-10) y la vista previa lo avisa. Las rutas generadas por el motor no se siembran: las produce *Generar rutas* (ver más abajo).
+
+## Red de caminos inventada (`network.osm`, H3)
+
+Una cuadrícula de 19 meridianos (lon −0,10 … 0,08) por 9 paralelos (lat 42,62 … 42,70) cada 0,01°, en OSM XML sobre el terreno sintético: el paralelo del sur es una carretera, los meridianos de los bordes son pistas y el resto, senderos (SAC `hiking` en los paralelos, `mountain_hiking` en los meridianos). El meridiano lon −0,02 es la «frontera» inventada de la demostración; su paso es un nodo con nombre. La genera `pnpm --filter @onway/api synthetic-network` (es determinista; el CI y las pruebas la comparan con el archivo). **No es ningún dato real**: el motor de rutas (GraphHopper) la lee como leería un extracto de OpenStreetMap, y por eso el CI y el E2E prueban el motor de verdad sin descargar nada. Con la superposición `infra/compose.e2e.yml` el servicio `routing-data` la usa en vez de bajar la red de los Pirineos; con `docker compose up` a secas se baja la real (~1,3 GB, la primera vez).
+
+**La misión de dos orígenes de la demostración de H3 no está en la semilla**: la crea el E2E por la API (`apps/web/e2e/h3-demo.spec.ts`: un origen a cada lado de la frontera inventada y el objetivo sobre ella) y la deja cerrada con sus rutas archivadas. Así los recuentos de la semilla (3 misiones, 6 rutas) no cambian y no dependen de que el motor esté en marcha. Para verla a mano, crea una misión con un origen en (42,63; −0,07) y otro en (42,63; 0,04), objetivo en (42,69; −0,02), y pulsa *Generar rutas* en su detalle.
 
 ## DEM sintético (`dem/`)
 

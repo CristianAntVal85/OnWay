@@ -30,9 +30,9 @@ apps/web         React + Vite + MapLibre
 packages/contracts  Esquemas Zod = fuente de verdad del API (OpenAPI y cliente se generan de aquí)
 packages/geo     Geometría pura (distancias, perfiles, GPX), sin React ni NestJS
 packages/i18n    Textos es / fr
-infra/           compose.yml, Caddyfile, motor de rutas
+infra/           compose.yml, Caddyfile, motor de rutas (servicios `routing` y `routing-data`, `infra/routing/`) y regresión real (`scripts/routing-regression.sh`)
 db/              Migraciones SQL escritas a mano + pruebas del esquema
-data/seed        Datos de demostración ficticios
+data/seed        Datos de demostración ficticios (incluida la red de caminos inventada `network.osm` del E2E y el CI)
 poc/             Pruebas técnicas aisladas (motor de rutas, doc 04 §7.6): fuera del workspace, de compose.yml y del CI; ver poc/motor-rutas/README.md
 ```
 
@@ -41,11 +41,11 @@ PostgreSQL 16 + PostGIS, Drizzle (SQL propio para lo espacial), pg-boss para tra
 ## Comandos
 
 ```
-docker compose up --wait                    # todo en local: http://localhost:8080 (cuentas en data/seed/README.md). La primera vez `geodata` descarga ~843 MB
+docker compose up --wait                    # todo en local: http://localhost:8080 (cuentas en data/seed/README.md). La primera vez `geodata` descarga ~843 MB y `routing-data` ~1,3 GB (red de caminos de Geofabrik) y convierte el relieve (~10 min)
 docker compose down                         # para; conserva datos y descargas (con -v los borra, también las contraseñas generadas y los ~843 MB de geodata)
 infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 4 cuentas, altitud del servidor, entorno (tiempo, luz y luna) y roles de la base (sin superusuario ni BYPASSRLS)
 COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --wait   # pila de pruebas: sin descargas (DEM sintético) y proveedores falsos (providers-stub)
-pnpm --filter @onway/web e2e                # 63 pruebas de Playwright (Chromium; 35 de escritorio y 28 de móvil 375 px: las 21 de H0, la demostración de H1 y la de H2 en los dos formatos) contra la pila levantada (con la superposición, como en el CI)
+pnpm --filter @onway/web e2e                # 76 pruebas de Playwright (Chromium; 41 de escritorio, 34 de móvil 375 px y 1 con el motor parado: las 21 de H0, la demostración de H1, la de H2 y la de H3 en los dos formatos) contra la pila levantada (con la superposición, como en el CI)
 
 pnpm install                                # pnpm 9.12 vía corepack, Node >= 24.7
 pnpm lint                                  # ESLint plano en la raíz; incluye la regla de límites del mapa (apps/web/src fuera de src/map/)
@@ -54,19 +54,23 @@ pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
 pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
 pnpm --filter @onway/api test:db            # 25 pruebas de Vitest sobre PostGIS: las 194 comprobaciones SQL del esquema + 8 de la política 0010 + 6 de la 0011 + 6 de la 0012 (Testcontainers, necesita Docker)
-pnpm --filter @onway/api test:api           # 274 pruebas del API sobre PostGIS (Testcontainers)
+pnpm --filter @onway/api test:api           # 330 pruebas del API sobre PostGIS (Testcontainers); el trabajo con pg-boss real incluido
+pnpm --filter @onway/api test:routing       # 10 pruebas contra el GraphHopper REAL sobre la red inventada: necesita la pila de pruebas con `routing` levantado (puerto 18989, `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --build --wait routing`)
+infra/scripts/routing-regression.sh         # regresión REAL del motor (extracto de los Pirineos y DEM de verdad, ~1,3 GB la primera vez; proyecto `onway-regression`): los casos de poc/motor-rutas/cases; también el workflow manual `routing-regression`
 pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME (seed: ELEVATION_DEM_DIR para la altitud de las misiones)
 pnpm --filter @onway/api synthetic-dem      # regenera data/seed/dem (terreno inventado del E2E)
-pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT
+pnpm --filter @onway/api synthetic-network  # regenera data/seed/network.osm (red de caminos inventada del E2E y el CI)
+pnpm --filter @onway/api build-hgt          # convierte el DEM de OnWay (GLO-30) al formato de altitud del motor de rutas (lo hace `routing-data`)
+pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT (el worker de trabajos: `node dist/src/worker.js`, servicio `worker`)
 pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (3000)
 db/tests/run-postgis.sh                     # las 194 pruebas del esquema con un PostGIS en Docker, sin Node
 ```
 
-`FILES_DIR` (`/files` en la imagen) es la carpeta de los archivos subidos; en compose es el volumen `files` (`down -v` lo borra con la pila). Recuentos de `pnpm -r test`: contratos 89 (80 de contrato y 9 del cliente generado), i18n 8, geo 116, api unitarias 132, web 270. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y casi deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). La demostración de H1 crea en cada ejecución cuatro misiones «E2E …» (dos por proyecto) y las deja **cerradas** (el registro de auditoría es de solo añadir, así que no se pueden borrar; `docker compose down -v` las borra con la pila); si una ejecución se interrumpe, la siguiente (o el cierre) cierra las que queden abiertas. Se apunta a otra dirección con `E2E_BASE_URL`.
+`FILES_DIR` (`/files` en la imagen) es la carpeta de los archivos subidos; en compose es el volumen `files` (`down -v` lo borra con la pila). Recuentos de `pnpm -r test`: contratos 89 (80 de contrato y 9 del cliente generado), i18n 8, geo 127, api unitarias 162, web 293. El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y casi deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización). La demostración de H1 crea en cada ejecución cuatro misiones «E2E …» (dos por proyecto) y las deja **cerradas** (el registro de auditoría es de solo añadir, así que no se pueden borrar; `docker compose down -v` las borra con la pila); si una ejecución se interrumpe, la siguiente (o el cierre) cierra las que queden abiertas. La demostración de H3 genera rutas con el GraphHopper real sobre la red inventada y, al terminar, cierra las misiones «E2E …» y archiva sus rutas (la biblioteca queda como estaba); `h3-engine-down.spec.ts` para y arranca el motor, y corre al final. Se apunta a otra dirección con `E2E_BASE_URL`.
 
 `docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen.
 
-**`geodata`** (H1) es un servicio de un solo uso con su volumen (`onway_geodata`): la primera vez descarga el DEM Copernicus GLO-30 de los Pirineos (12 teselas, 466 MB), un extracto PMTiles del mapa base (403 MB) y las fuentes y sprites de su estilo (14 MB); ~90 s con buena conexión, nada la segunda vez. Si una descarga falla, la pila arranca igual y se degrada. Fuentes, licencias y atribuciones: `docs/04` §9.0. Nada de esto se descarga en CI ni en el E2E (superposición `infra/compose.e2e.yml`: DEM sintético de `data/seed/dem` y `providers-stub` con respuestas fijas de Nominatim y Open-Meteo). La búsqueda de direcciones usa el Nominatim público, al que la aplicación se identifica con la página del proyecto (`NOMINATIM_CONTACT` en `.env` la sustituye). El mapa (H1-T6): el extracto y sus fuentes los sirve Caddy en `/tiles/`; satélite y topográfico los piden directamente al navegador los WMTS de IGN España y Francia (únicos anfitriones de terceros, en `apps/web/src/map/ign.ts` y en la CSP de `infra/Caddyfile`; el resto del navegador solo habla con el propio origen). Los recuentos y el estado al día los anota `docs/estado.md`.
+**`geodata`** (H1) es un servicio de un solo uso con su volumen (`onway_geodata`): la primera vez descarga el DEM Copernicus GLO-30 de los Pirineos (12 teselas, 466 MB), un extracto PMTiles del mapa base (403 MB) y las fuentes y sprites de su estilo (14 MB); ~90 s con buena conexión, nada la segunda vez. Si una descarga falla, la pila arranca igual y se degrada. Fuentes, licencias y atribuciones: `docs/04` §9.0. Nada de esto se descarga en CI ni en el E2E (superposición `infra/compose.e2e.yml`: DEM sintético de `data/seed/dem` y `providers-stub` con respuestas fijas de Nominatim y Open-Meteo). La búsqueda de direcciones usa el Nominatim público, al que la aplicación se identifica con la página del proyecto (`NOMINATIM_CONTACT` en `.env` la sustituye). El mapa (H1-T6): el extracto y sus fuentes los sirve Caddy en `/tiles/`; satélite y topográfico los piden directamente al navegador los WMTS de IGN España y Francia (únicos anfitriones de terceros, en `apps/web/src/map/ign.ts` y en la CSP de `infra/Caddyfile`; el resto del navegador solo habla con el propio origen). **Motor de rutas y trabajos** (H3): `routing-data` (un solo uso, imagen Debian con osmium) baja de Geofabrik las siete regiones de los Pirineos (~1,3 GB, MD5 comprobado), las recorta a lon −1,9…3,3 / lat 42,0…43,2 (`--strategy simple`: sin nodos fuera del DEM) y convierte el DEM de OnWay al formato del motor (`build-hgt`, 12 teselas × ~43 s); `routing` es GraphHopper 11.1 con el perfil de `infra/routing/mountain.json`, grafo en el volumen `routing-graph`, sin salida a Internet, y `worker` es la misma imagen de la API con `src/worker.ts` (cola pg-boss, salud en :3001). Sin red de caminos el motor queda en reposo sano y la API responde `ROUTING_UNAVAILABLE`; tras bajarla hay que reiniciar `routing` (`docker compose restart routing`). La superposición E2E usa la red inventada `data/seed/network.osm`, sin descargas (el motor arranca en ~3 s). Cambiar `mountain.json` pide revisar los pesos con `specs/H3-generacion-rutas/revision-pesos.md` y repetir la regresión real. Los recuentos y el estado al día los anota `docs/estado.md`.
 
 ## Reglas inviolables
 

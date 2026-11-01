@@ -27,6 +27,21 @@ RUN pnpm --filter "@onway/api..." build
 # Solo dependencias de producción y lo compilado (apps/api/package.json "files": ["dist"]).
 RUN pnpm --filter @onway/api deploy --prod /out
 
+# Servicio `routing-data` (H3, un solo uso): lo compilado de la API más osmium (recorte de la red de caminos) y curl. Es Debian y no
+# Alpine porque Alpine 3.24 no trae `osmium-tool`; lo compilado es JavaScript puro, así que no depende de la libc. Va antes de
+# `runtime` porque la etapa por defecto de `docker build` es la última.
+FROM node:24.22.2-bookworm-slim AS routing-data
+ENV NODE_ENV=production
+WORKDIR /app
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends osmium-tool curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && mkdir /routing && chown node:node /routing
+COPY --from=build --chown=node:node /out/ ./
+COPY --chmod=755 infra/routing/prepare.sh /app/prepare.sh
+USER node
+CMD ["sh", "/app/prepare.sh"]
+
 FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
