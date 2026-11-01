@@ -45,6 +45,29 @@ const DemoMission = z.strictObject({
   points: z.array(DemoPoint),
 });
 
+/** A made-up route (P6): its versions come from invented GPX files in `data/seed/gpx/`; altitudes and metrics are measured at seeding, like the API does (RN-10). */
+const DemoRoute = z.strictObject({
+  name: z.string().trim().min(3).max(160),
+  /** Key of a coordinator of `members`: who created and validated it. */
+  coordinator: Key,
+  archived: z.boolean().default(false),
+  /** Route (by name, earlier in the list) and version number this one is a copy of. */
+  derivedFrom: z.strictObject({ route: z.string(), version: z.number().int().min(1) }).optional(),
+  versions: z
+    .array(
+      z.strictObject({
+        gpx: z.string().regex(/^[a-z0-9-]+\.gpx$/),
+        /** Age of the version; the first one is the oldest. */
+        daysAgo: z.number().int().min(0).max(3650),
+        /** Present = the version is Validated, that many days ago (never before it was created). */
+        validatedDaysAgo: z.number().int().min(0).max(3650).optional(),
+        note: z.string().trim().min(1).max(1000).optional(),
+      }),
+    )
+    .min(1)
+    .max(10),
+});
+
 /**
  * `data/seed/demo.json` (D-H0-17, D-H0-18). It holds no hash and no secret: the single fictitious demo password is
  * public on purpose (data/seed/README.md) and is hashed with Argon2id when the seed runs.
@@ -58,6 +81,7 @@ export const Demo = z
     applicants: z.array(DemoApplicant),
     teams: z.array(DemoTeam),
     missions: z.array(DemoMission).default([]),
+    routes: z.array(DemoRoute).default([]),
   })
   .superRefine((demo, ctx) => {
     const keys = new Set<string>();
@@ -84,6 +108,22 @@ export const Demo = z
       if (names.has(mission.name.toLowerCase())) ctx.addIssue({ code: 'custom', message: `duplicate mission name ${mission.name}`, path: ['missions', index, 'name'] });
       names.add(mission.name.toLowerCase());
     }
+    const routeNames = new Set<string>();
+    for (const [index, route] of demo.routes.entries()) {
+      if (!coordinators.has(route.coordinator))
+        ctx.addIssue({ code: 'custom', message: `route coordinator ${route.coordinator} is not a coordinator of the demo`, path: ['routes', index, 'coordinator'] });
+      if (route.derivedFrom && !routeNames.has(route.derivedFrom.route.toLowerCase()))
+        ctx.addIssue({ code: 'custom', message: `route derived from ${route.derivedFrom.route}, which is not an earlier route of the demo`, path: ['routes', index, 'derivedFrom'] });
+      if (routeNames.has(route.name.toLowerCase())) ctx.addIssue({ code: 'custom', message: `duplicate route name ${route.name}`, path: ['routes', index, 'name'] });
+      routeNames.add(route.name.toLowerCase());
+      let previous = Number.POSITIVE_INFINITY;
+      for (const [v, version] of route.versions.entries()) {
+        if (version.daysAgo > previous) ctx.addIssue({ code: 'custom', message: 'versions must go from the oldest to the newest', path: ['routes', index, 'versions', v, 'daysAgo'] });
+        if (version.validatedDaysAgo !== undefined && version.validatedDaysAgo > version.daysAgo)
+          ctx.addIssue({ code: 'custom', message: 'a version cannot be validated before it was created', path: ['routes', index, 'versions', v, 'validatedDaysAgo'] });
+        previous = version.daysAgo;
+      }
+    }
   });
 export type Demo = z.infer<typeof Demo>;
 
@@ -101,6 +141,9 @@ export function resolveSeedFile(env: Record<string, string | undefined> = proces
     dir = parent;
   }
 }
+
+/** The folder with the invented GPX files of the demo: `gpx/` next to the seed file. */
+export const gpxDirOf = (seedFile = resolveSeedFile()): string => join(dirname(seedFile), 'gpx');
 
 export function loadDemo(file = resolveSeedFile()): Demo {
   return Demo.parse(JSON.parse(readFileSync(file, 'utf8')));

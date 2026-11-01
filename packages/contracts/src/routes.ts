@@ -323,6 +323,12 @@ export const MissionRouteGeometry = z.strictObject({
 
 export const ExportFormat = z.enum(['gpx', 'kml']);
 export const ExportRouteQuery = z.strictObject({ versionId: Id.optional(), format: ExportFormat.default('gpx') });
+/** Varias rutas de la biblioteca en un solo archivo (RF-511). Una `<trk>` por ruta, con su versión más reciente. */
+export const ExportRoutesQuery = z.strictObject({
+  ids: z.string().regex(/^[0-9a-f-]{36}(,[0-9a-f-]{36}){0,49}$/, 'de 1 a 50 ids separados por comas'),
+  format: ExportFormat.default('gpx'),
+  validatedOnly: z.enum(['true', 'false']).default('false'), // true: la última versión validada de cada ruta (las que no tienen, se omiten)
+});
 export const ExportMissionRoutesQuery = z.strictObject({
   format: ExportFormat.default('gpx'),
   ids: z

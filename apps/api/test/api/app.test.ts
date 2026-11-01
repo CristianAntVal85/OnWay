@@ -8,8 +8,8 @@ import { TEST_PASSWORD } from '../support/fixtures.js';
 import { TestOnlyController } from '../support/test-controllers.js';
 
 /**
- * Operations built so far: the five of H0 plus those of H1 that earlier tasks have mounted. AC-02 compares the routes
- * Express mounts with this list; each H1 task appends its operations here; T5 leaves exactly the 23 of the milestone (5 of H0 + 18 of H1).
+ * Operations built so far: the five of H0, the 18 of H1 and those of H2 that earlier tasks have mounted. AC-02 compares the routes
+ * Express mounts with this list; each H2 task appended its operations here and H2-T6 left exactly the 36 (23 of H0 and H1 + 13 of H2).
  */
 const BUILT = [
   'getHealth',
@@ -35,6 +35,19 @@ const BUILT = [
   'geocode',
   'getElevation', // H1-T4
   'getEnvironment', // H1-T5
+  'uploadFile', // H2-T3
+  'previewRouteImport',
+  'importMissionPoints', // H2-T4
+  'createRoute',
+  'createRouteVersion',
+  'deriveRoute',
+  'validateRouteVersion',
+  'archiveRoute', // H2-T5
+  'listRoutes',
+  'getRoute',
+  'getRouteVersion',
+  'exportRoute',
+  'exportRoutes', // H2-T6
 ];
 
 let real: TestApp;
@@ -65,10 +78,14 @@ async function expectError(response: Response, code: keyof typeof ERROR_HTTP) {
 }
 
 describe('routes come from the registry (AC-02, rule 7)', () => {
-  it('mounts exactly the 23 operations of H0 and H1, and all of them are in the registry (H1-T5)', () => {
+  it('mounts exactly the 36 operations of H0, H1 and H2 (23 + 13), and all of them are in the registry (H2-T6)', () => {
     const ofMilestones = ENDPOINTS.filter((e) => e.milestone === 'H0' || e.milestone === 'H1').map((e) => e.id);
     expect(ofMilestones).toHaveLength(23);
-    expect([...BUILT].sort()).toEqual([...ofMilestones].sort());
+    const ofH2 = ENDPOINTS.filter((e) => e.milestone === 'H2').map((e) => e.id);
+    expect(ofH2).toHaveLength(13);
+    // H2-T6: the 13 operations of H2 are all mounted, so AC-02 is the exact 36.
+    expect([...BUILT].sort()).toEqual([...ofMilestones, ...ofH2].sort());
+    expect(BUILT).toHaveLength(36);
   });
 
   it('mounts exactly the operations built so far, and all of them are in the registry', () => {
@@ -77,10 +94,10 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing that belongs to a later milestone than H1, test controllers included', () => {
-    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H1')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
+  it('mounts nothing that belongs to a later milestone than H2, test controllers included', () => {
+    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H2')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
-    expect(later.length).toBeGreaterThan(70);
+    expect(later.length).toBeGreaterThan(55);
     expect(later.filter((route) => mounted.has(route))).toEqual([]);
   });
 
@@ -157,7 +174,7 @@ describe('validation from the registry (D-H0-06, AC-16)', () => {
   });
 
   it('answers 413 FILE_TOO_LARGE when the body exceeds the limit', async () => {
-    await expectError(await post(JSON.stringify({ email: 'a@example.org', password: 'x'.repeat(200_000) })), 'FILE_TOO_LARGE');
+    await expectError(await post(JSON.stringify({ email: 'a@example.org', password: 'x'.repeat(3_000_000) })), 'FILE_TOO_LARGE');
   });
 
   it('hands the handler the parsed body when it is valid (the email arrives lower-cased)', async () => {

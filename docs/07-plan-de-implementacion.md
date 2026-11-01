@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.3 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
+**Versión:** 0.4 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -96,12 +96,13 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 
 | | |
 |---|---|
-| **Demostración** | Importar un GPX real de los Pirineos, ver la vista previa con métricas recalculadas por el servidor, guardarlo en Borrador. Editarlo a mano: se crea la versión 2. Compararlas. Validarla. Derivar una copia. Exportar. Explorar la lista y el mapa a la vez, filtrando por el área visible |
+| **Demostración** | Importar un GPX de ejemplo ficticio (inventado: nunca el recorrido de una persona ni de un servicio) de los Pirineos, ver la vista previa con métricas recalculadas por el servidor, guardarlo en Borrador. Editarlo a mano: se crea la versión 2. Compararlas. Validarla. Derivar una copia. Exportar. Explorar la lista y el mapa a la vez, filtrando por el área visible |
 | **Alcance** | RF-405, 502, 504, 505, 506, 510, 511, 512, 516, 517, 519. Bocetos 9 y 10. Migración 0005 en uso. Almacenamiento de archivos tras el puerto `FileStorage` |
-| **Operaciones (12)** | `uploadFile`, `importMissionPoints`, `listRoutes`, `createRoute`, `previewRouteImport`, `getRoute`, `archiveRoute`, `getRouteVersion`, `createRouteVersion`, `deriveRoute`, `validateRouteVersion`, `exportRoute` |
+| **Operaciones (13)** | `uploadFile`, `importMissionPoints`, `listRoutes`, `createRoute`, `previewRouteImport`, `getRoute`, `archiveRoute`, `getRouteVersion`, `createRouteVersion`, `deriveRoute`, `validateRouteVersion`, `exportRoute`, `exportRoutes` (varias rutas en un solo archivo, RF-511) |
 | **Salida** | INV-04 (inmutabilidad), 07, 15. Las métricas salen siempre del modelo propio de elevación (R-07), con pruebas contra GPX de referencia en `packages/geo`. Exportar e importar de nuevo da la misma geometría. Subida de archivos con validación de contenido y tamaño |
 | **Fuera** | Generar y unir con caminos (H3), añadir a misión (H4), búsqueda por punto (H8) |
 | **Riesgos** | R-07 (GPX ruidosos), precisión del modelo de superficie bajo arbolado (documento 04, §7.4) |
+| **Tal como se construyó** | Las 13 operaciones montadas y probadas (`test:api`; 36 con las de H0 y H1). `packages/geo`: lectura de GPX y KML sin DTD ni entidades (con tope de tamaño, anidamiento y elementos), escritura sin autor, `prepareLine` (redondeo a 1 cm, depurado a 5 m, densificado a 30 m) y `computeMetrics` (mediana de 3, umbral de 3 m, ventana de pendiente de 60 m); exportar e importar da exactamente los mismos vértices. El servidor mide todo trazado (altitud en un solo lote por el `ElevationProvider`, un tramo «sin clasificar» hasta H3) y nunca usa la altitud ni las métricas de un archivo o del cliente. Archivos: `FileStorage` en disco (volumen `files`, clave aleatoria), tipo por contenido y tope de 10 MB. Biblioteca: `listRoutes` por área visible con el GiST (10 000 rutas, plan con `route_versions_geom_gix`), versiones inmutables con candado de fila, derivación, validación con aviso, archivo con INV-07. Semilla: 6 rutas ficticias de 10 GPX inventados. Web: biblioteca con lista y mapa, detalle con perfil SVG accesible y comparación, importar, dibujar y editar (solo vértices) e importar puntos en la misión. Dependencias aprobadas: `fast-xml-parser` y `@types/multer`. Demostración como prueba E2E: `apps/web/e2e/h2-demo.spec.ts` (escritorio y 375 px) |
 
 ### H3 · Generación automática de rutas · L
 
@@ -244,6 +245,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.4 | 2026-10-31 | H2 (sección 3) al día tras construirlo (T10): «GPX de ejemplo ficticio» en lugar de «GPX real» (decisión P2: ningún track procede de un servicio público ni de una persona), 13 operaciones con `exportRoutes` (P3) y la fila «Tal como se construyó» |
 | 0.3 | 2026-10-31 | Q-14 resuelta (no): el administrador no escribe misiones (H1-T6; documentos 01 y 02 actualizados). H1 (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con las capas de IGN, `geodata`, las tres misiones de demostración, las dependencias aprobadas y la demostración como prueba E2E; Q-26 (sección 6) resuelta en lo de H1 |
 | 0.2 | 2026-10-30 | H0 (sección 3) al día tras construirlo: la demostración lleva una sola organización (decisión D-H0-18), con una cuenta pendiente y rescatistas con perfil incompleto hasta H5; el aislamiento entre organizaciones se demuestra con una organización creada por las pruebas. Riesgos de H0 y «PostGIS real» (sección 6) marcados como resueltos |
 | 0.1 | 2026-10-30 | Primera versión: diez hitos de v1 (H0–H9) con MVP en H0–H4, bosquejo de v2 y v3, definición de terminado común. Cada operación del contrato tiene hito (`milestones.ts`, 74 pruebas) |

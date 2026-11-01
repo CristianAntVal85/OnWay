@@ -450,6 +450,76 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
   });
 });
 
+describe('detalle de misión: importar puntos de un archivo (RF-405)', () => {
+  const I = D.importPoints;
+  const gpx = (size?: number) => {
+    const file = new File(['<gpx/>'], 'puntos.gpx', { type: 'application/gpx+xml' });
+    if (size) Object.defineProperty(file, 'size', { value: size });
+    return file;
+  };
+  const FILE_ID = '88888888-8888-4888-8888-888888888888';
+  const uploaded = () => json(201, { id: FILE_ID, purpose: 'route_import', contentType: 'application/gpx+xml', sizeBytes: 6, createdAt: '2026-10-31T09:00:00.000Z' });
+
+  it('sube el archivo, importa con el tipo elegido, refresca la misión y avisa de cuántos puntos', async () => {
+    const { user, calls } = await openDetail({
+      'POST /files': uploaded,
+      [`POST ${PATH}/points/import`]: () =>
+        json(201, {
+          items: [
+            { ...collado, id: 'n1' },
+            { ...collado, id: 'n2', name: 'Otro' },
+          ],
+        }),
+    });
+    const reads = missionReads(calls());
+    await user.click(screen.getByRole('button', { name: I.cta }));
+    const dialog = await screen.findByRole('dialog', { name: I.title });
+    await user.selectOptions(within(dialog).getByLabelText(I.kindLabel), 'rendezvous');
+    await user.upload(within(dialog).getByLabelText(I.fileLabel), gpx());
+    await user.click(within(dialog).getByRole('button', { name: I.submit }));
+    await waitFor(() => expect(sends(calls(), 'POST', `${PATH}/points/import`)).toHaveLength(1));
+    expect(sends(calls(), 'POST', `${PATH}/points/import`)[0]!.body).toEqual({ fileId: FILE_ID, kind: 'rendezvous' });
+    expect(await screen.findByText('Puntos importados: 2.')).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(missionReads(calls())).toBeGreaterThan(reads);
+  });
+
+  it('sin archivo o con uno de más de 10 MB lo dice sin subir nada', async () => {
+    const { user, calls } = await openDetail();
+    await user.click(screen.getByRole('button', { name: I.cta }));
+    const dialog = await screen.findByRole('dialog', { name: I.title });
+    await user.click(within(dialog).getByRole('button', { name: I.submit }));
+    expect(within(dialog).getByText(I.noFile)).toBeTruthy();
+    await user.upload(within(dialog).getByLabelText(I.fileLabel), gpx(11 * 1024 * 1024));
+    await user.click(within(dialog).getByRole('button', { name: I.submit }));
+    expect(within(dialog).getByText(I.tooLarge)).toBeTruthy();
+    expect(calls().some((c) => c.path === '/files')).toBe(false);
+  });
+
+  it('un archivo sin puntos con nombre (INVALID_FILE_CONTENT) se dice dentro del diálogo y no cambia nada', async () => {
+    const { user } = await openDetail({ 'POST /files': uploaded, [`POST ${PATH}/points/import`]: () => apiError(422, 'INVALID_FILE_CONTENT') });
+    await user.click(screen.getByRole('button', { name: I.cta }));
+    const dialog = await screen.findByRole('dialog', { name: I.title });
+    await user.upload(within(dialog).getByLabelText(I.fileLabel), gpx());
+    await user.click(within(dialog).getByRole('button', { name: I.submit }));
+    expect(await within(dialog).findByText(es.errors.INVALID_FILE_CONTENT)).toBeTruthy();
+  });
+
+  it('en una misión cerrada (MISSION_CLOSED) lo dice dentro del diálogo y relee la misión', async () => {
+    const { user } = await openDetail({ 'POST /files': uploaded, [`POST ${PATH}/points/import`]: () => apiError(409, 'MISSION_CLOSED') });
+    await user.click(screen.getByRole('button', { name: I.cta }));
+    const dialog = await screen.findByRole('dialog', { name: I.title });
+    await user.upload(within(dialog).getByLabelText(I.fileLabel), gpx());
+    await user.click(within(dialog).getByRole('button', { name: I.submit }));
+    expect(await within(dialog).findByText(D.closedMeanwhile)).toBeTruthy();
+  });
+
+  it('quien no puede escribir (misión cerrada o administrador) no ve el botón', async () => {
+    await openDetail({}, detailServer(detail({ status: 'closed', actions: noActions })));
+    expect(screen.queryByRole('button', { name: I.cta })).toBeNull();
+  });
+});
+
 describe('detalle de misión: editar datos (RF-205, Q-10)', () => {
   it('envía solo lo que cambió y expectedUpdatedAt, refresca y avisa', async () => {
     const { user, calls } = await openDetail();

@@ -12,6 +12,10 @@ import { MissionsPage } from '../pages/missions-page';
 import { LoginPage } from '../pages/login-page';
 import { NotFoundPage } from '../pages/not-found-page';
 import { ProfilePage } from '../pages/profile-page';
+import { ImportRoutePage } from '../pages/import-route-page';
+import { RouteDetailPage } from '../pages/route-detail-page';
+import { RouteEditorPage } from '../pages/route-editor-page';
+import { RoutesPage } from '../pages/routes-page';
 import { WaitingPage } from '../pages/waiting-page';
 
 /** Rutas de la web. Cada ruta de la barra pasa por `RoleGate`; el servidor decide igualmente (RF-103). */
@@ -62,7 +66,39 @@ export function AppRoutes() {
                 path={PATHS.routes}
                 element={
                   <RoleGate route="routes">
-                    <LaterPage section="nav.routes" />
+                    <RoutesPage />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={PATHS.routeImport}
+                element={
+                  <RoleGate route="createRoute">
+                    <ImportRoutePage />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={PATHS.createRoute}
+                element={
+                  <RoleGate route="createRoute">
+                    <RouteEditorPage mode="draw" />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={`${PATHS.routes}/:routeId/edit`}
+                element={
+                  <RoleGate route="createRoute">
+                    <RouteEditorPage mode="edit" />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={`${PATHS.routes}/:routeId`}
+                element={
+                  <RoleGate route="routes">
+                    <RouteDetailPage />
                   </RoleGate>
                 }
               />

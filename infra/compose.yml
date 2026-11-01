@@ -6,7 +6,7 @@
 #            Pirineos con sus fuentes y sprites (H1, P2); las siguientes no descarga nada. Si algo falla, avisa y la pila
 #            arranca igual (sin mapa base o con OUTSIDE_COVERAGE). Es lo único que sale a Internet al arrancar.
 #   db       PostgreSQL 16 + PostGIS; el primer arranque aplica la 0001 y los roles como superusuario.
-#   migrate  migraciones 0002-0011 como onway_owner.
+#   migrate  migraciones 0002-0012 como onway_owner.
 #   seed     datos de demostración ficticios (R-10), idempotente.
 #   api      NestJS como onway_app (se niega a arrancar con un rol que salte la seguridad por filas).
 #   web      Caddy: sirve la web y hace de proxy de /api. Único puerto publicado: 127.0.0.1:8080.
@@ -158,6 +158,8 @@ services:
       - { type: volume, source: secrets, target: /run/onway/app, read_only: true, volume: { subpath: app } }
       - { type: volume, source: secrets, target: /run/onway/csrf, read_only: true, volume: { subpath: csrf } }
       - geodata:/geodata:ro
+      # Archivos subidos (GPX/KML para importar rutas, H2). La API es la única que escribe; `down -v` los borra con la pila.
+      - files:/files
     depends_on:
       seed:
         condition: service_completed_successfully
@@ -212,5 +214,7 @@ networks:
 volumes:
   secrets: {}
   db-data: {}
+  # GPX y KML subidos por los coordinadores (contenido en disco, fila en la tabla `files`). Se copia con el volumen en una copia de seguridad.
+  files: {}
   # DEM y mapa base descargados por `geodata`. Se puede borrar sola (`docker volume rm onway_geodata`): se vuelve a descargar.
   geodata: {}

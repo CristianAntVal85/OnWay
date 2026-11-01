@@ -1832,3 +1832,639 @@ h4 {
     forced-color-adjust: none;
   }
 }
+
+/* ---------- biblioteca de rutas (H2-T7) ---------- */
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: var(--tap);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.check-row input,
+.route-card-check {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  flex: none;
+  accent-color: var(--rock);
+}
+
+.library {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: 1rem;
+}
+
+/* Pantalla estrecha: dos pestañas, Lista y Mapa, con la misma selección. */
+.library[data-view='list'] .library-map,
+.library[data-view='map'] .library-list {
+  display: none;
+}
+
+.library-map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.library-map-view {
+  height: 62vh;
+  height: 62dvh;
+  min-height: 18rem;
+}
+
+.library-map-view .map-canvas {
+  flex: 1 1 auto;
+  height: auto;
+}
+
+.zone-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+}
+
+.zone-note {
+  margin: 0.5rem 0;
+  color: var(--stone);
+}
+
+.library-filter-details {
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--rock);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.library-filter-details summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.library-filter-grid {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  padding-top: 0.5rem;
+}
+
+.selection-area {
+  margin-bottom: 0.75rem;
+}
+
+.selection-hint {
+  margin: 0 0 0.5rem;
+  color: var(--stone);
+  font-size: 0.95rem;
+}
+
+.selection-bar,
+.selection-report {
+  margin-bottom: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 2px solid var(--rock);
+  border-radius: 4px;
+  background: var(--signal-soft);
+}
+
+.selection-count {
+  margin: 0;
+  font-weight: 700;
+}
+
+.selection-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.selection-report p {
+  margin: 0 0 0.25rem;
+}
+
+.dialog-list {
+  margin: 0 0 1rem;
+  padding-inline-start: 1.25rem;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.route-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-card {
+  padding: 0.75rem 1rem 1rem;
+  border: 2px solid var(--rock);
+  border-inline-start-width: 8px;
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.route-card[data-highlighted] {
+  outline: 3px solid var(--signal);
+  outline-offset: 1px;
+}
+
+.route-card[data-selected] {
+  background: var(--signal-soft);
+}
+
+.route-card[data-tone='validated'] {
+  border-inline-start-color: #1f6b3a;
+}
+
+.route-card[data-tone='draft'] {
+  border-inline-start-color: #8a5a00;
+  border-inline-start-style: dashed;
+}
+
+.route-card[data-tone='stale'] {
+  border-inline-start-color: #b3261e;
+}
+
+.route-card[data-tone='archived'] {
+  border-inline-start-color: #5f6b73;
+  border-inline-start-style: dotted;
+}
+
+.route-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+/* Objetivo táctil de 48 px alrededor de la casilla. */
+.route-card-select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  inline-size: var(--tap);
+  block-size: var(--tap);
+  margin: -0.25rem 0 -0.25rem -0.5rem;
+  cursor: pointer;
+}
+
+.route-card-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.route-card-head h2 a {
+  color: var(--rock);
+}
+
+.route-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: 0.5rem 0 0.75rem;
+}
+
+.status-badge[data-version='validated'] {
+  border-color: #1f6b3a;
+  background: #e3f3e8;
+  color: #124a27;
+}
+
+.status-badge[data-version='draft'] {
+  border-style: dashed;
+  background: var(--signal-soft);
+}
+
+.status-badge[data-stale='true'] {
+  border-color: #b3261e;
+  background: #fbe9e7;
+  color: #7a1913;
+}
+
+.status-badge[data-archived='true'] {
+  border-style: dotted;
+  background: var(--snow);
+  color: var(--stone);
+}
+
+.facts-wide {
+  grid-column: 1 / -1;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.map-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.legend-swatch {
+  inline-size: 1.75rem;
+  block-size: 0;
+  border-top: 4px solid var(--stone);
+}
+
+.legend-swatch[data-tone='validated'] {
+  border-top-color: #1f6b3a;
+}
+
+.legend-swatch[data-tone='draft'] {
+  border-top-color: #8a5a00;
+  border-top-style: dashed;
+}
+
+.legend-swatch[data-tone='stale'] {
+  border-top-color: #b3261e;
+}
+
+.legend-swatch[data-tone='archived'] {
+  border-top-color: #5f6b73;
+  border-top-style: dotted;
+}
+
+.legend-note {
+  margin: 0;
+  color: var(--stone);
+  font-size: 0.9rem;
+}
+
+/* Pantalla ancha: lista a la izquierda y mapa a la derecha, a la vez; las pestañas sobran. */
+@media (min-width: 64rem) {
+  .library-tabs {
+    display: none;
+  }
+
+  .library {
+    grid-template-columns: minmax(20rem, 28rem) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .library[data-view='list'] .library-map,
+  .library[data-view='map'] .library-list {
+    display: flex;
+  }
+
+  .library-list {
+    min-width: 0;
+  }
+
+  .library-map {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .library-map-view {
+    height: calc(100vh - 12rem);
+    height: calc(100dvh - 12rem);
+    min-height: 24rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .legend-swatch {
+    forced-color-adjust: none;
+  }
+}
+
+/* ---------- detalle de ruta (H2-T8) ---------- */
+
+.route-layout {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.route-map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.route-map-view {
+  height: 50vh;
+  height: 50dvh;
+  min-height: 18rem;
+}
+
+.route-map-view .map-canvas {
+  flex: 1 1 auto;
+  height: auto;
+}
+
+.route-info {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+  min-width: 0;
+}
+
+.route-info h2 {
+  margin: 0 0 0.5rem;
+}
+
+.notice-warning {
+  border-inline-start-color: #b3261e;
+  background: #fbe9e7;
+}
+
+.dialog-warning {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--rock);
+  background: var(--signal-soft);
+  font-weight: 700;
+}
+
+.profile {
+  margin: 1rem 0 0;
+}
+
+.profile-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--rock);
+  background: var(--paper);
+}
+
+.profile-grid line {
+  stroke: #c5cdd0;
+  stroke-width: 1;
+}
+
+.profile-grid text,
+.profile-axis {
+  fill: var(--stone);
+  font: 11px var(--font-sign, sans-serif);
+}
+
+.profile-area {
+  fill: rgba(31, 107, 58, 0.18);
+}
+
+.profile-line {
+  stroke: #1f6b3a;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.profile-table {
+  margin-top: 0.5rem;
+}
+
+.profile-table summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile-table table,
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-table th,
+.profile-table td,
+.compare-table th,
+.compare-table td {
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--stone);
+  text-align: start;
+}
+
+.profile-table caption {
+  padding: 0.25rem 0;
+  text-align: start;
+  font-weight: 700;
+}
+
+.compare-selects {
+  display: grid;
+  gap: 0 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.table-scroll {
+  max-width: 100%;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.compare-table {
+  font-size: 0.95rem;
+}
+
+.compare-table th,
+.compare-table td {
+  overflow-wrap: anywhere;
+}
+
+.version-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.version-row {
+  padding: 0.625rem 0.875rem;
+  border: 2px solid var(--rock);
+  border-radius: 4px;
+  background: var(--paper);
+}
+
+.version-row[data-shown='true'] {
+  background: var(--signal-soft);
+}
+
+.version-row p {
+  margin: 0 0 0.25rem;
+}
+
+.version-meta {
+  color: var(--stone);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.legend-swatch[data-tone='compare-a'] {
+  border-top-color: #0b5cad;
+}
+
+.legend-swatch[data-tone='compare-b'] {
+  border-top-color: #7b2d8e;
+  border-top-style: dashed;
+}
+
+@media (min-width: 64rem) {
+  .route-layout {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .route-map {
+    position: sticky;
+    top: 1rem;
+  }
+
+  .route-map-view {
+    height: calc(100vh - 9rem);
+    height: calc(100dvh - 9rem);
+  }
+}
+
+/* ---------- editar y dibujar rutas (H2-T9) ---------- */
+
+.vertex-handle {
+  touch-action: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding: 0;
+  border: 3px solid var(--rock);
+  border-radius: 50%;
+  background: var(--paper);
+  cursor: grab;
+}
+
+/* El área táctil es mayor que el círculo. */
+.vertex-handle::after {
+  content: '';
+  position: absolute;
+  inset: -0.75rem;
+}
+
+.vertex-handle[data-end='start'] {
+  background: #1f6b3a;
+}
+
+.vertex-handle[data-end='end'] {
+  background: var(--blaze);
+}
+
+.vertex-handle[aria-pressed='true'] {
+  background: var(--signal);
+  box-shadow: 0 0 0 4px var(--rock);
+}
+
+.vertex-handle:focus-visible {
+  outline: 3px solid var(--rock);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--signal);
+}
+
+.editor-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.editor-map-view {
+  height: 55vh;
+  height: 55dvh;
+  min-height: 18rem;
+}
+
+.editor-map-view .map-canvas {
+  flex: 1 1 auto;
+  height: auto;
+}
+
+.editor-panel {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+  min-width: 0;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.vertex-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vertex-table th,
+.vertex-table td {
+  padding: 0.25rem;
+  text-align: start;
+  vertical-align: middle;
+}
+
+.vertex-table input {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0.25rem 0.5rem;
+  border: 2px solid var(--rock);
+  border-radius: 4px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.vertex-table tr[data-selected='true'] {
+  background: var(--signal-soft);
+}
+
+.vertex-scroll {
+  max-height: 18rem;
+  overflow: auto;
+  border: 2px solid var(--rock);
+}
+
+@media (min-width: 64rem) {
+  .editor-layout {
+    grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 1fr);
+    align-items: start;
+  }
+
+  .editor-map-view {
+    height: calc(100vh - 10rem);
+    height: calc(100dvh - 10rem);
+  }
+}
+
+.vertex-table th .button-link {
+  min-inline-size: var(--tap);
+  min-block-size: var(--tap);
+}
+
+.import-warnings {
+  margin: 0.75rem 0;
+  padding-inline-start: 1.25rem;
+}

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { createApp } from './app.js';
 import { SystemClock } from './clock/clock.js';
 import { appConnectionFromEnv } from './db/config.js';
+import { createFileStorage } from './files/config.js';
 import { createElevationProvider, createGeocodingProvider } from './geo/config.js';
 import { identityOptionsFromEnv } from './identity/config.js';
 import { createWeatherProvider } from './weather/config.js';
@@ -13,6 +14,7 @@ const app = await createApp({
   identity: identityOptionsFromEnv(),
   clock,
   geo: { elevation: createElevationProvider(process.env), geocoding: createGeocodingProvider(clock, process.env) },
+  files: { storage: createFileStorage() },
   weather: { provider: createWeatherProvider(process.env) },
 });
 const port = Number(process.env.PORT ?? 3000);

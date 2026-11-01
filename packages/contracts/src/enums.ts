@@ -21,7 +21,8 @@ export const ParticipationOrigin = z.enum(['volunteer', 'team', 'coordinator']);
 export const RouteStatus = z.enum(['active', 'archived']);
 export const VersionStatus = z.enum(['draft', 'validated']);
 export const Provenance = z.enum(['generated', 'imported', 'drawn', 'edited', 'adapted']);
-export const RoadType = z.enum(['road', 'track', 'path', 'offtrail']);
+/** `unknown`: sin clasificar (rutas importadas, dibujadas o editadas a mano; el clasificador es el motor de H3). */
+export const RoadType = z.enum(['road', 'track', 'path', 'offtrail', 'unknown']);
 export const MissionRouteStatus = z.enum(['added', 'unavailable']);
 export const JobKind = z.enum(['generate', 'adapt']);
 export const JobStatus = z.enum(['pending', 'running', 'completed', 'failed']);

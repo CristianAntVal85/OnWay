@@ -33,6 +33,9 @@ async function fingerprint(): Promise<string> {
       `SELECT * FROM team_members ORDER BY team_id, user_id`,
       `SELECT id, name, status, ST_AsEWKT(target) target, created_at, updated_at, activated_at, closed_at FROM missions ORDER BY id`,
       `SELECT id, kind, name, ST_AsEWKT(geom) geom, position FROM mission_points ORDER BY id`,
+      `SELECT id, name, status, derived_from_route_id, derived_from_version_id, latest_version_id, latest_validated_version_id, created_at, updated_at FROM routes ORDER BY id`,
+      `SELECT id, route_id, version_number, status, ST_AsEWKT(geom) geom, distance_m, ascent_m, descent_m, provenance, note, created_at, validated_at FROM route_versions ORDER BY id`,
+      `SELECT id, version_id, position, road_type, distance_m FROM route_segments ORDER BY id`,
       `SELECT * FROM audit_log ORDER BY id`,
     ].map(async (query) => JSON.stringify(await fixtures.query(query))),
   );
@@ -54,12 +57,12 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
   it('loads the agreed demo and a second run changes nothing', async () => {
     const { owner } = inject('database');
     const first = await seedDemo(owner, demo, options);
-    expect(first).toMatchObject({ seeded: true, missions: 3 });
+    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6 });
     orgId = first.organizationId;
     const before = await fingerprint();
 
     const second = await seedDemo(owner, demo, options);
-    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0 });
+    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0 });
     expect(await fingerprint()).toBe(before);
 
     // Two runs at once also end with a single organization.
@@ -67,6 +70,8 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
     expect(await count(`SELECT count(*) n FROM organizations WHERE name = $1`, [demo.organization.name])).toBe(1);
     expect(await fingerprint()).toBe(before);
     expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [orgId])).toBe(3);
+    expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1`, [orgId])).toBe(6);
+    expect(await count(`SELECT count(*) n FROM route_versions WHERE organization_id = $1`, [orgId])).toBe(9);
     expect(warnings).toEqual([]);
   });
 
@@ -249,17 +254,90 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
         applicants: demo.applicants.map((a) => ({ ...a, email: `catchup-${a.email}` })),
         missions: demo.missions.map((m) => ({ ...m, name: `${m.name} (catch-up)` })),
       };
-      const nothing: ElevationProvider = { elevationAt: async () => null };
+      const nothing: ElevationProvider = { elevationAt: async () => null, elevationsAt: async (points) => points.map(() => null) };
       const messages: string[] = [];
       const first = await seedDemo(owner, other, { elevation: nothing, warn: (m) => messages.push(m) });
-      expect(first).toMatchObject({ seeded: true, missions: 0 });
-      expect(messages).toHaveLength(3);
+      expect(first).toMatchObject({ seeded: true, missions: 0, routes: 0 });
+      expect(messages).toHaveLength(9);
       expect(messages[0]).toMatch(/skipped/);
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(0);
 
       const second = await seedDemo(owner, other, options);
-      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3 });
+      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6 });
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(3);
+      expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1`, [first.organizationId])).toBe(6);
+    });
+  });
+
+  describe('demo routes (P6, RN-10, INV-04, INV-16)', () => {
+    const byName = (name: string) =>
+      fixtures.query<{ id: string; status: string; latest_version_id: string; latest_validated_version_id: string | null; derived_from_route_id: string | null }>(
+        `SELECT id, status::text AS status, latest_version_id, latest_validated_version_id, derived_from_route_id FROM routes WHERE organization_id = $1 AND name = $2`,
+        [orgId, name],
+      );
+    const versions = (routeId: string) =>
+      fixtures.query<{ version_number: number; status: string; provenance: string; distance_m: string; validated_by: string | null; created_at: Date; validated_at: Date | null }>(
+        `SELECT version_number, status::text AS status, provenance::text AS provenance, distance_m::text AS distance_m, validated_by, created_at, validated_at FROM route_versions WHERE route_id = $1 ORDER BY version_number`,
+        [routeId],
+      );
+
+    it('has the six routes of the agreement: one validated version, three versions, a Draft newer than the validated one, a copy, an archived one and a validation older than 90 days', async () => {
+      const names = demo.routes.map((r) => r.name);
+      expect(names).toHaveLength(6);
+      const shape = [];
+      for (const name of names) {
+        const [route] = await byName(name);
+        const all = await versions(route!.id);
+        shape.push({ name, status: route!.status, versions: all.map((v) => v.status), derived: route!.derived_from_route_id !== null });
+      }
+      expect(shape.map((s) => [s.status, s.versions, s.derived])).toEqual([
+        ['active', ['validated'], false],
+        ['active', ['validated', 'validated', 'validated'], false],
+        ['active', ['validated', 'draft'], false],
+        ['active', ['draft'], true],
+        ['archived', ['validated'], false],
+        ['active', ['validated'], false],
+      ]);
+    });
+
+    it('measures every version with the server’s altitudes and the same service as the API (RN-10): the stored line has no altitude from the file', async () => {
+      const [route] = await byName(demo.routes[0]!.name);
+      const [version] = await versions(route!.id);
+      expect(Number(version!.distance_m)).toBeGreaterThan(1000);
+      expect(version!.provenance).toBe('imported');
+      const points = await fixtures.query<{ lon: number; lat: number; z: number }>(
+        `SELECT ST_X((dp).geom) lon, ST_Y((dp).geom) lat, ST_Z((dp).geom) z FROM (SELECT ST_DumpPoints(geom) dp FROM route_versions WHERE route_id = $1) t LIMIT 20`,
+        [route!.id],
+      );
+      for (const point of points) expect(point.z).toBe(await elevation.elevationAt({ lat: point.lat, lon: point.lon }));
+    });
+
+    it('points `latest_*` at the right versions, validated by a coordinator, and leaves the original of the copy as it was', async () => {
+      const [circo] = await byName('Senda del Circo (ficticia)');
+      expect(circo!.latest_validated_version_id).toBe(circo!.latest_version_id);
+      const [collado] = await byName('Collado con borrador nuevo (ficticia)');
+      expect(collado!.latest_validated_version_id).not.toBe(collado!.latest_version_id);
+      const [variant] = await byName('Variante de la Pradera (ficticia)');
+      const [pradera] = await byName('Pradera a la Brecha (ficticia)');
+      expect(variant!.derived_from_route_id).toBe(pradera!.id);
+      expect(variant!.latest_validated_version_id).toBeNull();
+      const coordinators = await fixtures.query<{ id: string }>(`SELECT user_id AS id FROM memberships WHERE organization_id = $1 AND role = 'coordinator'`, [orgId]);
+      for (const row of await versions(pradera!.id)) expect(coordinators.map((c) => c.id)).toContain(row.validated_by);
+    });
+
+    it('writes an audit row per route action, by its coordinator (INV-16)', async () => {
+      const [circo] = await byName('Senda del Circo (ficticia)');
+      const rows = await fixtures.query<{ action: string; actor: string }>(`SELECT action, actor_user_id AS actor FROM audit_log WHERE entity_type = 'route' AND entity_id = $1 ORDER BY id`, [
+        circo!.id,
+      ]);
+      expect(rows.map((r) => r.action)).toEqual(['route_created', 'route_version_validated', 'route_version_created', 'route_version_validated', 'route_version_created', 'route_version_validated']);
+      const [old] = await byName('Camino antiguo (ficticia)');
+      expect((await fixtures.query<{ action: string }>(`SELECT action FROM audit_log WHERE entity_id = $1 ORDER BY id`, [old!.id])).map((r) => r.action)).toEqual([
+        'route_created',
+        'route_version_validated',
+        'route_archived',
+      ]);
+      expect(await count(`SELECT count(*) n FROM audit_log WHERE organization_id = $1 AND entity_type = 'route'`, [orgId])).toBe(17);
     });
   });
 });

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Documento ficticio</name>
+    <Placemark><name>Sendero ficticio KML</name><LineString><tessellate>1</tessellate>
+      <coordinates>
+        -0.1000000,42.6300000,999
+        -0.1005000,42.6310000,999
+        -0.1012000, 42.6325000, 999
+        -0.1100000,42.6400000
+      </coordinates>
+    </LineString></Placemark>
+    <Placemark><name>Refugio ficticio</name><Point><coordinates>-0.1,42.63,999</coordinates></Point></Placemark>
+  </Document>
+</kml>

@@ -28,6 +28,10 @@
 	}
 
 	handle /api/* {
+		# Lo mayor que acepta la API es un archivo de 10 MB (uploadFile) más el multipart; Caddy corta antes lo que pase de ahí.
+		request_body {
+			max_size 12MB
+		}
 		encode zstd gzip
 		# Nada de lo que devuelve la API se guarda en cachés compartidas (sesión, CSRF, datos de la organización).
 		header ?Cache-Control "no-store"

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Demostración de H0 y H1 (doc 07 §3) contra la pila real de `docker compose up --wait` (T9). No arranca nada:
+// Demostración de H0, H1 y H2 (doc 07 §3) contra la pila real de `docker compose up --wait` (T9). No arranca nada:
 // se espera que la pila ya esté en pie en E2E_BASE_URL (http://localhost:8080 por defecto).
 export default defineConfig({
   testDir: '.',
@@ -10,6 +10,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
+  // El runner del CI es lento (dos núcleos, WebGL por software y tres demostraciones con mapa en dos formatos): más margen que los 5 s por defecto.
+  expect: { timeout: process.env.CI ? 15_000 : 5_000 },
   workers: process.env.CI ? 2 : undefined,
   // Los informes y trazas se escriben junto a esta configuración (ignorados por git); el CI los sube solo si algo falla.
   outputDir: './test-results',
@@ -23,6 +25,6 @@ export default defineConfig({
   projects: [
     { name: 'desktop', testIgnore: /mobile\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
     // Móvil de 375 px de ancho (iPhone SE/mini); Chromium con pantalla táctil.
-    { name: 'mobile', testMatch: /(mobile|h1-demo)\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } },
+    { name: 'mobile', testMatch: /(mobile|h1-demo|h2-demo)\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } },
   ],
 });

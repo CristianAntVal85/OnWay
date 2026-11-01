@@ -71,6 +71,13 @@
       "when": 1762560000000,
       "tag": "0011_missions_coordinator_only",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1762646400000,
+      "tag": "0012_routes_h2",
+      "breakpoints": true
     }
   ]
 }

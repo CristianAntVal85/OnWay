@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 0.9 (borrador) · Fecha: 2026-10-31 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.0 (borrador) · Fecha: 2026-10-31 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -234,7 +234,7 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 **RF-502 (Must) Métricas de cada versión**: distancia total, desnivel positivo, desnivel negativo, altitud mínima y máxima, pendiente máxima, perfil de elevación.
 - No se muestra tiempo estimado (D-03).
 
-**RF-503 (Should) Composición de la ruta**: porcentaje del recorrido por carretera, pista, sendero o tramo sin camino.
+**RF-503 (Should) Composición de la ruta**: porcentaje del recorrido por carretera, pista, sendero o tramo sin camino. Una ruta que no pasa por el motor (importada, dibujada o editada a mano) se muestra como **«sin clasificar»** hasta H3.
 
 **RF-504 (Must) Comparar rutas** en el mapa y en una tabla de métricas, tanto en la misión como en los resultados de búsqueda.
 
@@ -258,7 +258,7 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 - La ruta entra como *Borrador* y exige validación (RF-506).
 - Un archivo inválido o demasiado grande da un error claro, sin guardar nada.
 
-**RF-511 (Must) Exportar ruta** en GPX (y KML con prioridad Should). Se puede exportar una ruta o todas las rutas validadas de una misión en un único archivo. En la biblioteca se pueden seleccionar varias rutas y exportarlas a la vez.
+**RF-511 (Must) Exportar ruta** en GPX (y KML con prioridad Should). Se puede exportar una ruta o todas las rutas validadas de una misión en un único archivo. En la biblioteca se pueden seleccionar varias rutas y exportarlas a la vez (`exportRoutes`: un archivo con una pista por ruta, sin autor).
 
 **RF-512 (Must) Biblioteca de rutas de la organización, con lista y mapa.** Pantalla partida como Wikiloc: lista de rutas a la izquierda y mapa grande a la derecha.
 - La lista muestra las rutas del área visible del mapa y se actualiza al moverlo (con opción de buscar solo al pulsar), o al filtrar.
@@ -547,6 +547,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.0 (2026-10-31)**
+- H2: RF-503 aclara que lo que no pasa por el motor es «sin clasificar» (decisión P1) y RF-511 recoge `exportRoutes` (P3). Los GPX de demostración y de pruebas son inventados (P2).
 
 **0.9 (2026-10-31)**
 - Resuelta Q-14: el administrador no escribe misiones (H1-T6). Su barra de navegación pierde «Crear misión» (documento 02, §2 y §6). Cambiarlo ya no es una sola constante: el servidor (`MISSION_WRITERS`) y la base de datos (migración 0011, documento 05) lo repiten.

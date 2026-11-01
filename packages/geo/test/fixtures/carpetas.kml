@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document><Folder><name>Fuera</name><Folder><name>Dentro</name>
+    <Placemark><name>Multi</name><MultiGeometry>
+      <LineString><coordinates>1.0,42.0 1.001,42.001</coordinates></LineString>
+      <LineString><coordinates>2.0,43.0 2.001,43.001</coordinates></LineString>
+    </MultiGeometry></Placemark>
+    <Placemark><name>Punto A</name><Point><coordinates>1.0,42.0</coordinates></Point></Placemark>
+  </Folder></Folder></Document>
+</kml>

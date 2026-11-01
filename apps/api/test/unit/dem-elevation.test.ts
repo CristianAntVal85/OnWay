@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DemElevationProvider, demTileName } from '../../src/geo/dem-elevation.js';
 import { syntheticSurface } from '../../src/geo/synthetic-elevation.js';
 import { SYNTHETIC_STEP, SYNTHETIC_TILES, syntheticTile } from '../../src/geo/synthetic-dem.js';
@@ -94,5 +94,39 @@ describe('the committed synthetic DEM (data/seed/dem, used by the end-to-end sta
     for (const mission of demo.missions) {
       for (const place of [mission.target, ...mission.points]) expect(await committed.elevationAt(place)).not.toBeNull();
     }
+  });
+});
+
+describe('DemElevationProvider.elevationsAt: many points at once (H2-T4, D-H2-02)', () => {
+  // A diagonal across four tiles, with points on tile edges, outside the folder and not finite.
+  const line = [
+    ...Array.from({ length: 300 }, (_, i) => ({ lat: 42.05 + i * 0.0031, lon: -0.95 + i * 0.0063 })),
+    { lat: 42.9999, lon: 0.9999 },
+    { lat: 42.0001, lon: -0.9999 },
+    { lat: 45.5, lon: 0.5 },
+    { lat: Number.NaN, lon: 0 },
+  ];
+
+  it.each([4, 16, 256])('gives for every point what elevationAt gives, with blocks of %i pixels', async (blockSize) => {
+    const batch = new DemElevationProvider(dir, 2, blockSize);
+    const together = await batch.elevationsAt(line);
+    const one = await Promise.all(line.map((point) => provider.elevationAt(point)));
+    expect(together).toEqual(one);
+    expect(together.slice(-2)).toEqual([null, null]);
+    expect(together.filter((metres) => metres !== null).length).toBeGreaterThan(300);
+  });
+
+  it('reads each block once however many points fall in it', async () => {
+    const batch = new DemElevationProvider(dir, 2, 16);
+    const reads = vi.spyOn(batch as unknown as { read: () => unknown }, 'read');
+    // 200 points in a straight run of 0.2° (20 pixels at 0.01°): it crosses at most 3 blocks of 16 pixels.
+    const run = Array.from({ length: 200 }, (_, i) => ({ lat: 42.5, lon: 0.1 + i * 0.001 }));
+    await batch.elevationsAt(run);
+    expect(reads.mock.calls.length).toBeLessThanOrEqual(3);
+    expect(reads.mock.calls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('answers an empty list with an empty list', async () => {
+    expect(await provider.elevationsAt([])).toEqual([]);
   });
 });

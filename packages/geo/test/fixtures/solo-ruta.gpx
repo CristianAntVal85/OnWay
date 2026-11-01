@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<gpx version="1.1" creator="prueba" xmlns="http://www.topografix.com/GPX/1/1">
+  <rte><name>Ruta planificada ficticia</name><rtept lat="42.5" lon="0.5"/><rtept lat="42.51" lon="0.51"/><rtept lat="42.52" lon="0.52"/></rte>
+</gpx>

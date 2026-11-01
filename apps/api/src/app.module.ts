@@ -5,11 +5,13 @@ import { ClockModule } from './clock/clock.module.js';
 import { CommonModule } from './common/common.module.js';
 import type { DbConnection } from './db/config.js';
 import { DatabaseModule } from './db/database.module.js';
+import { FilesModule, type FilesOptions } from './files/files.module.js';
 import { GeoModule, type GeoOptions } from './geo/geo.module.js';
 import { HealthModule } from './health/health.module.js';
 import type { IdentityOptions } from './identity/config.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { MissionsModule } from './missions/missions.module.js';
+import { RoutesModule } from './routes/routes.module.js';
 import { WeatherModule, type WeatherOptions } from './weather/weather.module.js';
 
 export interface AppOptions {
@@ -20,6 +22,8 @@ export interface AppOptions {
   clock?: Clock;
   /** Altitude source, address search and the per-user altitude limit. Without them the test implementations answer; `main.ts` passes the real ones. */
   geo?: GeoOptions;
+  /** Where uploaded files live. Without it they stay in memory; `main.ts` passes the disk store. */
+  files?: FilesOptions;
   /** Weather provider. Without it the test implementation answers; `main.ts` passes the real one. */
   weather?: WeatherOptions;
   /** Only for tests: controllers of synthetic endpoints (outside the registry) that exercise the guards. */
@@ -37,7 +41,9 @@ export class AppModule {
         DatabaseModule.register(options.database),
         AuditModule,
         IdentityModule.register(options.identity),
+        FilesModule.register(options.files),
         MissionsModule,
+        RoutesModule,
         WeatherModule.register(options.weather),
         CommonModule,
         HealthModule,

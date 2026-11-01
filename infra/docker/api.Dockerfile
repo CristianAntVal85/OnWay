@@ -31,11 +31,15 @@ FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out/ ./
-# Migraciones 0002-0011 (la 0001 la aplica el arranque de la base de datos como superusuario)
+# Migraciones 0002-0012 (la 0001 la aplica el arranque de la base de datos como superusuario)
 # y datos de demostración ficticios (R-10): sin secretos ni hashes.
 COPY --chown=node:node db/migrations db/migrations
 COPY --chown=node:node data/seed/demo.json data/seed/demo.json
+COPY --chown=node:node data/seed/gpx data/seed/gpx
 ENV MIGRATIONS_DIR=/app/db/migrations SEED_FILE=/app/data/seed/demo.json
+# Carpeta de los archivos subidos (GPX/KML): el volumen `files` del compose se monta aquí y hereda el dueño `node`. Es lo único que la API escribe además de /tmp.
+RUN mkdir /files && chown node:node /files && chmod 700 /files
+ENV FILES_DIR=/files
 USER node
 EXPOSE 3000
 CMD ["node", "dist/src/main.js"]

@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 0.6 (borrador) · Fecha: 2026-10-31 · Depende de: documento 01 (v0.9)
+Versión: 0.7 (borrador) · Fecha: 2026-10-31 · Depende de: documento 01 (v0.9)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -184,7 +184,7 @@ Boceto 9. Vista nueva (RF-512). Es el fondo permanente de rutas de la organizaci
 - La lista muestra las rutas del **área visible del mapa** y se actualiza al moverlo. Una opción permite buscar solo al pulsar "Buscar en esta zona".
 - Pasar el ratón por una tarjeta resalta su trazado en el mapa, y al revés.
 - Filtros: estado, distancia, desnivel, antigüedad de la validación y búsqueda por nombre o lugar. Etiquetas si se acepta Q-21. Orden y paginación.
-- Acciones sobre la selección: **exportar** y archivar. Botones **Nueva ruta** e **Importar**.
+- Acciones sobre la selección: **exportar** y archivar. Botones **Dibujar ruta** e **Importar ruta** (en H2 no hay «Generar»: llega con el motor, H3). La composición por tipo de vía se muestra como «sin clasificar» hasta entonces.
 
 **Mapa (derecha)**
 - Capas satélite, topográfica y carreteras, conmutables.
@@ -640,6 +640,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**0.7 (2026-10-31)**
+- H2 (§3.6): dibujar y editar a mano son líneas rectas, sin ajuste a caminos hasta H3; «Generar» no se muestra en H2; la composición por tipo de vía dice «sin clasificar»; la selección se conserva entre páginas y se exporta (GPX/KML) o se archiva; en pantalla estrecha, pestañas Lista y Mapa.
 
 **0.6 (2026-10-31)**
 - Q-14 resuelta (no): el administrador no escribe misiones. §2: sin «Crear misión» en su barra. §6: sus celdas «Q-14» pasan a «No». §3.2, §3.10 y §11 al día (H1-T6).

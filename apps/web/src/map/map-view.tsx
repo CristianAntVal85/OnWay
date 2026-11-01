@@ -4,10 +4,12 @@ import * as maplibre from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { Protocol } from 'pmtiles';
-import MapGL, { Marker, NavigationControl, type MapLayerMouseEvent, type MapRef } from 'react-map-gl/maplibre';
+import MapGL, { Layer, Marker, NavigationControl, Source, type MapLayerMouseEvent, type MapRef, type ViewStateChangeEvent } from 'react-map-gl/maplibre';
 import { Attribution } from './attribution.js';
 import { SATELLITE_PROTOCOL, satelliteTile } from './ign-mix.js';
 import { Readout, type Cursor } from './readout.js';
+import { nearestSegment, type Vertex } from './edit.js';
+import { ROUTES_LINE_LAYER, ROUTES_SOURCE, casingLayer, lineLayer, routesBounds, routesGeoJson } from './route-layers.js';
 import { ROADS_SOURCE, buildStyle } from './style.js';
 import { MAP_LAYERS, type MapLayerId, type MapViewProps } from './types.js';
 import { initialViewFor } from './view.js';
@@ -18,11 +20,30 @@ maplibre.addProtocol('pmtiles', new Protocol().tile);
 maplibre.addProtocol(SATELLITE_PROTOCOL, satelliteTile);
 
 const PICK_ZOOM = 12;
+/** Más vértices que esto no se dibujan como controles (la lista de coordenadas sigue teniéndolos todos). */
+const MAX_HANDLES = 400;
 
 const prefersReducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
 /** Mapa con las tres capas, controles, indicador de coordenadas y altitud, y atribuciones. Único sitio que importa MapLibre. */
-export default function MapView({ markers = [], onPick, picking = false, elevationLookup, focus, fitToMarkers = false, defaultLayer = 'topographic', label, className }: MapViewProps) {
+export default function MapView({
+  markers = [],
+  onPick,
+  picking = false,
+  elevationLookup,
+  focus,
+  fitToMarkers = false,
+  defaultLayer = 'topographic',
+  label,
+  className,
+  routes,
+  highlightedRouteId,
+  selectedRouteIds,
+  onRouteClick,
+  onViewChange,
+  fitRoutesKey,
+  editor,
+}: MapViewProps) {
   const { t, i18n } = useTranslation();
   const mapRef = useRef<MapRef>(null);
   const [layer, setLayer] = useState<MapLayerId>(defaultLayer);
@@ -52,7 +73,72 @@ export default function MapView({ markers = [], onPick, picking = false, elevati
     // `nonce` identifica la petición; las coordenadas solas no cambiarían si se pide el mismo punto dos veces.
   }, [focus]);
 
+  // Encuadra todas las rutas cuando la página lo pide con una clave nueva (otros filtros, otra página), nunca por mover el mapa.
+  // Si el mapa aún se está cargando cuando llega la clave, lo hace al terminar de cargar (`onLoad`).
+  const routesRef = useRef(routes);
+  routesRef.current = routes;
+  const fitKeyRef = useRef(fitRoutesKey);
+  fitKeyRef.current = fitRoutesKey;
+  const fitRoutes = useCallback(() => {
+    const box = routesBounds(routesRef.current ?? []);
+    if (!box) return;
+    mapRef.current?.fitBounds(
+      [
+        [box.minLon, box.minLat],
+        [box.maxLon, box.maxLat],
+      ],
+      { padding: 48, maxZoom: 14, duration: prefersReducedMotion() ? 0 : 600 },
+    );
+  }, []);
+  useEffect(() => {
+    if (fitRoutesKey !== undefined) fitRoutes();
+  }, [fitRoutesKey, fitRoutes]);
+
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
+
+  // Arrastre de un vértice: sigue al puntero y, al soltar (si se movió de verdad), el editor recibe el punto nuevo.
+  const [drag, setDrag] = useState<{ index: number; lon: number; lat: number } | null>(null);
+  const startDrag = useCallback((event: React.PointerEvent<HTMLButtonElement>, index: number) => {
+    const map = mapRef.current?.getMap();
+    if (!map || event.button !== 0) return;
+    const rect = map.getCanvas().getBoundingClientRect();
+    const origin = { x: event.clientX, y: event.clientY };
+    const at = (e: PointerEvent) => map.unproject([e.clientX - rect.left, e.clientY - rect.top]);
+    let moved = false;
+    const onMove = (e: PointerEvent) => {
+      if (!moved && Math.hypot(e.clientX - origin.x, e.clientY - origin.y) < 4) return;
+      moved = true;
+      const p = at(e);
+      setDrag({ index, lon: p.lng, lat: p.lat });
+    };
+    const onUp = (e: PointerEvent) => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointercancel', onUp);
+      setDrag(null);
+      if (moved) {
+        const p = at(e);
+        editorRef.current?.onMove(index, { lat: p.lat, lon: p.lng });
+      }
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+    window.addEventListener('pointercancel', onUp, { once: true });
+  }, []);
+
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
+
+  const routeData = useMemo(() => routesGeoJson(routes ?? [], highlightedRouteId, selectedRouteIds), [routes, highlightedRouteId, selectedRouteIds]);
+
+  // Solo los movimientos de la persona (con evento original) cuentan: un encuadre pedido por la página no debe cambiar la lista.
+  const onMoveEnd = useCallback(
+    (event: ViewStateChangeEvent) => {
+      if (!onViewChange || !(event as { originalEvent?: unknown }).originalEvent) return;
+      const bounds = event.target.getBounds();
+      onViewChange({ minLon: bounds.getWest(), minLat: bounds.getSouth(), maxLon: bounds.getEast(), maxLat: bounds.getNorth() });
+    },
+    [onViewChange],
+  );
 
   const onMouseMove = useCallback((event: MapLayerMouseEvent) => {
     const { lat, lng } = event.lngLat;
@@ -65,9 +151,20 @@ export default function MapView({ markers = [], onPick, picking = false, elevati
       const { lat, lng } = event.lngLat;
       cancelAnimationFrame(frame.current);
       setCursor({ lat, lon: lng, immediate: true });
+      const routeId = event.features?.find((feature) => feature.layer.id === ROUTES_LINE_LAYER)?.properties?.id;
+      // Con el editor, tocar la línea inserta un vértice en el tramo tocado; fuera de la línea, `onPick` añade uno al final.
+      if (typeof routeId === 'string' && editorRef.current) {
+        const at = nearestSegment(editorRef.current.vertices as Vertex[], [lng, lat]);
+        if (at !== null) editorRef.current.onInsert(at + 1, { lat, lon: lng });
+        return;
+      }
+      if (typeof routeId === 'string' && onRouteClick) {
+        onRouteClick(routeId);
+        return;
+      }
       onPick?.({ lat, lon: lng });
     },
-    [onPick],
+    [onPick, onRouteClick],
   );
 
   const onError = useCallback((event: { sourceId?: string; error?: unknown }) => {
@@ -114,12 +211,46 @@ export default function MapView({ markers = [], onPick, picking = false, elevati
           dragRotate
           locale={mapLocale}
           cursor={onPick ? 'crosshair' : undefined}
+          interactiveLayerIds={routes ? [ROUTES_LINE_LAYER] : undefined}
           onMouseMove={onMouseMove}
+          onMoveEnd={onMoveEnd}
           onClick={onClick}
+          onLoad={() => fitKeyRef.current !== undefined && fitRoutes()}
           onError={onError}
           style={{ width: '100%', height: '100%' }}
         >
           <NavigationControl position="top-right" showCompass visualizePitch={false} />
+          {routes && (
+            <Source id={ROUTES_SOURCE} type="geojson" data={routeData as never}>
+              <Layer {...casingLayer} />
+              <Layer {...lineLayer} />
+            </Source>
+          )}
+          {editor?.vertices.slice(0, MAX_HANDLES).map((vertex, index) => (
+            <Marker key={`vertex-${index}`} longitude={drag?.index === index ? drag.lon : vertex[0]} latitude={drag?.index === index ? drag.lat : vertex[1]} anchor="center">
+              <button
+                type="button"
+                className="vertex-handle"
+                data-end={index === 0 ? 'start' : index === editor.vertices.length - 1 ? 'end' : undefined}
+                aria-label={editor.labelFor(index)}
+                aria-pressed={editor.selected === index}
+                // El arrastre es propio (eventos de puntero): el mapa no debe empezar a desplazarse con el mismo gesto.
+                onMouseDown={(event) => event.stopPropagation()}
+                onTouchStart={(event) => event.stopPropagation()}
+                onPointerDown={(event) => startDrag(event, index)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  editor.onSelect(editor.selected === index ? null : index);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Delete' || event.key === 'Backspace') {
+                    event.preventDefault();
+                    editor.onRemove(index);
+                  }
+                }}
+              />
+            </Marker>
+          ))}
           {markers.map((marker) => (
             <Marker key={marker.id} longitude={marker.lon} latitude={marker.lat} anchor="bottom">
               <div className="map-marker" data-kind={marker.kind} role="img" aria-label={marker.label ?? t(`map.markers.${marker.kind}`)} />
