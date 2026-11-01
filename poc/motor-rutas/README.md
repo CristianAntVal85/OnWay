@@ -166,3 +166,19 @@ Cómo leerlo:
 ## Par extra del lado francés y veredicto (T6)
 
 `cases/extra-france.json` (Aparcamiento de Gavarnie → Vignemale, `--pairs extra-france.json`) mide el lado francés de OSM, que los tres pares del usuario no tocan. No forma parte de la aceptación. GraphHopper cumple todo (2 rutas, 97,2 % en pista o sendero); Valhalla **falla el criterio 2** (30,5 % de la ruta principal por carretera). La propuesta de motor, el veredicto por criterio y las condiciones para H3 están en `results/veredicto.md`.
+
+## El motor con el DEM de OnWay (H3-T1)
+
+`pnpm --filter @onway/api build-hgt` (con `ELEVATION_DEM_DIR=<teselas GLO-30>` y un directorio de salida) convierte las teselas de OnWay al formato que lee GraphHopper: `N42W001.hgt.gz`, 3601 × 3601 muestras de 16 bits en metros, de norte a sur y de oeste a este. Si el directorio de caché de elevación del motor ya trae esos archivos, GraphHopper no descarga nada (lo comprueba `AbstractSRTMElevationProvider` de la v11.1: solo descarga si no existe el archivo). Cada tesela tarda unos 46 s en un equipo de desarrollo.
+
+Resultado con las dos teselas reales de los tres pares (motor con un extracto de 1° de latitud, `results/graphhopper-onway-dem.json`):
+
+| Par | Subida que dice GraphHopper (antes, con Skadi → ahora) | Con nuestro algoritmo (antes → ahora) | Nuestra medición | Neto de A a B (antes → ahora) |
+|---|---|---|---|---|
+| `coronas-aneto` | 1418 → 1426 m | 1401 → 1408 m | 1408 m | 1395 → 1405 m |
+| `bujaruelo-brecha` | 1629 → 1572 m | 1470 → 1465 m | 1462 m | 1439 → 1449 m |
+| `ordesa-perdido` | 2539 → 2293 m | 2175 → 2039 m | 2041 m | 1781 → 2001 m |
+
+La altitud del aparcamiento de la Pradera de Ordesa pasa de 1535 m (Skadi) a **1314 m**, igual que la nuestra, y el neto de ese par coincide (2001 m). Con el algoritmo de OnWay, la diferencia entre lo que ve el motor y lo que mide el servidor queda en ≤ 0,5 %.
+
+**Hallazgo sobre el límite de pendiente (criterio 3, texto literal del plan):** GraphHopper guarda `max_slope` en 5 bits (`MaxSlope`, factor 1): toda pendiente de 31 % o más se lee como 31. Un límite por encima de 30 % no puede expresarse (con 31 o más no cambia la ruta) y con uno de 30 % o menos **los tres pares dejan de tener ruta** (`Connection between locations not found`): en cada uno hay algún tramo de 31 % o más. Es el «no hay otra salida» que admite el texto literal del criterio, así que se anota como **cumplido (inevitable)** en los tres pares. Pero lo que mide nuestra medición en esos mismos pares es 55–100 % de pendiente máxima en una ventana de 60 m: un límite de pendiente solo discrimina rutas de pendiente moderada, no el tramo final de una cima. `generateRoutes` no lo expone (el contrato no tiene ese campo).

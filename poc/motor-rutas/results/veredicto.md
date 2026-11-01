@@ -84,3 +84,8 @@ A favor de Valhalla: menos memoria sirviendo, un perfil que por defecto ya evita
 3. **El DEM del motor:** primera tarea de H3.
 4. **Valhalla:** se conservan su adaptador, su perfil y sus resultados en la rama como plan B.
 5. **Quién y cuándo revisa los pesos del perfil (condición 3):** **sin decidir**; anotado como pendiente en `docs/estado.md`, antes de validar H3.
+
+## 7. Actualización (H3, tarea 1, 2026-11-01): el motor con el DEM de OnWay
+
+Condición 1 de §4, cumplida: con las teselas de OnWay convertidas por `build-hgt`, la altitud de GraphHopper coincide con la nuestra (aparcamiento de la Pradera de Ordesa: 1314 m en lugar de 1535 m; diferencia de subida con nuestro algoritmo ≤ 0,5 %). El criterio 3 se repitió sobre los tres pares con el texto literal del plan: el límite de pendiente de GraphHopper solo se expresa hasta el 30 % (5 bits, saturado en 31 %) y con ese límite los tres pares no tienen ruta, es decir, no hay otra salida y el motor lo dice. Detalle en `README.md` («El motor con el DEM de OnWay») y datos en `results/graphhopper-onway-dem.json`.
+

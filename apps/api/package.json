@@ -15,7 +15,8 @@
     "start": "node dist/src/main.js",
     "migrate": "pnpm build && node dist/src/cli/migrate.js",
     "seed": "pnpm build && node dist/src/cli/seed.js",
-    "synthetic-dem": "pnpm build && node dist/src/cli/synthetic-dem.js"
+    "synthetic-dem": "pnpm build && node dist/src/cli/synthetic-dem.js",
+    "build-hgt": "pnpm build && node dist/src/cli/build-hgt.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.8",
