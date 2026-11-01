@@ -1,0 +1,292 @@
+{
+  "engine": "graphhopper",
+  "date": "2026-11-01T10:02:25.205Z",
+  "extract": {
+    "geofabrikSnapshot": "261031",
+    "bbox": [
+      -1.9,
+      41.9,
+      3.3,
+      43.2
+    ],
+    "licence": "© OpenStreetMap contributors, ODbL"
+  },
+  "thresholds": {
+    "minAlternatives": 2,
+    "maxSharedShare": 0.7,
+    "minTrailShare": 0.9,
+    "p95Seconds": 5,
+    "peakMemoryMb": 2048
+  },
+  "alternatives": {
+    "maxPaths": 3,
+    "maxShareFactor": 0.8,
+    "maxWeightFactor": 2.5
+  },
+  "runs": 10,
+  "slopeProbe": {
+    "id": "bujaruelo-goriz",
+    "value": {
+      "limitPct": 25,
+      "baseMaxSlopePct": 97.8,
+      "limitedMaxSlopePct": 44.9,
+      "routeChanged": true
+    },
+    "pass": true
+  },
+  "peakMemoryMiB": {
+    "value": 1030,
+    "pass": true
+  },
+  "results": [
+    {
+      "id": "coronas-aneto",
+      "paths": [
+        {
+          "distanceKm": 5.58,
+          "timeH": 3.5,
+          "ascentM": 1418,
+          "descentM": 23,
+          "mix": {
+            "road": 0,
+            "track": 0.077,
+            "path": 0.923,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 8.1,
+          "timeH": 4.83,
+          "ascentM": 1631,
+          "descentM": 236,
+          "mix": {
+            "road": 0,
+            "track": 0.158,
+            "path": 0.842,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.009,
+        "p95": 0.011,
+        "max": 0.011
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "native"
+            ],
+            "sharedWithMain": [
+              0.43
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 1,
+          "pass": true
+        },
+        "4": {
+          "value": 0.01,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 14.18
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 1,
+            "covered": 1,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 67.1,
+        "limitedMaxSlopePct": 68.7,
+        "routeChanged": false
+      }
+    },
+    {
+      "id": "bujaruelo-brecha",
+      "paths": [
+        {
+          "distanceKm": 9.13,
+          "timeH": 5.24,
+          "ascentM": 1629,
+          "descentM": 189,
+          "mix": {
+            "road": 0,
+            "track": 0.006,
+            "path": 0.994,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 10.88,
+          "timeH": 5.99,
+          "ascentM": 2121,
+          "descentM": 682,
+          "mix": {
+            "road": 0,
+            "track": 0.005,
+            "path": 0.995,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.01,
+        "p95": 0.011,
+        "max": 0.011
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "native"
+            ],
+            "sharedWithMain": [
+              0.02
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 1,
+          "pass": true
+        },
+        "4": {
+          "value": 0.01,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 1.85
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 0.99,
+            "covered": 0.99,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 54.8,
+        "limitedMaxSlopePct": 53.9,
+        "routeChanged": false
+      }
+    },
+    {
+      "id": "ordesa-perdido",
+      "paths": [
+        {
+          "distanceKm": 15.74,
+          "timeH": 6.84,
+          "ascentM": 2539,
+          "descentM": 758,
+          "mix": {
+            "road": 0.009,
+            "track": 0.117,
+            "path": 0.874,
+            "unknown": 0
+          }
+        },
+        {
+          "distanceKm": 19.74,
+          "timeH": 7.81,
+          "ascentM": 2676,
+          "descentM": 895,
+          "mix": {
+            "road": 0.007,
+            "track": 0.248,
+            "path": 0.745,
+            "unknown": 0
+          }
+        }
+      ],
+      "seconds": {
+        "p50": 0.038,
+        "p95": 0.043,
+        "max": 0.043
+      },
+      "criteria": {
+        "1": {
+          "value": {
+            "alternatives": 2,
+            "sources": [
+              "native",
+              "blocking"
+            ],
+            "sharedWithMain": [
+              0.24
+            ]
+          },
+          "pass": true
+        },
+        "2": {
+          "value": 0.991,
+          "pass": true
+        },
+        "4": {
+          "value": 0.04,
+          "pass": true
+        },
+        "6": {
+          "value": {
+            "outcome": "avoided",
+            "pointsInside": 0,
+            "detourKm": 4
+          },
+          "pass": true
+        },
+        "7": {
+          "value": {
+            "onNetwork": 0.98,
+            "covered": 0.98,
+            "ordered": true
+          },
+          "pass": true
+        },
+        "8": {
+          "value": 0,
+          "pass": true
+        }
+      },
+      "slopeLimitEffect": {
+        "limitPct": 25,
+        "baseMaxSlopePct": 97.1,
+        "limitedMaxSlopePct": 94.1,
+        "routeChanged": true
+      }
+    }
+  ]
+}

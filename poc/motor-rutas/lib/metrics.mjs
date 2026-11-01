@@ -99,3 +99,60 @@ export function parseMemUsageMiB(text) {
   const value = Number(match[1]);
   return { B: value / 1048576, KiB: value / 1024, MiB: value, GiB: value * 1024 }[match[2]];
 }
+
+/** Distance along the polyline (m) of the point of the line closest to `point`; used to check that matched points keep their order. */
+export function arcPositionM(point, coords) {
+  const kLon = Math.cos(toRad(point[1])) * 111_320;
+  const kLat = 110_574;
+  let best = { distance: Infinity, arc: 0 };
+  let walked = 0;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const ax = (coords[i][0] - point[0]) * kLon;
+    const ay = (coords[i][1] - point[1]) * kLat;
+    const dx = (coords[i + 1][0] - coords[i][0]) * kLon;
+    const dy = (coords[i + 1][1] - coords[i][1]) * kLat;
+    const lengthSquared = dx * dx + dy * dy;
+    const t = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / lengthSquared));
+    const distance = Math.hypot(ax + dx * t, ay + dy * t);
+    const segment = haversineM(coords[i], coords[i + 1]);
+    if (distance < best.distance) best = { distance, arc: walked + segment * t };
+    walked += segment;
+  }
+  return best.arc;
+}
+
+/** True when the points, taken in order, never go back along the line by more than `slackM`. */
+export function keepsOrder(points, coords, slackM = 30) {
+  let last = -Infinity;
+  for (const point of points) {
+    const arc = arcPositionM(point, coords);
+    if (arc < last - slackM) return false;
+    last = Math.max(last, arc);
+  }
+  return true;
+}
+
+/** Axis-aligned square of side `2 * halfM` around `center`, as a closed GeoJSON ring. */
+export function squareRing(center, halfM) {
+  const dLat = halfM / 110_574;
+  const dLon = halfM / (Math.cos(toRad(center[1])) * 111_320);
+  return [
+    [center[0] - dLon, center[1] - dLat],
+    [center[0] + dLon, center[1] - dLat],
+    [center[0] + dLon, center[1] + dLat],
+    [center[0] - dLon, center[1] + dLat],
+    [center[0] - dLon, center[1] - dLat],
+  ];
+}
+
+/** Points of `coords` (resampled every `stepM`) inside the axis-aligned ring made by `squareRing`. */
+export function pointsInsideSquare(coords, ring, stepM = 5) {
+  const [minX, minY] = ring[0];
+  const [maxX, maxY] = ring[2];
+  return resample(coords, stepM).filter(([x, y]) => x >= minX && x <= maxX && y >= minY && y <= maxY).length;
+}
+
+/** A rough hand drawing of `coords`: a point every `stepM`, each pushed sideways by a fixed pattern (no randomness: the case must repeat). */
+export function roughDrawing(coords, stepM = 150, offsetM = 20) {
+  return resample(coords, stepM).map(([lon, lat], i) => [lon + ((i % 2 ? 1 : -1) * offsetM) / (Math.cos(toRad(lat)) * 111_320), lat + ((i % 3 ? 1 : -1) * (offsetM * 0.75)) / 110_574]);
+}

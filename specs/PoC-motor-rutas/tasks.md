@@ -22,7 +22,7 @@ Estado: **aprobadas por el usuario (2026-11-01)** · Plan aprobado el 2026-11-01
 - Hecho cuando: un solo comando produce la tabla criterio × motor × par (hoy solo GraphHopper: Valhalla es condicional, P7); el cálculo del solapamiento y de la composición tiene pruebas con casos sintéticos (Vitest en `poc/` o `node --test`, sin entrar en el CI).
 - Cierre: commit `feat(PoC): T4 add case runner with overlap, mix, timing and memory` + push.
 
-- [ ] **T5. Pendientes, zonas a evitar y ajuste a caminos.** Criterios 3, 6 y 7 y D-PoC-01.
+- [x] **T5. Pendientes, zonas a evitar y ajuste a caminos.** Criterios 3, 6 y 7 y D-PoC-01.
 - Pendiente máxima de cada ruta medida con **nuestra** medición (`packages/geo` y `ElevationProvider` sobre el DEM local), sin la altitud del motor; caso con dos valores del límite de pendiente; caso de polígono a evitar sobre la ruta principal; caso de polilínea tosca (±30 m) para ajustar a los caminos (map matching).
 - Hecho cuando: el corredor evalúa los tres criterios en los dos motores; se anota cuáles no soporta un motor; sin código nuevo en `apps/` ni en `packages/` (solo se importa lo que exista).
 - Cierre: commit `feat(PoC): T5 add slope, avoid-area and snap cases` + push.

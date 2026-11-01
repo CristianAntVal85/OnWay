@@ -1,14 +1,14 @@
 // Case runner of the routing-engine PoC (plan: specs/PoC-motor-rutas). No dependencies: Node >= 24.
 //   node poc/motor-rutas/run-cases.mjs --check
 //   node poc/motor-rutas/run-cases.mjs --engine graphhopper [--runs 10] [--url http://127.0.0.1:8989] [--container onway-poc-graphhopper-1] [--out results/graphhopper.json]
-// T4 measures criteria 1, 2, 4, 5 and 8; T5 adds 3, 6 and 7.
+// Criteria: 1 alternatives, 2 trails, 3 slope limit (probe), 4 time, 5 memory, 6 zone to avoid, 7 snap to the network, 8 road mix.
 import { execFile } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import * as graphhopper from './lib/graphhopper.mjs';
-import { parseMemUsageMiB, percentile, sharedShare } from './lib/metrics.mjs';
+import { keepsOrder, parseMemUsageMiB, percentile, pointsInsideSquare, resample, roughDrawing, sharedShare, squareRing } from './lib/metrics.mjs';
 
 const run = promisify(execFile);
 const engines = { graphhopper };
@@ -44,6 +44,16 @@ export function checkPairs(document) {
     for (const key of ['from', 'trailhead', 'to']) if (!isPoint(pair?.[key])) problems.push(`${label}: ${key} is not a valid point`);
     if (typeof pair?.touchesBorder !== 'boolean') problems.push(`${label}: touchesBorder must be true or false`);
   }
+  return problems;
+}
+
+/** Problems of `slope-probe.json`. */
+export function checkProbe(document) {
+  const problems = [];
+  if (!isPoint(document?.from)) problems.push('from is not a valid point');
+  if (!isPoint(document?.to)) problems.push('to is not a valid point');
+  if (!(document?.limitPct > 0)) problems.push('limitPct must be positive');
+  if (!(document?.maxSlopeRatio > 0 && document.maxSlopeRatio < 1)) problems.push('maxSlopeRatio must be between 0 and 1');
   return problems;
 }
 
@@ -85,12 +95,61 @@ export function evaluatePair(paths, secondsList, thresholds) {
   const p95 = percentile(secondsList, 95);
   return {
     1: check(
-      { alternatives: paths.length, sharedWithMain: shares.map((share) => Number(share.toFixed(2))) },
+      { alternatives: paths.length, sources: paths.map((path) => path.source), sharedWithMain: shares.map((share) => Number(share.toFixed(2))) },
       paths.length >= thresholds.minAlternatives && shares.every((share) => share <= thresholds.maxSharedShare),
     ),
     2: check(Number(trail.toFixed(3)), trail >= thresholds.minTrailShare),
     4: check(Number(p95.toFixed(2)), p95 <= thresholds.p95Seconds),
     8: check(Number(unknown.toFixed(3)), unknown <= 0.02),
+  };
+}
+
+const SLOPE_LIMIT_FOR_INFO_PCT = 25;
+
+/** Criteria 6 (zone to avoid) and 7 (snap a rough drawing) of one pair, and the informative slope effect for criterion 3. */
+async function capabilities(engine, url, pair, main, ours) {
+  const out = {};
+  // 6: a 200 m square over the middle of the main route; the new route must not cross it (or the engine must say there is no way).
+  const middle = resample(main.coords, 10);
+  const ring = squareRing(middle[Math.floor(middle.length / 2)], 100);
+  const avoided = await engine.route({ url, from: pair.from, to: pair.to, customModel: engine.avoidModel(ring) });
+  if (avoided.paths.length === 0) out[6] = check({ outcome: 'no_route', message: avoided.error ?? null }, true);
+  else {
+    const inside = pointsInsideSquare(avoided.paths[0].coords, ring, 5);
+    out[6] = check({ outcome: inside === 0 ? 'avoided' : 'crossed', pointsInside: inside, detourKm: Number(((avoided.paths[0].distanceM - main.distanceM) / 1000).toFixed(2)) }, inside === 0);
+  }
+  // 7: a rough drawing of the main route (about 25 m off the trail) must come back on the network, in order.
+  const drawing = roughDrawing(main.coords);
+  const snapped = await engine.match({ url, points: drawing });
+  if (snapped.coords.length === 0) out[7] = check({ error: snapped.error }, false);
+  else {
+    const onNetwork = sharedShare(snapped.coords, main.coords, 10);
+    const covered = sharedShare(main.coords, snapped.coords, 10);
+    const ordered = keepsOrder(drawing, snapped.coords);
+    out[7] = check({ onNetwork: Number(onNetwork.toFixed(2)), covered: Number(covered.toFixed(2)), ordered }, onNetwork >= 0.9 && covered >= 0.9 && ordered);
+  }
+  // 3 (information only): the same pair with a slope limit, measured with OnWay's own measurement.
+  const limited = await engine.route({ url, from: pair.from, to: pair.to, customModel: engine.slopeModel(SLOPE_LIMIT_FOR_INFO_PCT) });
+  const base = await ours(main.coords);
+  const slope = { limitPct: SLOPE_LIMIT_FOR_INFO_PCT, baseMaxSlopePct: base.maxSlopePct };
+  if (limited.paths.length > 0) {
+    slope.limitedMaxSlopePct = (await ours(limited.paths[0].coords)).maxSlopePct;
+    slope.routeChanged = sharedShare(limited.paths[0].coords, main.coords) < 0.9;
+  }
+  return { criteria: out, slope };
+}
+
+/** Criterion 3: on a pair where a gentler way exists, the limit must change the route and lower the measured maximum slope. */
+async function slopeProbe(engine, url, probe, ours) {
+  const base = await engine.route({ url, from: probe.from, to: probe.to });
+  const limited = await engine.route({ url, from: probe.from, to: probe.to, customModel: engine.slopeModel(probe.limitPct) });
+  if (base.paths.length === 0 || limited.paths.length === 0) return { id: probe.id, ...check({ error: base.error ?? limited.error }, false) };
+  const baseMax = (await ours(base.paths[0].coords)).maxSlopePct;
+  const limitedMax = (await ours(limited.paths[0].coords)).maxSlopePct;
+  const changed = sharedShare(limited.paths[0].coords, base.paths[0].coords) < 0.9;
+  return {
+    id: probe.id,
+    ...check({ limitPct: probe.limitPct, baseMaxSlopePct: baseMax, limitedMaxSlopePct: limitedMax, routeChanged: changed }, changed && limitedMax <= baseMax * probe.maxSlopeRatio),
   };
 }
 
@@ -101,15 +160,17 @@ async function measure(engineName) {
   const container = argOf('container', 'onway-poc-graphhopper-1');
   const runs = Number(argOf('runs', '10'));
   const { pairs, thresholds, extract } = JSON.parse(readFileSync(join(casesDir, 'pairs.json'), 'utf8'));
+  const probe = JSON.parse(readFileSync(join(casesDir, 'slope-probe.json'), 'utf8'));
+  const { measureLikeOnWay: ours } = await import('./lib/ours.mjs'); // needs `pnpm build` and .data/dem (scripts/fetch-dem.sh)
 
   const stopWatching = watchMemory(container);
   const results = [];
   for (const pair of pairs) {
-    await engine.route({ url, from: pair.from, to: pair.to }); // warm-up, not counted
+    await engine.proposeRoutes({ url, from: pair.from, to: pair.to }); // warm-up, not counted
     const seconds = [];
     let first;
     for (let i = 0; i < runs; i++) {
-      const answer = await engine.route({ url, from: pair.from, to: pair.to });
+      const answer = await engine.proposeRoutes({ url, from: pair.from, to: pair.to });
       seconds.push(answer.ms / 1000);
       first ??= answer;
     }
@@ -117,6 +178,8 @@ async function measure(engineName) {
       results.push({ id: pair.id, error: first.error ?? 'no route', criteria: {} });
       continue;
     }
+    const criteria = evaluatePair(first.paths, seconds, thresholds);
+    const extra = await capabilities(engine, url, pair, first.paths[0], ours);
     results.push({
       id: pair.id,
       paths: first.paths.map((path) => ({
@@ -127,19 +190,22 @@ async function measure(engineName) {
         mix: Object.fromEntries(Object.entries(path.mix).map(([key, share]) => [key, Number(share.toFixed(3))])),
       })),
       seconds: { p50: Number(percentile(seconds, 50).toFixed(3)), p95: Number(percentile(seconds, 95).toFixed(3)), max: Number(Math.max(...seconds).toFixed(3)) },
-      criteria: evaluatePair(first.paths, seconds, thresholds),
+      criteria: { ...criteria, ...extra.criteria },
+      slopeLimitEffect: extra.slope,
     });
   }
+  const slope = await slopeProbe(engine, url, probe, ours);
   const peakMiB = await stopWatching();
   const memory = check(peakMiB, peakMiB <= thresholds.peakMemoryMb);
-  return { engine: engineName, date: new Date().toISOString(), extract, thresholds, alternatives: engine.ALTERNATIVES, runs, peakMemoryMiB: memory, results };
+  return { engine: engineName, date: new Date().toISOString(), extract, thresholds, alternatives: engine.ALTERNATIVES, runs, slopeProbe: slope, peakMemoryMiB: memory, results };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (process.argv.includes('--check')) {
     let failed = false;
     for (const file of readdirSync(casesDir).filter((name) => name.endsWith('.json'))) {
-      const problems = file === 'pairs.json' ? checkPairs(JSON.parse(readFileSync(join(casesDir, file), 'utf8'))) : [];
+      const document = JSON.parse(readFileSync(join(casesDir, file), 'utf8'));
+      const problems = file === 'pairs.json' ? checkPairs(document) : file === 'slope-probe.json' ? checkProbe(document) : [];
       for (const problem of problems) console.error(`${file}: ${problem}`);
       console.log(`${file}: ${problems.length === 0 ? 'ok' : 'FAILED'}`);
       failed ||= problems.length > 0;
@@ -154,10 +220,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const report = await measure(engineName);
   const mark = (criterion) => (criterion ? (criterion.pass ? 'PASS' : 'FAIL') : '  - ');
   console.log(`\n${engineName}  runs=${report.runs}  peak memory ${report.peakMemoryMiB.value} MiB (${mark(report.peakMemoryMiB)})`);
-  console.log('pair'.padEnd(20), ['c1', 'c2', 'c4', 'c8'].map((c) => c.padEnd(6)).join(''), 'paths  p95 s');
+  console.log('pair'.padEnd(20), ['c1', 'c2', 'c4', 'c6', 'c7', 'c8'].map((c) => c.padEnd(6)).join(''), 'paths  p95 s');
   for (const result of report.results) {
-    console.log(result.id.padEnd(20), [1, 2, 4, 8].map((c) => mark(result.criteria[c]).padEnd(6)).join(''), String(result.paths?.length ?? 0).padEnd(6), result.seconds?.p95 ?? result.error);
+    console.log(result.id.padEnd(20), [1, 2, 4, 6, 7, 8].map((c) => mark(result.criteria[c]).padEnd(6)).join(''), String(result.paths?.length ?? 0).padEnd(6), result.seconds?.p95 ?? result.error);
   }
+  console.log(`c3 slope probe ${report.slopeProbe.id}: ${mark(report.slopeProbe)} ${JSON.stringify(report.slopeProbe.value)}`);
   const out = join(dirname(fileURLToPath(import.meta.url)), argOf('out', `results/${engineName}.json`));
   writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
   console.log(`written ${out}`);

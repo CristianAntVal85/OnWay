@@ -12,7 +12,9 @@ node poc/motor-rutas/run-cases.mjs --check   # valida cases/*.json
 node --test poc/motor-rutas/lib/metrics.test.mjs   # pruebas de las métricas (solapamiento, composición, percentiles); no están en el CI
 mkdir -p poc/motor-rutas/.data/{graphhopper,elevation}
 docker compose -f poc/motor-rutas/compose.yml up --build --wait graphhopper   # GraphHopper en http://127.0.0.1:8989 (T2)
-node poc/motor-rutas/run-cases.mjs --engine graphhopper --runs 10 --out results/graphhopper.json   # mide los criterios 1, 2, 4, 5 y 8 (T4)
+poc/motor-rutas/scripts/fetch-dem.sh          # 2 teselas Copernicus GLO-30 (85 MB) para la medición propia (T5)
+pnpm build                                    # la medición propia importa packages/geo y apps/api ya compilados
+node poc/motor-rutas/run-cases.mjs --engine graphhopper --runs 10 --out results/graphhopper.json   # mide los 8 criterios (T4 y T5)
 poc/motor-rutas/scripts/peak-memory.sh onway-poc-graphhopper-1 300             # pico de memoria del contenedor, en MiB (para medir la carga)
 docker compose -f poc/motor-rutas/compose.yml down                             # para; .data/ se conserva
 ```
@@ -87,3 +89,28 @@ Primera medición de GraphHopper (`results/graphhopper-t4-xmx2g.json`, pesos y p
 Memoria (criterio 5): **563–588 MiB de pico en consulta** (cumple, tope 2048), tras una carga que llegó a 1907 MiB con el mismo montón. El tiempo, de milisegundos, es tan holgado que no será un factor de decisión.
 
 El resultado importante es el criterio 1: en dos de los tres pares solo sale una ruta con `max_paths=3`, `max_share_factor=0.7` y `max_weight_factor=1.6`. Hay que ver en T5/T6 si es una limitación del terreno (un solo valle de subida, RF-501 pide alternativas «cuando el terreno lo permita») o de los parámetros.
+
+## Pendientes, zonas a evitar y ajuste a caminos (T5)
+
+Se añaden al corredor los criterios 3, 6 y 7. Las pendientes y los desniveles se miden con **la medición de OnWay** (`lib/ours.mjs` importa `prepareLine` y `computeMetrics` de `@onway/geo` y el lector de GLO-30 de `apps/api`, ya compilados; sin código nuevo en `apps/` ni en `packages/`), nunca con la altitud del motor. La altitud de GraphHopper (Skadi) discrepa de la nuestra: en `ordesa-perdido` da +2539 m de subida frente a +2032 m con GLO-30 (+25 %), y en el par 1 y el 2 la diferencia es del 1 % y del 11 %.
+
+Resultado (`results/graphhopper.json`, `-Xmx2g`, parámetros `max_paths=3`, `max_share_factor=0.8`, `max_weight_factor=2.5`):
+
+| Criterio | `coronas-aneto` | `bujaruelo-brecha` | `ordesa-perdido` |
+|---|---|---|---|
+| 1 · ≥ 2 alternativas, comparten ≤ 70 % | cumple (2: ambas nativas) | cumple (2: ambas nativas) | cumple (2: **una por bloqueo**) |
+| 2 · ≥ 90 % en pista o sendero | cumple | cumple | cumple |
+| 4 · p95 ≤ 5 s | cumple (11 ms) | cumple (11 ms) | cumple (43 ms) |
+| 6 · zona a evitar (cuadrado de 200 m en medio de la ruta) | evitada, +14,2 km | evitada, +1,9 km | evitada, +4,0 km |
+| 7 · ajuste de un dibujo burdo (a ~25 m del sendero) | 100 % sobre la red, orden conservado | 99 %, orden conservado | 98 %, orden conservado |
+| 8 · composición sin «desconocido» | cumple | cumple | cumple |
+
+Memoria (criterio 5): **1030 MiB de pico en consulta** (tope 2048; en dos pasadas salió 787 y 1030 MiB, porque el montón de la JVM crece con las consultas). Criterio 3 (sonda `bujaruelo-goriz`): el límite de 25 % cambia la ruta y baja la pendiente máxima medida de **97,8 % a 44,9 %**.
+
+Lo que este resultado **no** dice, para que nadie lo lea de más:
+
+- **Criterio 1, `ordesa-perdido`:** la búsqueda de alternativas de GraphHopper no devuelve ninguna con ningún parámetro probado (hasta `max_weight_factor=8`), aunque existe un rodeo de 19,7 km que comparte el 24 % con la ruta principal. Cumple solo con la estrategia de `proposeRoutes`: bloquear 200 m en medio de la ruta principal y volver a preguntar. Esa lógica sería del servidor en H3.
+- **Criterio 3:** en los tres pares el límite casi no cambia la ruta (la subida final es inevitable) y en `coronas-aneto` empeoró (de 67,1 % a 72,4 % con el límite de 30 %), porque el motor juzga la pendiente con su propia altitud. La sonda `bujaruelo-goriz` **se eligió después de explorar**: es un par donde existe un rodeo más suave (22,5 km frente a 29,9 km). Demuestra que el mecanismo funciona, no que mejore las rutas del usuario. Para H3 conviene alimentar el motor con el mismo modelo digital que usa OnWay (GLO-30), no con Skadi.
+- **Criterio 6:** si el polígono corta el único camino, el motor responde «Connection between locations not found» (un `NO_ROUTE_POSSIBLE` limpio), como pasó al bloquear el último cuarto de `coronas-aneto`.
+- **Criterio 7:** `/match` ajusta bien un dibujo burdo y ordenado, pero se probó con dibujos hechos a partir de la propia ruta del motor (mismo grafo), que es el caso favorable; no se probó con un dibujo a mano real.
+- Solo tres pares, todos del lado español y del Pirineo central: el lado francés de OSM (R-02, RF-304) sigue sin medirse.

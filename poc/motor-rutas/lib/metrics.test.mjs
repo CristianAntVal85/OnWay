@@ -1,6 +1,21 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { distanceToPolylineM, haversineM, mixFromDetails, parseMemUsageMiB, percentile, polylineLengthM, resample, roadTypeOf, sharedShare } from './metrics.mjs';
+import {
+  arcPositionM,
+  distanceToPolylineM,
+  haversineM,
+  mixFromDetails,
+  parseMemUsageMiB,
+  percentile,
+  pointsInsideSquare,
+  polylineLengthM,
+  resample,
+  keepsOrder,
+  roughDrawing,
+  squareRing,
+  roadTypeOf,
+  sharedShare,
+} from './metrics.mjs';
 
 // A straight line due east along 42.6 N: 0.01 degrees of longitude are ~822 m there.
 const line = (from, to, steps) => Array.from({ length: steps + 1 }, (_, i) => [from + ((to - from) * i) / steps, 42.6]);
@@ -70,4 +85,28 @@ test('parseMemUsageMiB reads docker stats', () => {
   assert.equal(parseMemUsageMiB('512MiB / 3GiB'), 512);
   assert.equal(parseMemUsageMiB('1.5GiB / 3GiB'), 1536);
   assert.ok(Number.isNaN(parseMemUsageMiB('--')));
+});
+
+test('arcPositionM and keepsOrder: points along a line keep their order, reversed ones do not', () => {
+  const coords = line(0.6, 0.7, 10);
+  const arc = arcPositionM([0.65, 42.6003], coords);
+  assert.ok(Math.abs(arc - polylineLengthM(coords) / 2) < 5);
+  const points = [0.62, 0.64, 0.66, 0.68].map((lon) => [lon, 42.6002]);
+  assert.equal(keepsOrder(points, coords), true);
+  assert.equal(keepsOrder([...points].reverse(), coords), false);
+});
+
+test('squareRing and pointsInsideSquare: a 100 m half-side square catches ~200 m of a line through its centre', () => {
+  const coords = line(0.6, 0.7, 10);
+  const ring = squareRing([0.65, 42.6], 100);
+  const inside = pointsInsideSquare(coords, ring, 5);
+  assert.ok(inside >= 38 && inside <= 42, String(inside));
+  assert.equal(pointsInsideSquare(line(0.6, 0.62, 2), ring, 5), 0);
+});
+
+test('roughDrawing is repeatable and stays within ~25 m of the line (20 m along, 15 m across)', () => {
+  const coords = line(0.6, 0.7, 10);
+  const first = roughDrawing(coords);
+  assert.deepEqual(first, roughDrawing(coords));
+  for (const point of first) assert.ok(distanceToPolylineM(point, coords) <= 26);
 });
