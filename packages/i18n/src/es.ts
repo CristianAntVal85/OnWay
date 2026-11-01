@@ -708,7 +708,7 @@ export const es: Messages = {
   routeEditor: {
     drawTitle: 'Dibujar una ruta',
     editTitle: 'Nueva versión de «{{name}}»',
-    help: 'Toca el mapa para marcar los vértices de la ruta, unidos en línea recta (sin ajuste a caminos). Arrastra un vértice para moverlo y toca un tramo para añadir un punto. También puedes escribir las coordenadas de cada vértice en la lista.',
+    help: 'Toca el mapa para marcar los vértices de la ruta. Arrastra un vértice para moverlo y toca un tramo para añadir un punto. También puedes escribir las coordenadas de cada vértice en la lista.',
     simplifiedNote: 'Se edita una versión simplificada (como mucho {{max}} vértices). El servidor vuelve a medir la ruta al guardarla.',
     nameLabel: 'Nombre de la ruta',
     noteLabel: 'Nota (opcional)',
@@ -735,6 +735,16 @@ export const es: Messages = {
     mapLabel: 'Mapa para dibujar y editar la ruta',
     markerLabel: 'Vértice {{n}} de {{total}}',
     changed: 'Sin cambios todavía.',
+    snapLabel: 'Unir los puntos siguiendo los caminos',
+    snapHelp:
+      'Los puntos son puntos de paso: el servidor los une por carreteras, pistas y senderos, de dos a {{max}} puntos. Si lo desmarcas, se guardan unidos en línea recta y la ruta queda sin clasificar.',
+    snapPreview: 'Calcular la ruta por los caminos',
+    snapComputing: 'Calculando…',
+    snapResult: 'Ruta por los caminos: {{distance}} · subida {{ascent}} · bajada {{descent}}',
+    snapStale: 'Has cambiado los puntos: vuelve a calcular la ruta por los caminos.',
+    snapTooMany: 'Para unir por los caminos hay como máximo {{max}} puntos; quita alguno o desmarca la opción.',
+    snapFailedHint: 'Puedes mover los puntos o desmarcar la unión por los caminos para guardarlos en línea recta.',
+    snapPreviewMapLabel: 'Ruta unida por los caminos',
   },
   roadMix: {
     title: 'Tipo de vía',
@@ -810,6 +820,7 @@ export const es: Messages = {
     ascent: 'Subida',
     descent: 'Bajada',
     compareTitle: 'Comparación de las alternativas',
+    again: 'Generar otras rutas',
   },
   errors: {
     VALIDATION_FAILED: 'Revisa los datos introducidos.',

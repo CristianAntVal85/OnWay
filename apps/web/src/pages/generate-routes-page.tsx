@@ -485,52 +485,65 @@ export function GenerateRoutesPage() {
           {results.some((result) => result.isPending) && <LoadingState />}
           {results.some((result) => result.isError) && <ErrorState error={results.find((result) => result.isError)?.error} />}
           {results.length > 0 && results.every((result) => result.isSuccess) && (
-            <table className="results-table">
-              <caption>{t('generate.compareTitle')}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">{t('generate.resultName', { name: '' })}</th>
-                  <th scope="col">{t('generate.distance')}</th>
-                  <th scope="col">{t('generate.ascent')}</th>
-                  <th scope="col">{t('generate.descent')}</th>
-                  <th scope="col">{t('roadMix.title')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((result, index) => {
-                  const detail = result.data!.detail;
-                  const version = detail.versions[0]!;
-                  return (
-                    <tr key={detail.id} data-highlighted={highlighted === detail.id || undefined}>
-                      <th scope="row">
-                        <Link to={routePath(detail.id)} aria-label={t('generate.open', { name: detail.name })}>
-                          {detail.name}
-                        </Link>{' '}
-                        <button
-                          type="button"
-                          className="button-link"
-                          aria-pressed={highlighted === routeIds[index]}
-                          aria-label={t('generate.showOnMap', { name: detail.name })}
-                          onClick={() => setHighlighted(highlighted === detail.id ? null : detail.id)}
-                        >
-                          ◎
-                        </button>
-                      </th>
-                      <td>{t('units.km', { value: formatKm(version.metrics.distanceM, locale) })}</td>
-                      <td>{t('units.m', { value: Math.round(version.metrics.ascentM) })}</td>
-                      <td>{t('units.m', { value: Math.round(version.metrics.descentM) })}</td>
-                      <td>
-                        <RoadMix mix={version.roadMix} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="table-scroll" role="region" aria-label={t('generate.compareTitle')} tabIndex={0}>
+              <table className="results-table">
+                <caption>{t('generate.compareTitle')}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">{t('generate.resultName', { name: '' })}</th>
+                    <th scope="col">{t('generate.distance')}</th>
+                    <th scope="col">{t('generate.ascent')}</th>
+                    <th scope="col">{t('generate.descent')}</th>
+                    <th scope="col">{t('roadMix.title')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((result, index) => {
+                    const detail = result.data!.detail;
+                    const version = detail.versions[0]!;
+                    return (
+                      <tr key={detail.id} data-highlighted={highlighted === detail.id || undefined}>
+                        <th scope="row">
+                          <Link to={routePath(detail.id)} aria-label={t('generate.open', { name: detail.name })}>
+                            {detail.name}
+                          </Link>{' '}
+                          <button
+                            type="button"
+                            className="button-link"
+                            aria-pressed={highlighted === routeIds[index]}
+                            aria-label={t('generate.showOnMap', { name: detail.name })}
+                            onClick={() => setHighlighted(highlighted === detail.id ? null : detail.id)}
+                          >
+                            ◎
+                          </button>
+                        </th>
+                        <td>{t('units.km', { value: formatKm(version.metrics.distanceM, locale) })}</td>
+                        <td>{t('units.m', { value: Math.round(version.metrics.ascentM) })}</td>
+                        <td>{t('units.m', { value: Math.round(version.metrics.descentM) })}</td>
+                        <td>
+                          <RoadMix mix={version.roadMix} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
           <p>
             <Link to={PATHS.routes}>{t('generate.openLibrary')}</Link>
           </p>
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => {
+              setJobId(null);
+              setHighlighted(null);
+              start.reset();
+            }}
+          >
+            {t('generate.again')}
+          </button>
         </section>
       )}
     </>

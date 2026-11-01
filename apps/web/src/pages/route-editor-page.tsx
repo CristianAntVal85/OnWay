@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useReducer, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { formatKm } from '../library/format';
+import { RoadMix } from '../library/road-mix';
 import { Dialog } from '../components/dialog';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
@@ -12,6 +14,8 @@ import { useApi } from '../session/api-context';
 
 /** Lo más que se edita a mano: una versión de miles de puntos se simplifica (el servidor vuelve a medir al guardar). */
 export const MAX_EDIT_VERTICES = 150;
+/** Lo más que el servidor une siguiendo los caminos de una vez (`snapRoute` y `createRoute` con `snapToPaths`). */
+export const MAX_SNAP_POINTS = 50;
 
 const lineOf = (vertices: readonly Vertex[]) => ({ type: 'LineString' as const, coordinates: vertices.map(([lon, lat]) => [lon, lat] as [number, number]) });
 
@@ -21,7 +25,8 @@ const lineOf = (vertices: readonly Vertex[]) => ({ type: 'LineString' as const, 
  * los vértices: el servidor mide. Guardar una edición crea la versión siguiente; «guardar como nueva ruta» deriva una copia.
  */
 export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.resolvedLanguage ?? 'es';
   const api = useApi();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -45,6 +50,8 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
   const [simplified, setSimplified] = useState(false);
   const [coordinateError, setCoordinateError] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  // Al dibujar, los puntos se unen siguiendo los caminos (H3); al editar una versión, los vértices se guardan tal cual.
+  const [snap, setSnap] = useState(true);
 
   // La versión de partida entra una sola vez, simplificada si es muy larga.
   const [loaded, setLoaded] = useState<string | null>(null);
@@ -63,7 +70,7 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
     if (editing) await queryClient.invalidateQueries({ queryKey: ['route', routeId] });
   };
   const draw = useMutation({
-    mutationFn: () => api.createRoute({ body: { source: 'drawn', name: name.trim(), geometry: lineOf(state.vertices), ...(note.trim() ? { note: note.trim() } : {}) } }),
+    mutationFn: () => api.createRoute({ body: { source: 'drawn', name: name.trim(), geometry: lineOf(state.vertices), snapToPaths: snap, ...(note.trim() ? { note: note.trim() } : {}) } }),
     onSuccess: async (created) => {
       await refresh();
       navigate(routePath(created.routeId));
@@ -85,9 +92,24 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
     },
   });
 
-  const mapLine: MapRoute[] = useMemo(() => (state.vertices.length >= 2 ? [{ id: 'edit', name: t('routeEditor.mapLabel'), tone: 'draft', line: state.vertices }] : []), [state.vertices, t]);
+  // La vista previa de la ruta unida por los caminos: el servidor la calcula y la mide (`snapRoute`); aquí solo se enseña.
+  const preview = useMutation({
+    mutationFn: () => api.snapRoute({ body: { points: state.vertices.map(([lon, lat]) => ({ lat, lon })) } }),
+  });
+  const { reset: resetPreview } = preview;
+  useEffect(() => {
+    resetPreview();
+  }, [state.vertices, snap, resetPreview]);
+  const snapping = !editing && snap;
+
+  const mapLine: MapRoute[] = useMemo(() => {
+    const lines: MapRoute[] = state.vertices.length >= 2 ? [{ id: 'edit', name: t('routeEditor.mapLabel'), tone: 'draft', line: state.vertices }] : [];
+    if (preview.data) lines.push({ id: 'snapped', name: t('routeEditor.snapPreviewMapLabel'), tone: 'compare-a', line: preview.data.geometry.coordinates.map(([lon, lat]) => [lon!, lat!] as const) });
+    return lines;
+  }, [preview.data, state.vertices, t]);
   const total = state.vertices.length;
   const enough = total >= 2;
+  const tooManyToSnap = snapping && total > MAX_SNAP_POINTS;
   const pending = draw.isPending || saveVersion.isPending || derive.isPending;
   const failure = draw.error ?? saveVersion.error ?? derive.error;
 
@@ -110,7 +132,7 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!enough) return;
+    if (!enough || tooManyToSnap) return;
     if (!editing) {
       if (!name.trim()) return setNameMissing(true);
       draw.mutate();
@@ -186,6 +208,46 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
             <label htmlFor="editor-note">{t('routeEditor.noteLabel')}</label>
             <textarea id="editor-note" rows={2} maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} />
           </div>
+
+          {!editing && !archived && (
+            <section aria-labelledby="snap-title" className="snap-panel">
+              <h2 id="snap-title">{t('routeEditor.snapLabel')}</h2>
+              <label className="check">
+                <input type="checkbox" checked={snap} onChange={(event) => setSnap(event.target.checked)} /> {t('routeEditor.snapLabel')}
+              </label>
+              <p className="field-help">{t('routeEditor.snapHelp', { max: MAX_SNAP_POINTS })}</p>
+              {snap && (
+                <>
+                  <button type="button" className="button button-secondary" disabled={!enough || tooManyToSnap || preview.isPending} onClick={() => preview.mutate()}>
+                    {preview.isPending ? t('routeEditor.snapComputing') : t('routeEditor.snapPreview')}
+                  </button>
+                  {tooManyToSnap && (
+                    <p className="field-error" role="alert">
+                      {t('routeEditor.snapTooMany', { max: MAX_SNAP_POINTS })}
+                    </p>
+                  )}
+                  {preview.isError && (
+                    <div role="alert" className="field-error">
+                      <p>{errorMessage(t, preview.error)}</p>
+                      <p>{t('routeEditor.snapFailedHint')}</p>
+                    </div>
+                  )}
+                  {preview.data && (
+                    <div role="status" className="snap-result">
+                      <p>
+                        {t('routeEditor.snapResult', {
+                          distance: t('units.km', { value: formatKm(preview.data.metrics.distanceM, locale) }),
+                          ascent: t('units.m', { value: Math.round(preview.data.metrics.ascentM) }),
+                          descent: t('units.m', { value: Math.round(preview.data.metrics.descentM) }),
+                        })}
+                      </p>
+                      <RoadMix mix={preview.data.roadMix} />
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+          )}
 
           <div className="editor-toolbar">
             <button type="button" className="button button-secondary" disabled={state.history.length === 0} onClick={() => dispatch({ type: 'undo' })}>

@@ -489,6 +489,15 @@ export interface Messages {
     mapLabel: string;
     markerLabel: string;
     changed: string;
+    snapLabel: string;
+    snapHelp: string;
+    snapPreview: string;
+    snapComputing: string;
+    snapResult: string;
+    snapStale: string;
+    snapTooMany: string;
+    snapFailedHint: string;
+    snapPreviewMapLabel: string;
   };
   roadMix: {
     title: string;
@@ -559,6 +568,7 @@ export interface Messages {
     ascent: string;
     descent: string;
     compareTitle: string;
+    again: string;
   };
   errors: Record<ErrorCode, string>;
 }

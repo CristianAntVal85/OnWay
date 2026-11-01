@@ -2556,3 +2556,22 @@ h4 {
 .detail-generate {
   margin: 1rem 0;
 }
+
+/* Dibujar uniendo los puntos por los caminos (H3-T9). */
+.snap-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+.snap-panel h2 {
+  font-size: 1rem;
+}
+.snap-result {
+  margin-top: 0.5rem;
+}
+
+/* Una tabla más ancha que la pantalla se desplaza dentro de su región (que se puede enfocar y mover con el teclado), no la página. */
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}

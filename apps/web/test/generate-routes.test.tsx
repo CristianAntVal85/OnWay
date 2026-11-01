@@ -193,6 +193,10 @@ describe('generar desde la biblioteca (dos puntos)', () => {
     expect(within(rows[2]!).getByText('7,5 km')).toBeTruthy();
     expect(screen.getByText(T.resultsHelp)).toBeTruthy();
     expect(map.routes?.filter((r) => r.tone === 'draft')).toHaveLength(2);
+    // El formulario queda bloqueado mientras se ven los resultados; «generar otras rutas» lo libera.
+    await user.click(screen.getByRole('button', { name: T.again }));
+    expect((screen.getByRole('button', { name: T.submit }) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByRole('table', { name: T.compareTitle })).toBeNull();
   });
 
   it('avisa de los puntos que faltan y no envía nada', async () => {

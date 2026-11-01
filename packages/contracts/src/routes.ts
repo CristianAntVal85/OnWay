@@ -135,6 +135,11 @@ export const CreateRouteRequest = z.discriminatedUnion('source', [
     source: z.literal('drawn'),
     name: z.string().trim().min(1).max(160),
     geometry: LineStringInput,
+    /**
+     * Si es true (H3), `geometry` son los puntos de control (de 2 a 50) y el servidor los une siguiendo los caminos, como `snapRoute`; la
+     * ruta queda con su composición por tipo de vía. Si no, `geometry` se guarda tal cual y la composición queda «sin clasificar».
+     */
+    snapToPaths: z.boolean().default(false),
     note: z.string().trim().max(1000).optional(),
     addToMission: AddToMission.optional(),
   }),

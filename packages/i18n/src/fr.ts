@@ -708,7 +708,7 @@ export const fr: Messages = {
   routeEditor: {
     drawTitle: 'Dessiner un itinéraire',
     editTitle: 'Nouvelle version de « {{name}} »',
-    help: 'Touchez la carte pour poser les sommets de l’itinéraire, reliés en ligne droite (sans accrochage aux chemins). Faites glisser un sommet pour le déplacer et touchez un tronçon pour ajouter un point. Vous pouvez aussi saisir les coordonnées de chaque sommet dans la liste.',
+    help: 'Touchez la carte pour poser les sommets de l’itinéraire. Faites glisser un sommet pour le déplacer et touchez un tronçon pour ajouter un point. Vous pouvez aussi saisir les coordonnées de chaque sommet dans la liste.',
     simplifiedNote: 'Vous modifiez une version simplifiée ({{max}} sommets au plus). Le serveur mesure de nouveau l’itinéraire à l’enregistrement.',
     nameLabel: 'Nom de l’itinéraire',
     noteLabel: 'Note (facultative)',
@@ -735,6 +735,16 @@ export const fr: Messages = {
     mapLabel: 'Carte pour dessiner et modifier l’itinéraire',
     markerLabel: 'Sommet {{n}} sur {{total}}',
     changed: 'Aucun changement pour l’instant.',
+    snapLabel: 'Relier les points en suivant les chemins',
+    snapHelp:
+      'Les points sont des points de passage : le serveur les relie par routes, pistes et sentiers, de deux à {{max}} points. Si vous décochez, ils sont enregistrés reliés en ligne droite et l’itinéraire reste non classé.',
+    snapPreview: 'Calculer l’itinéraire par les chemins',
+    snapComputing: 'Calcul en cours…',
+    snapResult: 'Itinéraire par les chemins : {{distance}} · montée {{ascent}} · descente {{descent}}',
+    snapStale: 'Vous avez changé les points : recalculez l’itinéraire par les chemins.',
+    snapTooMany: 'Pour relier par les chemins, il y a au plus {{max}} points ; retirez-en ou décochez l’option.',
+    snapFailedHint: 'Vous pouvez déplacer les points ou décocher la liaison par les chemins pour les enregistrer en ligne droite.',
+    snapPreviewMapLabel: 'Itinéraire relié par les chemins',
   },
   roadMix: {
     title: 'Type de voie',
@@ -810,6 +820,7 @@ export const fr: Messages = {
     ascent: 'Montée',
     descent: 'Descente',
     compareTitle: 'Comparaison des variantes',
+    again: 'Générer d’autres itinéraires',
   },
   errors: {
     VALIDATION_FAILED: 'Vérifiez les données saisies.',

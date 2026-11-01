@@ -47,7 +47,7 @@ Cada cierre: solo con todo en verde (lo tocado y el CI de la rama, incluidos los
 - Hecho cuando: pruebas de componente de los estados cargando, vacío, error y cada código de error; el botón de la misión desactivado sin origen; i18n completo en es y fr (prueba «sin texto fijo»); `pnpm lint` mantiene la frontera del mapa; revisión con Chrome DevTools en 375 px y solo con teclado, anotada; sin ubicación del dispositivo guardada (INV-30).
 - Cierre: commit `feat(H3): T8 add the Generate routes view` + push.
 
-- [ ] **T9. Web: dibujar a mano con ajuste a caminos y composición real.** RF-503; doc 02 §3.6-C
+- [x] **T9. Web: dibujar a mano con ajuste a caminos y composición real.** RF-503; doc 02 §3.6-C
   El editor de «Dibujar ruta» (y la edición de H2) usa `snapRoute`: los puntos se unen siguiendo caminos y la vista previa muestra métricas y composición del servidor; si el ajuste falla se avisa y se puede dejar como línea recta; la composición real (carretera, pista, sendero, y «sin clasificar» solo para lo que no pasó por el motor) aparece en el detalle, la lista y la comparación; la edición manual sigue creando una versión nueva.
 - Hecho cuando: pruebas de componente y del reductor de edición con el ajuste mockeado; barra de composición con colores y texto accesibles (no solo color); revisión en 375 px y con teclado; i18n es y fr; ninguna geometría de rutas fuera de `src/map/` y `packages/geo`; si se deciden mover `nearestSegment` y `simplifyVertices` a `packages/geo`, con sus pruebas.
 - Cierre: commit `feat(H3): T9 snap hand-drawn routes to paths and show the real road mix` + push.

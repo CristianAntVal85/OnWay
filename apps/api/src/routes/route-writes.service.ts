@@ -10,6 +10,7 @@ import { ImportedTracks } from '../files/imported-tracks.js';
 import { viewerOf } from '../missions/mission-support.js';
 import { translateRouteWriteError } from './errors.js';
 import { readRouteDetail, readVersion } from './route-reads.js';
+import { ROUTING_PROVIDER, type EngineSegment, type RoutingProvider } from '../routing/routing.js';
 import { RouteMeasurement, type MeasuredPath } from './route-measurement.js';
 
 type CreateBody = z.infer<typeof CreateRouteRequest>;
@@ -24,6 +25,14 @@ interface LockedRoute {
   status: 'active' | 'archived';
   latest_validated_version_id: string | null;
 }
+
+/** Most control points the engine joins at once (the same limit as `snapRoute`). */
+const MAX_SNAP_POINTS = 50;
+
+const tooManyPoints = (): DomainError =>
+  new DomainError('VALIDATION_FAILED', 'Request validation failed', {
+    issues: [{ path: 'geometry', code: 'too_many_points', message: `following the paths takes at most ${MAX_SNAP_POINTS} points` }],
+  });
 
 /** An input the contract carries for a later milestone: refused with the field named, as the points of H1 do with `teamIds` (D-H2-09). */
 function notYet(path: string, milestone: string): DomainError {
@@ -47,6 +56,7 @@ export class RouteWrites {
     @Inject(AuditWriter) private readonly audit: AuditWriter,
     @Inject(ImportedTracks) private readonly tracks: ImportedTracks,
     @Inject(RouteMeasurement) private readonly measurement: RouteMeasurement,
+    @Inject(ROUTING_PROVIDER) private readonly routing: RoutingProvider,
   ) {}
 
   private get tx(): Tx {
@@ -58,15 +68,22 @@ export class RouteWrites {
     if (body.addToMission) throw notYet('addToMission', 'the missions milestone (H4)');
 
     let vertices: readonly (readonly number[])[];
+    let stretches: readonly EngineSegment[] | undefined;
     let sourceFileId: string | null = null;
     if (body.source === 'import') {
       const { fileId, track } = await this.tracks.open(viewer.orgId, body.fileId);
       vertices = track.line;
       sourceFileId = fileId;
+    } else if (body.snapToPaths) {
+      // The points are control points: the engine joins them following the paths, and the server measures the result (rule 6).
+      if (body.geometry.coordinates.length > MAX_SNAP_POINTS) throw tooManyPoints();
+      const snapped = await this.routing.snap(body.geometry.coordinates.map(([lon, lat]) => ({ lat: lat!, lon: lon! })));
+      vertices = snapped.coordinates;
+      stretches = snapped.segments;
     } else {
       vertices = body.geometry.coordinates;
     }
-    const measured = await this.measurement.measure(vertices);
+    const measured = await this.measurement.measure(vertices, stretches);
 
     const routeId = await this.insertRoute(viewer.orgId, viewer.userId, body.name);
     const versionId = await this.insertVersion({
@@ -86,7 +103,7 @@ export class RouteWrites {
       routeId,
       action: 'route_created',
       actorUserId: viewer.userId,
-      detail: { name: body.name, versionNumber: 1, source: body.source },
+      detail: { name: body.name, versionNumber: 1, source: body.source, ...(body.source === 'drawn' && body.snapToPaths ? { snapToPaths: true } : {}) },
     });
     return { routeId, versionId, versionNumber: 1, missionRouteId: null };
   }
