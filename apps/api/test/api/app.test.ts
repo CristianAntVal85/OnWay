@@ -9,7 +9,7 @@ import { TestOnlyController } from '../support/test-controllers.js';
 
 /**
  * Operations built so far: the 23 of H0 and H1, the 13 of H2 and those of H3 that earlier tasks have mounted. AC-02 compares the
- * routes Express mounts with this list; each H3 task appends its operations here and H3-T7 will leave exactly the 42 (36 + 6 of H3).
+ * routes Express mounts with this list; each H3 task appends its operations here and since H3-T7 it is exactly the 42 (36 + the 6 of H3).
  */
 const BUILT = [
   'getHealth',
@@ -95,6 +95,9 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     const builtOfH3 = BUILT.filter((id) => ofH3.includes(id));
     expect([...BUILT].sort()).toEqual([...ofMilestones, ...ofH2, ...builtOfH3].sort());
     expect(BUILT).toHaveLength(36 + builtOfH3.length);
+    // H3 is complete: all its 6 operations are mounted, so the list has exactly the 42 that docs/estado.md and CLAUDE.md announce.
+    expect(builtOfH3).toHaveLength(6);
+    expect(BUILT).toHaveLength(42);
   });
 
   it('mounts exactly the operations built so far, and all of them are in the registry', () => {

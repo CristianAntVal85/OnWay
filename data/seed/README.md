@@ -51,7 +51,7 @@ Seis rutas inventadas en el Pirineo central, todas con «ficticia» en el nombre
 | Camino antiguo (ficticia) | archivada |
 | Pista con validación antigua (ficticia) | validada hace 120 días: la biblioteca avisa de que ha caducado (límite de la organización: 90) |
 
-`gpx/ejemplo-importar.gpx` no se siembra: es el archivo para probar **Importar ruta** a mano y en el E2E. Lleva una altitud falsa de 999 m en todos los puntos y dos puntos con nombre; el servidor ignora la altitud (RN-10) y la vista previa lo avisa. Las dos rutas generadas por el motor (alternativas) llegan con H3.
+`gpx/ejemplo-importar.gpx` no se siembra: es el archivo para probar **Importar ruta** a mano y en el E2E. Lleva una altitud falsa de 999 m en todos los puntos y dos puntos con nombre; el servidor ignora la altitud (RN-10) y la vista previa lo avisa. Las rutas generadas por el motor no se siembran: las produce *Generar rutas* (ver más abajo).
 
 ## Red de caminos inventada (`network.osm`, H3)
 

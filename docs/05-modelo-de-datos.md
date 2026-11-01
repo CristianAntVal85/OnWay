@@ -322,7 +322,7 @@ El documento 03 es conceptual. Al bajarlo a tablas hubo que tomar estas decision
 | `mission_points` | Misiones | Orígenes, intermedios y puntos de reunión | cientos | Sí |
 | `mission_team_assignments` | Misiones | Equipos asignados | decenas | Sí |
 | `participations` | Participación | Voluntarios y participantes, con asistencia confirmada | cientos | Sí |
-| `calculation_jobs` | Planificación | Trabajos de cálculo (H3: `generate`; `pending → running → completed/failed`, con `progress`, el código del fallo y `queue_job_id` de pg-boss) | cientos | Sí |
+| `calculation_jobs` | Planificación | Trabajos de cálculo (H3: `generate`; `pending → running → completed/failed`, con `progress` y el código del fallo; la columna `queue_job_id` no se rellena en H3) | cientos | Sí |
 | `routes` | Biblioteca | Identidad estable de cada ruta | decenas a miles | Sí |
 | `route_versions` | Biblioteca | Versiones inmutables con geometría y métricas | decenas a miles | Sí |
 | `route_segments` | Biblioteca | Tramos de cada versión | miles | Sí |
