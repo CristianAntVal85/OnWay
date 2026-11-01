@@ -32,7 +32,7 @@ Huecos que los documentos no cierran. Cada una lleva mi recomendación (la prime
 |---|---|
 | `poc/motor-rutas/` (nueva) | `compose.yml` propio (GraphHopper y Valhalla, cada uno con tope de memoria), `README.md` (cómo reproducir), perfiles de montaña de cada motor, `cases/*.json` (los 3 pares y los casos de zona a evitar y de ajuste), `run-cases.mjs` (Node 24, sin dependencias: pide al motor, mide y escribe un JSON de resultados), `results/` con los resultados que se conservan |
 | `.gitignore` | `poc/motor-rutas/.data/` (el `.pbf`, los grafos y las teselas de elevación): cientos de MB y ODbL, no se versionan |
-| `docs/` | Doc 04 §7: nueva §7.5 «Resultado de la prueba técnica» (motor, pesos, cifras), criterios 6–8 y los 3 pares elegidos por el usuario en §7.3 (sustituyen a «uno a cada lado de la frontera y uno que la cruce») y entrada en su registro; §11.1 con la memoria medida. Doc 07: §6 («Prueba técnica del motor» → resuelta) y «Antes de empezar» de H3. Doc 01: estado de R-01. `docs/estado.md` |
+| `docs/` | Doc 04 §7: nueva §7.6 «Resultado de la prueba técnica» (motor, pesos, cifras), criterios 6–8 y los 3 pares elegidos por el usuario en §7.3 (sustituyen a «uno a cada lado de la frontera y uno que la cruce») y entrada en su registro; §11.1 con la memoria medida. Doc 07: §6 («Prueba técnica del motor» → resuelta) y «Antes de empezar» de H3. Doc 01: estado de R-01. `docs/estado.md` |
 | `apps/`, `packages/`, `db/`, `infra/`, `data/seed` | **Sin cambios** |
 
 ## 3. Puertos implicados
@@ -89,6 +89,6 @@ Mismos datos y mismas preguntas para los dos motores: **un extracto OSM de los P
 4. **T4 · Corredor de casos:** `run-cases.mjs` con alternativas, composición, tiempo y memoria (criterios 1, 2, 4, 5, 8).
 5. **T5 · Pendientes, zonas a evitar y ajuste a caminos** con nuestra medición (criterios 3, 6, 7).
 6. **T6 · Comparación y corte:** tabla completa, motor elegido o parada (P5).
-7. **T7 · Informe y documentos:** doc 04 §7.5, §7.3 y §11.1; doc 07 §6 y H3; doc 01 R-01; `docs/estado.md`; casos como regresión.
+7. **T7 · Informe y documentos:** doc 04 §7.6, §7.3 y §11.1; doc 07 §6 y H3; doc 01 R-01; `docs/estado.md`; casos como regresión.
 
 Un commit y un push por tarea, igual que en los hitos. Al terminar: validación con el `reviewer` contra los criterios de §4 y el PR de P6.

@@ -1,6 +1,6 @@
 # OnWay — Documento 04: Arquitectura y stack
 
-Versión: 0.9 (borrador) · Fecha: 2026-10-31 · Depende de: documentos 01 (v0.7), 02 (v0.5) y 03 (v0.4)
+Versión: 1.0 (borrador) · Fecha: 2026-11-01 · Depende de: documentos 01 (v0.7), 02 (v0.5) y 03 (v0.4)
 
 Este documento decide **con qué y cómo** se construye OnWay: lenguaje, frameworks, base de datos, despliegue, proveedores externos, seguridad y estrategia para la futura app móvil. Parte de las restricciones de un proyecto didáctico (documento 03, sección 14).
 
@@ -26,7 +26,7 @@ Prefijo **AD** (Architecture Decision) para distinguirlas de las decisiones de p
 | AD-08 | **Cola de trabajos en PostgreSQL** (pg-boss), sin Redis | Redis + BullMQ (un servicio más que mantener) | Propuesta |
 | AD-09 | **Contrato de API primero**: esquemas Zod compartidos, OpenAPI generado, cliente tipado | Tipos duplicados a mano entre web y API | Propuesta |
 | AD-10 | **Mapas con MapLibre GL JS**; mapa base vectorial propio (Protomaps); satélite y topográfico desde los servicios abiertos de IGN España e IGN Francia | Google Maps (licencia y coste), Mapbox (de pago) | Propuesta |
-| AD-11 | **Motor de rutas detrás de una interfaz**, con una prueba técnica antes de fijarlo. Candidato inicial: GraphHopper | Fijarlo ya sin medir | Propuesta |
+| AD-11 | **Motor de rutas detrás de una interfaz**, con una prueba técnica antes de fijarlo. Candidato inicial: GraphHopper. **Elegido GraphHopper 11.1 tras la prueba técnica (§7.6)** | Fijarlo ya sin medir | Confirmada (2026-11-01) |
 | AD-12 | **Datos sensibles cifrados en la aplicación** (AES-256-GCM), con huella HMAC para detectar documentos duplicados | Cifrado solo de disco, o guardarlos en claro | Propuesta |
 | AD-13 | **Móvil: web instalable (PWA) ahora, decisión de envoltorio nativo más adelante** | Decidir ya React Native o Capacitor | Propuesta |
 | AD-14 | **Mapas y datos externos cargados en el servidor propio** siempre que sea posible (elevación, mapa base), para no depender de cupos | Llamar a APIs externas en cada consulta | Propuesta |
@@ -167,7 +167,7 @@ Principio 7 del documento 03: lo externo se puede cambiar sin tocar el dominio. 
 
 | Puerto | Implementación inicial | Alternativas previstas |
 |---|---|---|
-| `RoutingProvider` | GraphHopper | Valhalla, pgRouting; módulo propio de superficie de coste (v2) |
+| `RoutingProvider` | **GraphHopper 11.1** (elegido en la prueba técnica, §7.6) | Valhalla 3.9.1 (plan B: adaptador y perfil en `poc/motor-rutas/`), pgRouting; módulo propio de superficie de coste (v2) |
 | `ElevationProvider` | **Compuesto (H1)**: archivos Copernicus GLO-30 del servidor (lectura por ventanas, interpolación bilineal) dentro de la caja de los Pirineos y, fuera de ella, la API de elevación de Open-Meteo (Copernicus GLO-90). Si ninguna responde, `OUTSIDE_COVERAGE` | MDT del IGN español, RGE ALTI francés |
 | `WeatherProvider` | **Open-Meteo (H1)**: pronóstico a la altitud propia del punto (`elevation`), horario y diario de 7 días, isoterma de 0 °C; caché por celda y banda en `forecast_cache` | Meteoblue |
 | `GeocodingProvider` | **Nominatim público (H1)**: `User-Agent` con contacto, 1 petición/s en toda la API, caché de 24 h | CartoCiudad (España), Base Adresse Nationale (Francia) |
@@ -242,15 +242,18 @@ Dato verificado: la documentación de GraphHopper indica que preparar una red mu
 
 Antes de comprometer la implementación, una prueba aislada de unos pocos días.
 
-- **Zona:** 3 pares origen-destino reales de los Pirineos, uno a cada lado de la frontera y uno que la cruce.
+- **Zona:** 3 pares origen-destino reales de los Pirineos, **fijados por el usuario**: Refugio de Coronas → Aneto, Parking de Bujaruelo → Brecha de Rolando y Parking de la Pradera de Ordesa → Monte Perdido (los tres del lado español; la redacción original pedía «uno a cada lado de la frontera y uno que la cruce»). El lado francés se midió con un cuarto par extra, Aparcamiento de Gavarnie → Vignemale, que no forma parte de la aceptación.
 - **Qué se compara:** GraphHopper frente a Valhalla (pgRouting solo si ambos fallan).
 - **Criterios de aceptación:**
   1. Devuelve al menos 2 alternativas razonablemente distintas por par (D-04: pueden compartir tramos).
   2. Prefiere senderos y pistas marcados frente a carretera cuando el destino está en montaña.
   3. Evita pendientes extremas configurables.
   4. Calcula en pocos segundos con el extracto cargado.
-  5. Funciona dentro del presupuesto de memoria de la sección 9.
-- **Resultado esperado:** un informe corto que fija el motor y los pesos del perfil, y guarda los casos como pruebas automáticas.
+  5. Funciona dentro del presupuesto de memoria de la sección 11.1.
+  6. *(añadido en el plan de la prueba)* Respeta una zona a evitar (RF-507): un polígono sobre la ruta principal y la nueva ruta no lo cruza, o el motor dice que no hay camino.
+  7. *(añadido)* Ajusta un dibujo burdo a los caminos (`snapRoute`): queda a ≤ 10 m de la red y conserva el orden.
+  8. *(añadido)* Devuelve el tipo de vía de cada tramo, mapeable a `road`, `track` o `path`, sin tramos desconocidos (RF-503).
+- **Resultado esperado:** un informe corto que fija el motor y los pesos del perfil, y guarda los casos como pruebas automáticas. **Hecho: §7.6.**
 
 ### 7.4 Elevación
 
@@ -264,6 +267,21 @@ Antes de comprometer la implementación, una prueba aislada de unos pocos días.
 ### 7.5 Campo a través (v2) y el lenguaje
 
 Los cálculos raster (superficie de coste, pendiente, obstáculos) son más cómodos en Python que en TypeScript. Esta decisión **no se toma ahora**. El puerto `RoutingProvider` permite en la v2 añadir un pequeño servicio en Python sin tocar el dominio. Lo anoto como riesgo R-12.
+
+### 7.6 Resultado de la prueba técnica (2026-11-01)
+
+La prueba vive en `poc/motor-rutas/` (fuera del workspace, de `compose.yml` y del CI; ver su `README.md`) y el veredicto completo en `poc/motor-rutas/results/veredicto.md`.
+
+- **Decisión: GraphHopper 11.1 (Apache-2.0) para H3.** Valhalla 3.9.1 (MIT) queda como plan B documentado; pgRouting no hizo falta (los dos candidatos cumplen).
+- **Datos:** instantánea de Geofabrik `261031` recortada a los Pirineos (95 MB, 12,7 M de nodos; solo viales, barreras y restricciones de giro). Los tres pares del usuario más el par francés extra. Los casos están en `poc/motor-rutas/cases/` y se ejecutan con `node poc/motor-rutas/run-cases.mjs --engine graphhopper|valhalla` (regresión para H3).
+- **Resultado:** los dos motores cumplen los 8 criterios en los tres pares del usuario. GraphHopper también cumple el par francés; Valhalla falla el criterio 2 (30,5 % de su ruta principal por carretera). Tiempos de 10–110 ms (GraphHopper) y 36–330 ms (Valhalla), muy por debajo de los 5 s.
+- **Por qué GraphHopper:** el *custom model* da reglas por dificultad SAC, tipo de vía y pendiente (Valhalla solo cuatro parámetros y ninguna pendiente máxima); sus rutas principales son más directas (las de Valhalla son un 27–45 % más largas en dos pares); devuelve el tipo de vía por tramo en la misma respuesta.
+- **Perfil de montaña** (`poc/motor-rutas/graphhopper/mountain.json`, primera pasada razonada): escala SAC ≥ 6 prohibida, 5 ×0,3 y 4 ×0,6 (el perfil de a pie de serie prohíbe desde el 2); carreteras de coche ×0,5 en la prioridad; velocidades reducidas por pendiente. **Debe revisarlo alguien que conozca esas rutas.**
+- **Alternativas:** la búsqueda propia (`algorithm=alternative_route`, `max_paths=3`, `max_share_factor=0,8`, `max_weight_factor=2,5`) dio dos rutas en dos de los tres pares; en `ordesa-perdido` ninguna. Se resuelve en el servidor con `proposeRoutes`: bloquear 200 m en medio de la ruta principal y volver a preguntar (el rodeo debe compartir ≤ 70 % con las ya guardadas).
+- **Memoria:** 0,8–1,1 GiB sirviendo con `-Xmx2g` en un contenedor de 3 GB; la carga llega a 1,9 GiB (el grafo puede construirse fuera del servidor). Valhalla: 0,7 GiB sirviendo y 2,5 GiB al cargar. Confirma la estimación de 1–2 GB.
+- **La altitud del motor no sirve para métricas.** GraphHopper suma todas las subidas y bajadas sin filtro (en `ordesa-perdido` da 758 m de bajada en una ruta que solo sube; OnWay, 34 m) y su fuente (Skadi) sitúa el fondo del cañón de Ordesa unos 220 m más alto que Copernicus GLO-30. Subida y bajada se miden siempre con la medición de OnWay (§7.4); los dos miden desnivel acumulado, no neto.
+- **Condiciones para H3:** (1) alimentar el motor con el mismo DEM de OnWay (GLO-30), primera tarea de H3, y repetir el criterio 3 sobre los tres pares (hoy solo se cumplió en una sonda elegida a posteriori); (2) `proposeRoutes` y el resto de la estrategia de alternativas en el servidor, detrás de `RoutingProvider`; (3) revisión de los pesos por una persona del dominio; (4) decidir cada cuánto se regenera el extracto.
+- **No medido:** puntos intermedios obligatorios, carga simultánea, un dibujo a mano real para `snapRoute` y qué ruta prefiere un rescatista. El lado francés se midió con un solo par.
 
 ---
 
@@ -377,7 +395,7 @@ Un servidor virtual con Docker Compose y estos servicios:
 | API NestJS | 300–500 MB | |
 | Worker NestJS | 300–500 MB | Mismo código que la API |
 | PostgreSQL + PostGIS | 0,5–1 GB | Ajustado para poca memoria |
-| GraphHopper | 1–2 GB *(estimación, se mide en la prueba técnica)* | Extracto de los Pirineos |
+| GraphHopper | 1–2 GB *(medido en la prueba técnica, §7.6: 0,8–1,1 GiB sirviendo con `-Xmx2g`; la carga llegó a 1,9 GiB)* | Extracto de los Pirineos |
 
 La suma se acerca a los 4 GB de RAM, sin margen para el sistema, la caché de disco ni los picos del cálculo.
 
@@ -415,7 +433,7 @@ Registros estructurados, endpoint de salud para API, worker y motor de rutas, y 
 | Integración | Consultas espaciales, RLS, cola de trabajos | Testcontainers con PostGIS |
 | Contrato | El API respeta los esquemas Zod y el OpenAPI | Generado desde los esquemas |
 | Extremo a extremo | Flujos de las vistas: crear misión, ofrecerse, aceptar, cerrar con asistencia, aprobar cuenta. En H0: la demostración completa contra `docker compose up`, en escritorio y a 375 px. En H1 (`apps/web/e2e/h1-demo.spec.ts`, 11 pruebas por proyecto): con `compose.yml` + `infra/compose.e2e.yml` (DEM sintético y `providers-stub`, sin salir a Internet) el coordinador crea una misión pinchando el objetivo en el mapa, añade orígenes por coordenadas (decimal y GMS) y por dirección, un intermedio y una reunión (esta en otro país, con confirmación), cambia las tres capas con sus atribuciones a la vista, ve el tiempo, la luz y la luna de una ubicación concedida y del objetivo y la tarjeta «no disponible» con el proveedor caído, activa con el aviso de «sin ruta validada», cierra y reabre; el rescatista ve la misión activa sin rutas y no la ve en planificación; el historial lo refleja; una organización ajena recibe 404; y un recorrido solo con teclado y en francés. Una vigilancia de red comprueba en cada prueba que el navegador solo habla con el propio origen y con los servicios de IGN (las teselas se sustituyen por una imagen vacía). Cada ejecución crea misiones «E2E …» y las deja cerradas: el registro de auditoría es de solo añadir. En H2 (`apps/web/e2e/h2-demo.spec.ts`, 10 pruebas por proyecto): el coordinador ve la biblioteca de demostración en lista y mapa, mueve el mapa y la lista pide la zona, filtra y busca; importa un GPX inventado con altitudes falsas (rechaza uno de más de 10 MB y un PDF que se llama `.gpx`), ve la vista previa con las métricas del servidor y lo guarda en Borrador; edita (escribiendo una coordenada y, en escritorio, arrastrando un vértice) y se crea la versión 2; las compara y valida la 2 con el aviso; deriva una copia, exporta varias rutas en un GPX sin autor, exporta una versión, la vuelve a importar y obtiene la misma geometría; archiva una ruta; importa puntos en una misión; el administrador lee sin botones de escritura y el rescatista no tiene acceso; una organización ajena no ve nada (404); y un recorrido con teclado y en francés. Las rutas «E2E …» quedan archivadas | Playwright |
-| Motor de rutas | Casos de la prueba técnica, guardados como regresión | Vitest con el contenedor |
+| Motor de rutas | Casos de la prueba técnica (`poc/motor-rutas/cases/`, ejecutados con `run-cases.mjs`), guardados como regresión | Vitest con el contenedor |
 
 ---
 
@@ -435,7 +453,7 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | ID | Riesgo o supuesto | Mitigación |
 |---|---|---|
-| R-11 | El motor de rutas no entrega rutas de calidad para montaña con el perfil estándar | Prueba técnica (sección 7.3) antes de construir. Plan B: otro candidato |
+| R-11 | El motor de rutas no entrega rutas de calidad para montaña con el perfil estándar | Prueba técnica (sección 7.3) antes de construir. Plan B: otro candidato. **Resuelto (2026-11-01, §7.6):** el perfil de montaña de GraphHopper entrega rutas casi enteras por sendero y pista; queda por repetir con el DEM propio |
 | R-12 | El análisis de terreno de la v2 es más cómodo en Python que en TypeScript | Puerto `RoutingProvider`: se añade un servicio Python solo para eso, sin tocar el dominio |
 | R-13 | Los servicios gratuitos de IGN pueden cambiar sus condiciones o limitar el uso sin aviso | Atribución visible, proveedor sustituible y alternativa de satélite documentada |
 | R-14 | Memoria del servidor insuficiente para el motor de rutas | Extracto regional, acceso a disco mapeado, medir en la prueba. El punto de partida ya es 8 GB; el siguiente escalón de 16 GB solo entraría si el techo de 20 € lo permite |
@@ -468,6 +486,7 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 1.0 | 2026-11-01 | Prueba técnica del motor cerrada: AD-11 confirmada con **GraphHopper 11.1** (Valhalla 3.9.1 como plan B); §7.3 con los tres pares fijados por el usuario y los criterios 6–8; nueva §7.6 con el resultado, el perfil, la estrategia de alternativas, la memoria y las condiciones para H3; R-11 resuelto; §11.1 con la memoria medida; §13 con la ubicación de los casos de regresión |
 | 0.9 | 2026-10-31 | H2-T10: §5.1 y §5.2 con `files` y `routes` implementados y el `FileStorage` en disco (volumen `files`); §7.4 con el `ElevationProvider` por lotes, cómo se mide una ruta, sus parámetros y su precisión; §3 y §12 con `fast-xml-parser` y `@types/multer` y las pruebas de H2 (E2E `h2-demo.spec.ts`); Caddy limita el cuerpo de `/api` a 12 MB y la API acepta JSON de hasta 2 MB |
 | 0.8 | 2026-10-31 | H1, validación: §9.0 corrige la causa del `403` de Nominatim (el contacto ficticio de `example.org`, no la red ni la IP): el `User-Agent` por defecto pasa a ser la página pública del proyecto, comprobado con `200`. Q-26 y el resto, sin cambios |
 | 0.7 | 2026-10-31 | H1-T10: §3 con ESLint incorporado y las versiones reales tras H1; §12 con la prueba de extremo a extremo de H1 y su vigilancia de red; Q-26 queda resuelta en lo de H1 y abierta solo en lo offline (v2.1), como ya figuraba. H1-T6: §8.1 con las tres capas tal como se construyeron (PMTiles propio en `/tiles/`; satélite compuesto por tesela; topográfico apilado), §8.2 con los `GetCapabilities` leídos el 2026-10-31 (capas, formatos, licencias, sin SCAN 25 público francés, teselas blancas de IGN Francia fuera de su país), §8.3 y Q-26 (parte de H1 resuelta), §8.5 con las atribuciones y el hueco de Andorra, CSP con los dos anfitriones de IGN. H1-T5: §5.2 con `WeatherProvider` Open-Meteo, caché por celda y banda, degradación (`stale`/`unavailable`), salud pasiva, redondeo de la ubicación y registro sin consulta; §9.0 con el pronóstico de Open-Meteo y SunCalc; §9.1 con el presupuesto de llamadas. H1-T4: §5.2 con `ElevationProvider` compuesto (GLO-30 local + Open-Meteo) y `GeocodingProvider` Nominatim implementados; §9.0 con las fuentes de `geodata` verificadas (URL oficiales, licencias, atribuciones, tamaños, caja lon −2…4 / lat 42…44) y el rechazo de Nominatim al `User-Agent` con contacto de `example.org` |

@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.4 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
+**Versión:** 0.5 · **Estado:** borrador para revisión · **Fecha:** 31 de octubre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -113,7 +113,7 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 | **Demostración** | Una misión con dos orígenes, uno a cada lado de la frontera, y un objetivo en montaña. Pulsar *Generar*, ver el progreso, recibir varias alternativas por origen con distancia, desnivel y composición (carretera, pista, sendero). Compararlas, guardar una. Dibujar una zona a evitar y regenerar: la ruta la esquiva. Dibujar una ruta a mano y que se pegue a los caminos |
 | **Alcance** | RF-304 (rutas a través de la frontera), 501, 503, 507. Trabajos de cálculo con progreso (cola pg-boss, proceso *worker*). Puerto `RoutingProvider` con el motor elegido |
 | **Operaciones (6)** | `generateRoutes`, `snapRoute`, `getJob`, `listAvoidZones`, `createAvoidZone`, `deleteAvoidZone` |
-| **Antes de empezar** | **Prueba técnica cerrada** (documento 04, §7.3): motor elegido, pesos del perfil y casos guardados como pruebas. Se lanza durante H1 |
+| **Antes de empezar** | **Prueba técnica cerrada el 2026-11-01** (documento 04, §7.6): motor **GraphHopper 11.1**, pesos del perfil en `poc/motor-rutas/graphhopper/mountain.json` y casos guardados en `poc/motor-rutas/cases/`. **Primera tarea de H3: alimentar el motor con el DEM de OnWay (GLO-30)**. Quedan para H3 la estrategia de alternativas (bloqueo), la revisión de los pesos por una persona que conozca las rutas y repetir el criterio de pendiente |
 | **Salida** | INV-14. Los casos de la prueba técnica pasan como regresión. Un trabajo sobrevive a un reinicio del *worker*. `MISSION_HAS_NO_ORIGIN`, `NO_ROUTE_POSSIBLE`, `OUTSIDE_COVERAGE` y `ROUTING_UNAVAILABLE` se muestran con un mensaje útil. Con el motor caído, el resto de la app sigue (documento 04, §11.4). Memoria dentro del presupuesto de 8 GB |
 | **Fuera** | Campo a través (v2.2), adaptar el tramo final (H9) |
 | **Riesgos** | R-01 (calidad del motor), R-12 (memoria), perfil de montaña. Si el motor no alcanza la calidad: el MVP se entrega igualmente con H2 y se documenta la limitación |
@@ -218,7 +218,7 @@ Cada bloque tendrá su propio documento de diseño cuando llegue su turno. Aquí
 | Pendiente | Bloquea | Mientras tanto |
 |---|---|---|
 | ~~PostGIS real~~ | ~~H0 (primera tarea)~~ | **Resuelto en H0**: 118/118 sobre `postgis/postgis:16-3.4` |
-| Prueba técnica del motor | H3 | Se hace durante H1 y H2; si falla, ver el riesgo de H3 |
+| ~~Prueba técnica del motor~~ | ~~H3~~ | **Resuelta (2026-11-01):** GraphHopper 11.1, con Valhalla como plan B (documento 04, §7.6). Quedan sus condiciones para H3 |
 | ~~Q-26 capas de IGN y licencias~~ | ~~mejora de H1~~ | **Resuelto en H1 (2026-10-31):** capas, formatos y licencias verificados (doc 04 §8.2). Abierta solo la parte de teselas sin conexión (v2.1) |
 | ~~Q-14 el administrador escribe misiones~~ | ~~H1~~ | **Resuelto (2026-10-31): no.** Lo decide el servidor (`MISSION_WRITERS`) y, en profundidad, la base de datos (migración 0011) |
 | Q-31 qué misiones ve el rescatista | H1 | Todas las activas de su organización |
@@ -245,6 +245,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.5 | 2026-11-01 | Prueba técnica del motor cerrada (documento 04, §7.6): H3 «Antes de empezar» con el motor elegido (GraphHopper 11.1) y su primera tarea (alimentar el motor con el DEM de OnWay) y la fila de la sección 6 resuelta |
 | 0.4 | 2026-10-31 | H2 (sección 3) al día tras construirlo (T10): «GPX de ejemplo ficticio» en lugar de «GPX real» (decisión P2: ningún track procede de un servicio público ni de una persona), 13 operaciones con `exportRoutes` (P3) y la fila «Tal como se construyó» |
 | 0.3 | 2026-10-31 | Q-14 resuelta (no): el administrador no escribe misiones (H1-T6; documentos 01 y 02 actualizados). H1 (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con las capas de IGN, `geodata`, las tres misiones de demostración, las dependencias aprobadas y la demostración como prueba E2E; Q-26 (sección 6) resuelta en lo de H1 |
 | 0.2 | 2026-10-30 | H0 (sección 3) al día tras construirlo: la demostración lleva una sola organización (decisión D-H0-18), con una cuenta pendiente y rescatistas con perfil incompleto hasta H5; el aislamiento entre organizaciones se demuestra con una organización creada por las pruebas. Riesgos de H0 y «PostGIS real» (sección 6) marcados como resueltos |

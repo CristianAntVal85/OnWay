@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.0 (borrador) · Fecha: 2026-10-31 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.1 (borrador) · Fecha: 2026-11-01 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -455,7 +455,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 
 | ID | Riesgo | Mitigación |
 |---|---|---|
-| R-01 | El motor de rutas campo a través es complejo y puede no alcanzar calidad suficiente | Entregar v1 con rutas sobre red. Hacer una prueba técnica aislada (PoC) antes de comprometer v2 |
+| R-01 | El motor de rutas campo a través es complejo y puede no alcanzar calidad suficiente | Entregar v1 con rutas sobre red. Hacer una prueba técnica aislada (PoC) antes de comprometer v2. **Medido el 2026-11-01 sobre la red de los Pirineos: cumple con GraphHopper (documento 04, §7.6); el campo a través sigue sin medirse (v2).** |
 | R-02 | Calidad desigual de los datos entre países (senderos, elevación) | Medir sobre zonas reales de los Pirineos en ambos lados. Permitir edición manual (RF-505) |
 | R-03 | Una ruta mala puede causar daño real | Validación humana obligatoria (RF-506), versiones inmutables, versión fijada en la misión, avisos visibles, registro de cambios. En un proyecto didáctico, aviso explícito de que no debe usarse en rescates reales |
 | R-04 | Coste o licencias de teselas satélite y proveedores de mapas | Documento 04: mapa base propio con datos de OpenStreetMap y satélite de los servicios abiertos de IGN España y Francia. Licencias a seguir verificando |
@@ -547,6 +547,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.1 (2026-11-01)**
+- Prueba técnica del motor cerrada: R-01 anota el resultado sobre la red (GraphHopper 11.1 cumple los criterios del documento 04, §7.3; el campo a través sigue sin medirse). Sin cambios de requisitos.
 
 **1.0 (2026-10-31)**
 - H2: RF-503 aclara que lo que no pasa por el motor es «sin clasificar» (decisión P1) y RF-511 recoge `exportRoutes` (P3). Los GPX de demostración y de pruebas son inventados (P2).
