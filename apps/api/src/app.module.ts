@@ -12,6 +12,7 @@ import { HealthModule } from './health/health.module.js';
 import type { IdentityOptions } from './identity/config.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { MissionsModule } from './missions/missions.module.js';
+import { AvoidZonesModule } from './avoid-zones/avoid-zones.module.js';
 import { RoutesModule } from './routes/routes.module.js';
 import { WeatherModule, type WeatherOptions } from './weather/weather.module.js';
 
@@ -47,6 +48,7 @@ export class AppModule {
         FilesModule.register(options.files),
         MissionsModule,
         RoutesModule,
+        AvoidZonesModule,
         WeatherModule.register(options.weather),
         CommonModule,
         HealthModule,

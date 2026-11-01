@@ -246,8 +246,8 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | `exportRoute` · **H2**<br>Descargar una versión como GPX o KML | `GET /routes/{routeId}/export` | Coordinador, Admin | ruta: routeId<br>consulta: versionId?, format? | 200 archivo | — |
 | `getJob` · **H3**<br>Progreso y resultado de un cálculo | `GET /jobs/{jobId}` | Coordinador, Admin | ruta: jobId | 200: id?, status?, progress?, errorCode?, createdAt?, finishedAt?, kind?, result? | — |
 | `listAvoidZones` · **H3**<br>Zonas a evitar de la organización o de una misión | `GET /avoid-zones` | Coordinador, Admin | consulta: missionId? | 200: items | — |
-| `createAvoidZone` · **H3**<br>Dibujar una zona a evitar *(auditado)* | `POST /avoid-zones` | Coordinador | cuerpo: missionId?, geometry, reason? | 201: id, missionId, geometry, reason, createdAt | — |
-| `deleteAvoidZone` · **H3**<br>Borrar una zona a evitar *(auditado)* | `DELETE /avoid-zones/{zoneId}` | Coordinador | ruta: zoneId | 204 | — |
+| `createAvoidZone` · **H3**<br>Dibujar una zona a evitar *(auditado)* | `POST /avoid-zones` | Coordinador | cuerpo: missionId?, geometry, reason? | 201: id, missionId, geometry, reason, createdAt | `MISSION_CLOSED` |
+| `deleteAvoidZone` · **H3**<br>Borrar una zona a evitar *(auditado)* | `DELETE /avoid-zones/{zoneId}` | Coordinador | ruta: zoneId | 204 | `MISSION_CLOSED` |
 
 ### Rutas de la misión
 

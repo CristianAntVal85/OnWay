@@ -25,6 +25,18 @@ export interface RouteAuditEntry {
   detail?: Record<string, unknown>;
 }
 
+/** What happened to a zone to avoid (H3, doc 06 §10). */
+export type AvoidZoneAuditAction = 'avoid_zone_created' | 'avoid_zone_deleted';
+
+export interface AvoidZoneAuditEntry {
+  orgId: string;
+  zoneId: string;
+  action: AvoidZoneAuditAction;
+  actorUserId: string;
+  /** Never personal data, and not the free text of the reason: the mission it belonged to and the size of the polygon. */
+  detail?: Record<string, unknown>;
+}
+
 /**
  * Writes `audit_log` (INV-16, RN-05) inside the transaction of the request: if the operation fails the row is
  * rolled back with it, and a change cannot commit without its row. By convention every action of a mission is
@@ -56,6 +68,20 @@ export class AuditWriter {
         organizationId: entry.orgId,
         entityType: 'route',
         entityId: entry.routeId,
+        action: entry.action,
+        actorUserId: entry.actorUserId,
+        detail: entry.detail ?? {},
+      });
+  }
+
+  async recordAvoidZone(entry: AvoidZoneAuditEntry): Promise<void> {
+    await this.database
+      .current()
+      .insert(auditLog)
+      .values({
+        organizationId: entry.orgId,
+        entityType: 'avoid_zone',
+        entityId: entry.zoneId,
         action: entry.action,
         actorUserId: entry.actorUserId,
         detail: entry.detail ?? {},

@@ -22,7 +22,7 @@ Cada cierre: solo con todo en verde (lo tocado y el CI de la rama, incluidos los
 - Hecho cuando: pruebas unitarias del adaptador (mapeo de errores, estrategia de bloqueo, solapamiento ≤ 70 %, composición que suma 100 % y sin «desconocido» salvo tramos justificados); `pnpm --filter @onway/api test:routing` contra el motor de la superposición E2E: ≥ 2 alternativas por par, preferencia por sendero, zona a evitar esquivada o `NO_ROUTE_POSSIBLE`, ajuste de un dibujo burdo con el orden conservado; el trabajo del CI para esta suite existe y está en verde; `test:api` y el resto sin regresiones.
 - Cierre: commit `feat(H3): T3 add the RoutingProvider port and the GraphHopper adapter` + push.
 
-- [ ] **T4. Zonas a evitar.** RF-507; D-H3-09; INV-01, INV-16
+- [x] **T4. Zonas a evitar.** RF-507; D-H3-09; INV-01, INV-16
   `createAvoidZone`, `listAvoidZones` y `deleteAvoidZone` (`apps/api/src/avoid-zones/`): polígono válido (sin auto-intersección, dentro de cobertura), `missionId` opcional de la misma organización, `reason` ≤ 300; auditoría por escritura; el administrador solo lee; el rescatista no ve nada. `CURRENT_MILESTONE = 'H3'` y AC-02 con las 3 operaciones nuevas. Contrato: solo notas si hacen falta.
 - Hecho cuando: pruebas contra base real: crear, listar (filtrando por misión) y borrar; 404 para una zona o misión de otra organización (incluidos los `avoidZoneIds` ajenos, que dan 404 y no se ignoran); 403 al administrador en escrituras y al rescatista en todo; `VALIDATION_FAILED` con polígono inválido; una fila de auditoría por escritura (INV-16); las políticas `zones_staff` y 0011 comprobadas también como `onway_owner` si procede; OpenAPI y doc 06 regenerados sin diferencias.
 - Cierre: commit `feat(H3): T4 add avoid zones` + push.

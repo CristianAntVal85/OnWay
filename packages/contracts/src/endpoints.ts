@@ -252,11 +252,14 @@ const RAW = [
   { id: 'getJob', method: 'GET', path: '/jobs/{jobId}', tag: 'Rutas', summary: 'Progreso y resultado de un cálculo', roles: STAFF,
     params: p.job, response: { status: 200, schema: R.Job }, delivery: 1, notes: 'Sondeo cada 1–2 s. Solo quien lo pidió o un coordinador de la misma organización.' },
   { id: 'listAvoidZones', method: 'GET', path: '/avoid-zones', tag: 'Rutas', summary: 'Zonas a evitar de la organización o de una misión', roles: STAFF,
-    query: R.ListAvoidZonesQuery, response: { status: 200, schema: Items(R.AvoidZone) }, delivery: 1 },
+    query: R.ListAvoidZonesQuery, response: { status: 200, schema: Items(R.AvoidZone) }, delivery: 1,
+    notes: 'Sin `missionId`: las zonas de la organización (las que no son de ninguna misión). Con `missionId`: esas y las de la misión (404 si no es de la organización). Las ven y escriben el personal; el rescatista no.' },
   { id: 'createAvoidZone', method: 'POST', path: '/avoid-zones', tag: 'Rutas', summary: 'Dibujar una zona a evitar', roles: MISSION_WRITERS,
-    body: R.CreateAvoidZoneRequest, response: { status: 201, schema: R.AvoidZone }, delivery: 1, audited: true },
+    body: R.CreateAvoidZoneRequest, response: { status: 201, schema: R.AvoidZone }, errors: ['MISSION_CLOSED'], delivery: 1, audited: true,
+    notes: 'El polígono no puede cortarse a sí mismo ni tener más de 200 vértices (`VALIDATION_FAILED`). Con `missionId`, la misión debe ser de la organización (404) y no estar cerrada.' },
   { id: 'deleteAvoidZone', method: 'DELETE', path: '/avoid-zones/{zoneId}', tag: 'Rutas', summary: 'Borrar una zona a evitar', roles: MISSION_WRITERS,
-    params: p.zone, response: { status: 204 }, delivery: 1, audited: true },
+    params: p.zone, response: { status: 204 }, errors: ['MISSION_CLOSED'], delivery: 1, audited: true,
+    notes: 'Borrar es real (no hay historial que proteger; la auditoría lo anota). Una zona de una misión cerrada no se borra.' },
 
   // ================= Rutas de la misión =================
   { id: 'listMissionRoutes', method: 'GET', path: '/missions/{missionId}/routes', tag: 'Rutas de la misión', summary: 'Tabla comparativa de rutas de la misión', roles: STAFF,

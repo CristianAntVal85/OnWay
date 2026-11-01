@@ -8,8 +8,8 @@ import { TEST_PASSWORD } from '../support/fixtures.js';
 import { TestOnlyController } from '../support/test-controllers.js';
 
 /**
- * Operations built so far: the five of H0, the 18 of H1 and those of H2 that earlier tasks have mounted. AC-02 compares the routes
- * Express mounts with this list; each H2 task appended its operations here and H2-T6 left exactly the 36 (23 of H0 and H1 + 13 of H2).
+ * Operations built so far: the 23 of H0 and H1, the 13 of H2 and those of H3 that earlier tasks have mounted. AC-02 compares the
+ * routes Express mounts with this list; each H3 task appends its operations here and H3-T7 will leave exactly the 42 (36 + 6 of H3).
  */
 const BUILT = [
   'getHealth',
@@ -48,6 +48,9 @@ const BUILT = [
   'getRouteVersion',
   'exportRoute',
   'exportRoutes', // H2-T6
+  'listAvoidZones',
+  'createAvoidZone',
+  'deleteAvoidZone', // H3-T4
 ];
 
 let real: TestApp;
@@ -78,14 +81,17 @@ async function expectError(response: Response, code: keyof typeof ERROR_HTTP) {
 }
 
 describe('routes come from the registry (AC-02, rule 7)', () => {
-  it('mounts exactly the 36 operations of H0, H1 and H2 (23 + 13), and all of them are in the registry (H2-T6)', () => {
+  it('mounts the 36 operations of H0, H1 and H2 plus the ones of H3 built so far, and all of them are in the registry', () => {
     const ofMilestones = ENDPOINTS.filter((e) => e.milestone === 'H0' || e.milestone === 'H1').map((e) => e.id);
     expect(ofMilestones).toHaveLength(23);
     const ofH2 = ENDPOINTS.filter((e) => e.milestone === 'H2').map((e) => e.id);
     expect(ofH2).toHaveLength(13);
-    // H2-T6: the 13 operations of H2 are all mounted, so AC-02 is the exact 36.
-    expect([...BUILT].sort()).toEqual([...ofMilestones, ...ofH2].sort());
-    expect(BUILT).toHaveLength(36);
+    const ofH3 = ENDPOINTS.filter((e) => e.milestone === 'H3').map((e) => e.id);
+    expect(ofH3).toHaveLength(6);
+    // Everything before H3 is mounted; of H3, only what earlier tasks built (T4: the three zones to avoid).
+    const builtOfH3 = BUILT.filter((id) => ofH3.includes(id));
+    expect([...BUILT].sort()).toEqual([...ofMilestones, ...ofH2, ...builtOfH3].sort());
+    expect(BUILT).toHaveLength(36 + builtOfH3.length);
   });
 
   it('mounts exactly the operations built so far, and all of them are in the registry', () => {
@@ -94,10 +100,10 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing that belongs to a later milestone than H2, test controllers included', () => {
-    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H2')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
+  it('mounts nothing that belongs to a later milestone than H3, test controllers included', () => {
+    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H3')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
-    expect(later.length).toBeGreaterThan(55);
+    expect(later.length).toBeGreaterThan(45);
     expect(later.filter((route) => mounted.has(route))).toEqual([]);
   });
 
