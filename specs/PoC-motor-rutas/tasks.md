@@ -7,7 +7,7 @@ Estado: **aprobadas por el usuario (2026-11-01)** · Plan aprobado el 2026-11-01
 - Hecho cuando: un clon limpio ejecuta el script y deja el mismo extracto (misma suma); `cases/` valida contra un esquema sencillo comprobado por `run-cases.mjs --check`; licencias anotadas; `pnpm lint`, `format:check` y `typecheck` en verde.
 - Cierre: commit `chore(PoC): T1 add Pyrenees extract script, licences and test cases` + push a `poc/motor-rutas` (incluye `plan.md` y `tasks.md`).
 
-- [ ] **T2. GraphHopper.** Criterios 1, 2 y 4 (primera pasada) y D-PoC-03.
+- [x] **T2. GraphHopper.** Criterios 1, 2 y 4 (primera pasada) y D-PoC-03.
 - `poc/motor-rutas/compose.yml` con GraphHopper y su tope de memoria; grafo construido con el extracto; perfil de montaña en un *custom model* con cada peso comentado (por qué ese valor); alternativas activadas; primera consulta de los 3 pares con distancia, tiempo y tipo de vía por tramo.
 - Hecho cuando: `docker compose -f poc/motor-rutas/compose.yml up --wait graphhopper` arranca desde cero, responde a los 3 pares con ≥ 1 ruta y se ve su composición; memoria de carga anotada; sin tocar `compose.yml` de la raíz.
 - Cierre: commit `feat(PoC): T2 add GraphHopper with a mountain profile` + push.

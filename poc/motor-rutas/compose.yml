@@ -1,0 +1,31 @@
+# Routing-engine PoC (specs/PoC-motor-rutas): nothing here belongs to the app stack. Run from the repository root:
+#   mkdir -p poc/motor-rutas/.data/{graphhopper,elevation}
+#   docker compose -f poc/motor-rutas/compose.yml up --build --wait graphhopper
+name: onway-poc
+
+services:
+  graphhopper:
+    build: ./docker/graphhopper
+    # Same user as the files in .data/, so nothing is left owned by root.
+    user: '${POC_UID:-1000}:${POC_GID:-1000}'
+    # Memory budget of the PoC (doc 04 §11.1: 1-2 GB for the engine). The import is allowed more than the serving.
+    mem_limit: ${GH_MEM_LIMIT:-3g}
+    command:
+      - -Xmx${GH_HEAP:-2g}
+      - -jar
+      - graphhopper-web.jar
+      - server
+      - /app/conf/config.yml
+    ports:
+      - '127.0.0.1:8989:8989'
+    volumes:
+      - ./.data/pyrenees.osm.pbf:/data/pyrenees.osm.pbf:ro
+      - ./.data/graphhopper:/graph
+      - ./.data/elevation:/elevation
+      - ./graphhopper:/app/conf:ro
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:8989/health']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30m
