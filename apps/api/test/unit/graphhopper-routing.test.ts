@@ -12,6 +12,12 @@ const path = (lat: number, details: [number, number, string][] = [[0, 11, 'path'
   details: { road_class: details },
 });
 
+/** The same straight line as `path`, `factor` times as long (to the east). */
+const stretched = (lat: number, factor: number) => ({
+  points: { coordinates: Array.from({ length: 12 }, (_, i) => [-0.07 + (0.11 * factor * i) / 11, lat]) },
+  details: { road_class: [[0, 11, 'path']] },
+});
+
 type Body = {
   points: number[][];
   profile: string;
@@ -91,6 +97,15 @@ describe('GraphHopperRouting', () => {
     const routes = await provider(fetchFn).alternatives({ ...request, count: 3 });
     expect(bodies[0]).toMatchObject({ algorithm: 'alternative_route', 'alternative_route.max_paths': 3 });
     expect(routes).toHaveLength(2); // the second path is the first again: dropped
+  });
+
+  it('does not offer a route more than 50 % longer than the main one (it is another route, not a way round), but offers one that is exactly that much', async () => {
+    const tooLong = engine((body) => ({ paths: [body.custom_model ? stretched(42.65, 1.6) : path(42.63)] }));
+    expect(await provider(tooLong.fetchFn).alternatives(request)).toHaveLength(1);
+    const native = engine(() => ({ paths: [path(42.63), stretched(42.65, 1.6)] }));
+    expect(await provider(native.fetchFn).alternatives(request)).toHaveLength(1);
+    const allowed = engine(() => ({ paths: [path(42.63), stretched(42.65, 1.49)] }));
+    expect(await provider(allowed.fetchFn).alternatives(request)).toHaveLength(2);
   });
 
   it('blocks 200 m in the middle of the main route when the engine finds fewer routes than asked', async () => {

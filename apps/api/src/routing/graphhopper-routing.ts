@@ -1,4 +1,4 @@
-import { resampleLine, sharedShare, squareRing, type Position2D } from '@onway/geo';
+import { lengthM, resampleLine, sharedShare, squareRing, type Position2D } from '@onway/geo';
 import { DomainError } from '../common/domain-error.js';
 import type { AlternativesRequest, EngineRoadType, EngineRoute, EngineSegment, LatLon, RoutingProvider } from './routing.js';
 
@@ -9,6 +9,11 @@ const PROFILE = 'mountain';
 const NATIVE_ALTERNATIVES = { maxShareFactor: 0.8, maxWeightFactor: 2.5 };
 /** A detour counts only if it shares at most this much of its length with every route already kept (D-04: sharing is allowed, up to a point). */
 const MAX_SHARED_SHARE = 0.7;
+/**
+ * A route longer than the main one by more than this fraction is not offered as an alternative: past that, it is another trip, not a way
+ * round (decided by the user on 2026-11-01; the technical test found a second alternative twice as long as the main one, doc 04 §7.6).
+ */
+const MAX_EXTRA_LENGTH = 0.5;
 /** Side of the square blocked in the middle of a route to force a detour (half-side, metres). */
 const BLOCK_HALF_SIDE_M = 100;
 /** Where along the main route the detours are tried, in order. */
@@ -145,7 +150,10 @@ function toEngineRoute(path: GhPath): EngineRoute {
   return { coordinates, segments };
 }
 
-const differentEnough = (candidate: EngineRoute, kept: EngineRoute[]): boolean => kept.every((other) => sharedShare(candidate.coordinates, other.coordinates) <= MAX_SHARED_SHARE);
+/** Different enough from every route already kept (shares at most 70 %) and not more than 50 % longer than the main one, the first kept. */
+const differentEnough = (candidate: EngineRoute, kept: EngineRoute[]): boolean =>
+  kept.every((other) => sharedShare(candidate.coordinates, other.coordinates) <= MAX_SHARED_SHARE) &&
+  (kept.length === 0 || lengthM(candidate.coordinates) <= lengthM(kept[0]!.coordinates) * (1 + MAX_EXTRA_LENGTH));
 
 /**
  * GraphHopper's 4xx answers to the codes of the API. A point it cannot place on the network is "outside coverage", unless a zone
