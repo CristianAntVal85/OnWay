@@ -51,6 +51,7 @@ const BUILT = [
   'listAvoidZones',
   'createAvoidZone',
   'deleteAvoidZone', // H3-T4
+  'snapRoute', // H3-T5
 ];
 
 let real: TestApp;

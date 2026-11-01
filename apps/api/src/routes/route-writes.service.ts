@@ -269,9 +269,11 @@ export class RouteWrites {
     ).rows as { id: string }[];
     const versionId = row!.id;
     for (const segment of measured.segments) {
+      // Each stretch keeps its own line (a route from the engine has several; one that has not passed through it has the whole line).
+      const segmentGeom = lineString(measured.segmentLines[segment.position]!);
       await this.tx.execute(sql`
         INSERT INTO route_segments (organization_id, version_id, position, geom, road_type, distance_m, ascent_m, descent_m)
-        VALUES (${input.orgId}::uuid, ${versionId}::uuid, ${segment.position}, ${geom}, ${segment.roadType}::road_type, ${segment.distanceM}, ${segment.ascentM}, ${segment.descentM})`);
+        VALUES (${input.orgId}::uuid, ${versionId}::uuid, ${segment.position}, ${segmentGeom}, ${segment.roadType}::road_type, ${segment.distanceM}, ${segment.ascentM}, ${segment.descentM})`);
     }
     return versionId;
   }

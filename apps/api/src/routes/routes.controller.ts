@@ -8,6 +8,7 @@ import type {
   ImportPreviewRequest,
   ListRoutesQuery,
   OperationOutput,
+  SnapRequest,
   ValidateVersionRequest,
 } from '@onway/contracts';
 import type { Response } from 'express';
@@ -16,6 +17,7 @@ import { Input, Operation, type OnwayRequest, type OperationInput } from '../com
 import { RouteExports, type ExportedFile } from './route-exports.service.js';
 import { RouteImports } from './route-imports.service.js';
 import { RouteLibrary } from './route-library.service.js';
+import { RouteSnapping } from './route-snapping.service.js';
 import { RouteWrites } from './route-writes.service.js';
 
 type RouteParams = { routeId: string };
@@ -36,6 +38,7 @@ export class RoutesController {
     @Inject(RouteWrites) private readonly writes: RouteWrites,
     @Inject(RouteLibrary) private readonly library: RouteLibrary,
     @Inject(RouteExports) private readonly exports: RouteExports,
+    @Inject(RouteSnapping) private readonly snapping: RouteSnapping,
   ) {}
 
   @Operation('listRoutes')
@@ -68,6 +71,11 @@ export class RoutesController {
   @Operation('createRoute')
   create(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'createRoute'>> {
     return this.writes.create(request.principal!, input.body as z.infer<typeof CreateRouteRequest>);
+  }
+
+  @Operation('snapRoute')
+  snap(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'snapRoute'>> {
+    return this.snapping.snap(request.principal!, input.body as z.infer<typeof SnapRequest>);
   }
 
   @Operation('previewRouteImport')
