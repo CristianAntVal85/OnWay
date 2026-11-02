@@ -11,12 +11,13 @@ try {
   console.log(
     result.seeded
       ? 'demo data loaded (fictitious, R-10)'
-      : result.missions + result.routes > 0
+      : result.missions + result.routes + result.missionRoutes > 0
         ? 'demo data already present: people and teams unchanged'
         : 'demo data already present: nothing changed',
   );
   console.log(`demo missions created now: ${result.missions} of ${demo.missions.length}`);
   console.log(`demo routes created now: ${result.routes} of ${demo.routes.length}`);
+  console.log(`demo routes put in the demo missions now: ${result.missionRoutes} of ${demo.missions.reduce((total, mission) => total + mission.routes.length, 0)}`);
 } catch (error) {
   console.error(error);
   process.exitCode = 1;

@@ -53,6 +53,19 @@ Seis rutas inventadas en el Pirineo central, todas con «ficticia» en el nombre
 
 `gpx/ejemplo-importar.gpx` no se siembra: es el archivo para probar **Importar ruta** a mano y en el E2E. Lleva una altitud falsa de 999 m en todos los puntos y dos puntos con nombre; el servidor ignora la altitud (RN-10) y la vista previa lo avisa. Las rutas generadas por el motor no se siembran: las produce *Generar rutas* (ver más abajo).
 
+## Rutas en la misión (H4)
+
+La misión activa «Simulacro ficticio · Valle de Ordesa» lleva **cuatro rutas de la biblioteca**, para que quien levante la pila vea algo en la vista del rescatista y en la sección «Rutas de la misión» del coordinador. Las pone el comando `seed` como las dejaría la aplicación (`addMissionRoutes` y `updateMissionRoute`: mismas filas de `mission_routes` y mismas líneas del historial, `route_added` y `route_marked_unavailable`), sin cambiar las 3 misiones ni las 6 rutas: no crea versiones ni cambia estados. Es idempotente por misión y ruta (una pila sembrada antes de H4 las recibe en el siguiente `up`). Ninguna lleva origen ni equipo.
+
+| Ruta | Versión fijada | Qué enseña | ¿La ve el rescatista? |
+|---|---|---|---|
+| Pradera a la Brecha (ficticia) | 1, validada | una ruta validada y visible | Sí |
+| Senda del Circo (ficticia) | **2**, validada (existe la 3, también validada) | el aviso «hay una versión 3 validada más reciente»: la misión no se actualiza sola | Sí, en la versión 2 |
+| Collado con borrador nuevo (ficticia) | 1, validada | marcada **no disponible** en la misión | Sí, señalada y sin descarga |
+| Variante de la Pradera (ficticia) | 1, **borrador** | una versión fijada que el rescatista no puede ver (INV-05) | No |
+
+Así, el coordinador ve las 4 y el rescatista 3 (una de ellas señalada como no disponible). `infra/scripts/smoke.sh` lo comprueba. Para que la demostración siga siendo esta, **no valides a mano la «Variante de la Pradera»**: una versión validada ya no se puede deshacer (es inmutable) y la pila dejaría de ser la sembrada; si lo haces, `docker compose down -v` la devuelve a su estado.
+
 ## Red de caminos inventada (`network.osm`, H3)
 
 Una cuadrícula de 19 meridianos (lon −0,10 … 0,08) por 9 paralelos (lat 42,62 … 42,70) cada 0,01°, en OSM XML sobre el terreno sintético: el paralelo del sur es una carretera, los meridianos de los bordes son pistas y el resto, senderos (SAC `hiking` en los paralelos, `mountain_hiking` en los meridianos). El meridiano lon −0,02 es la «frontera» inventada de la demostración; su paso es un nodo con nombre. La genera `pnpm --filter @onway/api synthetic-network` (es determinista; el CI y las pruebas la comparan con el archivo). **No es ningún dato real**: el motor de rutas (GraphHopper) la lee como leería un extracto de OpenStreetMap, y por eso el CI y el E2E prueban el motor de verdad sin descargar nada. Con la superposición `infra/compose.e2e.yml` el servicio `routing-data` la usa en vez de bajar la red de los Pirineos; con `docker compose up` a secas se baja la real (~1,3 GB, la primera vez).

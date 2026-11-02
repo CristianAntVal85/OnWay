@@ -34,6 +34,17 @@ const DemoPoint = z.strictObject({
   lon: z.number().min(-180).max(180),
 });
 
+/**
+ * A route of the library put in a made-up mission (H4-T7, P1), the way `addMissionRoutes` would leave it. The pinned version is the last validated one
+ * (or the last, if none is validated) unless `version` says otherwise; `unavailable` marks it as such, with its line of the history.
+ */
+const DemoMissionRoute = z.strictObject({
+  /** Name of a route of `routes`. */
+  route: z.string().trim().min(3).max(160),
+  version: z.number().int().min(1).max(10).optional(),
+  unavailable: z.boolean().default(false),
+});
+
 /** A made-up mission (P4 b). Altitudes are not in the file: the seed asks the configured `ElevationProvider`, as the API does (RN-07). */
 const DemoMission = z.strictObject({
   name: z.string().trim().min(3).max(120),
@@ -43,6 +54,8 @@ const DemoMission = z.strictObject({
   coordinator: Key,
   target: z.strictObject({ lat: z.number().min(-90).max(90), lon: z.number().min(-180).max(180), label: z.string().trim().min(1).max(200).optional() }),
   points: z.array(DemoPoint),
+  /** Routes of the library that this mission uses; only a mission that is not closed can have them (INV-11). */
+  routes: z.array(DemoMissionRoute).default([]),
 });
 
 /** A made-up route (P6): its versions come from invented GPX files in `data/seed/gpx/`; altitudes and metrics are measured at seeding, like the API does (RN-10). */
@@ -122,6 +135,22 @@ export const Demo = z
         if (version.validatedDaysAgo !== undefined && version.validatedDaysAgo > version.daysAgo)
           ctx.addIssue({ code: 'custom', message: 'a version cannot be validated before it was created', path: ['routes', index, 'versions', v, 'validatedDaysAgo'] });
         previous = version.daysAgo;
+      }
+    }
+    for (const [index, mission] of demo.missions.entries()) {
+      if (mission.routes.length > 0 && mission.status === 'closed') ctx.addIssue({ code: 'custom', message: 'a closed mission takes no routes (INV-11)', path: ['missions', index, 'routes'] });
+      const used = new Set<string>();
+      for (const [r, placed] of mission.routes.entries()) {
+        const library = demo.routes.find((route) => route.name.toLowerCase() === placed.route.toLowerCase());
+        if (!library) ctx.addIssue({ code: 'custom', message: `mission route ${placed.route} is not a route of the demo`, path: ['missions', index, 'routes', r, 'route'] });
+        else {
+          if (library.archived) ctx.addIssue({ code: 'custom', message: 'an archived route is not added to a mission', path: ['missions', index, 'routes', r, 'route'] });
+          if (placed.version !== undefined && placed.version > library.versions.length)
+            ctx.addIssue({ code: 'custom', message: `route ${library.name} has no version ${placed.version}`, path: ['missions', index, 'routes', r, 'version'] });
+        }
+        if (used.has(placed.route.toLowerCase()))
+          ctx.addIssue({ code: 'custom', message: `route ${placed.route} appears twice in the mission (INV-13)`, path: ['missions', index, 'routes', r, 'route'] });
+        used.add(placed.route.toLowerCase());
       }
     }
   });
