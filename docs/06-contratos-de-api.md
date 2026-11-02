@@ -582,9 +582,10 @@ Estas tablas son las que hacen cumplir RN-18 y RN-21. Lo que no aparece aquí **
 | `id` | uuid |  |
 | `routeId` | uuid |  |
 | `name` | texto |  |
-| `status` | added \| unavailable |  |
-| `versionNumber` | entero | ≥1 |
+| `status` | added \| unavailable | La *no disponible* se ve señalada, no desaparece (RF-508) |
+| `versionNumber` | entero | ≥1; la versión **fijada** (RN-13), no la última |
 | `validatedAt` | fecha-hora |  |
+| `validationIsStale` | booleano | Validación más antigua que `validation_max_age_days` de la organización, leída con el `Clock` (RF-519, R-08) |
 | `metrics` | objeto |  |
 | `metrics.distanceM` | número | ≥0 |
 | `metrics.ascentM` | número | ≥0 |
@@ -598,7 +599,7 @@ Estas tablas son las que hacen cumplir RN-18 y RN-21. Lo que no aparece aquí **
 | `origin` | objeto \| null |  |
 | `origin.id` | uuid |  |
 | `origin.name` | texto |  |
-| `team` | objeto \| null |  |
+| `team` | objeto \| null | Solo si la persona es miembro de ese equipo (`teams_select`) |
 | `team.id` | uuid |  |
 | `team.name` | texto |  |
 | `team.locality` | texto |  |

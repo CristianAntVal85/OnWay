@@ -59,6 +59,10 @@ const BUILT = [
   'addMissionRoutes',
   'updateMissionRoute',
   'removeMissionRoute', // H4-T2
+  'exportMissionRoutes',
+  'listMyMissionRoutes',
+  'getMyMissionRouteGeometry',
+  'exportMyMissionRoutes', // H4-T3
 ];
 
 let real: TestApp;
@@ -94,7 +98,7 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(before).toHaveLength(42);
     const ofH4 = ENDPOINTS.filter((e) => e.milestone === 'H4').map((e) => e.id);
     expect(ofH4).toHaveLength(9);
-    // Everything before H4 is mounted; of H4, only what earlier tasks built (T1: the table and the line of a mission route).
+    // Everything before H4 is mounted; of H4, only what earlier tasks built (T1 and T2: the table, the line and the three writes; T3: the rescuer's reads and the exports).
     const builtOfH4 = BUILT.filter((id) => ofH4.includes(id));
     expect([...BUILT].sort()).toEqual([...before, ...builtOfH4].sort());
     expect(BUILT).toHaveLength(42 + builtOfH4.length);

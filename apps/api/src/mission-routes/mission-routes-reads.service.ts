@@ -1,13 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { OperationOutput } from '@onway/contracts';
+import type { ExportMissionRoutesQuery, OperationOutput } from '@onway/contracts';
 import { computeMetrics, type Position3D } from '@onway/geo';
-import { sql } from 'drizzle-orm';
+import { sql, type SQL } from 'drizzle-orm';
+import type { z } from 'zod';
 import { CLOCK, type Clock } from '../clock/clock.js';
 import { DomainError } from '../common/domain-error.js';
+import type { ExportedFile } from '../common/download.js';
 import type { Principal } from '../common/operation.js';
 import { DatabaseService, type Tx } from '../db/database.service.js';
 import { isoUtc, viewerOf } from '../missions/mission-support.js';
 import { capPositions } from '../routes/route-library.service.js';
+import { exportFile, safeFileName } from '../routes/route-exports.service.js';
+import type { ExportRow } from '../routes/route-library.service.js';
 import { readSegments } from '../routes/route-reads.js';
 
 type Table = OperationOutput<'listMissionRoutes'>;
@@ -72,26 +76,87 @@ export class MissionRoutesReads {
   /** The line (altitudes the server measured), the stretches and the elevation profile of the pinned version. */
   async geometry(principal: Principal, missionId: string, missionRouteId: string): Promise<OperationOutput<'getMissionRouteGeometry'>> {
     const { orgId } = viewerOf(principal);
-    const { rows } = await this.tx.execute(sql`
-      SELECT v.id AS version_id, v.version_number, ST_AsGeoJSON(v.geom, 7) AS geojson
-        FROM mission_routes mr JOIN route_versions v ON v.id = mr.pinned_version_id
-       WHERE mr.id = ${missionRouteId}::uuid AND mr.mission_id = ${missionId}::uuid AND mr.organization_id = ${orgId}::uuid`);
-    const row = rows[0] as { version_id: string; version_number: number; geojson: string } | undefined;
-    if (!row) throw new DomainError('NOT_FOUND');
-    const coordinates = (JSON.parse(row.geojson) as { coordinates: Position3D[] }).coordinates;
-    return {
-      missionRouteId,
-      versionNumber: row.version_number,
-      geometry: { type: 'LineString', coordinates },
-      segments: await readSegments(this.tx, row.version_id),
-      elevationProfile: computeMetrics(coordinates).profile,
-    };
+    return readGeometry(this.tx, orgId, missionId, missionRouteId, sql``);
   }
 
-  private async assertMission(orgId: string, missionId: string): Promise<void> {
-    const { rows } = await this.tx.execute(sql`SELECT 1 FROM missions WHERE id = ${missionId}::uuid AND organization_id = ${orgId}::uuid`);
+  /**
+   * One file with the routes of the mission, each in its PINNED version, Drafts included (P2). Without `ids`, the routes marked unavailable
+   * stay out; with them, those rows are exported as asked, the unavailable ones too: the coordinator decides. Reading and exporting leave
+   * no audit row (D-H2-07). Another organization's mission is a 404 as ever; a mission with nothing to export too (like the library).
+   */
+  async export(principal: Principal, missionId: string, query: z.infer<typeof ExportMissionRoutesQuery>): Promise<ExportedFile> {
+    const { orgId } = viewerOf(principal);
+    const mission = await this.assertMission(orgId, missionId);
+    const ids = parseIds(query.ids);
+    const rows = await readExportRows(this.tx, orgId, missionId, ids ? sql` AND mr.id IN (${ids})` : sql` AND mr.status <> 'unavailable'`);
     if (rows.length === 0) throw new DomainError('NOT_FOUND');
+    return exportFile(rows, query.format, `${safeFileName(mission.name, 'mission')}-routes`);
   }
+
+  private async assertMission(orgId: string, missionId: string): Promise<{ name: string }> {
+    const { rows } = await this.tx.execute(sql`SELECT name FROM missions WHERE id = ${missionId}::uuid AND organization_id = ${orgId}::uuid`);
+    if (rows.length === 0) throw new DomainError('NOT_FOUND');
+    return { name: (rows[0] as { name: string }).name };
+  }
+}
+
+/**
+ * The line, stretches and profile of the version a mission route PINS. `extra` narrows who may read it: the staff pass nothing, the rescuer the
+ * conditions of INV-05 (an active or closed mission, a validated version), on top of the policies. What does not match is simply not there (404).
+ */
+export async function readGeometry(tx: Tx, orgId: string, missionId: string, missionRouteId: string, extra: SQL): Promise<OperationOutput<'getMissionRouteGeometry'>> {
+  const { rows } = await tx.execute(sql`
+    SELECT v.id AS version_id, v.version_number, ST_AsGeoJSON(v.geom, 7) AS geojson
+      FROM mission_routes mr JOIN route_versions v ON v.id = mr.pinned_version_id JOIN missions m ON m.id = mr.mission_id
+     WHERE mr.id = ${missionRouteId}::uuid AND mr.mission_id = ${missionId}::uuid AND mr.organization_id = ${orgId}::uuid${extra}`);
+  const row = rows[0] as { version_id: string; version_number: number; geojson: string } | undefined;
+  if (!row) throw new DomainError('NOT_FOUND');
+  const coordinates = (JSON.parse(row.geojson) as { coordinates: Position3D[] }).coordinates;
+  return {
+    missionRouteId,
+    versionNumber: row.version_number,
+    geometry: { type: 'LineString', coordinates },
+    segments: await readSegments(tx, row.version_id),
+    elevationProfile: computeMetrics(coordinates).profile,
+  };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** The ids of mission routes asked for, as an SQL list, or `null` when none were asked for. What is not an id cannot match a row, so it is dropped. */
+export function parseIds(text: string | undefined): SQL | null {
+  if (text === undefined) return null;
+  const ids = [...new Set(text.split(',').filter((id) => UUID.test(id)))];
+  // An empty list matches nothing (`IN (NULL)`): asking for ids that do not exist exports nothing, it does not fall back to "all".
+  return ids.length === 0
+    ? sql`NULL`
+    : sql.join(
+        ids.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      );
+}
+
+/**
+ * The PINNED version of each mission route that `extra` lets through, with its line, in the order the routes were added: what the exports
+ * of the staff and of the rescuer write. The conditions are the callers' (who may export what is P2); the organization is always filtered.
+ */
+export async function readExportRows(tx: Tx, orgId: string, missionId: string, extra: SQL): Promise<ExportRow[]> {
+  const { rows } = await tx.execute(sql`
+    SELECT r.id AS route_id, r.name, pv.version_number, pv.status::text AS status, ${sql.raw(isoUtc('pv.validated_at'))} AS validated_at, ST_AsGeoJSON(pv.geom, 7) AS geojson
+      FROM mission_routes mr
+      JOIN routes r ON r.id = mr.route_id AND r.organization_id = mr.organization_id
+      JOIN route_versions pv ON pv.id = mr.pinned_version_id
+      JOIN missions m ON m.id = mr.mission_id
+     WHERE mr.mission_id = ${missionId}::uuid AND mr.organization_id = ${orgId}::uuid${extra}
+     ORDER BY mr.added_at, mr.id`);
+  return (rows as unknown as { route_id: string; name: string; version_number: number; status: 'draft' | 'validated'; validated_at: string | null; geojson: string }[]).map((row) => ({
+    routeId: row.route_id,
+    name: row.name,
+    versionNumber: row.version_number,
+    status: row.status,
+    validatedAt: row.validated_at,
+    coordinates: (JSON.parse(row.geojson) as { coordinates: Position3D[] }).coordinates,
+  }));
 }
 
 /** The table of a mission, in the order the routes were added. Shared with the writes of H4-T2, which answer with the rows they touched. */

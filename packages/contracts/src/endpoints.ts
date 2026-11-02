@@ -275,7 +275,8 @@ const RAW = [
   { id: 'getMissionRouteGeometry', method: 'GET', path: '/missions/{missionId}/routes/{missionRouteId}/geometry', tag: 'Rutas de la misión', summary: 'Trazado, tramos y perfil de la versión fijada', roles: STAFF,
     params: p.missionRoute, response: { status: 200, schema: R.MissionRouteGeometry }, delivery: 1 },
   { id: 'exportMissionRoutes', method: 'GET', path: '/missions/{missionId}/routes/export', tag: 'Rutas de la misión', summary: 'Exportar las rutas de la misión en un solo GPX/KML', roles: STAFF,
-    params: p.mission, query: R.ExportMissionRoutesQuery, response: { status: 200, file: 'application/gpx+xml | application/vnd.google-earth.kml+xml' }, delivery: 1 },
+    params: p.mission, query: R.ExportMissionRoutesQuery, response: { status: 200, file: 'application/gpx+xml | application/vnd.google-earth.kml+xml' }, delivery: 1,
+    notes: 'Una `<trk>` por ruta, en la versión **fijada** (borradores incluidos). Sin `ids`: todas menos las marcadas como no disponibles; con `ids` (ids de fila de la misión), esas, también las no disponibles. Sin nada que exportar, `NOT_FOUND`. Sin autor ni datos personales. Se puede con la misión cerrada.' },
 
   // ================= Rescatista: misiones =================
   { id: 'listMyMissions', method: 'GET', path: '/my/missions', tag: 'Rescatista', summary: 'Misiones activas y cerradas, con el estado de mi oferta', roles: ['rescuer'],
@@ -288,11 +289,14 @@ const RAW = [
   { id: 'withdrawOffer', method: 'DELETE', path: '/my/missions/{missionId}/offer', tag: 'Rescatista', summary: 'Retirar mi oferta', roles: ['rescuer'],
     params: p.mission, response: { status: 200, schema: M.MyParticipation }, errors: ['MISSION_NOT_ACTIVE', 'INVALID_STATE_TRANSITION'], delivery: 1, audited: true },
   { id: 'listMyMissionRoutes', method: 'GET', path: '/my/missions/{missionId}/routes', tag: 'Rescatista', summary: 'Rutas validadas de la misión', roles: ['rescuer'],
-    params: p.mission, response: { status: 200, schema: R.MissionRoutesRescuer }, delivery: 1 },
+    params: p.mission, response: { status: 200, schema: R.MissionRoutesRescuer }, delivery: 1,
+    notes: 'Solo filas cuya versión fijada está validada (INV-05, RN-03): la fijada, no la última. Una misión en planificación u otra organización responde `NOT_FOUND`; una cerrada se lee. Sin nota interna, borrador ni quién validó. La *no disponible* sale señalada (`status`). El equipo solo aparece si la persona es miembro de él.' },
   { id: 'getMyMissionRouteGeometry', method: 'GET', path: '/my/missions/{missionId}/routes/{missionRouteId}/geometry', tag: 'Rescatista', summary: 'Trazado y perfil de una ruta validada', roles: ['rescuer'],
-    params: p.missionRoute, response: { status: 200, schema: R.MissionRouteGeometry }, delivery: 1 },
+    params: p.missionRoute, response: { status: 200, schema: R.MissionRouteGeometry }, delivery: 1,
+    notes: 'Misma respuesta que la del personal, de la versión fijada. Si esa versión no está validada, la fila no es visible: `NOT_FOUND`.' },
   { id: 'exportMyMissionRoutes', method: 'GET', path: '/my/missions/{missionId}/routes/export', tag: 'Rescatista', summary: 'Exportar rutas validadas (solo de misiones activas)', roles: ['rescuer'],
-    params: p.mission, query: R.ExportMissionRoutesQuery, response: { status: 200, file: 'application/gpx+xml | application/vnd.google-earth.kml+xml' }, errors: ['MISSION_NOT_ACTIVE'], delivery: 1 },
+    params: p.mission, query: R.ExportMissionRoutesQuery, response: { status: 200, file: 'application/gpx+xml | application/vnd.google-earth.kml+xml' }, errors: ['MISSION_NOT_ACTIVE'], delivery: 1,
+    notes: 'Solo versiones validadas y fijadas de rutas que no están marcadas como no disponibles (una ruta que se avisa de no usar no se descarga). Misión en planificación u otra organización: `NOT_FOUND`; cerrada: `MISSION_NOT_ACTIVE`. Con `ids`, solo de entre esas filas. Sin nada que exportar, `NOT_FOUND`.' },
 
   // ================= Rescatista: perfil =================
   { id: 'getMyProfile', method: 'GET', path: '/my/profile', tag: 'Perfil', summary: 'Mi perfil (documento y dirección enmascarados)', roles: ['rescuer'],
