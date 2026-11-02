@@ -16,6 +16,7 @@ Lee la fuente de verdad antes de decidir nada: este archivo es un índice, no co
 | Contrato del API | `docs/06-contratos-de-api.md` y `packages/contracts/` |
 | **En qué orden se construye y cuándo está terminado un hito** | `docs/07-plan-de-implementacion.md` |
 | Estado actual y decisiones por el camino | `docs/estado.md` |
+| Lo aplazado para después del MVP (se pasa a *issues*) | `docs/backlog-post-mvp.md` |
 | Principios innegociables y flujo de trabajo (SDD ligero) | `docs/constitution.md`, `AGENTS.md`, `.claude/` |
 
 Si dos documentos se contradicen, manda el de número más bajo para el *qué* (01–03) y el más alto para el *cómo* (04–06). Ante la duda real, para y pregunta.

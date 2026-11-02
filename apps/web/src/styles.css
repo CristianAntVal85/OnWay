@@ -1248,7 +1248,7 @@ html:has(.action-bar) {
   display: grid;
   gap: 1.25rem;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'head' 'map' 'ready' 'points' 'history';
+  grid-template-areas: 'head' 'map' 'ready' 'routes' 'points' 'history';
 }
 
 .detail-head {
@@ -1469,8 +1469,8 @@ html:has(.action-bar) {
 @media (min-width: 64rem) {
   .detail-layout {
     grid-template-columns: minmax(0, 36rem) minmax(0, 1fr);
-    grid-template-areas: 'head map' 'ready map' 'points map' 'history map';
-    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas: 'head map' 'ready map' 'routes map' 'points map' 'history map';
+    grid-template-rows: auto auto auto auto 1fr;
     align-items: start;
     column-gap: 1.5rem;
   }
@@ -2574,4 +2574,98 @@ h4 {
 .table-scroll {
   max-width: 100%;
   overflow-x: auto;
+}
+
+/* ---------- rutas de la misión en el detalle (H4-T4) ---------- */
+
+.mission-routes-table {
+  min-width: 70rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mission-routes-table th[scope='col'] {
+  white-space: nowrap;
+}
+
+.mission-routes-table td {
+  white-space: nowrap;
+}
+
+.mission-routes-table td:nth-child(10) {
+  min-width: 11rem;
+  white-space: normal;
+}
+
+.mission-route-main {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 17rem;
+  max-width: 22rem;
+  font-weight: 400;
+}
+
+.mission-route-name {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.mission-route-name input {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+}
+
+/* El nombre es la etiqueta de la casilla: toda la línea se toca para marcarla (objetivo táctil de 44 px). */
+.mission-route-name label {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  min-height: 2.75rem;
+  cursor: pointer;
+}
+
+.mission-route-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.mission-route-badges:empty {
+  display: none;
+}
+
+.status-badge[data-route='unavailable'] {
+  border-color: var(--rock);
+  background: var(--snow);
+  color: var(--stone);
+}
+
+.status-badge[data-route='stale'] {
+  border-color: #b3261e;
+  background: #fbe9e7;
+  color: #7a1712;
+}
+
+.mission-routes-table tr[data-unavailable] .mission-route-name label {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.mission-route-notice {
+  padding-inline-start: 0.625rem;
+  border-inline-start: 4px solid var(--signal);
+  font-weight: 700;
+}
+
+.mission-routes-export,
+.mission-routes-profiles {
+  margin-top: 1.25rem;
+}
+
+.mission-route-profile {
+  margin-top: 0.75rem;
 }

@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.2 (borrador) · Fecha: 2026-11-01 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.3 (borrador) · Fecha: 2026-11-02 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -64,6 +64,7 @@ OnWay es una aplicación para equipos de rescate en montaña. Un coordinador def
 | D-31 | **El producto se llama OnWay** | Sustituye a OnCourse en todos los documentos y bocetos | Confirmada |
 | D-32 | **Stack y despliegue:** TypeScript, NestJS, React + Vite, PostgreSQL con PostGIS, servidor único de 8 GB con techo de 20 €/mes | Detalle y alternativas descartadas en el documento 04 | Confirmada |
 | D-33 | **Construcción por hitos pequeños (H0–H9), con el MVP en H0–H4.** Cada hito termina en algo que se puede demostrar | Documento 07. La biblioteca de rutas (H2) va antes del motor (H3) para aislar el mayor riesgo. El despliegue va al final de la primera entrega | Propuesta |
+| D-34 | **Un rescatista ve el nombre y la localidad de su equipo y de los demás equipos de su organización** (por ejemplo, el equipo asignado a cada ruta de una misión). Sigue sin ver quién es miembro de cada uno | Para saber qué equipo sigue cada ruta aunque no sea el suyo. La lectura de `teams` hoy solo deja ver los propios; se amplía en H5 (backlog B-01) | Confirmada (2026-11-02), construcción en H5 |
 
 ## 3. Usuarios y roles
 
@@ -502,6 +503,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - ~~**Q-33** Recuperar contraseña~~ **Cerrada:** por correo transaccional (Resend tras el puerto `Mailer`), enlace de un solo uso que caduca en 1 h. Pendiente solo el dominio para enviar a terceros (Q-28)
 - **Q-34** Solicitudes de alta sin «equipo indicado» ni «datos completos»: el registro solo recoge correo, nombre, contraseña y código, y el perfil nace al aprobar **Cerrada:** confirmada (documento 06 §5)
 - ~~**Q-35** Días de validación antigua (RF-519)~~ **Cerrada:** 90, configurable por organización
+- **Q-36** Alias de coordinadores y rescatistas, del estilo `criantval ALC` (tres letras del nombre y de cada apellido, y un código de la localidad del equipo): ¿se genera o lo elige la persona?, ¿qué pasa con varios equipos o ninguno?, ¿qué lo ve y dónde? Aplazada hasta después del MVP; el alcance se decide al planificar H5. Detalle en `docs/backlog-post-mvp.md` (B-02) *(nueva)*
 
 Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 
@@ -547,6 +549,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.3 (2026-11-02)**
+- D-34: el rescatista ve nombre y localidad de todos los equipos de su organización (construcción en H5). Nueva Q-36 (alias de coordinadores y rescatistas), aplazada. Backlog tras el MVP en `docs/backlog-post-mvp.md`.
 
 **1.2 (2026-11-01)**
 - H3: RF-304 (la ruta cruza la frontera en la misma red y sin cortes), RF-501 (generar, con puntos intermedios), RF-503 (composición real de lo generado y de lo dibujado pegado a caminos) y RF-507 (zonas a evitar) quedan construidos. Resuelta Q-05: las zonas pertenecen a la organización, con misión opcional, y no las ve el rescatista. R-01 anota la regresión sobre datos reales.

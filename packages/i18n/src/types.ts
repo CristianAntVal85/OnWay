@@ -506,6 +506,42 @@ export interface Messages {
     none: string;
     unknownNote: string;
   };
+  missionRoutes: {
+    title: string;
+    intro: string;
+    empty: string;
+    emptyHelp: string;
+    openLibrary: string;
+    tableCaption: string;
+    selectHelp: string;
+    select: string;
+    versionValue: string;
+    noOrigin: string;
+    noTeam: string;
+    notValidated: string;
+    teamValue: string;
+    columns: {
+      route: string;
+      version: string;
+      distance: string;
+      ascent: string;
+      descent: string;
+      minElevation: string;
+      maxElevation: string;
+      maxSlope: string;
+      roadMix: string;
+      validatedOn: string;
+      origin: string;
+      team: string;
+    };
+    badges: { unavailable: string; stale: string };
+    notices: { draft: string; stale: string; newer: string };
+    update: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    unavailable: { mark: string; markFor: string; marked: string; reactivate: string; reactivateFor: string; reactivated: string };
+    remove: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    export: { title: string; gpx: string; kml: string; help: string; busy: string; nothing: string; fileName: string };
+    profiles: { title: string; forRoute: string };
+  };
   generate: {
     title: string;
     cta: string;
