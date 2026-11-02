@@ -17,3 +17,15 @@ export function toneOf(row: MissionRouteRow): MapRoute['tone'] {
 export function mapRoutesOf(rows: readonly MissionRouteRow[]): MapRoute[] {
   return rows.map((row) => ({ id: row.id, name: row.name, tone: toneOf(row), line: row.previewGeometry.coordinates }));
 }
+
+export type MyMissionRouteRow = OperationOutput<'listMyMissionRoutes'>['items'][number];
+
+/** Lo mismo para el rescatista: una ruta no disponible va apagada, una validación antigua señalada y el resto como validada (no ve borradores, INV-05). */
+export function mapRoutesOfRescuer(rows: readonly MyMissionRouteRow[]): MapRoute[] {
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    tone: row.status === 'unavailable' ? ('archived' as const) : row.validationIsStale ? ('stale' as const) : ('validated' as const),
+    line: row.previewGeometry.coordinates,
+  }));
+}

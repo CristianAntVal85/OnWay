@@ -11,3 +11,16 @@ export function saveBlob(blob: Blob, fileName: string): void {
   // El navegador necesita un instante para empezar la descarga antes de soltar la dirección.
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
+
+/** Un nombre de archivo sencillo a partir del nombre de una ruta: sin tildes, en minúsculas y con guiones. */
+export function fileSlug(text: string, fallback = 'ruta'): string {
+  const slug = text
+    .normalize('NFD')
+    .replace(/\p{M}+/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/, '');
+  return slug || fallback;
+}

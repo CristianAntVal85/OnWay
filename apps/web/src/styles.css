@@ -1802,7 +1802,12 @@ h4 {
 }
 
 .detail-layout-readonly {
-  grid-template-areas: 'head' 'map' 'env' 'points' 'routes';
+  grid-template-areas: 'head' 'share' 'map' 'routes' 'env' 'points';
+}
+
+.detail-share {
+  grid-area: share;
+  min-width: 0;
 }
 
 .detail-environment {
@@ -1822,8 +1827,8 @@ h4 {
   }
 
   .detail-layout-readonly {
-    grid-template-areas: 'head map' 'env map' 'points map' 'routes map';
-    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas: 'head map' 'share map' 'routes map' 'env map' 'points map';
+    grid-template-rows: auto auto auto auto 1fr;
   }
 }
 
@@ -2764,4 +2769,73 @@ h4 {
   padding-inline: 0.375rem;
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+
+/* ---------- rutas y compartir ubicación en la vista del rescatista (H4-T6) ---------- */
+
+.share-location {
+  margin: 0;
+}
+
+.share-coordinates {
+  margin: 0.5rem 0;
+}
+
+.share-coordinates code {
+  display: inline-block;
+  padding: 0.375rem 0.625rem;
+  border: 2px solid var(--rock);
+  background: var(--paper);
+  font-size: 1.1rem;
+  font-weight: 700;
+  user-select: all;
+}
+
+.my-route-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.my-route-card {
+  padding: 0.875rem var(--gutter);
+  border: 2px solid var(--rock);
+  background: var(--paper);
+}
+
+.my-route-card[data-selected] {
+  border-inline-start-width: 8px;
+  border-inline-start-color: var(--signal);
+}
+
+.my-route-card[data-unavailable] {
+  border-style: dashed;
+  background: var(--snow);
+}
+
+.my-route-card[data-unavailable] h3 {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.my-route-card h3 {
+  overflow-wrap: anywhere;
+}
+
+.my-route-card .point-row-actions {
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.my-route-download-label {
+  font-weight: 700;
+}
+
+.my-route-all {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams } from 'react-router';
@@ -9,7 +9,10 @@ import { usePageTitle } from '../components/use-page-title';
 import { countryName } from '../i18n/country-name';
 import { EnvironmentSection } from '../environment/environment-section';
 import { MapView, type MapMarker } from '../map';
+import { mapRoutesOfRescuer } from '../missions/mission-route-style';
+import { MyRoutesSection, useMyMissionRoutes } from '../missions/my-routes-section';
 import type { PointKind } from '../missions/point';
+import { ShareLocation } from '../missions/share-location';
 import { StatusBadge } from '../missions/status-badge';
 import { PATHS } from '../nav/navigation';
 import { useApi } from '../session/api-context';
@@ -20,8 +23,8 @@ type Point = Mission['points'][number];
 const KINDS: readonly PointKind[] = ['origin', 'waypoint', 'rendezvous'];
 
 /**
- * Detalle de una misión para el rescatista (RF-602, boceto 14): solo lectura. Puntos, mapa y tiempo del objetivo; sin rutas (llegan en H4)
- * y sin botón de oferta (H6) aunque el API devuelva `canOffer`. El mapa no lleva `elevationLookup`: el rescatista no tiene `getElevation`
+ * Detalle de una misión para el rescatista (RF-601 a RF-604, boceto 14): solo lectura. Puntos, mapa, tiempo del objetivo, las rutas validadas y fijadas
+ * (con su perfil y descarga) y compartir la ubicación; sin botón de oferta (H6) aunque el API devuelva `canOffer`. El mapa no lleva `elevationLookup`: el rescatista no tiene `getElevation`
  * y ve solo coordenadas. Una misión en planificación o de otra organización responde 404 (RN-16, INV-08).
  */
 export function MyMissionDetailPage() {
@@ -59,6 +62,13 @@ function MissionView({ mission }: { mission: Mission }) {
     ],
     [mission.points, mission.target, t],
   );
+
+  // Las rutas: la lista y el mapa comparten la consulta y la que se está viendo (una a la vez, con su perfil).
+  const routes = useMyMissionRoutes(mission.id);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const routeRows = routes.data?.items;
+  const mapRoutes = useMemo(() => mapRoutesOfRescuer(routeRows ?? []), [routeRows]);
+  const selectedRoutes = useMemo(() => new Set(selectedId && routeRows?.some((row) => row.id === selectedId) ? [selectedId] : []), [routeRows, selectedId]);
 
   const pointsOf = (kind: PointKind): Point[] => mission.points.filter((point) => point.kind === kind).sort((a, b) => a.position - b.position);
   const objective = mission.target.label ?? formatCoordinate(mission.target, 'decimal');
@@ -107,6 +117,19 @@ function MissionView({ mission }: { mission: Mission }) {
           </p>
         </header>
 
+        <div className="detail-share">
+          <ShareLocation target={mission.target} />
+        </div>
+
+        <MyRoutesSection
+          missionId={mission.id}
+          active={mission.status === 'active'}
+          locale={locale}
+          routes={routes}
+          selectedId={selectedId && selectedRoutes.has(selectedId) ? selectedId : null}
+          onSelect={setSelectedId}
+        />
+
         <div className="detail-environment">
           <EnvironmentSection mission={{ id: mission.id, name: mission.name }} title={t('myMissions.detail.environmentTitle')} locale={locale} />
         </div>
@@ -138,13 +161,8 @@ function MissionView({ mission }: { mission: Mission }) {
           })}
         </section>
 
-        <section className="detail-routes" aria-labelledby="routes-title">
-          <h2 id="routes-title">{t('myMissions.detail.routesTitle')}</h2>
-          <p className="field-help">{t('myMissions.detail.noRoutes')}</p>
-        </section>
-
         <div className="detail-map">
-          <MapView label={t('missionDetail.mapRegion')} markers={markers} fitToMarkers />
+          <MapView label={t('missionDetail.mapRegion')} markers={markers} fitToMarkers routes={mapRoutes} selectedRouteIds={selectedRoutes} onRouteClick={setSelectedId} />
         </div>
       </div>
     </div>

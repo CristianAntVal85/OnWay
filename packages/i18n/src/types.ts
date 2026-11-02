@@ -104,6 +104,31 @@ export interface Messages {
     coordinatorNeutral: string;
     participation: { label: string; none: string; status: Record<'pending' | 'accepted' | 'not_selected' | 'withdrawn' | 'removed', string> };
     detail: { back: string; readOnly: string; routesTitle: string; noRoutes: string; environmentTitle: string; pointsTitle: string };
+    routes: {
+      intro: string;
+      listLabel: string;
+      version: string;
+      stale: string;
+      staleNotice: string;
+      unavailable: string;
+      unavailableNotice: string;
+      origin: string;
+      team: string;
+      show: string;
+      showFor: string;
+      profile: string;
+      download: string;
+      downloadFor: string;
+      downloadAll: string;
+      formats: { gpx: string; kml: string };
+      downloadAllTitle: string;
+      closedNotice: string;
+      preparing: string;
+      downloaded: string;
+      fileName: string;
+      fileNameAll: string;
+    };
+    share: { title: string; help: string; coordinates: string; copy: string; copied: string; copyFailed: string; open: string };
   };
   account: {
     title: string;
