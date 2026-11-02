@@ -2669,3 +2669,99 @@ h4 {
 .mission-route-profile {
   margin-top: 0.75rem;
 }
+
+/* ---------- añadir ruta a la misión (H4-T5) ---------- */
+
+.dialog:has(.add-route) {
+  max-width: 44rem;
+}
+
+.mission-routes > .button {
+  margin-top: 0.5rem;
+}
+
+.add-route h3 {
+  margin-top: 0.5rem;
+}
+
+.add-route-list {
+  display: grid;
+  gap: 0;
+  max-height: 18rem;
+  margin: 0.75rem 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.add-route-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.add-route-item input {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0.6875rem 0 0;
+}
+
+.add-route-item label {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  min-height: 2.75rem;
+  padding-block: 0.25rem;
+  cursor: pointer;
+}
+
+.add-route-item[data-already] label {
+  color: var(--stone);
+  cursor: default;
+}
+
+.add-route-name {
+  flex: 1 1 100%;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.add-route-meta {
+  color: var(--stone);
+  font-size: 0.95rem;
+}
+
+.add-route-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.add-route-other {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.add-route-other p {
+  margin: 0 0 0.75rem;
+}
+
+.add-route-details {
+  margin: 0 0 1rem;
+  padding: 0.75rem;
+  border: 2px solid var(--line);
+}
+
+.add-route-details legend {
+  padding-inline: 0.375rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}

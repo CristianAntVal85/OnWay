@@ -14,7 +14,7 @@ interface Common {
 }
 
 /** Validar una versión (RF-506): el aviso se confirma con una casilla y el servidor recibe `acknowledged: true`. */
-export function ValidateDialog({ routeId, versionId, versionNumber, onClose }: Common & { versionId: string; versionNumber: number }) {
+export function ValidateDialog({ routeId, versionId, versionNumber, onClose, onValidated }: Common & { versionId: string; versionNumber: number; onValidated?: () => void }) {
   const { t } = useTranslation();
   const api = useApi();
   const queryClient = useQueryClient();
@@ -26,6 +26,8 @@ export function ValidateDialog({ routeId, versionId, versionNumber, onClose }: C
       await queryClient.invalidateQueries({ queryKey: ['route', routeId] });
       void queryClient.invalidateQueries({ queryKey: ['routes'] });
       onClose();
+      // Quien lo abrió desde otra vista (la misión) refresca lo suyo cuando el diálogo ya se ha cerrado.
+      onValidated?.();
     },
   });
   const submit = (event: FormEvent) => {

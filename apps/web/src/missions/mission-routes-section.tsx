@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { ApiError, type OperationOutput } from '@onway/contracts/client';
 import { ErrorState, LoadingState } from '../components/states';
+import { ValidateDialog } from '../library/route-dialogs';
 import { errorMessage } from '../i18n/error-message';
 import { ElevationProfile } from '../library/elevation-profile';
 import { saveBlob } from '../library/download';
@@ -13,6 +14,7 @@ import { PATHS } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { missionChangedMeanwhile, writeFailureMessage } from './errors';
 import { formatDate } from './format';
+import { AddRouteDialog } from './add-route-dialog';
 import type { MissionRouteRow } from './mission-route-style';
 
 export type MissionRoutesQuery = UseQueryResult<OperationOutput<'listMissionRoutes'>>;
@@ -31,6 +33,8 @@ interface Props {
   locale: string;
   /** `actions.manageRoutes`: sin él la tabla es de lectura y no hay ningún control que escriba (misión cerrada o administrador). */
   canManage: boolean;
+  /** Los orígenes de la misión: el diálogo de añadir los ofrece a cada ruta y decide si se puede generar. */
+  origins: readonly { id: string; name: string }[];
   routes: MissionRoutesQuery;
   selected: ReadonlySet<string>;
   onToggle: (id: string) => void;
@@ -41,11 +45,13 @@ interface Props {
  * mapa y su perfil, los avisos de versión nueva (RF-518, nunca cambia sola) y de validación antigua (RF-519), y marcar no disponible (RF-508),
  * quitar y exportar. Nada de geometría aquí: el mapa y el perfil reciben lo que calcula el servidor.
  */
-export function MissionRoutesSection({ missionId, locale, canManage, routes, selected, onToggle }: Props) {
+export function MissionRoutesSection({ missionId, locale, canManage, origins, routes, selected, onToggle }: Props) {
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [message, setMessage] = useState('');
+  const [adding, setAdding] = useState(false);
   const rows = routes.data?.items ?? [];
+  const inMission = new Set(rows.map((row) => row.routeId));
 
   // Si la fila que se confirmaba desaparece (otra persona la quitó), la confirmación se cierra sola.
   const open = confirming && rows.some((row) => row.id === confirming.id) ? confirming : null;
@@ -62,6 +68,11 @@ export function MissionRoutesSection({ missionId, locale, canManage, routes, sel
         {t('missionRoutes.title')}
       </h2>
       <p className="field-help">{t('missionRoutes.intro')}</p>
+      {canManage && (
+        <button id="add-route-open" type="button" className="button button-primary" onClick={() => setAdding(true)}>
+          {t('missionRoutes.add.open')}
+        </button>
+      )}
       <div role="status" className="saved-message">
         {message}
       </div>
@@ -137,6 +148,18 @@ export function MissionRoutesSection({ missionId, locale, canManage, routes, sel
           )}
         </>
       )}
+      {adding && canManage && (
+        <AddRouteDialog
+          missionId={missionId}
+          origins={origins}
+          inMission={inMission}
+          onClose={() => setAdding(false)}
+          onAdded={(count) => {
+            setConfirming(null);
+            setMessage(t('missionRoutes.add.added', { count }));
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -159,6 +182,7 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
   const api = useApi();
   const queryClient = useQueryClient();
   const safe = useRef<HTMLButtonElement>(null);
+  const [validating, setValidating] = useState(false);
   const unavailable = row.status === 'unavailable';
   const newer = row.newerValidatedVersion;
   const km = (meters: number) => t('units.km', { value: formatKm(meters, locale) });
@@ -243,6 +267,11 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
             >
               {t(unavailable ? 'missionRoutes.unavailable.reactivate' : 'missionRoutes.unavailable.mark')}
             </button>
+            {row.pinned.status === 'draft' && (
+              <button type="button" className="button button-secondary" aria-label={t('missionRoutes.validate.actionFor', { name: row.name })} onClick={() => setValidating(true)}>
+                {t('missionRoutes.validate.action')}
+              </button>
+            )}
             <button type="button" className="button button-secondary" aria-label={t('missionRoutes.remove.actionFor', { name: row.name })} onClick={() => onConfirm('remove')}>
               {t('missionRoutes.remove.action')}
             </button>
@@ -270,6 +299,17 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
               </button>
             </span>
           </span>
+        )}
+        {validating && (
+          <ValidateDialog
+            routeId={row.routeId}
+            versionId={row.pinned.versionId}
+            versionNumber={row.pinned.number}
+            onClose={() => setValidating(false)}
+            onValidated={() => {
+              void refresh().then(() => onDone(t('missionRoutes.validate.done', { name: row.name })));
+            }}
+          />
         )}
         {canManage && failure != null && (
           <span className="field-error" role="alert">

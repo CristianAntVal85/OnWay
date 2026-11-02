@@ -90,9 +90,13 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
   const [importing, setImporting] = useState(false);
   // Aviso de lo último guardado, junto a lo que se ha tocado (cabecera o puntos); las regiones `status` existen siempre para que se anuncie.
   // Si se llega desde «Duplicar», la copia lo anuncia (la navegación lleva el nombre del original).
-  const arrival = useLocation().state as { duplicatedFrom?: string } | null;
+  const arrival = useLocation().state as { duplicatedFrom?: string; routeAdded?: string } | null;
   const [saved, setSaved] = useState<{ area: 'head' | 'points'; text: string } | null>(
-    arrival?.duplicatedFrom ? { area: 'head', text: t('missionDetail.lifecycle.duplicated', { name: arrival.duplicatedFrom }) } : null,
+    arrival?.duplicatedFrom
+      ? { area: 'head', text: t('missionDetail.lifecycle.duplicated', { name: arrival.duplicatedFrom }) }
+      : arrival?.routeAdded
+        ? { area: 'head', text: t('routeImport.mission.added', { name: arrival.routeAdded }) }
+        : null,
   );
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -290,7 +294,15 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
         </section>
 
         <div className="detail-routes">
-          <MissionRoutesSection missionId={mission.id} locale={locale} canManage={mission.actions.manageRoutes} routes={routes} selected={selectedRoutes} onToggle={togglePicked} />
+          <MissionRoutesSection
+            missionId={mission.id}
+            locale={locale}
+            canManage={mission.actions.manageRoutes}
+            origins={pointsByKind.origin.map((point) => ({ id: point.id, name: point.name }))}
+            routes={routes}
+            selected={selectedRoutes}
+            onToggle={togglePicked}
+          />
           {canEdit && (
             <section className="detail-generate" aria-labelledby="generate-title">
               <h2 id="generate-title" tabIndex={-1}>

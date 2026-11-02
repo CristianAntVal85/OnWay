@@ -458,6 +458,7 @@ export interface Messages {
     cancel: string;
     changeFile: string;
     mapLabel: string;
+    mission: { notice: string; origin: string; noOrigin: string; closed: string; back: string; added: string; loading: string };
   };
   routeEditor: {
     drawTitle: string;
@@ -541,6 +542,33 @@ export interface Messages {
     remove: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
     export: { title: string; gpx: string; kml: string; help: string; busy: string; nothing: string; fileName: string };
     profiles: { title: string; forRoute: string };
+    add: {
+      open: string;
+      title: string;
+      description: string;
+      libraryTitle: string;
+      versionFilter: string;
+      listLabel: string;
+      empty: string;
+      inMission: string;
+      limit: string;
+      selected: string;
+      pick: string;
+      latest: string;
+      previous: string;
+      next: string;
+      page: string;
+      continue: string;
+      back: string;
+      cancel: string;
+      submit: string;
+      submitting: string;
+      added: string;
+      details: { title: string; help: string; version: string; versionOption: string; origin: string; noOrigin: string; note: string; draftWarning: string; loadingVersions: string };
+      errors: { alreadyIn: string; alreadyInUnknown: string; archived: string; notFound: string };
+      other: { title: string; generate: string; generateHint: string; generateNoOrigin: string; import: string; importHint: string };
+    };
+    validate: { action: string; actionFor: string; done: string };
   };
   generate: {
     title: string;
