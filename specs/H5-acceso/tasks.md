@@ -9,8 +9,8 @@ Operaciones del cambio (7, `x-milestone: H5` sin cambiar): `register`, `forgotPa
   - Hecho cuando: `pnpm --filter @onway/contracts test` y `gen:openapi` / `gen:doc` sin diferencias salvo las notas; `test:api` de `app.test.ts` en verde con 58 operaciones y las 19 restantes de H5 respondiendo 404 `NOT_FOUND`.
   - Cierre: commit `feat(H5-acceso): T1 mark the access operations as the milestone in progress` + push.
 
-- [ ] **T2. Puerto `Mailer` y `ConsoleMailer`.** Puerto `Mailer` (doc 04); P1.
-  - `apps/api/src/mail/`: el puerto, el adaptador de consola con una línea JSON fija (destinatario, tipo, idioma, enlace) y la configuración `MAILER` / `PUBLIC_BASE_URL`. Arrancar con un valor de `MAILER` distinto de `console`, o con `console` y `NODE_ENV=production`, falla con un mensaje claro. Doble para pruebas que guarda lo enviado.
+- [x] **T2. Puerto `Mailer` y `ConsoleMailer`.** Puerto `Mailer` (doc 04); P1.
+  - `apps/api/src/mail/`: el puerto, el adaptador de consola con una línea JSON fija (destinatario, tipo, idioma, enlace) y la configuración `MAILER` / `PUBLIC_BASE_URL`. Arrancar con un valor de `MAILER` distinto de `console`, o con `console` y `NODE_ENV=production` sin `MAILER_ALLOW_CONSOLE=true` (D-A7), falla con un mensaje claro; fuera de producción, `MAILER`, `PUBLIC_BASE_URL` y el interruptor tienen valores por defecto (`console`, `http://localhost:8080`, permitido), y mientras T8 no los fije en compose, también en la pila. Doble para pruebas que guarda lo enviado.
   - Hecho cuando: pruebas unitarias del formato de la línea, de la construcción del enlace con el token en el fragmento y de los dos arranques que fallan; `pnpm --filter @onway/api test` en verde.
   - Cierre: commit `feat(H5-acceso): T2 add the Mailer port with a console adapter` + push.
 
@@ -40,7 +40,7 @@ Operaciones del cambio (7, `x-milestone: H5` sin cambiar): `register`, `forgotPa
   - Cierre: commit `feat(H5-acceso): T7 add the admin signup inbox and invite code view` + push.
 
 - [ ] **T8. Compose, semilla, `smoke.sh` y apoyo del E2E.** Doc 04 §5.2; data/seed.
-  - `MAILER=console` y `PUBLIC_BASE_URL` en `compose.yml` y en la superposición E2E; se comprueba que `pendiente@example.org` tiene su solicitud pendiente (si no, la semilla la crea, idempotente); `smoke.sh` añade: el administrador lee el código, `register` con código inválido da `REGISTRATION_FAILED` y `forgotPassword` responde 202; el apoyo `support/stack.ts` gana una función que lee del registro del `api` el último enlace enviado a un correo.
+  - `MAILER=console`, `MAILER_ALLOW_CONSOLE=true` y `PUBLIC_BASE_URL` en `compose.yml` y en la superposición E2E (y en `.env.example` si existe); se comprueba que `pendiente@example.org` tiene su solicitud pendiente (si no, la semilla la crea, idempotente); `smoke.sh` añade: el administrador lee el código, `register` con código inválido da `REGISTRATION_FAILED` y `forgotPassword` responde 202; el apoyo `support/stack.ts` gana una función que lee del registro del `api` el último enlace enviado a un correo.
   - Hecho cuando: `seed.test.ts` y `test:db` en verde; `infra/scripts/smoke.sh` pasa contra la pila de pruebas (`onway-e2e`, puerto 18080); el apoyo del E2E devuelve un enlace real.
   - Cierre: commit `feat(H5-acceso): T8 wire the mailer into compose, seed and smoke` + push.
 

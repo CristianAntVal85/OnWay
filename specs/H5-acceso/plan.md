@@ -16,7 +16,7 @@ Las dos grandes ya están tomadas (alcance: adelantar solo el acceso; registro: 
 | P4 | **Límite de peticiones en los tres endpoints públicos** (`register`, `forgotPassword`, `resetPassword`). El doc 07 lo cita en la salida de H5 (bloqueo por intentos y límite de peticiones); hoy solo existe el bloqueo por cuenta del login | **Un limitador pequeño por IP y por operación, en memoria**, con `RATE_LIMITED` y `retryAfterSeconds` (patrón de `UserRateLimiter` de H1). Sin él, el registro público llena `users` y `forgotPassword` envía correos a quien sea | Dejarlo para H7: el riesgo es nulo en una demostración local, pero el registro público queda abierto desde su primer día |
 | P5 | **Cuántos enlaces de «nombre»:** la issue pide «nombre de usuario» | **Nombre visible** (`displayName`, ya en `RegisterRequest`). OnWay inicia sesión con el correo; no hay nombre de usuario (D-28, INV-31). El alias sigue siendo B-02/Q-36 | Añadir un nombre de usuario aparte: cambia el modelo y el login, y entra en terreno de Q-36 |
 
-Además, **sin necesitar respuesta** (diseño, con alternativa en §4): D-A1 a D-A6.
+Además, **sin necesitar respuesta** (diseño, con alternativa en §4): D-A1 a D-A7.
 
 ## 1. Alcance
 
@@ -60,11 +60,12 @@ Además, **sin necesitar respuesta** (diseño, con alternativa en §4): D-A1 a D
 | D-A4 | La aprobación por lote es **atómica**: si falla una persona, el lote entero se deshace y la respuesta lo dice | Lote parcial con resultado por elemento: deja la bandeja a medias y es más difícil de probar |
 | D-A5 | `rotateInviteCode` invalida el anterior en el acto (una sola columna `invite_code`) | Dos códigos vivos durante un periodo de gracia: no hay tabla para ello |
 | D-A6 | El código de invitación solo lo ve el administrador (`getInviteCode`); nunca sale en listados ni en el historial | Mostrarlo al coordinador: INV-29 / D-25 reservan la gestión de altas al administrador |
+| D-A7 | `MAILER=console` con `NODE_ENV=production` no arranca **salvo** con `MAILER_ALLOW_CONSOLE=true` (desviación hallada en T2: `compose.yml` y el Dockerfile fijan `NODE_ENV=production` en `api` y `worker`, así que la regla tal cual habría impedido arrancar la pila local, la E2E y el CI). El interruptor lo fijan compose y su superposición E2E y no lo fijará el despliegue de H7 | Quitar `NODE_ENV=production` de compose: desactiva otros comportamientos de producción en la pila de referencia. Prohibir con otra señal de despliegue (`ONWAY_ENV`): equivale a lo elegido con el interruptor al revés |
 
 ## 5. Riesgos
 
 - **Registro público abierto** (alto si faltara P4): llenado de `users` y correos a terceros. Mitigación: limitador (P4), `REGISTRATION_FAILED` único, el registro solo crea una cuenta *pendiente* sin sesión ni datos (INV-25).
-- **Tokens en los registros** del `api` con `ConsoleMailer`: en desarrollo es lo buscado; en producción sería una fuga. Mitigación: `MAILER=console` solo se admite fuera de producción (el arranque falla si `NODE_ENV=production`), y el despliegue de H7 trae Resend.
+- **Tokens en los registros** del `api` con `ConsoleMailer`: en desarrollo es lo buscado; en producción sería una fuga. Mitigación: con `NODE_ENV=production`, `MAILER=console` solo arranca con `MAILER_ALLOW_CONSOLE=true` (D-A7; lo fijan la pila local, la E2E y el CI, no el despliegue de H7), y H7 trae Resend.
 - **Enumeración de cuentas** por mensajes o por tiempo en `register` y `forgotPassword`. Mitigación: respuestas idénticas (P3, D-A3) y prueba que compara cuerpo y estado.
 - **IP detrás de Caddy:** el limitador necesita la IP real del cliente (`X-Forwarded-For`). Mitigación: se confía solo en el salto de Caddy y se prueba con y sin cabecera.
 - **Seguridad de la contraseña nueva:** reutiliza el esquema `Password` de H0 (mínimos del doc 06 §5); se verifica que no se acepta una más débil por la vía de recuperación.

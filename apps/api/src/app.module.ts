@@ -12,6 +12,8 @@ import { HealthModule } from './health/health.module.js';
 import type { IdentityOptions } from './identity/config.js';
 import { IdentityModule } from './identity/identity.module.js';
 import { JobsModule, type JobsOptions } from './jobs/jobs.module.js';
+import type { MailOptions } from './mail/config.js';
+import { MailModule } from './mail/mail.module.js';
 import { MissionsModule } from './missions/missions.module.js';
 import { AvoidZonesModule } from './avoid-zones/avoid-zones.module.js';
 import { MissionRoutesModule } from './mission-routes/mission-routes.module.js';
@@ -33,6 +35,8 @@ export interface AppOptions {
   files?: FilesOptions;
   /** Weather provider. Without it the test implementation answers; `main.ts` passes the real one. */
   weather?: WeatherOptions;
+  /** The `Mailer` port and the origin of its links. Without it the console adapter answers; `main.ts` and the worker pass the ones read from the environment. */
+  mail?: Partial<MailOptions>;
   /** Only for tests: controllers of synthetic endpoints (outside the registry) that exercise the guards. */
   extraControllers?: Type<unknown>[];
 }
@@ -44,6 +48,7 @@ export class AppModule {
       module: AppModule,
       imports: [
         ClockModule.register(options.clock),
+        MailModule.register(options.mail),
         GeoModule.register(options.geo),
         RoutingModule.register(options.routing),
         JobsModule.register(options.jobs),

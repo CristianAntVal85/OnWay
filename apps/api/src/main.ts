@@ -5,6 +5,7 @@ import { appConnectionFromEnv } from './db/config.js';
 import { createFileStorage } from './files/config.js';
 import { createElevationProvider, createGeocodingProvider } from './geo/config.js';
 import { identityOptionsFromEnv } from './identity/config.js';
+import { mailOptionsFromEnv } from './mail/config.js';
 import { PgBossQueue } from './jobs/pg-boss-queue.js';
 import { createRoutingProvider } from './routing/config.js';
 import { createWeatherProvider } from './weather/config.js';
@@ -19,6 +20,7 @@ const app = await createApp({
   database,
   identity: identityOptionsFromEnv(),
   clock,
+  mail: mailOptionsFromEnv(),
   geo: { elevation: createElevationProvider(process.env), geocoding: createGeocodingProvider(clock, process.env) },
   files: { storage: createFileStorage() },
   routing: { provider: createRoutingProvider(process.env) },
