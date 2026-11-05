@@ -4,6 +4,7 @@ import { Shell } from '../components/shell';
 import { SkipLink } from '../components/skip-link';
 import { PATHS } from '../nav/navigation';
 import { AccountPage } from '../pages/account-page';
+import { AdminPage } from '../pages/admin-page';
 import { CreateMissionPage } from '../pages/create-mission-page';
 import { ForgotPasswordPage } from '../pages/forgot-password-page';
 import { HomePage } from '../pages/home-page';
@@ -129,7 +130,7 @@ export function AppRoutes() {
                 path={PATHS.admin}
                 element={
                   <RoleGate route="admin">
-                    <LaterPage section="nav.administration" />
+                    <AdminPage />
                   </RoleGate>
                 }
               />

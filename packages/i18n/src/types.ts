@@ -203,6 +203,64 @@ export interface Messages {
     roleCoordinator: string;
     roleRescuer: string;
   };
+  /** Administración, primer trozo de `H5-acceso` (doc 02 §3.10): solicitudes de alta y código de invitación. */
+  admin: {
+    signups: {
+      title: string;
+      intro: string;
+      tabsLabel: string;
+      tabs: { pending: string; approved: string; rejected: string };
+      status: { pending: string; approved: string; rejected: string };
+      searchLabel: string;
+      searchSubmit: string;
+      summary: string;
+      requestedOn: string;
+      selectPage: string;
+      selectionHint: string;
+      selectionCount: string;
+      clearSelection: string;
+      approve: string;
+      reject: string;
+      empty: { pending: string; approved: string; rejected: string };
+      emptySearch: string;
+      clearSearch: string;
+      decidedNote: string;
+      people: string;
+      working: string;
+      cancel: string;
+      approveDialog: {
+        title: string;
+        description: string;
+        roleLegend: string;
+        rescuerHelp: string;
+        coordinatorHelp: string;
+        coordinatorWarning: string;
+        roleRequired: string;
+        summary: string;
+        confirm: string;
+      };
+      rejectDialog: { title: string; description: string; confirm: string };
+      approved: string;
+      rejected: string;
+      stale: string;
+    };
+    inviteCode: {
+      title: string;
+      intro: string;
+      codeLabel: string;
+      rotatedAt: string;
+      copy: string;
+      copied: string;
+      copyFailed: string;
+      rotate: string;
+      rotateTitle: string;
+      rotateDescription: string;
+      rotateConfirm: string;
+      rotating: string;
+      rotateCancel: string;
+      rotated: string;
+    };
+  };
   session: { expired: string };
   map: {
     label: string;
