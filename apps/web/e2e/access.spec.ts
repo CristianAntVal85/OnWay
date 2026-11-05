@@ -126,3 +126,30 @@ test('the whole access (log in, move around, switch language, log out) works wit
   await key('Enter');
   await expect(page).toHaveURL(/\/login$/);
 });
+
+test('the login links reach the public sign up and password views with the keyboard, in both languages (H5-acceso)', async ({ page }) => {
+  const key = (name: string) => page.keyboard.press(name);
+  await page.goto('/login');
+  await page.getByRole('button', { name: es.login.submit }).focus();
+  await key('Tab');
+  await expect(page.getByRole('link', { name: es.login.forgotPassword })).toBeFocused();
+  await key('Tab');
+  await expect(page.getByRole('link', { name: es.login.createAccount })).toBeFocused();
+  await key('Enter');
+  await expect(page).toHaveURL(/\/register$/);
+  await expect(heading(page, es.register.title)).toBeVisible();
+
+  // Sin sesión las tres vistas se abren (la guarda de rutas no las lleva al acceso) y vuelven al acceso con su enlace.
+  await page.getByRole('link', { name: es.register.haveAccount }).click();
+  await expect(heading(page, es.login.title)).toBeVisible();
+  await page.getByRole('link', { name: es.login.forgotPassword }).click();
+  await expect(heading(page, es.recovery.forgotTitle)).toBeVisible();
+  await page.getByLabel(es.account.languageFr).check();
+  await expect(heading(page, fr.recovery.forgotTitle)).toBeVisible();
+
+  // Un enlace de recuperación sin token (o con él en la query, no en el fragmento) da el mensaje único y ofrece pedir otro.
+  await page.goto('/reset-password?token=no-vale');
+  await expect(heading(page, fr.recovery.invalidLinkTitle)).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText(fr.errors.INVALID_RESET_TOKEN);
+  await expect(page.getByRole('link', { name: fr.recovery.requestAnother })).toBeVisible();
+});

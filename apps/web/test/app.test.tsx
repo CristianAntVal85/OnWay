@@ -82,18 +82,49 @@ describe('acceso (RF-101)', () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('main'))); // el foco pasa al contenido en un efecto, tras pintar el título
   });
 
-  it('orden de tabulación del acceso: saltar al contenido, correo, contraseña, entrar, idioma', async () => {
+  it('orden de tabulación del acceso: saltar al contenido, correo, contraseña, entrar, enlaces, idioma', async () => {
     const { api } = sessionServer();
     const { user } = renderApp({ fetch: api.fetch });
     await screen.findByLabelText(es.login.email);
     const order: string[] = [];
-    for (let i = 0; i < 5; i += 1) {
+    for (let i = 0; i < 6; i += 1) {
       await user.tab();
       const el = document.activeElement as HTMLElement;
       order.push(el.textContent || el.getAttribute('name') || el.id);
     }
-    expect(order.slice(0, 4)).toEqual([es.nav.skipToContent, 'email', 'password', es.login.submit]);
+    expect(order).toEqual([es.nav.skipToContent, 'email', 'password', es.login.submit, es.login.forgotPassword, es.login.createAccount]);
+    await user.tab();
     expect((document.activeElement as HTMLInputElement).type).toBe('radio');
+  });
+
+  it.each([
+    ['es', es],
+    ['fr', fr],
+  ] as const)('el acceso ofrece «crear una cuenta» y «he olvidado mi contraseña» (%s)', async (language, text) => {
+    window.localStorage.setItem('onway.locale', language);
+    const { api } = sessionServer();
+    const { user } = renderApp({ fetch: api.fetch, language });
+    const create = await screen.findByRole('link', { name: text.login.createAccount });
+    const forgot = screen.getByRole('link', { name: text.login.forgotPassword });
+    expect(create.getAttribute('href')).toBe('/register');
+    expect(forgot.getAttribute('href')).toBe('/forgot-password');
+    await user.click(forgot);
+    expect(await screen.findByRole('heading', { level: 1, name: text.recovery.forgotTitle })).toBeTruthy();
+    expect(path()).toBe('/forgot-password');
+  });
+
+  it('con una sesión iniciada, /register lleva adonde llevaría el acceso', async () => {
+    const { api } = sessionServer({ user: rescuer() });
+    renderApp({ route: '/register', fetch: api.fetch });
+    expect(await screen.findByRole('heading', { level: 1, name: es.profile.completeTitle })).toBeTruthy();
+    expect(path()).toBe('/profile');
+  });
+
+  it.each(['/forgot-password', '/reset-password#token=abc'])('con sesión iniciada, %s no se queda en la vista pública', async (route) => {
+    const { api } = sessionServer({ user: admin() });
+    renderApp({ route, fetch: api.fetch });
+    expect(await screen.findByRole('heading', { level: 1, name: es.home.title })).toBeTruthy();
+    expect(path()).toBe('/home');
   });
 
   it('sesión caducada: la pantalla de acceso lo avisa (doc 02 §8)', async () => {

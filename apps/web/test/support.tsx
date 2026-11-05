@@ -96,7 +96,13 @@ export function sessionServer(initial: { user?: SessionUser | null; expired?: bo
 }
 
 function PathProbe() {
-  return <div data-testid="path">{useLocation().pathname}</div>;
+  const { pathname, hash } = useLocation();
+  return (
+    <>
+      <div data-testid="path">{pathname}</div>
+      <div data-testid="hash">{hash}</div>
+    </>
+  );
 }
 
 export function renderApp(options: { route?: string; fetch: typeof fetch; language?: 'es' | 'fr' }) {

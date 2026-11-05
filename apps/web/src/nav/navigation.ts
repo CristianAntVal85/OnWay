@@ -14,6 +14,9 @@ export const routePath = (routeId: string) => `${'/routes'}/${routeId}`;
 
 export const PATHS = {
   login: '/login',
+  register: '/register',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   waiting: '/waiting',
   home: '/home',
   missions: '/missions',
@@ -26,7 +29,7 @@ export const PATHS = {
   admin: '/admin',
   profile: '/profile',
   account: '/account',
-} as const satisfies Record<'login' | 'waiting' | 'routeImport' | RouteId, string>;
+} as const satisfies Record<'login' | 'register' | 'forgotPassword' | 'resetPassword' | 'waiting' | 'routeImport' | RouteId, string>;
 
 const STAFF: readonly MemberRole[] = ['admin', 'coordinator'];
 /** Quien escribe sobre misiones: Q-14 = no, el administrador las lee pero no las crea ni las edita (D-H1-13). */

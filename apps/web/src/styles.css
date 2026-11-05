@@ -440,6 +440,20 @@ p {
   padding: 2rem var(--gutter) 3rem;
 }
 
+/* enlaces de las vistas públicas (recuperar contraseña, crear cuenta, volver): objetivos táctiles completos */
+.auth-links {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-items: start;
+}
+
+a.button-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
 /* ---------- espera y pantallas sueltas ---------- */
 
 .single {

@@ -6,7 +6,66 @@ type HistoryActionName = (typeof MissionHistoryAction)['options'][number];
 /** Forma común de es y fr: si falta una clave en cualquiera de las dos, no compila. */
 export interface Messages {
   app: { name: string; tagline: string };
-  login: { title: string; email: string; password: string; submit: string; submitting: string; demoNotice: string; emailRequired: string; passwordRequired: string };
+  login: {
+    title: string;
+    email: string;
+    password: string;
+    submit: string;
+    submitting: string;
+    demoNotice: string;
+    emailRequired: string;
+    passwordRequired: string;
+    forgotPassword: string;
+    createAccount: string;
+  };
+  /** Registro con código de invitación (RF-104, doc 02 §3.1). */
+  register: {
+    title: string;
+    intro: string;
+    email: string;
+    displayName: string;
+    password: string;
+    passwordHelp: string;
+    passwordConfirm: string;
+    inviteCode: string;
+    inviteCodeHelp: string;
+    submit: string;
+    submitting: string;
+    haveAccount: string;
+    failed: string;
+    receivedTitle: string;
+    receivedBody: string;
+    toLogin: string;
+  };
+  /** Recuperar contraseña por enlace en el correo (Q-33). */
+  recovery: {
+    forgotTitle: string;
+    forgotIntro: string;
+    email: string;
+    forgotSubmit: string;
+    forgotSubmitting: string;
+    forgotSent: string;
+    backToLogin: string;
+    resetTitle: string;
+    resetIntro: string;
+    newPassword: string;
+    newPasswordConfirm: string;
+    resetSubmit: string;
+    resetSubmitting: string;
+    resetDoneTitle: string;
+    resetDoneBody: string;
+    invalidLinkTitle: string;
+    requestAnother: string;
+    toLogin: string;
+  };
+  /** Errores de campo de los formularios públicos: el mismo texto sale de la validación del cliente y de la del servidor. */
+  fieldError: {
+    email: { required: string; invalid: string };
+    displayName: { required: string; tooLong: string; invalid: string };
+    password: { required: string; tooShort: string; tooLong: string; invalid: string };
+    passwordConfirm: { required: string; mismatch: string; invalid: string };
+    inviteCode: { required: string; invalid: string };
+  };
   waiting: { title: string; body: string; logout: string };
   nav: {
     label: string;
