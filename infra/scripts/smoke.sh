@@ -1,6 +1,9 @@
 #!/bin/sh
 # Comprobación de humo de la pila de `docker compose up`: salud, página de acceso y el ciclo
-# login -> getMe -> logout con cookie y CSRF, para un administrador, un coordinador y un rescatista.
+# login -> getMe -> logout con cookie y CSRF, para un administrador, un coordinador y un rescatista. Comprueba también el acceso de H5:
+# el administrador lee el código de invitación y los demás reciben 403, `register` con un código inválido da REGISTRATION_FAILED,
+# `forgotPassword` responde 202 y la bandeja del administrador trae la solicitud de `pendiente@example.org`. No registra ninguna cuenta ni
+# envía ningún correo (el correo del `forgotPassword` no existe), así que no deja nada en la pila.
 # Uso (desde la raíz del repositorio): infra/scripts/smoke.sh [URL]   (por defecto http://localhost:8080)
 # La contraseña es la ficticia y pública de data/seed/demo.json (R-10); no hay ninguna otra.
 # También comprueba en la base real los roles (regla inviolable 1): necesita `docker compose` y el servicio `db`;
@@ -119,6 +122,36 @@ echo "$my_routes" | grep -q 'Variante de la Pradera' && fail "the rescuer sees a
 [ "$(echo "$my_routes" | grep -o '"status":"unavailable"' | wc -l)" = 1 ] || fail "the rescuer must see exactly one route marked unavailable: $my_routes"
 echo "$my_routes" | grep -Eq '"note"|validatedBy' && fail "the rescuer's routes carry a note or who validated"
 echo "ok  demo mission: coordinator sees its 4 routes, rescuer sees 3 (one marked unavailable) and not the Draft"
+
+# Acceso (H5-acceso): código de invitación, registro con un código inválido, recuperación de contraseña y bandeja de solicitudes.
+# Los límites de peticiones de los endpoints públicos son por IP (forgotPassword: 5 por hora): repetir esta comprobación más veces en
+# una hora, desde la misma pila arrancada, da 429 RATE_LIMITED; `docker compose restart api` vacía la cuenta.
+login_as admin@example.org
+invite="$(curl -s -b "$jar" "$base/api/v1/admin/invite-code")"
+invite_code="$(echo "$invite" | sed -n 's/.*"code":"\([^"]*\)".*/\1/p')"
+[ "${#invite_code}" -ge 10 ] || fail "getInviteCode as the administrator returned no code of 10 or more characters (the code is not printed)"
+echo "$invite" | grep -q '"rotatedAt"' || fail "getInviteCode returned no rotatedAt"
+for who in coordinador@example.org rescatista1@example.org; do
+  login_as "$who"
+  [ "$(status -b "$jar" "$base/api/v1/admin/invite-code")" = 403 ] || fail "getInviteCode as $who must be 403"
+done
+signups="$(login_as admin@example.org; curl -s -b "$jar" "$base/api/v1/admin/signup-requests?status=pending&pageSize=50")"
+echo "$signups" | grep -q '"email":"pendiente@example.org"' || fail "listSignupRequests does not list the pending request of pendiente@example.org: $signups"
+echo "$signups" | grep -q "$invite_code" && fail "listSignupRequests carries the invite code"
+echo "ok  admin: getInviteCode 200 with a code (coordinator and rescuer 403); the inbox lists the pending request of pendiente@example.org"
+
+register_body="{\"email\":\"smoke-register@example.org\",\"password\":\"$password\",\"passwordConfirm\":\"$password\",\"displayName\":\"Smoke ficticio\",\"inviteCode\":\"INVALID-CODE-0000\",\"locale\":\"es\"}"
+register_out="$(curl -s -w ' %{http_code}' -H 'Content-Type: application/json' -d "$register_body" "$base/api/v1/auth/register")"
+echo "$register_out" | grep -q '"code":"REGISTRATION_FAILED"' || fail "register with an invalid code must answer REGISTRATION_FAILED: $register_out"
+[ "${register_out##* }" = 422 ] || fail "register with an invalid code must be 422: $register_out"
+login_as admin@example.org
+curl -s -b "$jar" "$base/api/v1/admin/signup-requests?status=pending&pageSize=50" | grep -q 'smoke-register@example.org' && fail "register with an invalid code left a request behind"
+echo "ok  register with an invalid code -> 422 REGISTRATION_FAILED, nothing registered"
+
+forgot_out="$(curl -s -w ' %{http_code}' -H 'Content-Type: application/json' -d '{"email":"nadie-smoke@example.org"}' "$base/api/v1/auth/password/forgot")"
+[ "${forgot_out##* }" = 202 ] || fail "forgotPassword for an unknown address must be 202 (429 means more than 5 calls in the last hour): $forgot_out"
+echo "$forgot_out" | grep -q '"ok":true' || fail "forgotPassword must answer {ok:true}: $forgot_out"
+echo "ok  forgotPassword for an unknown address -> 202 {ok:true}"
 
 wrong="$(status -H 'Content-Type: application/json' -d '{"email":"admin@example.org","password":"incorrecta-incorrecta"}' "$base/api/v1/auth/login")"
 [ "$wrong" = 401 ] || fail "wrong credentials must be 401, got $wrong"

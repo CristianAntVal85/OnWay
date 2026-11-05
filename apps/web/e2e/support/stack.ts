@@ -6,6 +6,7 @@ import { argon2, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { lastResetMailTo, type ResetMail } from './mail-log';
 
 export const ROOT = path.resolve(import.meta.dirname, '../../../..');
 
@@ -149,4 +150,29 @@ export async function startRoutingEngine(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   throw new Error('the routing engine did not come back');
+}
+
+/**
+ * El ÚLTIMO enlace de recuperación de contraseña que el `api` ha "enviado" a un correo (el adaptador de consola lo escribe en su registro,
+ * `docker compose logs api`; formato en `mail-log.ts`). Espera con reintentos acotados a que aparezca. Con `since` solo cuenta lo escrito
+ * desde ese instante, para no confundir el enlace nuevo con uno anterior del mismo correo. Necesita `COMPOSE_PROJECT_NAME` como el resto.
+ */
+export async function lastPasswordResetMail(email: string, options: { since?: Date; timeoutMs?: number } = {}): Promise<ResetMail> {
+  const { since, timeoutMs = 20_000 } = options;
+  const args = ['logs', '--no-color', '--no-log-prefix', ...(since ? ['--since', since.toISOString()] : []), 'api'];
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const mail = lastResetMailTo(await compose(args), email);
+    if (mail) return mail;
+    if (Date.now() >= deadline) throw new Error(`no password-reset mail for ${email} appeared in the api log within ${timeoutMs} ms`);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+}
+
+/** El código de invitación vigente de la organización de la demostración (lo que el administrador ve en Administración), leído de la base. */
+export async function currentInviteCode(): Promise<string> {
+  const out = await psqlAsOwner(`SELECT invite_code FROM organizations WHERE name = '${ORG_A_NAME.replaceAll("'", "''")}';`);
+  const code = out.trim();
+  if (code.length < 10) throw new Error('the invite code of the demo organization was not found');
+  return code;
 }

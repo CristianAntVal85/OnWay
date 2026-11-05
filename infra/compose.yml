@@ -20,6 +20,15 @@ x-hardened: &hardened
   cap_drop:
     - ALL
 
+# Correo (H5-acceso, D-A7): el adaptador de consola escribe en el registro de `api` el enlace de recuperación de contraseña (no sale ningún
+# correo). Lo usan `api` y `worker`, que arrancan `MailModule` y con `NODE_ENV=production` exigen las tres variables.
+#   MAILER_ALLOW_CONSOLE es el interruptor de ESTA pila (local, E2E y CI): el despliegue de H7 NO lo fija, usará Resend.
+#   PUBLIC_BASE_URL sigue el puerto publicado (ONWAY_HTTP_PORT, 18080 en el E2E); ONWAY_PUBLIC_URL del .env lo sustituye.
+x-mail-env: &mail-env
+  MAILER: console
+  MAILER_ALLOW_CONSOLE: 'true'
+  PUBLIC_BASE_URL: ${ONWAY_PUBLIC_URL:-http://localhost:${ONWAY_HTTP_PORT:-8080}}
+
 x-node-job: &node-job
   <<: *hardened
   build: &api-build
@@ -197,7 +206,7 @@ services:
     mem_limit: 512m
     networks: [data, edge]
     environment:
-      <<: *db-env
+      <<: [*db-env, *mail-env]
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: '3000'
@@ -246,7 +255,7 @@ services:
     tmpfs:
       - /tmp
     environment:
-      <<: *db-env
+      <<: [*db-env, *mail-env]
       NODE_ENV: production
       HOST: 0.0.0.0
       WORKER_PORT: '3001'

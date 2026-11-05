@@ -8,10 +8,6 @@ const lines = () => {
   const written: string[] = [];
   return { written, write: (line: string) => written.push(line) };
 };
-const warnings = () => {
-  const warned: string[] = [];
-  return { warned, warn: (message: string) => warned.push(message) };
-};
 
 describe('ConsoleMailer', () => {
   it('writes ONE JSON line with exactly event, kind, to, locale and link, in that order', async () => {
@@ -73,17 +69,15 @@ describe('passwordResetLink', () => {
 
 describe('mailOptionsFromEnv', () => {
   it('outside production defaults to the console, http://localhost:8080 and no warning', () => {
-    const w = warnings();
-    const options = mailOptionsFromEnv({}, w.warn);
+    const options = mailOptionsFromEnv({});
     expect(options.mailer).toBeInstanceOf(ConsoleMailer);
     expect(options.publicBaseUrl).toBe(DEFAULT_PUBLIC_BASE_URL);
     expect(DEFAULT_PUBLIC_BASE_URL).toBe('http://localhost:8080');
-    expect(w.warned).toEqual([]);
   });
 
   it('refuses a MAILER other than console', () => {
     expect(() => mailOptionsFromEnv({ MAILER: 'resend' })).toThrow(/MAILER must be "console"/);
-    expect(() => mailOptionsFromEnv({ MAILER: 'smtp', NODE_ENV: 'production', MAILER_ALLOW_CONSOLE: 'true' })).toThrow(/MAILER must be "console"/);
+    expect(() => mailOptionsFromEnv({ MAILER: 'smtp', NODE_ENV: 'production', MAILER_ALLOW_CONSOLE: 'true', PUBLIC_BASE_URL: 'https://onway.example.org' })).toThrow(/MAILER must be "console"/);
     expect(() => mailOptionsFromEnv({ MAILER: '' })).not.toThrow();
   });
 
@@ -97,20 +91,26 @@ describe('mailOptionsFromEnv', () => {
     expect(() => mailOptionsFromEnv({ MAILER_ALLOW_CONSOLE: 'yes' })).toThrow(/MAILER_ALLOW_CONSOLE must be "true" or "false"/);
   });
 
-  it('in production with no variables (the compose of T2) starts with the defaults and warns about each one', () => {
-    const w = warnings();
-    const options = mailOptionsFromEnv({ NODE_ENV: 'production' }, w.warn);
-    expect(options.mailer).toBeInstanceOf(ConsoleMailer);
-    expect(options.publicBaseUrl).toBe('http://localhost:8080');
-    expect(w.warned.join('\n')).toMatch(/MAILER_ALLOW_CONSOLE/);
-    expect(w.warned.join('\n')).toMatch(/PUBLIC_BASE_URL/);
-    expect(w.warned.join('\n')).toMatch(/default/);
+  it('in production with no variables fails and names every missing one (no production defaults)', () => {
+    expect(() => mailOptionsFromEnv({ NODE_ENV: 'production' })).toThrow(/MAILER, MAILER_ALLOW_CONSOLE, PUBLIC_BASE_URL are not set/);
   });
 
-  it('in production with everything set explicitly does not warn', () => {
-    const w = warnings();
-    mailOptionsFromEnv({ NODE_ENV: 'production', MAILER: 'console', MAILER_ALLOW_CONSOLE: 'true', PUBLIC_BASE_URL: 'https://onway.example.org' }, w.warn);
-    expect(w.warned).toEqual([]);
+  it.each([
+    ['MAILER', { MAILER_ALLOW_CONSOLE: 'true', PUBLIC_BASE_URL: 'http://localhost:8080' }],
+    ['MAILER_ALLOW_CONSOLE', { MAILER: 'console', PUBLIC_BASE_URL: 'http://localhost:8080' }],
+    ['PUBLIC_BASE_URL', { MAILER: 'console', MAILER_ALLOW_CONSOLE: 'true' }],
+  ])('in production without %s alone it fails and names it', (name, rest) => {
+    expect(() => mailOptionsFromEnv({ NODE_ENV: 'production', ...rest })).toThrow(new RegExp(`${name} is not set`));
+  });
+
+  it('in production an empty variable counts as missing', () => {
+    expect(() => mailOptionsFromEnv({ NODE_ENV: 'production', MAILER: 'console', MAILER_ALLOW_CONSOLE: 'true', PUBLIC_BASE_URL: '' })).toThrow(/PUBLIC_BASE_URL is not set/);
+  });
+
+  it('in production with everything set starts with the console mailer', () => {
+    const options = mailOptionsFromEnv({ NODE_ENV: 'production', MAILER: 'console', MAILER_ALLOW_CONSOLE: 'true', PUBLIC_BASE_URL: 'https://onway.example.org' });
+    expect(options.mailer).toBeInstanceOf(ConsoleMailer);
+    expect(options.publicBaseUrl).toBe('https://onway.example.org');
   });
 
   it('accepts http and https origins and drops a trailing slash', () => {
