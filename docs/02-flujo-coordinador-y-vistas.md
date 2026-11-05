@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.0 (borrador) · Fecha: 2026-11-05 · Depende de: documento 01 (v1.3)
+Versión: 1.1 (borrador) · Fecha: 2026-11-05 · Depende de: documento 01 (v1.3)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -67,22 +67,22 @@ Boceto 1. Una sola pantalla de entrada con tres estados.
 
 **Login**
 - **Campos:** correo, contraseña.
-- **Acciones:** entrar, recuperar contraseña, ir a registrarse.
+- **Acciones:** entrar, **«He olvidado mi contraseña»** y **«Crear una cuenta»** (dos enlaces bajo el botón; construido en `H5-acceso`).
 - **Errores:** credenciales incorrectas (mensaje genérico, sin revelar si el correo existe), cuenta desactivada, bloqueo temporal por intentos.
 - **Resultado:** lleva a Inicio (RF-101). Si es un rescatista con el perfil incompleto, lleva antes al formulario de alta (3.9). Si la cuenta está pendiente, lleva a la pantalla de espera.
 - Al iniciar sesión, el navegador pide permiso para leer la ubicación del dispositivo, que usa el Inicio (RF-708). Si se deniega, el acceso sigue con normalidad.
 
 **Registro** (RF-104)
-- **Campos:** correo, contraseña, repetir contraseña y **código de invitación de la organización** *(propuesto)*, que asocia la solicitud a su organización.
+- **Campos:** correo, nombre visible, contraseña, repetir contraseña y **código de invitación de la organización**, que asocia la solicitud a su organización (OnWay inicia sesión con el correo: no hay nombre de usuario, D-28). La vista valida en el cliente los obligatorios, el formato del correo, la contraseña y que coincida con su repetición, con los mismos esquemas que el servidor.
 - El registro nunca concede el rol de coordinador (RN-25).
 - Un correo ya registrado no revela de quién es.
-- Al enviarse: pantalla **«Solicitud recibida»** («Un administrador de tu organización debe aprobarla») con enlace al inicio de sesión. No se abre sesión sola (RN-25). Un código inválido y un correo ya registrado dan el mismo mensaje, sin revelar cuál es el motivo.
-- En el login, enlaces visibles a **«Crear una cuenta»** y **«He olvidado mi contraseña»** (issue #9). Construido en `H5-acceso`.
+- Al enviarse: pantalla **«Solicitud recibida»** («Un administrador de tu organización debe aprobarla. Hasta entonces podrás iniciar sesión, pero no acceder a ningún dato») con enlace al inicio de sesión; el foco pasa a su título. No se abre sesión sola (RN-25). Un código inválido, el de otra organización y un correo ya registrado dan **el mismo mensaje** («No hemos podido completar el registro…»), sin revelar cuál es el motivo. Si se piden demasiados registros desde la misma conexión, aparece el aviso de espera (`RATE_LIMITED`).
+- Un código de invitación se escribe tal como se recibe (mayúsculas y guiones); solo se recortan los espacios de los extremos.
 
 **Recuperar contraseña** (Q-33, `H5-acceso`)
-- **Petición:** un campo, el correo. La respuesta es siempre la misma («Si existe una cuenta con ese correo, te hemos enviado un enlace»), exista o no.
-- **Enlace:** de un solo uso, caduca a 1 h, y lleva el token en el fragmento (`/reset-password#token=…`). En desarrollo el enlace sale por el registro del `api` (puerto `Mailer`, `ConsoleMailer`).
-- **Nueva contraseña:** contraseña y repetirla. Un enlace usado, caducado o mal formado da el mismo mensaje. Al terminar se cierran todas las sesiones y se lleva al inicio de sesión.
+- **Petición** (`/forgot-password`): un campo, el correo. La respuesta es siempre la misma («Si existe una cuenta con ese correo, te hemos enviado un enlace…»), exista o no, y no se puede saber si el envío tuvo éxito.
+- **Enlace:** de un solo uso, caduca a 1 h, y lleva el token en el fragmento (`/reset-password#token=…`). En desarrollo no se envía ningún correo: el enlace sale por el registro del `api` (puerto `Mailer`, `ConsoleMailer`; `docker compose logs api`). El correo sale en el idioma de la cuenta.
+- **Nueva contraseña** (`/reset-password`): la web lee el token del fragmento y lo quita de la barra de direcciones; pide contraseña y repetirla. Un enlace usado, caducado, mal formado o sin token da el mismo mensaje («Enlace no válido») con «Pedir otro enlace». Al terminar aparece «Contraseña cambiada» con el enlace a iniciar sesión: se han cerrado todas las sesiones, también la de esta persona si la tenía abierta.
 
 **Espera de aprobación** (RF-106)
 - Mensaje: "Tu solicitud está pendiente. Un administrador de tu organización debe aprobarla".
@@ -365,11 +365,14 @@ Secciones:
 
 Boceto 13. Vista solo para el administrador de organización (RF-106, RF-813).
 
-> Primer trozo, `H5-acceso` (2026-11-05): de esta vista se construyen solo **Solicitudes de alta** y **Código de invitación** (ver, copiar y regenerar con confirmación; al regenerarlo el anterior deja de valer). «Usuarios de la organización» y «Datos sensibles y accesos» siguen en el resto de H5.
+> Primer trozo, `H5-acceso` (2026-11-05, construido): de esta vista existen solo **Solicitudes de alta** y **Código de invitación**; la ruta `/admin` sigue cerrada a coordinador y rescatista. «Usuarios de la organización» y «Datos sensibles y accesos» siguen en el resto de H5.
 
 **Solicitudes de alta** (parte superior)
 - Lista tipo bandeja con casilla, nombre, correo y fecha de la solicitud. No muestra equipo ni «datos completos»: el perfil se crea al aprobar y lo rellena la persona en su primer acceso (Q-34).
-- Acciones en bloque: **aprobar** (eligiendo el rol: rescatista o coordinador) y **rechazar**.
+- Pestañas **Pendientes / Aprobadas / Rechazadas**, búsqueda por nombre o correo y paginación; el estado, la búsqueda y la página viven en la dirección (`?tab=approved&q=…&page=2`). Las decididas no admiten más acciones.
+- Casillas por fila y «Seleccionar las solicitudes de esta página»: solo se selecciona lo de la página visible (no hay «seleccionar todos los resultados») y la selección se vacía al cambiar de pestaña, búsqueda o página.
+- Acciones en bloque: **aprobar**, que abre un diálogo donde se elige el rol (rescatista o coordinador, **sin ninguno marcado de antemano**; coordinador muestra el aviso de que concede permisos de edición), y **rechazar**, con su diálogo de confirmación y sin rol. La decisión es de todo o nada: si alguna solicitud ya estaba decidida o ya no existe, no cambia ninguna, se avisa y se relee la bandeja.
+- Vacío, carga y error en cada pestaña. Al terminar, el foco vuelve al botón (si se cancela) o al título de la sección (si ya no existe).
 - Hasta que se aprueba, la persona solo ve la pantalla de espera (3.1).
 
 **Usuarios de la organización**
@@ -381,7 +384,7 @@ Boceto 13. Vista solo para el administrador de organización (RF-106, RF-813).
 - Desde un usuario, el administrador puede abrir sus datos sensibles (documento y dirección). Cada consulta queda registrada con quién, qué y cuándo (RF-810).
 - Registro de accesos a datos sensibles y a certificados, con filtros por usuario y fecha *(propuesto)*.
 
-**Código de invitación** *(propuesto)*: el administrador consulta y regenera el código que usan los rescatistas al registrarse.
+**Código de invitación** (construido en `H5-acceso`): el administrador ve el código actual (16 caracteres en grupos de cuatro, en un recuadro monoespaciado) y cuándo se generó, lo **copia** (si el navegador no da acceso al portapapeles —sin HTTPS— se avisa y el código sigue a la vista para copiarlo a mano) y lo **regenera** con un diálogo de confirmación cuyo foco inicial está en «Cancelar». Al regenerarlo el anterior deja de valer en el acto; las solicitudes ya enviadas no cambian.
 
 El administrador no escribe misiones (Q-14 resuelta: no); las lee, sin acciones de escritura.
 
@@ -663,6 +666,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.1 (2026-11-05)**
+- Cierre de `H5-acceso` (T10): §3.1 y §3.10 tal como se construyeron: enlaces del login, registro con nombre visible y su validación, «Solicitud recibida», recuperar contraseña (petición, enlace con el token en el fragmento que se quita de la barra, «Enlace no válido», «Contraseña cambiada»), bandeja con pestañas, búsqueda, selección por página y diálogos de aprobar (rol sin valor marcado) y rechazar, y código de invitación con copiar y regenerar con confirmación. Sin cambios de permisos
 
 **1.0 (2026-11-05)**
 - Cambio de alcance `H5-acceso` (issue #9): §3.1 con la pantalla «Solicitud recibida», la vista de recuperar contraseña y los enlaces del login; §3.10 con el corte de la administración que se construye primero (solicitudes y código de invitación). Sin cambios de permisos
