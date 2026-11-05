@@ -1,4 +1,5 @@
 import { Module, type DynamicModule, type Type } from '@nestjs/common';
+import { AdminModule } from './admin/admin.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import type { Clock } from './clock/clock.js';
 import { ClockModule } from './clock/clock.module.js';
@@ -56,6 +57,7 @@ export class AppModule {
         AuditModule,
         IdentityModule.register(options.identity),
         FilesModule.register(options.files),
+        AdminModule,
         MissionsModule,
         RoutesModule,
         MissionRoutesModule,

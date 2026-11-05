@@ -46,6 +46,12 @@ export interface AvoidZoneAuditEntry {
   detail?: Record<string, unknown>;
 }
 
+/** The invitation code of the organization was replaced (RF-106, D-A5). */
+export interface InviteCodeAuditEntry {
+  orgId: string;
+  actorUserId: string;
+}
+
 /**
  * Writes `audit_log` (INV-16, RN-05) inside the transaction of the request: if the operation fails the row is
  * rolled back with it, and a change cannot commit without its row. By convention every action of a mission is
@@ -109,5 +115,13 @@ export class AuditWriter {
         actorUserId: entry.actorUserId,
         detail: entry.detail ?? {},
       });
+  }
+
+  /** The row never carries the code, old or new: it records that it was rotated, by whom and when. */
+  async recordInviteCodeRotated(entry: InviteCodeAuditEntry): Promise<void> {
+    await this.database
+      .current()
+      .insert(auditLog)
+      .values({ organizationId: entry.orgId, entityType: 'organization', entityId: entry.orgId, action: 'invite_code_rotated', actorUserId: entry.actorUserId, detail: {} });
   }
 }

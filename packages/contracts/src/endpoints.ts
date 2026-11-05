@@ -327,9 +327,11 @@ const RAW = [
 
   // ================= Administración =================
   { id: 'listSignupRequests', method: 'GET', path: '/admin/signup-requests', tag: 'Administración', summary: 'Solicitudes de alta (bandeja)', roles: ['admin'],
-    query: AD.ListSignupRequestsQuery, response: { status: 200, schema: AD.SignupRequestsPage }, delivery: 1 },
+    query: AD.ListSignupRequestsQuery, response: { status: 200, schema: AD.SignupRequestsPage }, delivery: 1,
+    notes: 'Solo las de la organización del administrador. Por defecto las pendientes; `q` busca por correo o nombre. Más recientes primero. Cada fila lleva solo `userId`, correo, nombre, estado y fecha (Q-34): nunca teléfono, documento, dirección ni rol. `Cache-Control: no-store`.' },
   { id: 'decideSignupRequests', method: 'POST', path: '/admin/signup-requests/decide', tag: 'Administración', summary: 'Aprobar (con rol) o rechazar, también en bloque', roles: ['admin'],
-    body: AD.DecideSignupRequest, response: { status: 200, schema: AD.DecideSignupResponse }, delivery: 1, audited: true },
+    body: AD.DecideSignupRequest, response: { status: 200, schema: AD.DecideSignupResponse }, errors: ['INVALID_STATE_TRANSITION'], delivery: 1, audited: true,
+    notes: 'Atómica (D-A4): toda la selección se decide en una sola transacción y, si una persona falla, no cambia ninguna. Un id que no es una solicitud de esta organización (inexistente o de otra) da `NOT_FOUND` y no se decide nada (INV-01); una solicitud que ya no está pendiente da `INVALID_STATE_TRANSITION`. Por eso `skipped` va siempre vacío y `affected` es el número de personas decididas. Con `selection.mode = "filter"` se decide lo que cumple el filtro menos `exceptIds`. Cada persona deja su fila de auditoría (`signup_approved` / `signup_rejected`).' },
   { id: 'listUsers', method: 'GET', path: '/admin/users', tag: 'Administración', summary: 'Usuarios de la organización', roles: ['admin'],
     query: AD.ListUsersQuery, response: { status: 200, schema: AD.UsersPage }, delivery: 1 },
   { id: 'getUser', method: 'GET', path: '/admin/users/{userId}', tag: 'Administración', summary: 'Ficha de usuario (contacto y habilidades, sin documento ni dirección)', roles: ['admin'],
@@ -344,9 +346,11 @@ const RAW = [
   { id: 'listAuditLog', method: 'GET', path: '/admin/audit-log', tag: 'Administración', summary: 'Registro de accesos y cambios de cuenta', roles: ['admin'],
     query: AD.ListAuditLogQuery, response: { status: 200, schema: AD.AuditLogPage }, delivery: 1 },
   { id: 'getInviteCode', method: 'GET', path: '/admin/invite-code', tag: 'Administración', summary: 'Ver el código de invitación', roles: ['admin'],
-    response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1 },
+    response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1,
+    notes: 'El código vigente de la organización del administrador (D-A6): ningún otro rol lo ve y no sale en ningún listado ni en el historial. `Cache-Control: no-store`.' },
   { id: 'rotateInviteCode', method: 'POST', path: '/admin/invite-code/rotate', tag: 'Administración', summary: 'Regenerar el código de invitación', roles: ['admin'],
-    body: Empty, response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1, audited: true },
+    body: Empty, response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1, audited: true,
+    notes: 'Genera un código nuevo (16 letras y cifras sin caracteres ambiguos, en grupos de 4) que invalida el anterior en el acto (D-A5). Deja la fila de auditoría `invite_code_rotated` sin el código. `Cache-Control: no-store`.' },
 ] as const satisfies readonly Omit<Endpoint, 'milestone'>[];
 
 export const ENDPOINTS: readonly Endpoint[] = RAW.map((e) => {

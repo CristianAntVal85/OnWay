@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.7 · **Estado:** borrador para revisión · **Fecha:** 5 de noviembre de 2026
+**Versión:** 1.8 · **Estado:** borrador para revisión · **Fecha:** 5 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -283,7 +283,7 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | Operación | Petición | Quién | Entrada | Respuesta | Errores propios |
 |---|---|---|---|---|---|
 | `listSignupRequests` · **H5**<br>Solicitudes de alta (bandeja) | `GET /admin/signup-requests` | Admin | consulta: page?, pageSize?, status?, q? | 200: items, page, pageSize, total | — |
-| `decideSignupRequests` · **H5**<br>Aprobar (con rol) o rechazar, también en bloque *(auditado)* | `POST /admin/signup-requests/decide` | Admin | cuerpo: action, role?, selection | 200: affected, skipped | — |
+| `decideSignupRequests` · **H5**<br>Aprobar (con rol) o rechazar, también en bloque *(auditado)* | `POST /admin/signup-requests/decide` | Admin | cuerpo: action, role?, selection | 200: affected, skipped | `INVALID_STATE_TRANSITION` |
 | `listUsers` · **H5**<br>Usuarios de la organización | `GET /admin/users` | Admin | consulta: page?, pageSize?, q?, role?, accountStatus? | 200: items, page, pageSize, total | — |
 | `getUser` · **H5**<br>Ficha de usuario (contacto y habilidades, sin documento ni dirección) | `GET /admin/users/{userId}` | Admin | ruta: userId | 200: userId, displayName, email, role, accountStatus, lastLoginAt, profileStatus, hasMissionsAsResponsible, phone, … | — |
 | `updateUser` · **H5**<br>Cambiar rol, desactivar o reactivar *(auditado)* | `PATCH /admin/users/{userId}` | Admin | ruta: userId<br>cuerpo: role?, accountStatus?, reassignMissionsTo? | 200: userId, displayName, email, role, accountStatus, lastLoginAt, profileStatus, hasMissionsAsResponsible, phone, … | `COORDINATOR_HAS_MISSIONS` `LAST_ADMIN` |
@@ -292,6 +292,12 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | `listAuditLog` · **H6**<br>Registro de accesos y cambios de cuenta | `GET /admin/audit-log` | Admin | consulta: page?, pageSize?, userId?, action?, from?, to?, onlyAccessToPersonalData? | 200: items, page, pageSize, total | — |
 | `getInviteCode` · **H5**<br>Ver el código de invitación | `GET /admin/invite-code` | Admin | — | 200: code, rotatedAt | — |
 | `rotateInviteCode` · **H5**<br>Regenerar el código de invitación *(auditado)* | `POST /admin/invite-code/rotate` | Admin | cuerpo:  | 200: code, rotatedAt | — |
+
+**Tal como se construyó (`H5-acceso` T5).** Las cuatro operaciones de administración de altas están montadas (58 con las 51 de H0 a H4 y las tres públicas de acceso); solo las llama el administrador (coordinador y rescatista, `403`; sin sesión, `401`; cuenta pendiente, `ACCOUNT_PENDING`) y ninguna es cacheable (`Cache-Control: no-store`).
+- *Bandeja (`listSignupRequests`).* Solo las solicitudes de la organización del administrador (INV-01); por defecto las `pending`; `q` busca por correo o nombre sin distinguir mayúsculas y trata `%` y `_` como caracteres normales. Más recientes primero (`requestedAt` descendente). Cada fila es exactamente `userId`, `email`, `displayName`, `status` y `requestedAt` (Q-34); no salen teléfono, documento, dirección ni rol. Las personas cuyos datos se eliminaron (RF-812) no se listan.
+- *Atomicidad (`decideSignupRequests`, D-A4).* Toda la selección se decide en la transacción de la petición, llamando a `admin_decide_signup` por persona: si una falla, no cambia ninguna (tampoco su fila de auditoría). Un id que no es una solicitud de esta organización (inexistente o de otra) da `404 NOT_FOUND` (INV-01); una que ya no está pendiente, `409 INVALID_STATE_TRANSITION` (nuevo error propio de la operación). Por eso `skipped` va siempre vacío y `affected` es el número de personas decididas. Con `selection.mode = "filter"` se decide lo que cumple el filtro menos `exceptIds`; sin resultados, `affected: 0`; un filtro sobre un estado ya decidido da el mismo `409`. Los ids repetidos cuentan una vez. Dos decisiones simultáneas de la misma organización se serializan con un cerrojo consultivo de la transacción (la función SQL no comprueba el estado en sus `UPDATE`): una gana y la otra recibe el `409`.
+- *Auditoría.* La hace `admin_decide_signup`, una fila por persona (`signup_approved` o `signup_rejected`, con el rol concedido en `detail`); no hay fila de lote.
+- *Código de invitación.* `getInviteCode` lo da solo al administrador de la organización y no sale en ningún otro listado ni en el historial (D-A6). `rotateInviteCode` genera uno nuevo de 16 caracteres sin ambiguos (letras y cifras sin `I`, `O`, `0`, `1`) en grupos de 4 (`K7QM-X2PD-9WTR-HC4N`, 80 bits del generador seguro del sistema), que invalida el anterior en el acto (D-A5), con `rotatedAt` nuevo; la fila de auditoría `invite_code_rotated` (entidad `organization`) no lleva el código. El registro lo compara exactamente, con mayúsculas.
 
 
 
@@ -778,7 +784,7 @@ Una prueba **encontró un fallo real** mientras se escribía el contrato: las co
 | `login` | `auth_find_user` y `auth_record_attempt` (bloqueo tras 5 fallos, 15 min) |
 | `forgotPassword` | `auth_request_password_reset`: devuelve a quién escribir o ninguna fila; guarda solo el hash del token; máx. 3 por hora y cuenta |
 | `resetPassword` | `auth_consume_password_reset`: un solo uso, cierra todas las sesiones, quita el bloqueo, audita |
-| `decideSignupRequests` | `admin_decide_signup(user, aprobar, rol)` por cada usuario, en una transacción |
+| `decideSignupRequests` | `admin_decide_signup(user, aprobar, rol)` por cada usuario, en una transacción (y con un cerrojo consultivo por organización para que dos decisiones no se crucen) |
 | `updateUser` | `admin_set_account_status` y actualización de `memberships.role`; `LAST_ADMIN` y `COORDINATOR_HAS_MISSIONS` se comprueban en el servicio antes |
 | `readUserSensitive` | `read_rescuer_sensitive(perfil)`: audita en la misma transacción (INV-19) |
 | `deleteMyData` | `delete_own_rescuer_data()`; el worker borra después los archivos de las claves devueltas |
@@ -847,6 +853,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.8 | 2026-11-05 | `H5-acceso` T5 (`listSignupRequests`, `decideSignupRequests`, `getInviteCode` y `rotateInviteCode` montadas: 58 operaciones con las 51 de H0 a H4 y las tres públicas de acceso; quedan 19 de H5 sin montar). Único cambio de contrato: `INVALID_STATE_TRANSITION` como error propio de `decideSignupRequests` (una solicitud de la selección ya decidida) y notas de las cuatro operaciones; sin cambios de esquema. Aclarado en §6 que la decisión es atómica y `skipped` va vacío, el orden de la bandeja y el formato del código de invitación. OpenAPI y tablas sin otras diferencias (96 operaciones) |
 | 1.7 | 2026-11-05 | `H5-acceso` T4 (`forgotPassword` y `resetPassword` montadas, 54 operaciones con las 51 de H0 a H4 y `register`). Único cambio de esquema: `ResetPasswordRequest.token` pasa de `string` de 20 a 200 caracteres a `string` sin límite de longitud, para que un token demasiado corto o largo dé el mismo `422 INVALID_RESET_TOKEN` que uno inexistente, usado o caducado (§4.3) y no un `VALIDATION_FAILED` que distinga la forma; la contraseña sigue con el esquema del registro. Notas de `resetPassword` al día (contraseña débil: `VALIDATION_FAILED` sin consumir el token); §4.3 y §10.2 con el comportamiento real (quién recibe enlace, el fallo del `Mailer`). OpenAPI y tablas sin otras diferencias (96 operaciones) |
 | 1.6 | 2026-11-05 | `H5-acceso` T1. Esquemas comprobados contra el plan (`RegisterResponse` 202, `ResetPasswordRequest` con token de 20 a 200 caracteres, `DecideSignupRequest` con rol al aprobar y ninguno al rechazar): sin cambios. Notas de `register`, `forgotPassword` y `resetPassword` completas: límite de peticiones por IP y operación (`RATE_LIMITED` con `retryAfterSeconds`, que ya es un error implícito de toda operación), enlace de recuperación `PUBLIC_BASE_URL/reset-password#token=…` con el token en el fragmento, y «mal formado» como caso del mismo `INVALID_RESET_TOKEN`. §10.2 al día (el enlace era `/restablecer?token=`). `CURRENT_MILESTONE = 'H5'` en el API; ninguna operación nueva montada todavía. OpenAPI y tablas sin otras diferencias (96 operaciones) |
 | 1.5 | 2026-11-05 | Cambio de alcance `H5-acceso` (issue #9): `register`, `forgotPassword`, `resetPassword`, `listSignupRequests`, `decideSignupRequests`, `getInviteCode` y `rotateInviteCode` se construyen antes que el resto de H5 y **conservan `x-milestone: H5`** (58 montadas con las 51 de H0 a H4). Sin cambios de esquema previstos; las notas de `register`, `forgotPassword` y `resetPassword` se completarán con el límite de peticiones (`RATE_LIMITED`) y el formato del enlace al construirlas |
