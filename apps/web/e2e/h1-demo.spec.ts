@@ -48,6 +48,14 @@ test('the coordinator creates a mission by clicking the target and adds three or
   await expect(page.getByRole('heading', { level: 1, name: es.createMission.title })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
+  // Issue #8: a partir de 1024 px el mapa llena su contenedor, sin hueco vacío debajo (la regla base de `.map-canvas` ganaba al bloque de escritorio).
+  if ((page.viewportSize()?.width ?? 0) >= 1024) {
+    const region = page.getByRole('region', { name: es.createMission.mapRegion });
+    await expect(region.locator('.maplibregl-canvas')).toBeVisible();
+    const emptySpace = await region.evaluate((view) => view.clientHeight - [...view.children].reduce((sum, child) => sum + child.getBoundingClientRect().height, 0));
+    expect(emptySpace).toBeLessThanOrEqual(1);
+  }
+
   // Sin datos, el botón de crear avisa de por qué no se puede pulsar.
   const submit = page.getByRole('button', { name: es.createMission.submit });
   await expect(submit).toHaveAttribute('aria-disabled', 'true');

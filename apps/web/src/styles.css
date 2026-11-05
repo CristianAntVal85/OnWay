@@ -928,11 +928,12 @@ html:has(.action-bar) {
     margin-inline: 0;
   }
 
-  .map-view {
+  /* Con `.split-map` delante: la regla base de `.map-canvas` (más abajo) tiene la misma especificidad y, al ir después, ganaba. */
+  .split-map .map-view {
     height: 100%;
   }
 
-  .map-canvas {
+  .split-map .map-canvas {
     flex: 1 1 auto;
     height: auto;
   }
