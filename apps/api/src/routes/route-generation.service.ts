@@ -152,8 +152,8 @@ export class RouteGeneration implements OnModuleInit {
     if (mission.status === 'closed') return;
     for (const route of created) {
       await this.tx.execute(sql`
-        INSERT INTO mission_routes (organization_id, mission_id, route_id, pinned_version_id, origin_point_id, team_id, added_by)
-        VALUES (${orgId}::uuid, ${target.missionId}::uuid, ${route.routeId}::uuid, ${route.versionId}::uuid, ${target.originPointId ?? null}::uuid, ${target.teamId ?? null}::uuid, ${userId}::uuid)
+        INSERT INTO mission_routes (organization_id, mission_id, route_id, pinned_version_id, origin_point_id, team_id, added_by, added_at)
+        VALUES (${orgId}::uuid, ${target.missionId}::uuid, ${route.routeId}::uuid, ${route.versionId}::uuid, ${target.originPointId ?? null}::uuid, ${target.teamId ?? null}::uuid, ${userId}::uuid, clock_timestamp())
         ON CONFLICT (mission_id, route_id) DO NOTHING`);
       await this.audit.recordMission({
         orgId,

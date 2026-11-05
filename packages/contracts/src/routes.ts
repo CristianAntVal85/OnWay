@@ -309,10 +309,11 @@ export const MissionRouteRescuer = z.strictObject({
   status: MissionRouteStatus, // 'unavailable' se ve señalada, no desaparecida (RF-508)
   versionNumber: z.number().int().min(1),
   validatedAt: Timestamp,
+  validationIsStale: z.boolean(), // RF-519, R-08: la validación supera el límite de días de la organización; el servidor lo calcula
   metrics: RouteMetrics,
   roadMix: RoadMix,
   origin: z.strictObject({ id: Id, name: z.string() }).nullable(),
-  team: TeamRef.nullable(),
+  team: TeamRef.nullable(), // solo si el rescatista es miembro de ese equipo (`teams_select`)
   previewGeometry: LineStringPreview,
 });
 export const MissionRoutesRescuer = z.strictObject({ items: z.array(MissionRouteRescuer) });

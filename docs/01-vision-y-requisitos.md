@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.2 (borrador) · Fecha: 2026-11-01 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.3 (borrador) · Fecha: 2026-11-02 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -64,6 +64,7 @@ OnWay es una aplicación para equipos de rescate en montaña. Un coordinador def
 | D-31 | **El producto se llama OnWay** | Sustituye a OnCourse en todos los documentos y bocetos | Confirmada |
 | D-32 | **Stack y despliegue:** TypeScript, NestJS, React + Vite, PostgreSQL con PostGIS, servidor único de 8 GB con techo de 20 €/mes | Detalle y alternativas descartadas en el documento 04 | Confirmada |
 | D-33 | **Construcción por hitos pequeños (H0–H9), con el MVP en H0–H4.** Cada hito termina en algo que se puede demostrar | Documento 07. La biblioteca de rutas (H2) va antes del motor (H3) para aislar el mayor riesgo. El despliegue va al final de la primera entrega | Propuesta |
+| D-34 | **Un rescatista ve el nombre y la localidad de su equipo y de los demás equipos de su organización** (por ejemplo, el equipo asignado a cada ruta de una misión). Sigue sin ver quién es miembro de cada uno | Para saber qué equipo sigue cada ruta aunque no sea el suyo. La lectura de `teams` hoy solo deja ver los propios; se amplía en H5 (backlog B-01) | Confirmada (2026-11-02), construcción en H5 |
 
 ## 3. Usuarios y roles
 
@@ -494,7 +495,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - ~~**Q-14** ¿Puede el administrador de organización ver y editar misiones, o solo gestionar usuarios, equipos y datos sensibles?~~ **Resuelta (2026-10-31): no.** El administrador lee las misiones pero no las escribe (ni crea, ni edita, ni activa, ni cierra); gestiona usuarios, equipos y datos sensibles. Lo escribe solo el coordinador (`MISSION_WRITERS`, y también las políticas de la base de datos: migración 0011).
 - **Q-15** Para informar a otras organizaciones (D-08), ¿qué formato necesitas: ficha en PDF, enlace de solo lectura, o basta con exportar las rutas?
 - **Q-16** Una misión *En planificación*, ¿solo la ven los coordinadores? ¿Los rescatistas solo pueden ofrecerse cuando está *Activa*?
-- **Q-17** ¿Pueden los rescatistas consultar la biblioteca de rutas, o solo ven las rutas de las misiones activas?
+- ~~**Q-17** ¿Pueden los rescatistas consultar la biblioteca de rutas, o solo ven las rutas de las misiones activas?~~ **Resuelta (2026-11-02, H4): no consultan la biblioteca.** Ven las rutas de las misiones que pueden ver (activas y cerradas), solo la versión validada y fijada (RN-03, INV-05); la *no disponible* se ve señalada. Lo deciden el servidor y las políticas de la base (`listMyMissionRoutes`).
 - **Q-21** ¿Quieres poder etiquetar las rutas (macizo, vertiente, época del año, tipo de terreno) para filtrar la biblioteca?
 - **Q-31** ¿El rescatista ve las misiones activas de toda la organización o solo las de sus equipos? ¿Debe recibir algún aviso al ser aceptado o al cerrarse la misión? *(nueva)*
 - **Q-32** Si el rescatista deniega la ubicación del dispositivo, ¿se usa el punto base de la organización para el tiempo del inicio? *(nueva)*
@@ -502,6 +503,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - ~~**Q-33** Recuperar contraseña~~ **Cerrada:** por correo transaccional (Resend tras el puerto `Mailer`), enlace de un solo uso que caduca en 1 h. Pendiente solo el dominio para enviar a terceros (Q-28)
 - **Q-34** Solicitudes de alta sin «equipo indicado» ni «datos completos»: el registro solo recoge correo, nombre, contraseña y código, y el perfil nace al aprobar **Cerrada:** confirmada (documento 06 §5)
 - ~~**Q-35** Días de validación antigua (RF-519)~~ **Cerrada:** 90, configurable por organización
+- **Q-36** Alias de coordinadores y rescatistas, del estilo `criantval ALC` (tres letras del nombre y de cada apellido, y un código de la localidad del equipo): ¿se genera o lo elige la persona?, ¿qué pasa con varios equipos o ninguno?, ¿qué lo ve y dónde? Aplazada hasta después del MVP; el alcance se decide al planificar H5. Detalle en `docs/backlog-post-mvp.md` (B-02) *(nueva)*
 
 Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 
@@ -547,6 +549,10 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.3 (2026-11-02)**
+- D-34: el rescatista ve nombre y localidad de todos los equipos de su organización (construcción en H5). Nueva Q-36 (alias de coordinadores y rescatistas), aplazada. Backlog tras el MVP en `docs/backlog-post-mvp.md`.
+- H4 (cierra el MVP): RF-508 (no disponible), RF-513 (añadir ruta a la misión, por la biblioteca, generando o importando), RF-518 (aviso de versión nueva, que nunca cambia sola), RF-601 a RF-604 (el rescatista ve las rutas validadas y fijadas, las descarga y comparte la ubicación del objetivo) y RF-805 (equipo por ruta: el servidor lo admite y la interfaz lo muestra; el selector llega con los equipos en H5) quedan construidos. Resuelta Q-17. RF-603: el rescatista solo descarga validadas, fijadas y disponibles, y solo con la misión activa; el coordinador, la versión fijada de todas (las no disponibles solo si las pide).
 
 **1.2 (2026-11-01)**
 - H3: RF-304 (la ruta cruza la frontera en la misma red y sin cortes), RF-501 (generar, con puntos intermedios), RF-503 (composición real de lo generado y de lo dibujado pegado a caminos) y RF-507 (zonas a evitar) quedan construidos. Resuelta Q-05: las zonas pertenecen a la organización, con misión opcional, y no las ve el rescatista. R-01 anota la regresión sobre datos reales.

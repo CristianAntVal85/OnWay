@@ -98,6 +98,28 @@ check_routes admin@example.org 200
 check_routes rescatista1@example.org 403
 echo "ok  routes: coordinator lists the 5 active demo routes plus the archived one and exports one without author, administrator reads, rescuer 403"
 
+# Rutas en la misión (H4-T7): la semilla pone 4 rutas en la misión activa «Valle de Ordesa». El coordinador las ve todas (incluida la de versión
+# fijada en borrador); el rescatista solo las de versión validada fijada: 3 de las 4, y una de ellas marcada como no disponible (INV-05, RF-508).
+login_as() {
+  : >"$jar"
+  curl -s -c "$jar" -b "$jar" -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"$password\"}" "$base/api/v1/auth/login" >/dev/null
+}
+login_as coordinador@example.org
+missions="$(curl -s -b "$jar" "$base/api/v1/missions?status=active&pageSize=50")"
+mission="$(echo "$missions" | sed -n 's/.*"id":"\([^"]*\)","name":"Simulacro ficticio · Valle de Ordesa".*/\1/p')"
+[ -n "$mission" ] || fail "the active demo mission is not listed: $missions"
+staff_routes="$(curl -s -b "$jar" "$base/api/v1/missions/$mission/routes")"
+[ "$(echo "$staff_routes" | grep -o '"previewGeometry"' | wc -l)" = 4 ] || fail "the coordinator must see the 4 routes of the demo mission: $staff_routes"
+echo "$staff_routes" | grep -q 'Variante de la Pradera' || fail "the coordinator does not see the route pinned to a Draft"
+echo "$staff_routes" | grep -q '"newerValidatedVersion":{' || fail "the demo mission shows no newer validated version notice"
+login_as rescatista1@example.org
+my_routes="$(curl -s -b "$jar" "$base/api/v1/my/missions/$mission/routes")"
+[ "$(echo "$my_routes" | grep -o '"previewGeometry"' | wc -l)" = 3 ] || fail "the rescuer must see 3 of the 4 routes of the demo mission: $my_routes"
+echo "$my_routes" | grep -q 'Variante de la Pradera' && fail "the rescuer sees a route whose pinned version is a Draft"
+[ "$(echo "$my_routes" | grep -o '"status":"unavailable"' | wc -l)" = 1 ] || fail "the rescuer must see exactly one route marked unavailable: $my_routes"
+echo "$my_routes" | grep -Eq '"note"|validatedBy' && fail "the rescuer's routes carry a note or who validated"
+echo "ok  demo mission: coordinator sees its 4 routes, rescuer sees 3 (one marked unavailable) and not the Draft"
+
 wrong="$(status -H 'Content-Type: application/json' -d '{"email":"admin@example.org","password":"incorrecta-incorrecta"}' "$base/api/v1/auth/login")"
 [ "$wrong" = 401 ] || fail "wrong credentials must be 401, got $wrong"
 echo "ok  wrong credentials -> 401"

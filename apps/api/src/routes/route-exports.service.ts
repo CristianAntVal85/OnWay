@@ -4,17 +4,14 @@ import { buildGpx, buildKml, type ExportTrack } from '@onway/geo';
 import type { z } from 'zod';
 import { CLOCK, type Clock } from '../clock/clock.js';
 import { DomainError } from '../common/domain-error.js';
+import type { ExportedFile } from '../common/download.js';
 import type { Principal } from '../common/operation.js';
 import { viewerOf } from '../missions/mission-support.js';
 import { RouteLibrary, type ExportRow } from './route-library.service.js';
 
 type Format = 'gpx' | 'kml';
 
-export interface ExportedFile {
-  content: string;
-  contentType: string;
-  fileName: string;
-}
+export type { ExportedFile };
 
 const CONTENT_TYPE: Record<Format, string> = { gpx: 'application/gpx+xml; charset=utf-8', kml: 'application/vnd.google-earth.kml+xml; charset=utf-8' };
 
@@ -39,6 +36,12 @@ function describe(row: ExportRow): string {
 
 const trackOf = (row: ExportRow): ExportTrack => ({ name: row.name, description: describe(row), coordinates: row.coordinates });
 
+/** One `<trk>` (or Placemark) per row, in the order given: the file of the library and of the routes of a mission (H4) are written the same way. */
+export function exportFile(rows: readonly ExportRow[], format: Format, baseName: string): ExportedFile {
+  const tracks = rows.map(trackOf);
+  return { content: format === 'gpx' ? buildGpx(tracks) : buildKml(tracks), contentType: CONTENT_TYPE[format], fileName: `${baseName}.${format}` };
+}
+
 /**
  * GPX and KML of the library (RF-511): metres and degrees (INV-17), one `<trk>` or `Placemark` per route, written by
  * `@onway/geo` from the stored line. Reading and exporting leave no audit row (D-H2-07).
@@ -54,7 +57,7 @@ export class RouteExports {
     const { orgId } = viewerOf(principal);
     const [row] = await this.library.exportable(orgId, [routeId], query.versionId ? { versionId: query.versionId } : {});
     if (!row) throw new DomainError('NOT_FOUND');
-    return this.file([trackOf(row)], query.format, `${safeFileName(row.name)}-v${row.versionNumber}`);
+    return exportFile([row], query.format, `${safeFileName(row.name)}-v${row.versionNumber}`);
   }
 
   async many(principal: Principal, query: z.infer<typeof ExportRoutesQuery>): Promise<ExportedFile> {
@@ -63,10 +66,6 @@ export class RouteExports {
     const rows = await this.library.exportable(orgId, ids, { validatedOnly: query.validatedOnly === 'true' });
     // Routes of another organization, unknown ids and (with validatedOnly) routes without a validated version are not there.
     if (rows.length === 0) throw new DomainError('NOT_FOUND');
-    return this.file(rows.map(trackOf), query.format, `onway-routes-${this.clock.now().toISOString().slice(0, 10)}`);
-  }
-
-  private file(tracks: ExportTrack[], format: Format, baseName: string): ExportedFile {
-    return { content: format === 'gpx' ? buildGpx(tracks) : buildKml(tracks), contentType: CONTENT_TYPE[format], fileName: `${baseName}.${format}` };
+    return exportFile(rows, query.format, `onway-routes-${this.clock.now().toISOString().slice(0, 10)}`);
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Inject, Req, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Inject, Req, Res, type StreamableFile } from '@nestjs/common';
 import type {
   CreateRouteRequest,
   CreateVersionRequest,
@@ -14,8 +14,9 @@ import type {
 } from '@onway/contracts';
 import type { Response } from 'express';
 import type { z } from 'zod';
+import { download } from '../common/download.js';
 import { Input, Operation, type OnwayRequest, type OperationInput } from '../common/operation.js';
-import { RouteExports, type ExportedFile } from './route-exports.service.js';
+import { RouteExports } from './route-exports.service.js';
 import { RouteGeneration } from './route-generation.service.js';
 import { RouteImports } from './route-imports.service.js';
 import { RouteLibrary } from './route-library.service.js';
@@ -24,13 +25,6 @@ import { RouteWrites } from './route-writes.service.js';
 
 type RouteParams = { routeId: string };
 type VersionParams = { routeId: string; versionId: string };
-
-/** A file answer: type and a plain attachment name (`safeFileName`); nothing in it identifies who asked. */
-function download(response: Response, file: ExportedFile): StreamableFile {
-  response.setHeader('Content-Type', file.contentType);
-  response.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
-  return new StreamableFile(Buffer.from(file.content, 'utf8'));
-}
 
 /** The route library (H2). Role, session and CSRF are decided by the global guard from the registry. */
 @Controller()

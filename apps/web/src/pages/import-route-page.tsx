@@ -1,15 +1,16 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import type { OperationOutput } from '@onway/contracts/client';
+import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { fileFailureMessage, MAX_UPLOAD_BYTES, uploadRouteFile } from '../library/upload';
 import { formatKm } from '../library/format';
 import { MapView, type MapRoute } from '../map';
 import { errorMessage } from '../i18n/error-message';
 import { formatMeters } from '../missions/format';
-import { PATHS, routePath } from '../nav/navigation';
+import { missionPath, PATHS, routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 
 type Preview = OperationOutput<'previewRouteImport'>;
@@ -25,6 +26,17 @@ export function ImportRoutePage() {
   const queryClient = useQueryClient();
   const locale = i18n.resolvedLanguage ?? 'es';
   usePageTitle(t('routeImport.title'));
+
+  // Desde una misión (`?mission=`, doc 02 §4.3-B): la ruta se añade a ella al guardarla, con su versión 1 fijada (RF-513).
+  const missionId = useSearchParams()[0].get('mission');
+  const mission = useQuery({
+    queryKey: ['missions', 'detail', missionId],
+    queryFn: ({ signal }) => api.getMission({ params: { missionId: missionId! } }, { signal }),
+    enabled: missionId !== null,
+  });
+  const origins = (mission.data?.points ?? []).filter((point) => point.kind === 'origin');
+  const missionClosed = mission.data !== undefined && !mission.data.actions.manageRoutes;
+  const [originPointId, setOriginPointId] = useState('');
 
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -44,9 +56,23 @@ export function ImportRoutePage() {
     },
   });
   const save = useMutation({
-    mutationFn: () => api.createRoute({ body: { source: 'import', name: name.trim(), fileId: prepared!.fileId, ...(note.trim() ? { note: note.trim() } : {}) } }),
+    mutationFn: () =>
+      api.createRoute({
+        body: {
+          source: 'import',
+          name: name.trim(),
+          fileId: prepared!.fileId,
+          ...(note.trim() ? { note: note.trim() } : {}),
+          ...(missionId ? { addToMission: { missionId, ...(originPointId ? { originPointId } : {}) } } : {}),
+        },
+      }),
     onSuccess: async (created) => {
       await queryClient.invalidateQueries({ queryKey: ['routes'] });
+      if (missionId) {
+        await queryClient.invalidateQueries({ queryKey: ['missions'] });
+        navigate(missionPath(missionId), { state: { routeAdded: name.trim() } });
+        return;
+      }
       navigate(routePath(created.routeId));
     },
   });
@@ -79,11 +105,33 @@ export function ImportRoutePage() {
   };
   const metrics = prepared?.preview.candidate.metrics;
 
+  const back = missionId ? <Link to={missionPath(missionId)}>{t('routeImport.mission.back')}</Link> : <Link to={PATHS.routes}>{t('routeDetail.back')}</Link>;
+  if (missionId && mission.isPending) return <LoadingState label={t('routeImport.mission.loading')} />;
+  if (missionId && mission.isError) {
+    return (
+      <>
+        <ErrorState error={mission.error} onRetry={() => void mission.refetch()} />
+        <p>{back}</p>
+      </>
+    );
+  }
+  if (missionId && missionClosed) {
+    return (
+      <>
+        <p>{back}</p>
+        <div className="page-heading">
+          <h1>{t('routeImport.title')}</h1>
+        </div>
+        <p className="notice" role="status">
+          {t('routeImport.mission.closed', { name: mission.data!.name })}
+        </p>
+      </>
+    );
+  }
+
   return (
     <>
-      <p>
-        <Link to={PATHS.routes}>{t('routeDetail.back')}</Link>
-      </p>
+      <p>{back}</p>
       <div className="page-heading">
         <h1>{t('routeImport.title')}</h1>
       </div>
@@ -179,6 +227,22 @@ export function ImportRoutePage() {
                   </p>
                 )}
               </div>
+              {missionId && mission.data && (
+                <>
+                  <p className="field-help">{t('routeImport.mission.notice', { name: mission.data.name })}</p>
+                  <div className="field">
+                    <label htmlFor="import-origin">{t('routeImport.mission.origin')}</label>
+                    <select id="import-origin" value={originPointId} onChange={(event) => setOriginPointId(event.target.value)}>
+                      <option value="">{t('routeImport.mission.noOrigin')}</option>
+                      {origins.map((origin) => (
+                        <option key={origin.id} value={origin.id}>
+                          {origin.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
               <div className="field">
                 <label htmlFor="import-note">{t('routeImport.noteLabel')}</label>
                 <textarea id="import-note" rows={3} maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} />
@@ -195,7 +259,7 @@ export function ImportRoutePage() {
                 <button type="button" className="button button-secondary" disabled={save.isPending} onClick={reset}>
                   {t('routeImport.changeFile')}
                 </button>
-                <Link className="button button-secondary" to={PATHS.routes}>
+                <Link className="button button-secondary" to={missionId ? missionPath(missionId) : PATHS.routes}>
                   {t('routeImport.cancel')}
                 </Link>
               </div>

@@ -3,6 +3,7 @@ import type { CreateRouteRequest, CreateVersionRequest, DeriveRouteRequest, Oper
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { AuditWriter } from '../audit/audit.writer.js';
+import { assertCanLink, pinRoute } from '../mission-routes/mission-route-links.js';
 import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import { DatabaseService, type Tx } from '../db/database.service.js';
@@ -65,7 +66,8 @@ export class RouteWrites {
 
   async create(principal: Principal, body: CreateBody): Promise<Created> {
     const viewer = viewerOf(principal);
-    if (body.addToMission) throw notYet('addToMission', 'the missions milestone (H4)');
+    // Asked before anything is made: a closed mission, or an origin or team that is not there, must leave no route behind (RF-513).
+    if (body.addToMission) await assertCanLink(this.tx, viewer.orgId, body.addToMission);
 
     let vertices: readonly (readonly number[])[];
     let stretches: readonly EngineSegment[] | undefined;
@@ -105,7 +107,19 @@ export class RouteWrites {
       actorUserId: viewer.userId,
       detail: { name: body.name, versionNumber: 1, source: body.source, ...(body.source === 'drawn' && body.snapToPaths ? { snapToPaths: true } : {}) },
     });
-    return { routeId, versionId, versionNumber: 1, missionRouteId: null };
+    const missionRouteId = body.addToMission
+      ? await pinRoute(this.tx, this.audit, {
+          ...body.addToMission,
+          orgId: viewer.orgId,
+          userId: viewer.userId,
+          routeId,
+          routeName: body.name,
+          versionId,
+          versionNumber: 1,
+          source: body.source === 'import' ? 'imported' : 'drawn',
+        })
+      : null;
+    return { routeId, versionId, versionNumber: 1, missionRouteId };
   }
 
   async createVersion(principal: Principal, routeId: string, body: VersionBody): Promise<Created> {
@@ -141,7 +155,7 @@ export class RouteWrites {
 
   async derive(principal: Principal, routeId: string, body: DeriveBody): Promise<Created> {
     const viewer = viewerOf(principal);
-    if (body.addToMission) throw notYet('addToMission', 'the missions milestone (H4)');
+    if (body.addToMission) await assertCanLink(this.tx, viewer.orgId, body.addToMission);
     if (body.calculationJobId) throw notYet('calculationJobId', 'the adaptation milestone (H9)');
     // An archived route can be derived: it is how one gets it back as a copy (D-H2-08).
     const source = await this.lockRoute(viewer.orgId, routeId);
@@ -173,7 +187,19 @@ export class RouteWrites {
       actorUserId: viewer.userId,
       detail: { name: body.name, versionNumber: 1, fromRouteId: routeId, fromRouteName: source.name, fromVersionNumber: fromNumber, geometryChanged: measured !== null },
     });
-    return { routeId: newRouteId, versionId, versionNumber: 1, missionRouteId: null };
+    const missionRouteId = body.addToMission
+      ? await pinRoute(this.tx, this.audit, {
+          ...body.addToMission,
+          orgId: viewer.orgId,
+          userId: viewer.userId,
+          routeId: newRouteId,
+          routeName: body.name,
+          versionId,
+          versionNumber: 1,
+          source: 'derived',
+        })
+      : null;
+    return { routeId: newRouteId, versionId, versionNumber: 1, missionRouteId };
   }
 
   async validate(principal: Principal, routeId: string, versionId: string, _body: ValidateBody): Promise<OperationOutput<'validateRouteVersion'>> {
@@ -206,6 +232,21 @@ export class RouteWrites {
       actorUserId: viewer.userId,
       detail: { name: route.name, versionNumber: row.version_number },
     });
+    // The missions that have this very version pinned (and are still open) now have a validated route: they say so in their history.
+    const pinned = (
+      await this.tx.execute(sql`
+        SELECT DISTINCT mr.mission_id FROM mission_routes mr JOIN missions m ON m.id = mr.mission_id
+         WHERE mr.pinned_version_id = ${versionId}::uuid AND mr.organization_id = ${viewer.orgId}::uuid AND m.status <> 'closed'`)
+    ).rows as { mission_id: string }[];
+    for (const { mission_id } of pinned) {
+      await this.audit.recordMission({
+        orgId: viewer.orgId,
+        missionId: mission_id,
+        action: 'route_version_validated',
+        actorUserId: viewer.userId,
+        detail: { name: route.name, routeId, versionNumber: row.version_number },
+      });
+    }
     return readVersion(this.tx, viewer.orgId, routeId, versionId);
   }
 

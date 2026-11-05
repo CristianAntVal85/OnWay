@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 0.8 (borrador) · Fecha: 2026-11-01 · Depende de: documento 01 (v1.2)
+Versión: 0.9 (borrador) · Fecha: 2026-11-02 · Depende de: documento 01 (v1.3)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -172,6 +172,8 @@ Cada elemento pendiente enlaza a la acción que lo resuelve.
 | Puntos | Orígenes, intermedios obligatorios, puntos de reunión | Añadir, editar, borrar, importar desde GPX o KML |
 | Rutas de la misión | Tabla comparativa y rutas en el mapa: versión fijada, estado de validación, origen, equipo asignado, métricas, disponibilidad | **Añadir ruta**, cambiar versión, marcar no disponible, quitar de la misión, exportar |
 | Historial | Registro de cambios (RN-05) | Solo lectura |
+
+**Rutas de la misión, tal como se construyó (H4).** La tabla comparativa lleva, de la versión **fijada**, distancia, subida, bajada, altitud mínima y máxima, pendiente máxima, composición, fecha de validación, origen y equipo (solo se muestra; el selector llega con los equipos en H5), con su propio desplazamiento horizontal enfocable en pantallas estrechas. Cada fila reúne en su primera celda el nombre, las marcas (*No disponible*, *Validación antigua*, borrador), los avisos y las acciones. Marcar varias rutas las resalta en el mapa y saca el perfil de cada una. Con la misión cerrada o para el administrador no hay ningún control que escriba; ver el mapa y exportar siguen. **Añadir ruta** abre un diálogo (4.3) y **Validar** está en la fila de una versión fijada en borrador (4.4).
 
 **Rescatista:** ve las secciones Mapa, Puntos y Rutas de la misión en solo lectura, y solo las versiones validadas (RN-03). No ve Voluntarios y participantes (RF-602). Tiene el botón **Me ofrezco como voluntario** o **Retirar mi oferta** (RF-605) mientras la misión esté activa. Si su perfil está incompleto, el botón lo lleva a completarlo (RN-20). Boceto 14.
 
@@ -412,6 +414,8 @@ Boceto 11. Desde *Rutas de la misión*, **Añadir ruta** abre un diálogo con tr
 
 Una versión en *Borrador* puede añadirse a la misión, pero el rescatista no la ve hasta que se valide.
 
+*Tal como se construyó (H4).* El diálogo **Añadir ruta** tiene dos pasos. Primero se elige de la biblioteca (búsqueda por nombre, filtro por la última versión, páginas de 10, hasta 20 a la vez aunque cambie la búsqueda); las rutas que la misión ya tiene salen marcadas y no se pueden elegir (INV-13). Después, por cada ruta, la **versión que fija la misión** (la última validada por defecto; si es un borrador se avisa de que el rescatista no la verá), el origen de la misión y una nota. Los otros dos caminos son enlaces del mismo diálogo: **Generar** (solo si la misión tiene origen, RN-08) e **Importar**, que llevan `?mission=`; importar pasa `addToMission` al guardar y vuelve a la misión avisando. Cada error tiene su mensaje: ya está en la misión (con su nombre), ruta archivada (derivar una copia), misión cerrada, algo que ya no existe. El lote es atómico: si falla una, no se añade ninguna. La adaptación de una ruta cercana (camino C) sigue siendo de la segunda entrega.
+
 ### 4.4 Comparar y validar rutas
 
 1. Tabla de rutas de la misión con distancia, desnivel positivo y negativo, altitud mínima y máxima, pendiente máxima, composición por tipo de vía, fecha de validación. Sin tiempo (D-03).
@@ -421,6 +425,8 @@ Una versión en *Borrador* puede añadirse a la misión, pero el rescatista no l
 5. Si una ruta se vuelve inviable en esta misión, el coordinador la marca como *No disponible en esta misión* (RF-508). Los rescatistas la ven señalada, no desaparecida.
 6. Si aparece una versión validada más reciente de una ruta ya añadida, la misión lo indica y el coordinador decide si actualiza (RF-518). **Nunca se actualiza sola.**
 7. Si la validación tiene más de N días, la ruta aparece marcada como posiblemente desactualizada (RF-519).
+
+*Tal como se construyó (H4).* La comparación es la tabla y los perfiles de las rutas marcadas; el aviso de versión nueva lleva **Actualizar a la versión N**, que pide confirmación y nunca se hace sola (RN-13). Una ruta marcada como no disponible se puede reactivar. Quitar una ruta de la misión pide confirmación y la deja en la biblioteca, desde donde vuelve a poder archivarse. Exportar da un solo GPX o KML con la versión fijada de cada ruta, borradores incluidos y sin las no disponibles.
 
 ### 4.5 Activar y cerrar misión
 
@@ -558,9 +564,9 @@ Boceto 14. Se detallará en un documento posterior, pero el recorrido base es:
 2. Primer acceso → **formulario de alta** (3.9).
 3. Login → Inicio reducido, con meteorología, luz y luna de su ubicación o de la misión que elija.
 4. Misiones activas → Detalle en solo lectura.
-5. En la misión: ver mapa, puntos y rutas validadas con métricas.
+5. En la misión: ver mapa, puntos y rutas validadas con métricas, **compartir la ubicación del objetivo** (coordenadas que se copian con un aviso para el lector de pantalla, y un enlace `geo:` que abre la aplicación de mapas del móvil) y elegir una ruta para verla en el mapa con su perfil.
 6. **Me ofrezco como voluntario**, y consultar el estado de la oferta. Puede retirarla.
-7. Exportar una ruta o todas las validadas.
+7. Exportar una ruta o todas las validadas (GPX o KML), solo con la misión activa. *Tal como se construyó (H4):* cada ruta es una tarjeta con la versión fijada y su fecha de validación, las métricas, la composición, el origen y el equipo (solo si es miembro, D-34 lo cambia en H5); una ruta *no disponible* se ve señalada («No la uses») y sin descarga; con la misión cerrada se leen y no se descargan. Las descargas son botones de la tarjeta, así que funcionan aunque el mapa no cargue.
 8. En **Mi perfil**: mantener datos y habilidades (con certificados), consultar su historial de misiones.
 
 ## 8. Estados vacíos, errores y casos límite
@@ -575,6 +581,12 @@ Boceto 14. Se detallará en un documento posterior, pero el recorrido base es:
 | Ruta fijada en una misión se archiva | No se puede archivar mientras esté en una misión no cerrada. Se explica en qué misiones se usa |
 | Se intenta eliminar una ruta usada | Solo se permite archivar (RN-14) |
 | Validación antigua | Marca "posiblemente desactualizada". Sigue usable, pero visible |
+| Versión fijada en borrador | En la tabla del coordinador se dice, con el aviso de que el rescatista no la ve, y ofrece **Validar**. El rescatista no recibe la fila ni su geometría (INV-05) |
+| Ruta marcada como no disponible | El coordinador la ve apagada y con la marca; el rescatista la ve señalada, con su aviso y sin descarga; no cuenta como validada al activar la misión |
+| Añadir una ruta que otra persona acaba de añadir | El lote se rechaza entero con «“X” ya está en la misión»; el diálogo sigue abierto y la lista se actualiza |
+| Añadir una ruta archivada | Se rechaza («deriva una copia para usarla»); no se añade ninguna del lote |
+| Misión cerrada con rutas | El coordinador y el rescatista las leen; ninguno escribe; el rescatista no descarga (`MISSION_NOT_ACTIVE`) |
+| El mapa no carga (sin WebGL) | Avisa en el mapa; las tarjetas, la tabla y las descargas siguen funcionando |
 | Objetivo en zona sin datos de caminos | El trabajo falla con «fuera de la zona que cubre el motor» (`OUTSIDE_COVERAGE`) y propone elegir puntos cerca de caminos de los Pirineos. Se puede importar o dibujar |
 | Sin ruta posible entre dos puntos, o con las zonas a evitar | «No hay ninguna ruta posible» (`NO_ROUTE_POSSIBLE`); propone mover los puntos o quitar alguna zona |
 | Motor de rutas caído | `ROUTING_UNAVAILABLE`: al pedir el cálculo no se crea ningún trabajo y se explica que el resto de la aplicación sigue; importar, dibujar en línea recta y la biblioteca funcionan |
@@ -642,6 +654,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**0.9 (2026-11-02)**
+- H4 (§3.5, §4.3, §4.4, §7, §8): «Rutas de la misión» tal como se construyó (tabla comparativa con desplazamiento propio, selección con mapa y perfil, avisos, no disponible, quitar y exportar), el diálogo **Añadir ruta** en dos pasos con los otros dos caminos, **Validar** desde la fila, la vista del rescatista (tarjetas, perfil, descarga y compartir ubicación) y los casos límite nuevos (borrador fijado, no disponible, duplicada, archivada, misión cerrada, mapa caído).
 
 **0.8 (2026-11-01)**
 - H3 (§3.6, §4.3, §8): «Generar rutas» (zonas a evitar, progreso, comparación con la composición real, generar desde la misión), dibujar a mano con la casilla de unir a los caminos, y los casos de misión sin origen, sin ruta posible, fuera de cobertura y motor caído.

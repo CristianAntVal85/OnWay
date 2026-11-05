@@ -39,6 +39,12 @@
         { "kind": "origin", "name": "Origen ficticio · Pradera de Ordesa", "note": "Aparcamiento inventado.", "lat": 42.6481, "lon": -0.0405 },
         { "kind": "waypoint", "name": "Intermedio ficticio · Refugio", "lat": 42.664, "lon": 0.005 },
         { "kind": "rendezvous", "name": "Reunión ficticia · Torla", "note": "Plaza inventada.", "lat": 42.6297, "lon": -0.1 }
+      ],
+      "routes": [
+        { "route": "Pradera a la Brecha (ficticia)" },
+        { "route": "Collado con borrador nuevo (ficticia)", "unavailable": true },
+        { "route": "Variante de la Pradera (ficticia)" },
+        { "route": "Senda del Circo (ficticia)", "version": 2 }
       ]
     },
     {

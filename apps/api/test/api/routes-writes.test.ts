@@ -228,12 +228,8 @@ describe('createRoute (RF-505, RF-510; INV-15)', () => {
     expect([await count('routes'), await count('route_versions'), await count('route_segments'), await count('audit_log')]).toEqual(before);
   });
 
-  it('refuses `addToMission` until H4, a name that is empty and unknown fields, and writes nothing', async () => {
+  it('refuses a name that is empty and unknown fields, and writes nothing (`addToMission` has its own tests: mission-routes-writes)', async () => {
     const before = await count('routes');
-    const mission = await call(a.coordinator, 'POST', '/missions', { name: uniq('M'), target: { source: 'map', lat: 42.6, lon: 0.65 } });
-    const { id: missionId } = MissionDetail.parse(await mission.json());
-    const error = await expectError(await call(a.coordinator, 'POST', '/routes', { source: 'drawn', name: uniq('R'), geometry: line(), addToMission: { missionId } }), 'VALIDATION_FAILED');
-    expect(error.details).toMatchObject({ issues: [{ path: 'addToMission' }] });
     await expectError(await call(a.coordinator, 'POST', '/routes', { source: 'drawn', name: '   ', geometry: line() }), 'VALIDATION_FAILED');
     await expectError(await call(a.coordinator, 'POST', '/routes', { source: 'drawn', name: uniq('R'), geometry: line(), status: 'validated' }), 'VALIDATION_FAILED');
     expect(await count('routes')).toBe(before);
@@ -399,7 +395,7 @@ describe('deriveRoute (RF-517)', () => {
     expect(version!.wkt).not.toBe((await versionsOf(original.routeId))[0]!.wkt);
   });
 
-  it('works on an archived route (it is how one is recovered), and refuses a version of another route, `addToMission` and `calculationJobId`', async () => {
+  it('works on an archived route (it is how one is recovered), and refuses a version of another route, a mission that is not there and `calculationJobId`', async () => {
     const [one, other] = [await createDrawn(a.coordinator), await createDrawn(a.coordinator)];
     expect((await call(a.coordinator, 'POST', `/routes/${one.routeId}/archive`)).status).toBe(200);
     const copy = await call(a.coordinator, 'POST', `/routes/${one.routeId}/derive`, { name: uniq('Recovered'), fromVersionId: one.versionId });
@@ -412,7 +408,7 @@ describe('deriveRoute (RF-517)', () => {
     );
     await expectError(
       await call(a.coordinator, 'POST', `/routes/${other.routeId}/derive`, { name: uniq('X'), fromVersionId: other.versionId, addToMission: { missionId: other.versionId } }),
-      'VALIDATION_FAILED',
+      'NOT_FOUND', // a mission that is not there (H4: `addToMission` is implemented)
     );
   });
 });

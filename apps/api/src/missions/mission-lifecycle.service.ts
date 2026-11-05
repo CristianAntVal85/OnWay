@@ -161,7 +161,7 @@ export class MissionLifecycleService {
   private async validatedRoutes(missionId: string): Promise<number> {
     const { rows } = await this.tx.execute(sql`
       SELECT count(*)::int AS n FROM mission_routes mr JOIN route_versions v ON v.id = mr.pinned_version_id
-       WHERE mr.mission_id = ${missionId} AND v.status = 'validated'`);
+       WHERE mr.mission_id = ${missionId} AND v.status = 'validated' AND mr.status = 'added'`); // P5: a route marked unavailable is not a usable one
     return (rows[0] as { n: number }).n;
   }
 

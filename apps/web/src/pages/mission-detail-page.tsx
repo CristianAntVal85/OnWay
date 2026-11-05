@@ -13,6 +13,8 @@ import { formatDate, formatDateTime, formatMeters } from '../missions/format';
 import { LifecycleActions } from '../missions/lifecycle-actions';
 import { MissionEditForm } from '../missions/mission-edit-form';
 import { MissionHistory } from '../missions/mission-history';
+import { mapRoutesOf } from '../missions/mission-route-style';
+import { MissionRoutesSection, useMissionRoutes } from '../missions/mission-routes-section';
 import type { PickedPoint, PointKind } from '../missions/point';
 import { ImportPointsDialog } from '../missions/import-points-dialog';
 import { PointForm } from '../missions/point-form';
@@ -88,13 +90,29 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
   const [importing, setImporting] = useState(false);
   // Aviso de lo último guardado, junto a lo que se ha tocado (cabecera o puntos); las regiones `status` existen siempre para que se anuncie.
   // Si se llega desde «Duplicar», la copia lo anuncia (la navegación lleva el nombre del original).
-  const arrival = useLocation().state as { duplicatedFrom?: string } | null;
+  const arrival = useLocation().state as { duplicatedFrom?: string; routeAdded?: string } | null;
   const [saved, setSaved] = useState<{ area: 'head' | 'points'; text: string } | null>(
-    arrival?.duplicatedFrom ? { area: 'head', text: t('missionDetail.lifecycle.duplicated', { name: arrival.duplicatedFrom }) } : null,
+    arrival?.duplicatedFrom
+      ? { area: 'head', text: t('missionDetail.lifecycle.duplicated', { name: arrival.duplicatedFrom }) }
+      : arrival?.routeAdded
+        ? { area: 'head', text: t('routeImport.mission.added', { name: arrival.routeAdded }) }
+        : null,
   );
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
   const nonce = useRef(1);
+  // Las rutas de la misión: la tabla y el mapa comparten la consulta y la selección (qué rutas se ven resaltadas y con su perfil).
+  const routes = useMissionRoutes(mission.id);
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const routeRows = routes.data?.items;
+  const selectedRoutes = useMemo(() => new Set((routeRows ?? []).filter((row) => picked.has(row.id)).map((row) => row.id)), [routeRows, picked]);
+  const mapRoutes = useMemo(() => mapRoutesOf(routeRows ?? []), [routeRows]);
+  const togglePicked = (id: string) =>
+    setPicked((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
 
   const canEdit = mission.actions.edit;
   // Si la misión pasa a solo lectura mientras se escribe (la cerró otra persona), el editor desaparece con sus controles.
@@ -275,28 +293,39 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
           </ul>
         </section>
 
-        {canEdit && (
-          <section className="detail-generate" aria-labelledby="generate-title">
-            <h2 id="generate-title" tabIndex={-1}>
-              {t('generate.title')}
-            </h2>
-            {pointsByKind.origin.length === 0 ? (
-              <>
-                {/* RN-08, INV-14: sin origen no se genera; se explica por qué y se lleva a donde se arregla (doc 02 §8). */}
-                <button type="button" className="button button-secondary" disabled aria-describedby="generate-hint">
+        <div className="detail-routes">
+          <MissionRoutesSection
+            missionId={mission.id}
+            locale={locale}
+            canManage={mission.actions.manageRoutes}
+            origins={pointsByKind.origin.map((point) => ({ id: point.id, name: point.name }))}
+            routes={routes}
+            selected={selectedRoutes}
+            onToggle={togglePicked}
+          />
+          {canEdit && (
+            <section className="detail-generate" aria-labelledby="generate-title">
+              <h2 id="generate-title" tabIndex={-1}>
+                {t('generate.title')}
+              </h2>
+              {pointsByKind.origin.length === 0 ? (
+                <>
+                  {/* RN-08, INV-14: sin origen no se genera; se explica por qué y se lleva a donde se arregla (doc 02 §8). */}
+                  <button type="button" className="button button-secondary" disabled aria-describedby="generate-hint">
+                    {t('generate.cta')}
+                  </button>
+                  <p id="generate-hint" className="field-help">
+                    {t('generate.noOrigin')} <a href="#points-title">{t('generate.addOrigin')}</a>
+                  </p>
+                </>
+              ) : (
+                <Link className="button button-secondary" to={`${PATHS.generateRoutes}?mission=${mission.id}`}>
                   {t('generate.cta')}
-                </button>
-                <p id="generate-hint" className="field-help">
-                  {t('generate.noOrigin')} <a href="#points-title">{t('generate.addOrigin')}</a>
-                </p>
-              </>
-            ) : (
-              <Link className="button button-secondary" to={`${PATHS.generateRoutes}?mission=${mission.id}`}>
-                {t('generate.cta')}
-              </Link>
-            )}
-          </section>
-        )}
+                </Link>
+              )}
+            </section>
+          )}
+        </div>
 
         <section className="detail-points" aria-labelledby="points-title">
           <h2 id="points-title" tabIndex={-1}>
@@ -404,6 +433,9 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
             elevationLookup={elevationLookup}
             picking={active !== null && picking}
             {...(active !== null && picking ? { onPick } : {})}
+            routes={mapRoutes}
+            selectedRouteIds={selectedRoutes}
+            onRouteClick={(id) => setPicked((current) => new Set(current).add(id))}
           />
         </div>
       </div>

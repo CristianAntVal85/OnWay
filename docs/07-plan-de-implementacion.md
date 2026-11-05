@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.6 · **Estado:** borrador para revisión · **Fecha:** 1 de noviembre de 2026
+**Versión:** 0.7 · **Estado:** borrador para revisión · **Fecha:** 2 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -130,6 +130,7 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 | **Operaciones (9)** | `listMissionRoutes`, `addMissionRoutes`, `updateMissionRoute`, `removeMissionRoute`, `getMissionRouteGeometry`, `exportMissionRoutes`, `listMyMissionRoutes`, `getMyMissionRouteGeometry`, `exportMyMissionRoutes` |
 | **Salida del MVP** | Prueba de extremo a extremo (Playwright) con la historia anterior. INV-03, 05, 06, 07, 13 y RN-13, RN-14. Un rescatista nunca recibe una versión sin validar ni una no fijada. Interfaz del rescatista usable en pantalla de móvil |
 | **Fuera** | Alta de usuarios, perfiles, voluntariado, equipos (existen en los datos de demostración pero aún no se gestionan) |
+| **Tal como se construyó** | Las 9 operaciones montadas y probadas (51 con las de H0 a H3), **sin migración SQL**: las tablas, claves compuestas (INV-06, INV-13), disparadores (INV-07, INV-11) y políticas del rescatista de 0005 a 0011 solo se probaron, también con SQL directo como `onway_app` (`test/db/mission-routes-rescuer-policy.test.ts`). **API:** módulo `apps/api/src/mission-routes/`. El coordinador lee la tabla de la misión (versión **fijada**, no la última, con `newerValidatedVersion` y `validationIsStale` leído con el `Clock`) y la geometría con tramos y perfil de la fijada; añade hasta 20 rutas en un lote **atómico** (versión por defecto la última validada), cambia la fijada solo con `pinnedVersionId` (nunca sola, RN-13), marca *no disponible* o reactiva, y quita (la ruta sigue en la biblioteca y vuelve a poder archivarse, INV-07); cada cambio deja su línea de historial en la misma transacción (`route_added`, `route_removed`, `route_version_changed`, `route_marked_unavailable`, `route_reactivated` y `route_updated` —nuevo—, sin el texto de la nota). `createRoute` y `deriveRoute` implementan `addToMission` (C1). **El rescatista** lee con doble defensa (política más condición explícita): solo la versión **fijada y validada** de una ruta, en una misión activa o cerrada; la *no disponible* sale señalada (se ve, no se descarga); sin nota, borrador ni quién validó. **Exportación (P2):** el rescatista solo descarga validadas, fijadas y disponibles, y solo con la misión activa (`MISSION_NOT_ACTIVE`); el coordinador, la versión fijada de todas (borradores incluidos) y las no disponibles solo por `ids`; ninguna lleva autor. **Web:** «Rutas de la misión» en el detalle del coordinador (tabla comparativa con su desplazamiento propio, selección con mapa y perfil, aviso de versión nueva con «Actualizar» y confirmación, validación antigua, borrador, no disponible, quitar, exportar), diálogo **Añadir ruta** (biblioteca con búsqueda y filtro, hasta 20, versión/origen/nota, y enlaces a generar e importar con `?mission=`; importar pasa `addToMission`), **validar desde la fila**, y la vista del rescatista (tarjetas, mapa y perfil, descargar GPX/KML de una o de todas, **compartir ubicación** con coordenadas copiables y enlace `geo:`). **Semilla (P1):** 4 rutas en «Valle de Ordesa» (una validada; una con la versión 2 fijada y la 3 validada; una validada *no disponible*; una con el borrador fijado) y `smoke.sh` lo comprueba. **Desviaciones:** C1 `addToMission` de `createRoute` y `deriveRoute`; C2 `validationIsStale` en `MissionRouteRescuer`; C3 el equipo solo lo ve quien es miembro (D-34 lo cambia en H5); C4 el rescatista ve 3 de las 4 rutas sembradas, no 2. **Demostración:** `h4-demo.spec.ts` (5 pruebas por formato, escritorio y 375 px) con la historia completa en dos roles, el rescatista solo con teclado y en francés. Dependencias nuevas: ninguna |
 
 > **Punto de control del MVP.** Tras H4 decides: seguir con H5, o corregir rumbo con lo que hayas visto. Es el momento más barato para cambiar de idea.
 
@@ -226,6 +227,7 @@ Cada bloque tendrá su propio documento de diseño cuando llegue su turno. Aquí
 | Q-32 punto base para el tiempo | H1 | Sin punto base: si deniega la ubicación, se pide elegir un punto |
 | Q-28 dominio | H7 | Desarrollo con Mailpit y sin HTTPS público |
 | ~~Q-05~~ | ~~H3~~ | **Resuelta (2026-11-01):** las zonas a evitar son de la organización, con misión opcional; las ve el personal (documento 01) |
+| ~~Q-17~~ | ~~H4~~ | **Resuelta (2026-11-02):** el rescatista no consulta la biblioteca; ve solo las rutas validadas y fijadas de las misiones que puede ver (documento 01, RF-602) |
 | Q-04, Q-06, Q-21 | Detalles de H1–H4 | Valores por defecto del documento 02: puntos de reunión con nombre, ubicación y notas; sin etiquetas |
 | Revisión de los pesos del perfil de montaña (P6) | Dar H3 por buena para uso real; no bloquea el desarrollo de H4 | Los pesos de la prueba técnica; hoja de revisión en `specs/H3-generacion-rutas/` |
 
@@ -248,6 +250,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.7 | 2026-11-02 | H4 (sección 3) al día tras construirlo (T9): fila «Tal como se construyó» con las 9 operaciones, la exportación por rol (P2), la semilla (P1), las desviaciones C1–C4 y la demostración del MVP. Punto de control del MVP |
 | 0.6 | 2026-11-01 | H3 (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con el motor, los trabajos, las desviaciones y la regresión real; Q-05 resuelta y la revisión de los pesos (P6) anotada como pendiente en la sección 6 |
 | 0.5 | 2026-11-01 | Prueba técnica del motor cerrada (documento 04, §7.6): H3 «Antes de empezar» con el motor elegido (GraphHopper 11.1) y su primera tarea (alimentar el motor con el DEM de OnWay) y la fila de la sección 6 resuelta |
 | 0.4 | 2026-10-31 | H2 (sección 3) al día tras construirlo (T10): «GPX de ejemplo ficticio» en lugar de «GPX real» (decisión P2: ningún track procede de un servicio público ni de una persona), 13 operaciones con `exportRoutes` (P3) y la fila «Tal como se construyó» |

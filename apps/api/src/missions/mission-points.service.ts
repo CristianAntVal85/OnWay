@@ -160,6 +160,13 @@ export class MissionPointsService {
     const viewer = viewerOf(principal);
     await this.lockOpen(viewer.orgId, missionId);
     const current = await this.read(missionId, pointId);
+    // A route of the mission that leaves from this point keeps a foreign key to it (mission_routes.origin_point_id).
+    const { rows: inUse } = await this.tx.execute(sql`SELECT 1 FROM mission_routes WHERE mission_id = ${missionId} AND origin_point_id = ${pointId} LIMIT 1`);
+    if (inUse.length > 0) {
+      throw new DomainError('VALIDATION_FAILED', 'Request validation failed', {
+        issues: [{ path: 'pointId', code: 'point_in_use', message: 'A route of the mission leaves from this point: remove the route from the mission or change its origin first' }],
+      });
+    }
     try {
       await this.tx.delete(missionPoints).where(and(eq(missionPoints.id, pointId), eq(missionPoints.missionId, missionId), eq(missionPoints.organizationId, viewer.orgId)));
       await this.renumber(missionId, current.kind, [], null);

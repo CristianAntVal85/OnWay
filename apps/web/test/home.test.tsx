@@ -483,6 +483,7 @@ describe('rescatista: Mis misiones (RF-601)', () => {
 describe('rescatista: detalle en solo lectura (RF-602)', () => {
   const detailHandlers = (body = myDetail()): Handlers => ({
     [`GET /my/missions/${MISSION_ID}`]: () => json(200, body),
+    [`GET /my/missions/${MISSION_ID}/routes`]: () => json(200, { items: [] }),
     'GET /environment': ({ query }) => json(200, environment({ basis: 'mission', missionId: query.get('missionId'), location: { lat: 42.6, lon: -0.05, elevationM: 3100, country: 'ES' } })),
   });
 
@@ -522,7 +523,7 @@ describe('rescatista: detalle en solo lectura (RF-602)', () => {
     expect(screen.queryByRole('button', { name: E.backToDevice })).toBeNull();
 
     // Sin rutas ni oferta ni escritura
-    expect(screen.getByText(M.detail.noRoutes)).toBeTruthy();
+    expect(await screen.findByText(M.detail.noRoutes)).toBeTruthy();
     const names = screen.queryAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent ?? '');
     expect(names.filter((n) => /ofrezc|ofrec|offre|Editar|Borrar|Añadir|Guardar|Activar|Cerrar|Reabrir|Duplicar/i.test(n))).toEqual([]);
     expect(screen.getByRole('main').querySelectorAll('input, textarea, select')).toHaveLength(0);
@@ -581,7 +582,7 @@ describe('rescatista: detalle en solo lectura (RF-602)', () => {
     mockGeolocation('none');
     setup(`/missions/${MISSION_ID}`, detailHandlers(), { user: rescuer({ profileStatus: 'complete', nextStep: 'home', locale: 'fr' }), language: 'fr' });
     expect(await screen.findByText(fr.myMissions.detail.readOnly)).toBeTruthy();
-    expect(screen.getByText(fr.myMissions.detail.noRoutes)).toBeTruthy();
+    expect(await screen.findByText(fr.myMissions.detail.noRoutes)).toBeTruthy();
     expect(await screen.findByRole('heading', { level: 3, name: fr.environment.weather.title })).toBeTruthy();
   });
 });

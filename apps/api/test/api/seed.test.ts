@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { MeResponse, MissionDetail, MissionHistoryPage, MissionsPage, MyMissionsPage } from '@onway/contracts';
+import { MeResponse, MissionDetail, MissionHistoryPage, MissionRouteGeometry, MissionRoutesRescuer, MissionRoutesStaff, MissionsPage, MyMissionsPage } from '@onway/contracts';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { loadDemo } from '../../src/seed/demo.js';
 import type { ElevationProvider } from '../../src/geo/elevation.js';
@@ -36,6 +36,7 @@ async function fingerprint(): Promise<string> {
       `SELECT id, name, status, derived_from_route_id, derived_from_version_id, latest_version_id, latest_validated_version_id, created_at, updated_at FROM routes ORDER BY id`,
       `SELECT id, route_id, version_number, status, ST_AsEWKT(geom) geom, distance_m, ascent_m, descent_m, provenance, note, created_at, validated_at FROM route_versions ORDER BY id`,
       `SELECT id, version_id, position, road_type, distance_m FROM route_segments ORDER BY id`,
+      `SELECT id, mission_id, route_id, pinned_version_id, origin_point_id, team_id, status, note, added_by, added_at FROM mission_routes ORDER BY id`,
       `SELECT * FROM audit_log ORDER BY id`,
     ].map(async (query) => JSON.stringify(await fixtures.query(query))),
   );
@@ -57,12 +58,12 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
   it('loads the agreed demo and a second run changes nothing', async () => {
     const { owner } = inject('database');
     const first = await seedDemo(owner, demo, options);
-    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6 });
+    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6, missionRoutes: 4 });
     orgId = first.organizationId;
     const before = await fingerprint();
 
     const second = await seedDemo(owner, demo, options);
-    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0 });
+    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0, missionRoutes: 0 });
     expect(await fingerprint()).toBe(before);
 
     // Two runs at once also end with a single organization.
@@ -257,13 +258,13 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
       const nothing: ElevationProvider = { elevationAt: async () => null, elevationsAt: async (points) => points.map(() => null) };
       const messages: string[] = [];
       const first = await seedDemo(owner, other, { elevation: nothing, warn: (m) => messages.push(m) });
-      expect(first).toMatchObject({ seeded: true, missions: 0, routes: 0 });
-      expect(messages).toHaveLength(9);
+      expect(first).toMatchObject({ seeded: true, missions: 0, routes: 0, missionRoutes: 0 });
+      expect(messages).toHaveLength(9); // the routes of a mission that was skipped add no warning of their own
       expect(messages[0]).toMatch(/skipped/);
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(0);
 
       const second = await seedDemo(owner, other, options);
-      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6 });
+      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6, missionRoutes: 4 });
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(3);
       expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1`, [first.organizationId])).toBe(6);
     });
@@ -338,6 +339,124 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
         'route_archived',
       ]);
       expect(await count(`SELECT count(*) n FROM audit_log WHERE organization_id = $1 AND entity_type = 'route'`, [orgId])).toBe(17);
+    });
+  });
+
+  describe('routes in the demo mission (H4-T7, P1, INV-05, INV-13, INV-16)', () => {
+    const active = () => demo.missions.find((m) => m.status === 'active')!;
+    const rows = () =>
+      fixtures.query<{ mission: string; route: string; version_number: number; version_status: string; status: string; origin_point_id: string | null; team_id: string | null; actor_email: string }>(
+        `SELECT m.name mission, r.name route, v.version_number, v.status::text version_status, mr.status::text status, mr.origin_point_id, mr.team_id, u.email actor_email
+           FROM mission_routes mr JOIN missions m ON m.id = mr.mission_id JOIN routes r ON r.id = mr.route_id JOIN route_versions v ON v.id = mr.pinned_version_id JOIN users u ON u.id = mr.added_by
+          WHERE mr.organization_id = $1 ORDER BY r.name`,
+        [orgId],
+      );
+
+    it('puts four routes in the active mission and nowhere else: a validated one, one validated and unavailable, one whose pinned version is a Draft, and one pinned two versions behind', async () => {
+      const found = await rows();
+      expect(found).toHaveLength(4);
+      expect(new Set(found.map((r) => r.mission))).toEqual(new Set([active().name]));
+      expect(found.map((r) => [r.route, r.version_number, r.version_status, r.status])).toEqual([
+        ['Collado con borrador nuevo (ficticia)', 1, 'validated', 'unavailable'],
+        ['Pradera a la Brecha (ficticia)', 1, 'validated', 'added'],
+        ['Senda del Circo (ficticia)', 2, 'validated', 'added'],
+        ['Variante de la Pradera (ficticia)', 1, 'draft', 'added'],
+      ]);
+      // Like the application would leave them: no origin or team chosen, added by the coordinator in charge of the mission.
+      for (const row of found) {
+        expect(row.origin_point_id).toBeNull();
+        expect(row.team_id).toBeNull();
+        expect(row.actor_email).toBe(demo.members.find((m) => m.key === active().coordinator)!.email);
+      }
+    });
+
+    it('leaves the three missions and the six routes as they were (no new versions, no status change)', async () => {
+      expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [orgId])).toBe(3);
+      expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1`, [orgId])).toBe(6);
+      expect(await count(`SELECT count(*) n FROM route_versions WHERE organization_id = $1`, [orgId])).toBe(9);
+      expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1 AND status = 'archived'`, [orgId])).toBe(1);
+      expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1 AND status = 'active'`, [orgId])).toBe(1);
+    });
+
+    it('writes the history the application writes, one line per route and one more for the unavailable one, by the coordinator (INV-16)', async () => {
+      const lines = await fixtures.query<{ action: string; name: string; versionNumber: number | null }>(
+        `SELECT a.action, a.detail->>'name' AS name, (a.detail->>'versionNumber')::int AS "versionNumber"
+           FROM audit_log a JOIN missions m ON m.id = a.entity_id WHERE a.organization_id = $1 AND a.entity_type = 'mission' AND m.name = $2 AND a.action LIKE 'route_%' ORDER BY a.id`,
+        [orgId, active().name],
+      );
+      expect(
+        lines
+          .filter((l) => l.action === 'route_added')
+          .map((l) => [l.name, l.versionNumber])
+          .sort(),
+      ).toEqual([
+        ['Collado con borrador nuevo (ficticia)', 1],
+        ['Pradera a la Brecha (ficticia)', 1],
+        ['Senda del Circo (ficticia)', 2],
+        ['Variante de la Pradera (ficticia)', 1],
+      ]);
+      expect(lines.filter((l) => l.action === 'route_marked_unavailable').map((l) => l.name)).toEqual(['Collado con borrador nuevo (ficticia)']);
+      expect(lines).toHaveLength(5);
+      const strangers = await count(`SELECT count(*) n FROM audit_log a JOIN users u ON u.id = a.actor_user_id WHERE a.organization_id = $1 AND a.action LIKE 'route_added' AND u.email <> $2`, [
+        orgId,
+        demo.members.find((m) => m.key === active().coordinator)!.email,
+      ]);
+      expect(strangers).toBe(0);
+    });
+
+    it('shows through the API: the coordinator reads all four, with the notice of the newer version; the rescuer reads three, one marked unavailable, and never the Draft (INV-05)', async () => {
+      const id = (await fixtures.query<{ id: string }>(`SELECT id FROM missions WHERE organization_id = $1 AND name = $2`, [orgId, active().name]))[0]!.id;
+      const coordinator = await mustLogin(app, demo.members.find((m) => m.key === 'coordinator-es')!.email, demo.demoPassword);
+      const staff = MissionRoutesStaff.parse(await (await fetch(`${app.baseUrl}/missions/${id}/routes`, { headers: withSession(coordinator, false) })).json()).items;
+      expect(staff.map((r) => r.name).sort()).toEqual(['Collado con borrador nuevo (ficticia)', 'Pradera a la Brecha (ficticia)', 'Senda del Circo (ficticia)', 'Variante de la Pradera (ficticia)']);
+      const circo = staff.find((r) => r.name.startsWith('Senda'))!;
+      expect(circo).toMatchObject({ pinned: { number: 2, status: 'validated' }, newerValidatedVersion: { number: 3 }, status: 'added' });
+      expect(staff.find((r) => r.name.startsWith('Variante'))).toMatchObject({ pinned: { number: 1, status: 'draft' }, newerValidatedVersion: null });
+      expect(staff.find((r) => r.name.startsWith('Collado'))).toMatchObject({ status: 'unavailable', pinned: { number: 1, status: 'validated' }, newerValidatedVersion: null });
+      expect(staff.find((r) => r.name.startsWith('Pradera'))).toMatchObject({ status: 'added', validationIsStale: false });
+
+      const rescuer = await mustLogin(app, demo.members.find((m) => m.role === 'rescuer')!.email, demo.demoPassword);
+      const mine = MissionRoutesRescuer.parse(await (await fetch(`${app.baseUrl}/my/missions/${id}/routes`, { headers: withSession(rescuer, false) })).json()).items;
+      expect(mine.map((r) => [r.name, r.versionNumber, r.status]).sort()).toEqual([
+        ['Collado con borrador nuevo (ficticia)', 1, 'unavailable'],
+        ['Pradera a la Brecha (ficticia)', 1, 'added'],
+        ['Senda del Circo (ficticia)', 2, 'added'],
+      ]);
+      // The rescuer reads the pinned version 2 of the route, not the validated version 3.
+      const geometry = await fetch(`${app.baseUrl}/my/missions/${id}/routes/${mine.find((r) => r.name.startsWith('Senda'))!.id}/geometry`, { headers: withSession(rescuer, false) });
+      expect(MissionRouteGeometry.parse(await geometry.json()).versionNumber).toBe(2);
+      const draft = staff.find((r) => r.name.startsWith('Variante'))!;
+      expect((await fetch(`${app.baseUrl}/my/missions/${id}/routes/${draft.id}/geometry`, { headers: withSession(rescuer, false) })).status).toBe(404);
+    });
+
+    it('a stack seeded before H4 gains the four on the next run, and does not repeat them', async () => {
+      const { owner } = inject('database');
+      // The same demo as before H4: missions and routes, none of the missions with routes in it. An audit row is append-only, so this is a second organization.
+      const old = {
+        ...demo,
+        organization: { ...demo.organization, name: 'Servicio de prueba anterior a H4' },
+        members: demo.members.map((m) => ({ ...m, email: `h3-${m.email}` })),
+        applicants: demo.applicants.map((a) => ({ ...a, email: `h3-${a.email}` })),
+        missions: demo.missions.map((m) => ({ ...m, name: `${m.name} (antes de H4)`, routes: [] })),
+        routes: demo.routes.map((r) => ({ ...r, name: `${r.name} (antes de H4)`, derivedFrom: r.derivedFrom && { ...r.derivedFrom, route: `${r.derivedFrom.route} (antes de H4)` } })),
+      };
+      const first = await seedDemo(owner, old, options);
+      expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6, missionRoutes: 0 });
+      expect(await count(`SELECT count(*) n FROM mission_routes WHERE organization_id = $1`, [first.organizationId])).toBe(0);
+
+      const withRoutes = {
+        ...old,
+        missions: old.missions.map((m, index) => ({
+          ...m,
+          routes: demo.missions[index]!.routes.map((r) => ({ ...r, route: `${r.route} (antes de H4)` })),
+        })),
+      };
+      const again = await seedDemo(owner, withRoutes, options);
+      expect(again).toEqual({ seeded: false, organizationId: first.organizationId, missions: 0, routes: 0, missionRoutes: 4 });
+      expect(await count(`SELECT count(*) n FROM mission_routes WHERE organization_id = $1`, [first.organizationId])).toBe(4);
+      expect(await count(`SELECT count(*) n FROM audit_log WHERE organization_id = $1 AND action IN ('route_added', 'route_marked_unavailable')`, [first.organizationId])).toBe(5);
+      expect((await seedDemo(owner, withRoutes, options)).missionRoutes).toBe(0);
+      expect(await count(`SELECT count(*) n FROM mission_routes WHERE organization_id = $1`, [first.organizationId])).toBe(4);
     });
   });
 });

@@ -1,6 +1,6 @@
 # OnWay — Documento 03: Modelo de dominio y flujos clave
 
-Versión: 0.7 (borrador) · Fecha: 2026-11-01 · Depende de: documentos 01 (v0.7) y 02 (v0.5)
+Versión: 0.8 (borrador) · Fecha: 2026-11-02 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
 
 Este documento traduce los requisitos y las vistas en un modelo conceptual: qué cosas existen en el sistema, cómo se relacionan, qué reglas deben cumplirse siempre y cómo fluyen los datos en los procesos clave. No fija tecnologías ni tablas: la arquitectura está en el documento 04 y el modelo de datos será el documento 05. Los IDs RF, RN, D y Q remiten al documento 01.
 
@@ -317,6 +317,9 @@ La **biblioteca con lista y mapa** (RF-512) usa la misma idea con un rectángulo
 4. Cuando se valida una versión más nueva de esa ruta, la misión lo detecta y lo indica (RF-518). **No se actualiza sola.**
 5. Si el coordinador actualiza, cambia la versión fijada y se registra en auditoría.
 6. Si una ruta se vuelve inviable, se marca *No disponible en esta misión* sin afectar a otras misiones.
+7. *Tal como se construyó (H4).* La **versión por defecto** es la última validada (si la ruta no tiene ninguna, la última, aunque sea un borrador). Una ruta **archivada** no se añade (`INVALID_STATE_TRANSITION`) y una ya presente da `ROUTE_ALREADY_IN_MISSION` (INV-13); el lote de hasta 20 es atómico. Cada cambio escribe una línea del historial de la misión en la misma transacción (`route_added`, `route_removed`, `route_version_changed`, `route_marked_unavailable`, `route_reactivated`, `route_updated`; las notas no se copian) (INV-16).
+8. Una ruta *No disponible* **no cuenta como validada** al activar la misión ni en la lista de preparación, aunque su versión fijada lo esté. El rescatista la sigue viendo, señalada (RF-508), pero no la descarga.
+9. Quitar una ruta de la misión no la borra (RN-14): vuelve a poder archivarse si ya no está en ninguna misión sin cerrar (INV-07).
 
 ### 8.6 Voluntariado con decisión en bloque
 
@@ -576,6 +579,9 @@ La arquitectura y el stack están en el documento 04, el modelo de datos en el 0
 Consultadas el 29 de octubre de 2026. Las condiciones y precios de terceros pueden cambiar. Hay que confirmarlas directamente con cada proveedor antes de publicar la demo.
 
 ## 19. Registro de cambios
+
+**0.8 (2026-11-02)**
+- H4: §8.5 con la versión por defecto, el rechazo de rutas archivadas o repetidas, el historial de cada cambio y que una ruta *No disponible* no cuenta como validada. Sin cambios en el modelo ni en las invariantes: INV-03, 05, 06, 07 y 13 tienen su prueba contra la base (también las políticas del rescatista con SQL directo).
 
 **0.7 (2026-11-01)**
 - H3: §8.2 con los estados del trabajo tal como se construyeron y los motivos del fallo. Sin cambios en el modelo ni en las invariantes (INV-14 tiene su prueba).

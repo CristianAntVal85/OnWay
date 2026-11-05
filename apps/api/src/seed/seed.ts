@@ -18,6 +18,8 @@ export interface SeedResult {
   missions: number;
   /** Demo routes created in this run: 0 once they exist. */
   routes: number;
+  /** Routes put in the demo missions in this run (H4-T7): 0 once they are there. */
+  missionRoutes: number;
 }
 
 export interface SeedOptions {
@@ -32,6 +34,7 @@ export interface SeedOptions {
 const SEED_LOCK = 7_301_001;
 const MISSIONS_LOCK = 7_301_002;
 const ROUTES_LOCK = 7_301_003;
+const MISSION_ROUTES_LOCK = 7_301_004;
 
 async function findOrganization(client: pg.Pool | pg.PoolClient, demo: Demo): Promise<string | undefined> {
   const { rows } = await client.query<{ id: string }>(`SELECT id FROM organizations WHERE name = $1 AND country = $2`, [demo.organization.name, demo.organization.country]);
@@ -50,7 +53,8 @@ export async function seedDemo(owner: DbConnection, demo: Demo, options: SeedOpt
     const organization = await seedOrganization(pool, demo);
     const missions = await seedMissions(pool, organization.organizationId, demo, options);
     const routes = await seedRoutes(pool, organization.organizationId, demo, options);
-    return { ...organization, missions, routes };
+    const missionRoutes = await seedMissionRoutes(pool, organization.organizationId, demo, options);
+    return { ...organization, missions, routes, missionRoutes };
   } finally {
     await pool.end();
   }
@@ -353,6 +357,79 @@ async function seedRoutes(pool: pg.Pool, orgId: string, demo: Demo, options: See
       throw error;
     } finally {
       client.release();
+    }
+  }
+  return created;
+}
+
+/**
+ * The routes of the demo missions (H4-T7, P1): what `addMissionRoutes` and `updateMissionRoute` would have left, as `onway_owner`, with the same
+ * lines of the history (`route_added`, and `route_marked_unavailable` for an unavailable one, INV-16). The pinned version is the last validated one
+ * unless the file says otherwise (D-H4-01). Idempotent per mission and route (INV-13). A mission or a route that is not there yet (no elevation source
+ * covered it, and the seed already warned) is left for a later run, without a second warning.
+ */
+async function seedMissionRoutes(pool: pg.Pool, orgId: string, demo: Demo, _options: SeedOptions): Promise<number> {
+  let created = 0;
+  for (const mission of demo.missions) {
+    for (const placed of mission.routes) {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query('SELECT pg_advisory_xact_lock($1)', [MISSION_ROUTES_LOCK]);
+        const found = await client.query<{ mission_id: string; route_id: string; name: string }>(
+          `SELECT m.id AS mission_id, r.id AS route_id, r.name
+             FROM missions m, routes r
+            WHERE m.organization_id = $1 AND lower(m.name) = lower($2) AND r.organization_id = $1 AND lower(r.name) = lower($3)`,
+          [orgId, mission.name, placed.route],
+        );
+        const target = found.rows[0];
+        if (!target) {
+          await client.query('ROLLBACK');
+          continue;
+        }
+        const present = await client.query(`SELECT 1 FROM mission_routes WHERE mission_id = $1 AND route_id = $2`, [target.mission_id, target.route_id]);
+        if (present.rowCount) {
+          await client.query('ROLLBACK');
+          continue;
+        }
+        const version = await client.query<{ id: string; version_number: number }>(
+          placed.version === undefined
+            ? `SELECT id, version_number FROM route_versions WHERE route_id = $1
+                ORDER BY (status = 'validated') DESC, version_number DESC LIMIT 1`
+            : `SELECT id, version_number FROM route_versions WHERE route_id = $1 AND version_number = $2`,
+          placed.version === undefined ? [target.route_id] : [target.route_id, placed.version],
+        );
+        const pinned = version.rows[0];
+        if (!pinned) {
+          await client.query('ROLLBACK');
+          continue;
+        }
+        const coordinator = demo.members.find((m) => m.key === mission.coordinator)!;
+        const userId = (await client.query<{ id: string }>(`SELECT id FROM users WHERE email = $1`, [coordinator.email])).rows[0]!.id;
+
+        await client.query(
+          `INSERT INTO mission_routes (organization_id, mission_id, route_id, pinned_version_id, status, added_by, added_at)
+           VALUES ($1, $2, $3, $4, $5, $6, clock_timestamp())`,
+          [orgId, target.mission_id, target.route_id, pinned.id, placed.unavailable ? 'unavailable' : 'added', userId],
+        );
+        const audit = (action: string, detail: Record<string, unknown>) =>
+          client.query(`INSERT INTO audit_log (organization_id, entity_type, entity_id, action, actor_user_id, detail) VALUES ($1, 'mission', $2, $3, $4, $5)`, [
+            orgId,
+            target.mission_id,
+            action,
+            userId,
+            JSON.stringify(detail),
+          ]);
+        await audit('route_added', { name: target.name, routeId: target.route_id, versionNumber: pinned.version_number, source: 'library' });
+        if (placed.unavailable) await audit('route_marked_unavailable', { name: target.name, routeId: target.route_id });
+        await client.query('COMMIT');
+        created += 1;
+      } catch (error) {
+        await client.query('ROLLBACK').catch(() => undefined);
+        throw error;
+      } finally {
+        client.release();
+      }
     }
   }
   return created;

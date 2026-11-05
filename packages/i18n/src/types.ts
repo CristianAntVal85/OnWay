@@ -104,6 +104,31 @@ export interface Messages {
     coordinatorNeutral: string;
     participation: { label: string; none: string; status: Record<'pending' | 'accepted' | 'not_selected' | 'withdrawn' | 'removed', string> };
     detail: { back: string; readOnly: string; routesTitle: string; noRoutes: string; environmentTitle: string; pointsTitle: string };
+    routes: {
+      intro: string;
+      listLabel: string;
+      version: string;
+      stale: string;
+      staleNotice: string;
+      unavailable: string;
+      unavailableNotice: string;
+      origin: string;
+      team: string;
+      show: string;
+      showFor: string;
+      profile: string;
+      download: string;
+      downloadFor: string;
+      downloadAll: string;
+      formats: { gpx: string; kml: string };
+      downloadAllTitle: string;
+      closedNotice: string;
+      preparing: string;
+      downloaded: string;
+      fileName: string;
+      fileNameAll: string;
+    };
+    share: { title: string; help: string; coordinates: string; copy: string; copied: string; copyFailed: string; open: string };
   };
   account: {
     title: string;
@@ -310,6 +335,7 @@ export interface Messages {
       removeYes: string;
       removing: string;
       removeNo: string;
+      inUse: string;
       added: string;
       updated: string;
       removed: string;
@@ -458,6 +484,7 @@ export interface Messages {
     cancel: string;
     changeFile: string;
     mapLabel: string;
+    mission: { notice: string; origin: string; noOrigin: string; closed: string; back: string; added: string; loading: string };
   };
   routeEditor: {
     drawTitle: string;
@@ -505,6 +532,69 @@ export interface Messages {
     part: string;
     none: string;
     unknownNote: string;
+  };
+  missionRoutes: {
+    title: string;
+    intro: string;
+    empty: string;
+    emptyHelp: string;
+    openLibrary: string;
+    tableCaption: string;
+    selectHelp: string;
+    select: string;
+    versionValue: string;
+    noOrigin: string;
+    noTeam: string;
+    notValidated: string;
+    teamValue: string;
+    columns: {
+      route: string;
+      version: string;
+      distance: string;
+      ascent: string;
+      descent: string;
+      minElevation: string;
+      maxElevation: string;
+      maxSlope: string;
+      roadMix: string;
+      validatedOn: string;
+      origin: string;
+      team: string;
+    };
+    badges: { unavailable: string; stale: string };
+    notices: { draft: string; stale: string; newer: string };
+    update: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    unavailable: { mark: string; markFor: string; marked: string; reactivate: string; reactivateFor: string; reactivated: string };
+    remove: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    export: { title: string; gpx: string; kml: string; help: string; busy: string; nothing: string; fileName: string };
+    profiles: { title: string; forRoute: string };
+    add: {
+      open: string;
+      title: string;
+      description: string;
+      libraryTitle: string;
+      versionFilter: string;
+      listLabel: string;
+      empty: string;
+      inMission: string;
+      limit: string;
+      selected: string;
+      pick: string;
+      latest: string;
+      previous: string;
+      next: string;
+      page: string;
+      continue: string;
+      back: string;
+      cancel: string;
+      submit: string;
+      submitting: string;
+      added: string;
+      details: { title: string; help: string; version: string; versionOption: string; origin: string; noOrigin: string; note: string; draftWarning: string; loadingVersions: string };
+      errors: { alreadyIn: string; alreadyInUnknown: string; archived: string; notFound: string };
+      other: { title: string; generate: string; generateHint: string; generateNoOrigin: string; import: string; importHint: string };
+    };
+    validate: { action: string; actionFor: string; done: string };
   };
   generate: {
     title: string;

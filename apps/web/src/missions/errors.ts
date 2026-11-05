@@ -11,6 +11,8 @@ export function writeFailureMessage(t: TFunction, error: unknown): string {
     if (error.code === 'MISSION_CLOSED') return t('missionDetail.closedMeanwhile');
     if (error.code === 'STALE_RESOURCE') return t('missionDetail.edit.stale');
     if (error.code === 'OUTSIDE_COVERAGE') return t('createMission.outsideCoverage');
+    const issues = error.code === 'VALIDATION_FAILED' ? error.details?.['issues'] : undefined;
+    if (Array.isArray(issues) && issues.some((issue) => (issue as { code?: unknown } | null)?.code === 'point_in_use')) return t('missionDetail.points.inUse');
   }
   return errorMessage(t, error);
 }

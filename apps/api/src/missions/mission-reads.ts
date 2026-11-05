@@ -25,6 +25,8 @@ const MISSION_COLUMNS = sql.raw(`
   (SELECT count(*)::int FROM mission_routes mr WHERE mr.mission_id = m.id) AS routes_total,
   (SELECT count(*)::int FROM mission_routes mr JOIN route_versions v ON v.id = mr.pinned_version_id
     WHERE mr.mission_id = m.id AND v.status = 'validated') AS routes_validated,
+  (SELECT count(*)::int FROM mission_routes mr JOIN route_versions v ON v.id = mr.pinned_version_id
+    WHERE mr.mission_id = m.id AND v.status = 'validated' AND mr.status = 'added') AS routes_usable,
   (SELECT count(*)::int FROM participations pa WHERE pa.mission_id = m.id AND pa.status = 'accepted') AS accepted,
   (SELECT count(*)::int FROM participations pa WHERE pa.mission_id = m.id AND pa.status = 'pending') AS pending`);
 
@@ -48,6 +50,7 @@ interface MissionRow {
   origins: { id: string; name: string }[];
   routes_total: number;
   routes_validated: number;
+  routes_usable: number;
   accepted: number;
   pending: number;
 }
@@ -141,7 +144,7 @@ export async function missionDetail(tx: Tx, viewer: Viewer, missionId: string): 
     closedAt: row.closed_at,
     points: points.map((p) => ({ id: p.id, kind: p.kind, name: p.name, note: p.note, lat: p.lat, lon: p.lon, elevationM: p.elevation_m, position: p.position })),
     teams,
-    readiness: { targetDefined: true, hasOrigins: row.origins.length > 0, hasParticipants: row.accepted > 0, hasValidatedRoute: row.routes_validated > 0 },
+    readiness: { targetDefined: true, hasOrigins: row.origins.length > 0, hasParticipants: row.accepted > 0, hasValidatedRoute: row.routes_usable > 0 },
     routesWithNewerValidatedVersion: newer?.n ?? 0,
     actions: actionsFor(viewer.role, row.status),
   };
