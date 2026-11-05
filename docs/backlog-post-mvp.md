@@ -1,6 +1,6 @@
 # OnWay — Backlog tras el MVP
 
-Cosas que se han decidido o detectado y que **no** se hacen ahora. Al cerrar el MVP (H4) se convierten en *issues* de GitHub, una por entrada, y se van cogiendo en orden. Última actualización: 2026-11-02.
+Cosas que se han decidido o detectado y que **no** se hacen ahora. Al cerrar el MVP (H4) se convierten en *issues* de GitHub, una por entrada, y se van cogiendo en orden. Última actualización: 2026-11-05.
 
 ## Qué entra aquí y qué no
 
@@ -12,6 +12,8 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 |---|---|---|
 | B-01 | El rescatista ve nombre y localidad de todos los equipos | H5 (equipos) |
 | B-02 | Alias de coordinadores y rescatistas (`criantval ALC`) | Decidir al planificar H5; construir después del MVP |
+| B-03 | `forgotPassword` permite agotar los enlaces de recuperación de otra cuenta | Antes del despliegue (H7) |
+| B-04 | `ResetPasswordRequest.token` sin longitud máxima propia | Antes del despliegue (H7) |
 
 ---
 
@@ -38,8 +40,24 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 - **Cuándo:** conviene **decidir el alcance al planificar H5**, porque H5 construye los perfiles y la lista de voluntarios, que son los sitios donde más se vería el alias. Si se decide que va después, añadirlo más tarde es aditivo (una columna y un campo del contrato), así que no genera deuda siempre que las listas de H5 no asuman que el nombre completo es lo único que se muestra.
 - **Contexto:** `docs/01` Q-36, D-22, D-24; `docs/estado.md` pendiente (a).
 
+## B-03 · Agotar los enlaces de recuperación de otra cuenta
+
+- **Qué es (hallazgo del `reviewer` de `H5-acceso`, 2026-11-05):** la función SQL de la migración 0009 limita a 3 enlaces por hora y cuenta. Una tercera persona que conozca el correo de alguien puede pedirlos sin parar y dejarle sin enlaces durante esa hora. Hoy lo frena el tope de 5 `forgotPassword` por hora y por IP del `api`, pero con varias IP el tope por cuenta se agota igual.
+- **Por qué se aplaza:** no expone datos ni permite entrar en la cuenta; es una molestia (denegación de servicio a una persona) y el diseño de la función es el de los docs 05 y 06. Con datos ficticios y sin usuarios reales no hay a quién afectar todavía.
+- **Cómo se resolvería:** que los intentos que no llegan a enviar nada no cuenten contra el tope, o que el tope por cuenta cuente solo los enlaces realmente usados o enviados a una dirección distinta; migración nueva (0013 o posterior) y prueba contra base real. Revisar junto con el límite persistente por IP, que hoy es en memoria.
+- **Cuándo:** antes del despliegue (H7), cuando el límite deje de ser en memoria y el correo sea real.
+- **Contexto:** `db/migrations/0009_*.sql`, `apps/api/src/identity/auth.service.ts`, `specs/H5-acceso/plan.md`.
+
+## B-04 · `ResetPasswordRequest.token` sin longitud máxima propia
+
+- **Qué es (hallazgo del `reviewer` de `H5-acceso`, 2026-11-05):** se quitó el límite de longitud del token del contrato para que uno mal formado dé el mismo `INVALID_RESET_TOKEN` que uno inexistente (no distinguir casos). El único tope es el del cuerpo de la petición.
+- **Qué falta:** confirmar que el límite del cuerpo de Express (y el de Caddy) actúa de tope y lo bastante bajo, o fijar un tope generoso (p. ej. 1024 caracteres) que dé igualmente `INVALID_RESET_TOKEN` en lugar de `VALIDATION_FAILED`. Con prueba.
+- **Por qué se aplaza:** el endpoint está protegido por el límite por IP y hoy no hay exposición real.
+- **Cuándo:** antes del despliegue (H7).
+- **Contexto:** `packages/contracts/src/auth.ts`, docs 06 y 07 (desviación v1.7).
+
 ---
 
 ## Otros pendientes ya anotados en `docs/estado.md`
 
-No se han movido aquí para no duplicarlos. Al cerrar el MVP se pasan a *issues*: (a) `coordinatorName` nulo para el rescatista (ligado a B-02), (c) límite por usuario de `getEnvironment` (R-09), (e) R-06 contraste con AEMET, (f) auditoría de contraste y de lector de pantalla (H7), (g) línea clara en el borde de las ortofotos francesas, (j) mover `distanceToSegment`, `nearestSegment` y `simplifyVertices` a `packages/geo`, (k) operación de «desarchivar» una ruta, y el código de error propio al borrar un origen del que sale una ruta.
+No se han movido aquí para no duplicarlos. Al cerrar el MVP se pasan a *issues*: (a) `coordinatorName` nulo para el rescatista (ligado a B-02), (c) límite por usuario de `getEnvironment` (R-09), (e) R-06 contraste con AEMET, (f) auditoría de contraste y de lector de pantalla (H7), (g) línea clara en el borde de las ortofotos francesas, (j) mover `distanceToSegment`, `nearestSegment` y `simplifyVertices` a `packages/geo`, (k) operación de «desarchivar» una ruta. (Resuelto en el arreglo de H4: borrar un origen del que sale una ruta responde 400 `VALIDATION_FAILED` con `point_in_use`.)
