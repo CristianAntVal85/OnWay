@@ -89,3 +89,28 @@ Medidas con `resize_page` + `evaluate_script`; cada una se anota «después» en
 - T7 no debería tocar la maquetación de escritorio (ya llena el contenedor); su trabajo real son la columna (hipótesis b y c) y la prueba de los umbrales de T9. Si el usuario no quiere cambiar la columna, T7 se reduce a la nota de (a) (ya prevista en `tasks.md`).
 - `!important` parte de 0: T3 exige que siga en 0.
 - El `docker compose -p onway images` falla en la pila del usuario por una imagen que ya no existe (probablemente de un servicio de un solo uso); no afecta a nada.
+
+## 8. T3: recorrido de todas las vistas con los tokens (2026-11-06)
+
+Pila `onway-e2e`, Chrome DevTools en contextos aislados (coordinador `t3-dark`, administrador `t3-admin`). Cada vista en oscuro (el tema por defecto) y en claro (fijando `data-theme='light'` a mano en `<html>`, como pide T3), a 1280 y 375 px. Además de mirar las capturas, un recorrido por script calcula la razón de contraste de **todo el texto visible** contra el fondo efectivo (ancestros con transparencia compuestos) en los dos temas, y exige 4,5:1: **sin ningún hallazgo** en Inicio, detalle de misión (con tabla de rutas, lista de preparación, puntos e historial), Rutas, detalle de ruta (perfil SVG, composición por tipo de vía, versiones), Generar rutas, Crear misión, Cuenta y Administración (solicitudes, selección, código de invitación).
+
+| Vista | 1280 oscuro | 1280 claro | 375 oscuro | 375 claro |
+|---|---|---|---|---|
+| Acceso (login) | visto | no visto en T3 (T2: 375 claro) | (T2) | (T2) |
+| Inicio | visto | recorrido por script | recorrido por script | recorrido por script |
+| Misiones (lista) | visto | recorrido por script | — | — |
+| Detalle de misión | visto | visto | recorrido por script | recorrido por script |
+| Rutas (biblioteca) | visto | recorrido por script | — | — |
+| Detalle de ruta con perfil | visto | visto | — | — |
+| Generar rutas | recorrido por script | recorrido por script | visto | recorrido por script |
+| Crear misión | — | — | visto | visto |
+| Administración (con fila seleccionada y código) | recorrido por script | recorrido por script | visto | recorrido por script |
+| Diálogo «Aprobar solicitudes» | — | — | visto | visto |
+
+Sin elementos con el color antiguo ni texto ilegible. Lo que cambió respecto al diseño de T2 al pasar la hoja a tokens:
+- Los **bordes de contenedor y control** que eran «tinta» (`--rock`) pasan a `--border-strong` (igual que la tinta en claro, gris 3:1 en oscuro) y los separadores (`--line`) a `--border`: el claro queda como estaba y el oscuro gana jerarquía.
+- **Insignias y estados:** borde del estado (`--success`, `--accent-text`) sobre su fondo suave y el rótulo en `--text` (antes un verde o rojo oscuro propio en claro). Las franjas de las tarjetas de ruta usan los tokens de estado del tema; las **leyendas del mapa** usan los colores fijos de las rutas (`--route-*`, los mismos que `TONE_COLORS`) con el borde blanco que lleva la línea en el mapa (`outline`).
+- **Controles inactivos** (`aria-disabled`): sin `opacity: 0,65`, que en oscuro dejaba el borde por debajo de 3:1; ahora fondo `--surface`, rótulo `--text-muted` y borde `--border-strong` (4,5:1 y 3:1 contados en `theme-contrast.test.ts`).
+- Marcadores, manijas de vértice y marca de sendero con tokens **fijos** (`--mark-*`, `--map-origin`, `--map-rendezvous`); perfil de altitud con `--success`, `--border` y `--text-muted`.
+- `--font-mono` ya se usa: código de invitación y coordenadas compartidas.
+- Tamaños (gzip): CSS principal 8 415 B (T2: 8 426), JS principal 262 855 B (T2: 262 854).

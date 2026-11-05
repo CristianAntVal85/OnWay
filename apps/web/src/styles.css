@@ -8,19 +8,6 @@
 */
 
 :root {
-  /* Alias de los nombres antiguos hacia los tokens semánticos de theme/tokens.css. Se retiran en T3 (UI-rediseno). */
-  --rock: var(--text); /* tinta */
-  --slate: var(--header-hover);
-  --stone: var(--text-muted);
-  --snow: var(--bg);
-  --paper: var(--surface);
-  --line: var(--border);
-  --blaze: var(--accent);
-  --blaze-deep: var(--accent-text);
-  --signal: var(--attention);
-  --signal-soft: var(--warn-soft);
-  --alarm-soft: var(--danger-soft);
-
   --font-sign: 'Bahnschrift', 'DIN Alternate', 'DIN 1451 Std', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
@@ -188,8 +175,12 @@ a {
   width: 100%;
 }
 
+/* Inactivo: sin opacidad (en oscuro dejaba el borde por debajo de 3:1); el rótulo y el borde siguen legibles */
 .button[aria-disabled='true'] {
-  opacity: 0.65;
+  border-color: var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  text-decoration: none;
   cursor: progress;
 }
 
@@ -229,9 +220,9 @@ a {
 .form-alert:not(:empty) {
   margin-bottom: 1.25rem;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--blaze);
+  border: 2px solid var(--accent-text);
   border-inline-start-width: 8px;
-  background: var(--alarm-soft);
+  background: var(--danger-soft);
   font-weight: 700;
 }
 
@@ -242,16 +233,16 @@ a {
 .notice {
   margin-bottom: 1.25rem;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-inline-start-width: 8px;
-  border-inline-start-color: var(--signal);
-  background: var(--signal-soft);
+  border-inline-start-color: var(--attention);
+  background: var(--warn-soft);
   font-weight: 700;
 }
 
 .demo-notice {
   margin-top: 1.5rem;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -319,9 +310,9 @@ a {
   max-width: var(--measure);
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
-  border: 2px solid var(--line);
+  border: 2px solid var(--border);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .state h2 {
@@ -333,9 +324,9 @@ a {
 }
 
 .state-error {
-  border-color: var(--blaze);
+  border-color: var(--accent-text);
   border-inline-start-width: 8px;
-  background: var(--alarm-soft);
+  background: var(--danger-soft);
 }
 
 .state-error .button {
@@ -358,8 +349,8 @@ a {
   width: 1.5rem;
   height: 1.5rem;
   flex: none;
-  border: 3px solid var(--line);
-  border-top-color: var(--blaze);
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
 }
@@ -373,8 +364,8 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation: none;
-    border-top-color: var(--line);
-    border-bottom-color: var(--blaze);
+    border-top-color: var(--border);
+    border-bottom-color: var(--accent);
   }
 }
 
@@ -384,9 +375,9 @@ a {
   max-width: var(--measure);
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .facts {
@@ -396,11 +387,11 @@ a {
 .facts > div + div {
   margin-top: 0.875rem;
   padding-top: 0.875rem;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
 }
 
 .facts dt {
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -718,7 +709,7 @@ a.button-link {
 
 .field-help {
   margin: 0.375rem 0 0;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -772,9 +763,9 @@ a.button-link {
   min-inline-size: 0;
   margin: 0 0 1.25rem;
   padding: 0.75rem 1rem 1rem;
-  border: 2px solid var(--line);
+  border: 2px solid var(--border);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .point-group legend {
@@ -840,7 +831,7 @@ a.button-link {
   gap: 0.75rem;
   min-height: var(--tap);
   padding: 0.5rem 0.25rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
 }
 
@@ -857,14 +848,14 @@ a.button-link {
 }
 
 .candidate-country {
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
 .point-summary {
   margin-top: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
 }
 
 .point-summary p {
@@ -879,7 +870,7 @@ a.button-link {
 .point-summary-empty,
 .point-summary-elevation,
 .point-summary-label {
-  color: var(--stone);
+  color: var(--text-muted);
 }
 
 .state-inline {
@@ -898,16 +889,16 @@ html:has(.action-bar) {
   z-index: 3;
   margin-inline: calc(var(--gutter) * -1);
   padding: 0.75rem var(--gutter);
-  border-top: 2px solid var(--rock);
-  background: var(--paper);
+  border-top: 2px solid var(--border-strong);
+  background: var(--surface-raised);
 }
 
 .action-bar-alert:not(:empty) {
   margin-bottom: 0.5rem;
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--blaze);
+  border: 2px solid var(--accent-text);
   border-inline-start-width: 8px;
-  background: var(--alarm-soft);
+  background: var(--danger-soft);
   font-weight: 700;
 }
 
@@ -918,7 +909,7 @@ html:has(.action-bar) {
 
 .action-bar-hint {
   margin-bottom: 0.5rem;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -971,8 +962,8 @@ html:has(.action-bar) {
 .map-view {
   display: flex;
   flex-direction: column;
-  border: 2px solid var(--rock);
-  background: var(--paper);
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
 }
 
 .map-view-loading {
@@ -993,12 +984,12 @@ html:has(.action-bar) {
   align-items: center;
   gap: 0.5rem;
   padding: 0.375rem 0.5rem;
-  border-bottom: 2px solid var(--rock);
+  border-bottom: 2px solid var(--border-strong);
 }
 
 .map-layers {
   display: inline-flex;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
 }
 
@@ -1006,19 +997,19 @@ html:has(.action-bar) {
   min-height: 2.75rem;
   padding: 0 0.875rem;
   border: 0;
-  background: var(--paper);
-  color: var(--rock);
+  background: var(--surface);
+  color: var(--text);
   font: 700 1rem/1 var(--font-sign);
   cursor: pointer;
 }
 
 .map-layer-button + .map-layer-button {
-  border-inline-start: 2px solid var(--rock);
+  border-inline-start: 2px solid var(--border-strong);
 }
 
 .map-layer-button[aria-pressed='true'] {
-  background: var(--rock);
-  color: var(--paper);
+  background: var(--text);
+  color: var(--bg);
 }
 
 .map-picking {
@@ -1037,8 +1028,8 @@ html:has(.action-bar) {
 .map-notice {
   margin: 0;
   padding: 0.375rem 0.5rem;
-  border-top: 2px solid var(--rock);
-  background: var(--signal-soft);
+  border-top: 2px solid var(--border-strong);
+  background: var(--warn-soft);
   font-size: 0.95rem;
   font-weight: 700;
 }
@@ -1048,7 +1039,7 @@ html:has(.action-bar) {
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.5rem;
-  border-top: 2px solid var(--rock);
+  border-top: 2px solid var(--border-strong);
   font-size: 0.9rem;
 }
 
@@ -1069,23 +1060,23 @@ html:has(.action-bar) {
 }
 
 .map-readout-hint {
-  color: var(--stone);
+  color: var(--text-muted);
 }
 
 .map-readout-format select {
   min-height: 2.25rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
-  color: var(--rock);
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
 }
 
 .map-attribution {
   margin: 0;
   padding: 0.25rem 0.5rem;
-  border-top: 1px solid var(--line);
-  color: var(--stone);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
   font-size: 0.75rem;
   line-height: 1.3;
   list-style: none;
@@ -1102,23 +1093,23 @@ html:has(.action-bar) {
 .map-marker {
   width: 1.5rem;
   height: 1.5rem;
-  border: 3px solid var(--paper);
+  border: 3px solid var(--mark-white);
   border-radius: 50% 50% 50% 0;
-  background: var(--blaze);
-  box-shadow: 0 0 0 2px var(--rock);
+  background: var(--mark-red);
+  box-shadow: 0 0 0 2px var(--mark-ink);
   transform: rotate(-45deg);
 }
 
 .map-marker[data-kind='origin'] {
-  background: #1d6fb8;
+  background: var(--map-origin);
 }
 
 .map-marker[data-kind='waypoint'] {
-  background: var(--signal);
+  background: var(--attention);
 }
 
 .map-marker[data-kind='rendezvous'] {
-  background: #2f8f4e;
+  background: var(--map-rendezvous);
 }
 
 .map-view[data-picking] .maplibregl-canvas {
@@ -1143,7 +1134,7 @@ html:has(.action-bar) {
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 2px solid var(--rock);
+  border-bottom: 2px solid var(--border-strong);
 }
 
 .tab {
@@ -1152,15 +1143,15 @@ html:has(.action-bar) {
   border: 2px solid transparent;
   border-bottom: 0;
   background: none;
-  color: var(--rock);
+  color: var(--text);
   font: 700 1.0625rem/1 var(--font-sign);
   cursor: pointer;
 }
 
 .tab[aria-selected='true'] {
-  border-color: var(--rock);
-  background: var(--rock);
-  color: var(--paper);
+  border-color: var(--border-strong);
+  background: var(--text);
+  color: var(--bg);
 }
 
 .tab:focus-visible {
@@ -1179,7 +1170,7 @@ html:has(.action-bar) {
 
 .result-count {
   margin: 0 0 0.5rem;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -1193,9 +1184,9 @@ html:has(.action-bar) {
 
 .mission-card {
   padding: 0.875rem 1rem 1rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .mission-card h2 {
@@ -1206,7 +1197,7 @@ html:has(.action-bar) {
 }
 
 .mission-card h2 a {
-  color: var(--rock);
+  color: var(--text);
 }
 
 .mission-card .facts-grid {
@@ -1216,27 +1207,26 @@ html:has(.action-bar) {
 .status-badge {
   display: inline-block;
   padding: 0.125rem 0.625rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 999px;
-  background: var(--paper);
+  background: var(--surface);
   font-size: 0.9rem;
   font-weight: 700;
   vertical-align: middle;
 }
 
 .status-badge[data-status='active'] {
-  border-color: #1f6b3a;
-  background: #e3f3e8;
-  color: #124a27;
+  border-color: var(--success);
+  background: var(--success-soft);
 }
 
 .status-badge[data-status='planning'] {
-  background: var(--signal-soft);
+  background: var(--warn-soft);
 }
 
 .status-badge[data-status='closed'] {
-  background: var(--snow);
-  color: var(--stone);
+  background: var(--bg);
+  color: var(--text-muted);
 }
 
 .facts-grid {
@@ -1247,7 +1237,7 @@ html:has(.action-bar) {
 }
 
 .facts-grid dt {
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -1259,7 +1249,7 @@ html:has(.action-bar) {
 
 .fact-sub {
   display: block;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.9rem;
   font-weight: 400;
 }
@@ -1343,9 +1333,9 @@ html:has(.action-bar) {
 .saved-message:not(:empty) {
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
-  border: 2px solid #1f6b3a;
+  border: 2px solid var(--success);
   border-inline-start-width: 8px;
-  background: #e3f3e8;
+  background: var(--success-soft);
   font-weight: 700;
 }
 
@@ -1377,13 +1367,13 @@ html:has(.action-bar) {
   align-items: baseline;
   gap: 0.25rem 0.75rem;
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--line);
+  border: 2px solid var(--border);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .readiness-item[data-done='true'] {
-  border-color: #1f6b3a;
+  border-color: var(--success);
 }
 
 .readiness-state {
@@ -1394,11 +1384,11 @@ html:has(.action-bar) {
 }
 
 .readiness-item[data-done='true'] .readiness-state {
-  color: #124a27;
+  color: var(--success);
 }
 
 .readiness-item[data-done='false'] .readiness-state {
-  color: var(--blaze-deep);
+  color: var(--accent-text);
 }
 
 .readiness-item .field-help {
@@ -1434,22 +1424,22 @@ html:has(.action-bar) {
   justify-content: space-between;
   gap: 0.5rem 1rem;
   padding: 0.625rem 0.75rem;
-  border: 2px solid var(--line);
+  border: 2px solid var(--border);
   border-inline-start-width: 8px;
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .point-row[data-kind='origin'] {
-  border-inline-start-color: #1d6fb8;
+  border-inline-start-color: var(--map-origin);
 }
 
 .point-row[data-kind='waypoint'] {
-  border-inline-start-color: var(--signal);
+  border-inline-start-color: var(--attention);
 }
 
 .point-row[data-kind='rendezvous'] {
-  border-inline-start-color: #2f8f4e;
+  border-inline-start-color: var(--map-rendezvous);
 }
 
 .point-row-editing {
@@ -1473,7 +1463,7 @@ html:has(.action-bar) {
 
 .point-row-note,
 .point-row-position {
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
   overflow-wrap: anywhere;
 }
@@ -1545,7 +1535,7 @@ html:has(.action-bar) {
   align-items: flex-end;
   justify-content: center;
   padding: 0;
-  background: rgb(23 38 43 / 72%);
+  background: var(--backdrop);
   overflow-y: auto;
 }
 
@@ -1555,8 +1545,8 @@ html:has(.action-bar) {
   max-height: 100dvh;
   overflow-y: auto;
   padding: 1.25rem var(--gutter);
-  border: 3px solid var(--rock);
-  background: var(--paper);
+  border: 3px solid var(--border-strong);
+  background: var(--surface-raised);
 }
 
 .dialog h2 {
@@ -1592,7 +1582,7 @@ body.dialog-open {
 
 .history-item {
   padding: 0.625rem 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
 }
 
 .history-item p {
@@ -1609,7 +1599,7 @@ body.dialog-open {
 }
 
 .history-meta {
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -1645,7 +1635,7 @@ h3 {
 h4 {
   margin-top: 1rem;
   font-size: 1rem;
-  color: var(--stone);
+  color: var(--text-muted);
 }
 
 .home-layout {
@@ -1687,9 +1677,9 @@ h4 {
 .env-card {
   min-width: 0;
   padding: 0.875rem 1rem 1rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .env-card[data-status='unavailable'] {
@@ -1721,7 +1711,7 @@ h4 {
   grid-template-columns: 7rem 1fr;
   gap: 0 0.75rem;
   padding: 0.375rem 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
 }
 
 .env-day-range {
@@ -1731,7 +1721,7 @@ h4 {
 
 .env-day-detail {
   grid-column: 1 / -1;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -1755,14 +1745,14 @@ h4 {
 
 .env-hourly caption {
   padding: 0.25rem 0;
-  color: var(--stone);
+  color: var(--text-muted);
   text-align: start;
 }
 
 .env-hourly th,
 .env-hourly td {
   padding: 0.375rem 0.5rem 0.375rem 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
   text-align: start;
   white-space: nowrap;
 }
@@ -1779,7 +1769,7 @@ h4 {
 
 .env-attribution {
   margin: 0.75rem 0 0;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -1800,12 +1790,12 @@ h4 {
 }
 
 .mission-card h3 a {
-  color: var(--rock);
+  color: var(--text);
 }
 
 .mission-card[data-picked] {
-  border-color: var(--blaze);
-  box-shadow: 0 0 0 2px var(--blaze);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .mission-card-line {
@@ -1821,8 +1811,8 @@ h4 {
 }
 
 .mission-pick[aria-pressed='true'] {
-  background: var(--rock);
-  color: var(--paper);
+  background: var(--text);
+  color: var(--bg);
 }
 
 .home-mission-list {
@@ -1888,7 +1878,7 @@ h4 {
   inline-size: 1.5rem;
   block-size: 1.5rem;
   flex: none;
-  accent-color: var(--rock);
+  accent-color: var(--text);
 }
 
 .library {
@@ -1931,15 +1921,15 @@ h4 {
 
 .zone-note {
   margin: 0.5rem 0;
-  color: var(--stone);
+  color: var(--text-muted);
 }
 
 .library-filter-details {
   margin: 0 0 1rem;
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .library-filter-details summary {
@@ -1963,7 +1953,7 @@ h4 {
 
 .selection-hint {
   margin: 0 0 0.5rem;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -1971,9 +1961,9 @@ h4 {
 .selection-report {
   margin-bottom: 0.75rem;
   padding: 0.625rem 0.75rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--signal-soft);
+  background: var(--warn-soft);
 }
 
 .selection-count {
@@ -2008,36 +1998,36 @@ h4 {
 
 .route-card {
   padding: 0.75rem 1rem 1rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-inline-start-width: 8px;
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .route-card[data-highlighted] {
-  outline: 3px solid var(--signal);
+  outline: 3px solid var(--attention);
   outline-offset: 1px;
 }
 
 .route-card[data-selected] {
-  background: var(--signal-soft);
+  background: var(--warn-soft);
 }
 
 .route-card[data-tone='validated'] {
-  border-inline-start-color: #1f6b3a;
+  border-inline-start-color: var(--success);
 }
 
 .route-card[data-tone='draft'] {
-  border-inline-start-color: #8a5a00;
+  border-inline-start-color: var(--warn);
   border-inline-start-style: dashed;
 }
 
 .route-card[data-tone='stale'] {
-  border-inline-start-color: #b3261e;
+  border-inline-start-color: var(--accent-text);
 }
 
 .route-card[data-tone='archived'] {
-  border-inline-start-color: #5f6b73;
+  border-inline-start-color: var(--text-muted);
   border-inline-start-style: dotted;
 }
 
@@ -2066,7 +2056,7 @@ h4 {
 }
 
 .route-card-head h2 a {
-  color: var(--rock);
+  color: var(--text);
 }
 
 .route-badges {
@@ -2077,26 +2067,24 @@ h4 {
 }
 
 .status-badge[data-version='validated'] {
-  border-color: #1f6b3a;
-  background: #e3f3e8;
-  color: #124a27;
+  border-color: var(--success);
+  background: var(--success-soft);
 }
 
 .status-badge[data-version='draft'] {
   border-style: dashed;
-  background: var(--signal-soft);
+  background: var(--warn-soft);
 }
 
 .status-badge[data-stale='true'] {
-  border-color: #b3261e;
-  background: #fbe9e7;
-  color: #7a1913;
+  border-color: var(--accent-text);
+  background: var(--danger-soft);
 }
 
 .status-badge[data-archived='true'] {
   border-style: dotted;
-  background: var(--snow);
-  color: var(--stone);
+  background: var(--bg);
+  color: var(--text-muted);
 }
 
 .facts-wide {
@@ -2122,30 +2110,31 @@ h4 {
 .legend-swatch {
   inline-size: 1.75rem;
   block-size: 0;
-  border-top: 4px solid var(--stone);
+  border-top: 4px solid var(--text-muted);
+  outline: 1px solid var(--mark-white); /* el mismo borde blanco que lleva la ruta en el mapa */
 }
 
 .legend-swatch[data-tone='validated'] {
-  border-top-color: #1f6b3a;
+  border-top-color: var(--route-validated);
 }
 
 .legend-swatch[data-tone='draft'] {
-  border-top-color: #8a5a00;
+  border-top-color: var(--route-draft);
   border-top-style: dashed;
 }
 
 .legend-swatch[data-tone='stale'] {
-  border-top-color: #b3261e;
+  border-top-color: var(--route-stale);
 }
 
 .legend-swatch[data-tone='archived'] {
-  border-top-color: #5f6b73;
+  border-top-color: var(--route-archived);
   border-top-style: dotted;
 }
 
 .legend-note {
   margin: 0;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -2225,14 +2214,14 @@ h4 {
 }
 
 .notice-warning {
-  border-inline-start-color: #b3261e;
-  background: #fbe9e7;
+  border-inline-start-color: var(--accent-text);
+  background: var(--danger-soft);
 }
 
 .dialog-warning {
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--rock);
-  background: var(--signal-soft);
+  border: 2px solid var(--border-strong);
+  background: var(--warn-soft);
   font-weight: 700;
 }
 
@@ -2244,27 +2233,28 @@ h4 {
   display: block;
   width: 100%;
   height: auto;
-  border: 2px solid var(--rock);
-  background: var(--paper);
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
 }
 
 .profile-grid line {
-  stroke: #c5cdd0;
+  stroke: var(--border);
   stroke-width: 1;
 }
 
 .profile-grid text,
 .profile-axis {
-  fill: var(--stone);
+  fill: var(--text-muted);
   font: 11px var(--font-sign, sans-serif);
 }
 
 .profile-area {
-  fill: rgba(31, 107, 58, 0.18);
+  fill: var(--success);
+  fill-opacity: 0.18;
 }
 
 .profile-line {
-  stroke: #1f6b3a;
+  stroke: var(--success);
   stroke-width: 2.5;
   stroke-linejoin: round;
 }
@@ -2293,7 +2283,7 @@ h4 {
 .compare-table th,
 .compare-table td {
   padding: 0.375rem 0.5rem;
-  border: 1px solid var(--stone);
+  border: 1px solid var(--border-strong);
   text-align: start;
 }
 
@@ -2334,13 +2324,13 @@ h4 {
 
 .version-row {
   padding: 0.625rem 0.875rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .version-row[data-shown='true'] {
-  background: var(--signal-soft);
+  background: var(--warn-soft);
 }
 
 .version-row p {
@@ -2348,17 +2338,17 @@ h4 {
 }
 
 .version-meta {
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
   overflow-wrap: anywhere;
 }
 
 .legend-swatch[data-tone='compare-a'] {
-  border-top-color: #0b5cad;
+  border-top-color: var(--route-compare-a);
 }
 
 .legend-swatch[data-tone='compare-b'] {
-  border-top-color: #7b2d8e;
+  border-top-color: var(--route-compare-b);
   border-top-style: dashed;
 }
 
@@ -2386,9 +2376,9 @@ h4 {
   inline-size: 1.5rem;
   block-size: 1.5rem;
   padding: 0;
-  border: 3px solid var(--rock);
+  border: 3px solid var(--mark-ink);
   border-radius: 50%;
-  background: var(--paper);
+  background: var(--mark-white);
   cursor: grab;
 }
 
@@ -2400,16 +2390,16 @@ h4 {
 }
 
 .vertex-handle[data-end='start'] {
-  background: #1f6b3a;
+  background: var(--route-validated);
 }
 
 .vertex-handle[data-end='end'] {
-  background: var(--blaze);
+  background: var(--mark-red);
 }
 
 .vertex-handle[aria-pressed='true'] {
-  background: var(--signal);
-  box-shadow: 0 0 0 4px var(--rock);
+  background: var(--attention);
+  box-shadow: 0 0 0 4px var(--mark-ink);
 }
 
 .vertex-handle:focus-visible {
@@ -2464,20 +2454,22 @@ h4 {
   width: 100%;
   min-height: var(--tap);
   padding: 0.25rem 0.5rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
   font-variant-numeric: tabular-nums;
 }
 
 .vertex-table tr[data-selected='true'] {
-  background: var(--signal-soft);
+  background: var(--warn-soft);
 }
 
 .vertex-scroll {
   max-height: 18rem;
   overflow: auto;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
 }
 
 @media (min-width: 64rem) {
@@ -2512,7 +2504,7 @@ h4 {
 .road-mix-bar {
   display: flex;
   height: 0.6rem;
-  border: 1px solid var(--rock);
+  border: 1px solid var(--border-strong);
   border-radius: 0.3rem;
   overflow: hidden;
   background: transparent;
@@ -2522,19 +2514,19 @@ h4 {
   height: 100%;
 }
 .road-mix-road {
-  background: #5f6b73;
+  background: var(--text-muted);
 }
 .road-mix-track {
-  background: #8a5a00;
+  background: var(--warn);
 }
 .road-mix-path {
-  background: #1f6b3a;
+  background: var(--success);
 }
 .road-mix-offtrail {
-  background: #7b2d8e;
+  background: var(--violet);
 }
 .road-mix-unknown {
-  background: repeating-linear-gradient(45deg, #b8c0c5, #b8c0c5 3px, #ffffff 3px, #ffffff 6px);
+  background: repeating-linear-gradient(45deg, var(--border-strong), var(--border-strong) 3px, var(--surface) 3px, var(--surface) 6px);
 }
 .road-mix-text,
 .road-mix-none {
@@ -2561,7 +2553,7 @@ h4 {
   padding: 0.25rem 0;
 }
 .zone-editor {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
   padding-top: 0.75rem;
 }
 .generate-results {
@@ -2578,13 +2570,13 @@ h4 {
 }
 .results-table th,
 .results-table td {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--border);
   padding: 0.5rem 0.4rem;
   text-align: left;
   vertical-align: top;
 }
 .results-table tr[data-highlighted] {
-  background: var(--signal-soft);
+  background: var(--warn-soft);
 }
 .detail-generate {
   margin: 1rem 0;
@@ -2592,7 +2584,7 @@ h4 {
 
 /* Dibujar uniendo los puntos por los caminos (H3-T9). */
 .snap-panel {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
   padding-top: 0.75rem;
   margin-top: 0.75rem;
 }
@@ -2672,15 +2664,14 @@ h4 {
 }
 
 .status-badge[data-route='unavailable'] {
-  border-color: var(--rock);
-  background: var(--snow);
-  color: var(--stone);
+  border-color: var(--border-strong);
+  background: var(--bg);
+  color: var(--text-muted);
 }
 
 .status-badge[data-route='stale'] {
-  border-color: #b3261e;
-  background: #fbe9e7;
-  color: #7a1712;
+  border-color: var(--accent-text);
+  background: var(--danger-soft);
 }
 
 .mission-routes-table tr[data-unavailable] .mission-route-name label {
@@ -2690,7 +2681,7 @@ h4 {
 
 .mission-route-notice {
   padding-inline-start: 0.625rem;
-  border-inline-start: 4px solid var(--signal);
+  border-inline-start: 4px solid var(--attention);
   font-weight: 700;
 }
 
@@ -2732,7 +2723,7 @@ h4 {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.25rem 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--border);
 }
 
 .add-route-item input {
@@ -2754,7 +2745,7 @@ h4 {
 }
 
 .add-route-item[data-already] label {
-  color: var(--stone);
+  color: var(--text-muted);
   cursor: default;
 }
 
@@ -2765,7 +2756,7 @@ h4 {
 }
 
 .add-route-meta {
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -2780,7 +2771,7 @@ h4 {
 .add-route-other {
   margin-top: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border);
 }
 
 .add-route-other p {
@@ -2790,7 +2781,7 @@ h4 {
 .add-route-details {
   margin: 0 0 1rem;
   padding: 0.75rem;
-  border: 2px solid var(--line);
+  border: 2px solid var(--border);
 }
 
 .add-route-details legend {
@@ -2812,8 +2803,9 @@ h4 {
 .share-coordinates code {
   display: inline-block;
   padding: 0.375rem 0.625rem;
-  border: 2px solid var(--rock);
-  background: var(--paper);
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  font-family: var(--font-mono);
   font-size: 1.1rem;
   font-weight: 700;
   user-select: all;
@@ -2829,18 +2821,18 @@ h4 {
 
 .my-route-card {
   padding: 0.875rem var(--gutter);
-  border: 2px solid var(--rock);
-  background: var(--paper);
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
 }
 
 .my-route-card[data-selected] {
   border-inline-start-width: 8px;
-  border-inline-start-color: var(--signal);
+  border-inline-start-color: var(--attention);
 }
 
 .my-route-card[data-unavailable] {
   border-style: dashed;
-  background: var(--snow);
+  background: var(--bg);
 }
 
 .my-route-card[data-unavailable] h3 {
@@ -2908,14 +2900,14 @@ h4 {
   align-items: stretch;
   gap: 0.5rem;
   min-height: var(--tap);
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .signup-row[data-checked] {
-  box-shadow: inset 6px 0 0 var(--signal);
-  background: var(--signal-soft);
+  box-shadow: inset 6px 0 0 var(--attention);
+  background: var(--warn-soft);
 }
 
 .signup-check {
@@ -2924,7 +2916,7 @@ h4 {
   inline-size: 1.5rem;
   block-size: 1.5rem;
   margin-inline: 0.75rem 0;
-  accent-color: var(--rock);
+  accent-color: var(--text);
 }
 
 .signup-info {
@@ -2954,7 +2946,7 @@ label.signup-info {
 }
 
 .signup-date {
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -2964,15 +2956,13 @@ label.signup-info {
 }
 
 .status-badge[data-signup='approved'] {
-  border-color: #1f6b3a;
-  background: #e3f3e8;
-  color: #124a27;
+  border-color: var(--success);
+  background: var(--success-soft);
 }
 
 .status-badge[data-signup='rejected'] {
-  border-color: #b3261e;
-  background: #fbe9e7;
-  color: #7a1913;
+  border-color: var(--accent-text);
+  background: var(--danger-soft);
 }
 
 @media (min-width: 40rem) {
@@ -3015,7 +3005,7 @@ label.signup-info {
   gap: 0.75rem;
   min-height: var(--tap);
   padding: 0.5rem 0.25rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
 }
 
@@ -3024,7 +3014,7 @@ label.signup-info {
   inline-size: 1.5rem;
   block-size: 1.5rem;
   margin-top: 0.125rem;
-  accent-color: var(--rock);
+  accent-color: var(--text);
 }
 
 .role-option .field-help {
@@ -3034,14 +3024,14 @@ label.signup-info {
 
 .invite-code {
   padding: 0.875rem var(--gutter);
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .invite-code-label {
   margin: 0;
-  color: var(--stone);
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -3053,14 +3043,9 @@ label.signup-info {
   display: inline-block;
   max-width: 100%;
   padding: 0.375rem 0.625rem;
-  border: 2px solid var(--rock);
-  background: var(--snow);
-  font:
-    700 1.25rem/1.3 ui-monospace,
-    'SFMono-Regular',
-    Menlo,
-    Consolas,
-    monospace;
+  border: 2px solid var(--border-strong);
+  background: var(--bg);
+  font: 700 1.25rem/1.3 var(--font-mono);
   letter-spacing: 0.04em;
   overflow-wrap: anywhere;
   user-select: all;

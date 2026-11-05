@@ -66,6 +66,8 @@ const pair = (fg: string, bgs: string[], min: number): Pair[] => bgs.map((bg) =>
 const SURFACES = ['--bg', '--surface', '--surface-raised'];
 const SOFT: Record<string, string> = { '--success': '--success-soft', '--warn': '--warn-soft', '--accent-text': '--danger-soft' };
 
+const ROUTE_TOKENS = ['validated', 'draft', 'stale', 'archived', 'compare-a', 'compare-b', 'avoid'].map((tone) => `--route-${tone}`);
+
 const COMMON: Pair[] = [
   ...pair('--on-accent', ['--accent'], TEXT),
   ...pair('--accent-text', ['--bg', '--surface', '--danger-soft'], TEXT),
@@ -80,6 +82,22 @@ const COMMON: Pair[] = [
   ...pair('--on-attention', ['--attention'], TEXT),
   ...pair('--accent', ['--bg', '--surface'], COMPONENT), // botón principal contra el fondo y los paneles
   ...pair('--accent-hover', ['--bg', '--surface'], COMPONENT),
+  // T3: lo que pinta el resto de la hoja
+  ...pair('--accent-text', ['--warn-soft'], TEXT), // enlaces rojos dentro de un aviso o una fila seleccionada
+  ...pair('--text-muted', ['--bg'], TEXT), // insignias neutras (cerrada, archivada, no disponible)
+  ...pair('--violet', ['--bg', '--surface'], COMPONENT), // «fuera de sendero» en la barra de tipos de vía
+  ...pair('--violet', ['--surface-raised'], COMPONENT),
+  ...pair('--success', ['--surface-raised'], COMPONENT), // perfil de altitud y barra de vías dentro de un diálogo
+  ...pair('--warn', ['--surface-raised'], COMPONENT),
+  ...pair('--text-muted', ['--surface-raised'], TEXT),
+  // Mapa y marca, fijos en los dos temas: borde claro y aro oscuro de marcadores y manijas; rutas contra su borde blanco (plan §5, D-U12)
+  ...pair('--mark-ink', ['--mark-white'], COMPONENT),
+  ...pair('--mark-red', ['--mark-white'], COMPONENT),
+  ...pair('--map-origin', ['--mark-white'], COMPONENT),
+  ...pair('--map-rendezvous', ['--mark-white'], COMPONENT),
+  ...ROUTE_TOKENS.flatMap((token) => pair(token, ['--mark-white'], 5)),
+  ...pair('--map-origin', ['--surface', '--bg'], COMPONENT), // la franja de color de la fila de un punto
+  ...pair('--map-rendezvous', ['--surface', '--bg'], COMPONENT),
 ];
 
 const DARK_PAIRS: Pair[] = [
@@ -157,12 +175,22 @@ describe('estructura de tokens.css', () => {
       '--header-text',
       '--header-muted',
       '--header-hover',
+      '--violet',
+      '--backdrop',
     ];
     for (const name of NAMES) {
       expect(DARK.has(name), `oscuro: ${name}`).toBe(true);
       expect(LIGHT.has(name), `claro: ${name}`).toBe(true);
     }
     expect([...LIGHT.keys()].filter((name) => !DARK.has(name))).toEqual([]);
+  });
+
+  it('el velo de los diálogos oscurece de verdad lo que hay detrás (opacidad entre 60 y 85 %) en los dos temas', () => {
+    for (const theme of [DARK, LIGHT]) {
+      const alpha = parseInt(resolve(theme, '--backdrop').slice(7, 9), 16) / 255;
+      expect(alpha).toBeGreaterThanOrEqual(0.6);
+      expect(alpha).toBeLessThanOrEqual(0.85);
+    }
   });
 
   it('D-U11: el principal oscuro no cambia de fondo al pasar el ratón', () => {
@@ -177,7 +205,9 @@ describe('estructura de tokens.css', () => {
     ] as const) {
       for (const [name, value] of tokens) {
         if (name === 'color-scheme') continue;
-        expect(value, `${theme}: ${name}`).toMatch(/^(#[0-9a-f]{6}|var\(--[\w-]+\))$/i);
+        // `--backdrop` lleva transparencia (#rrggbbaa); el resto, #rrggbb o una referencia a otro token
+        const pattern = name === '--backdrop' ? /^#[0-9a-f]{8}$/i : /^(#[0-9a-f]{6}|var\(--[\w-]+\))$/i;
+        expect(value, `${theme}: ${name}`).toMatch(pattern);
       }
     }
   });

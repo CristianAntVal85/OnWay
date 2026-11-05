@@ -39,6 +39,9 @@
   --success-soft: #0f2a1a;
   --warn-soft: #33270a;
   --danger-soft: #3d1714;
+  --violet: #bc8cff; /* fuera de sendero en la barra de tipos de vía */
+
+  --backdrop: #010409b8; /* velo detrás de un diálogo (72 %) */
 
   /* Cabecera y portadas de acceso: en oscuro, la superficie con el texto normal */
   --header-bg: var(--surface);
@@ -52,6 +55,19 @@
   --mark-white: #ffffff;
   --mark-red: #c4271b;
   --mark-ink: #17262b;
+
+  /* Mapa: lo que se pinta encima del mapa base (claro u oscuro) no depende del tema. Marcadores y manijas llevan borde `--mark-white`
+     y aro `--mark-ink`. Los colores de las rutas son los de `TONE_COLORS` (src/map/route-layers.ts, D-U12; una prueba vigila que coincidan)
+     y se leen con su borde blanco: la leyenda lo repite. */
+  --map-origin: #1d6fb8;
+  --map-rendezvous: #2f8f4e;
+  --route-validated: #1f6b3a;
+  --route-draft: #8a5a00;
+  --route-stale: #b3261e;
+  --route-archived: #5f6b73;
+  --route-compare-a: #0b5cad;
+  --route-compare-b: #7b2d8e;
+  --route-avoid: #c2185b;
 }
 
 [data-theme='light'] {
@@ -80,6 +96,9 @@
   --success-soft: #e3f3e8;
   --warn-soft: #fff3c4;
   --danger-soft: #fbe9e7;
+  --violet: #7b2d8e;
+
+  --backdrop: #17262bb8;
 
   --header-bg: #17262b;
   --header-text: #eef1f0;
