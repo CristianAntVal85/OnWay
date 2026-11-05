@@ -1,0 +1,88 @@
+/*
+  OnWay · tokens de tema (UI-rediseno, plan §5)
+  Dos conjuntos con los mismos nombres: oscuro (por defecto, D-U13) y claro de alto contraste (D-U10).
+  Sin atributo `data-theme` en <html> se ve el oscuro; `theme-boot.js` fija `dark` o `light` antes del primer pintado.
+  La prueba `test/theme-contrast.test.ts` lee este archivo y recalcula cada par con la fórmula de WCAG 2.x:
+  si cambias un valor, esa prueba manda. «Deco» = borde decorativo (separadores); todo borde que delimite un control
+  usa `--border-strong`. Aquí viven los únicos colores literales de la interfaz. Sin importaciones, fuentes remotas ni direcciones externas.
+*/
+
+/* Fuente monoespaciada del sistema (D-U9): coordenadas, altitudes, métricas y código de invitación. Sin descargas. */
+:root {
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
+}
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0d1117;
+  --surface: #161b22; /* paneles, campos */
+  --surface-raised: #21262d; /* diálogos, barra inferior, elemento actual */
+  --border: #30363d; /* deco */
+  --border-strong: #6e7681; /* campos, botones secundarios, grupos de capas: 4,1:1 sobre --bg */
+
+  --text: #e6edf3;
+  --text-muted: #9198a1;
+
+  --accent: #d9381e; /* acción principal: el rojo de rescate (D-U3) */
+  --accent-hover: var(--accent); /* D-U11: sin cambio de fondo; el rótulo se subraya */
+  --on-accent: #ffffff; /* 4,6:1 sobre --accent: justo, la prueba lo vigila */
+  --accent-text: #ff7b72; /* enlaces rojos y errores */
+
+  --focus: var(--attention); /* anillo exterior */
+  --focus-inner: var(--bg); /* anillo interior */
+
+  --success: #3fb950;
+  --warn: #d29922;
+  --info: #58a6ff;
+  --success-soft: #0f2a1a;
+  --warn-soft: #33270a;
+  --danger-soft: #3d1714;
+
+  /* Cabecera y portadas de acceso: en oscuro, la superficie con el texto normal */
+  --header-bg: var(--surface);
+  --header-text: var(--text);
+  --header-muted: var(--text-muted);
+  --header-hover: var(--surface-raised);
+
+  /* Fijos (iguales en los dos temas): aviso amarillo y su tinta, y la marca de sendero (blanco sobre rojo, como los GR) */
+  --attention: #ffc425;
+  --on-attention: #17262b;
+  --mark-white: #ffffff;
+  --mark-red: #c4271b;
+  --mark-ink: #17262b;
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #eef1f0;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #a9b8ba; /* deco */
+  --border-strong: #17262b;
+
+  --text: #17262b; /* ≥ 7:1 (AAA, D-U10) */
+  --text-muted: #3a4a50; /* ≥ 7:1 */
+
+  --accent: #c4271b;
+  --accent-hover: #9d1d13;
+  --on-accent: #ffffff;
+  --accent-text: #9d1d13;
+
+  --focus: #17262b; /* anillo exterior: la tinta; el interior, el amarillo */
+  --focus-inner: var(--attention);
+
+  --success: #1f6b3a;
+  --warn: #8a5a00;
+  --info: #0b5cad;
+  --success-soft: #e3f3e8;
+  --warn-soft: #fff3c4;
+  --danger-soft: #fbe9e7;
+
+  --header-bg: #17262b;
+  --header-text: #eef1f0;
+  --header-muted: #cfdadb;
+  --header-hover: #2b4047;
+}

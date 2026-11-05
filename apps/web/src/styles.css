@@ -2,22 +2,24 @@
   OnWay · identidad visual
   Herramienta de campo para equipos de rescate en montaña: se lee al sol, con guantes y con una mano.
   Un solo gesto memorable, la marca de sendero (blanco sobre rojo, como los GR); el resto es sobrio:
-  fondo de roca clara, tinta casi negra, rojo solo donde hay una acción, sin sombras ni degradados.
+  oscuro por defecto y claro de alto contraste (los colores viven en theme/tokens.css), rojo solo donde hay una acción,
+  sin sombras ni degradados.
   Sin fuentes ni recursos externos: tipografía de rotulación de sistema (DIN en Windows y Apple) y cuerpo del sistema.
 */
 
 :root {
-  --rock: #17262b; /* tinta y superficies oscuras */
-  --slate: #2b4047;
-  --stone: #4b5f66; /* texto secundario: 5,8:1 sobre --snow */
-  --snow: #eef1f0; /* fondo */
-  --paper: #ffffff;
-  --line: #a9b8ba;
-  --blaze: #c4271b; /* acción principal: 5,8:1 con texto blanco */
-  --blaze-deep: #9d1d13;
-  --signal: #ffc425; /* anillo de foco y avisos */
-  --signal-soft: #fff3c4;
-  --alarm-soft: #fdeceb;
+  /* Alias de los nombres antiguos hacia los tokens semánticos de theme/tokens.css. Se retiran en T3 (UI-rediseno). */
+  --rock: var(--text); /* tinta */
+  --slate: var(--header-hover);
+  --stone: var(--text-muted);
+  --snow: var(--bg);
+  --paper: var(--surface);
+  --line: var(--border);
+  --blaze: var(--accent);
+  --blaze-deep: var(--accent-text);
+  --signal: var(--attention);
+  --signal-soft: var(--warn-soft);
+  --alarm-soft: var(--danger-soft);
 
   --font-sign: 'Bahnschrift', 'DIN Alternate', 'DIN 1451 Std', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -41,8 +43,8 @@ html {
 body {
   margin: 0;
   min-width: 20rem;
-  background: var(--snow);
-  color: var(--rock);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--font-body);
   font-size: 1.0625rem;
   line-height: 1.5;
@@ -70,16 +72,20 @@ p {
   max-width: var(--measure);
 }
 
+a {
+  color: var(--accent-text);
+}
+
 .lead {
   font-size: 1.1875rem;
 }
 
-/* ---------- foco: anillo doble (amarillo pegado, tinta fuera) visible sobre claro y sobre oscuro ---------- */
+/* ---------- foco: anillo doble (--focus fuera, --focus-inner pegado), visible en los dos temas ---------- */
 
 :focus-visible {
-  outline: 3px solid var(--rock);
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--signal);
+  box-shadow: 0 0 0 2px var(--focus-inner);
 }
 
 [tabindex='-1']:focus {
@@ -93,8 +99,8 @@ p {
   inset-inline-start: 0;
   z-index: 10;
   padding: 0.875rem 1.25rem;
-  background: var(--signal);
-  color: var(--rock);
+  background: var(--attention);
+  color: var(--on-attention);
   font-weight: 700;
   transform: translateY(-110%);
 }
@@ -108,8 +114,8 @@ p {
 .blaze {
   display: inline-block;
   flex: none;
-  background: linear-gradient(to bottom, var(--paper) 0 50%, var(--blaze) 50% 100%);
-  border: 2px solid var(--rock);
+  background: linear-gradient(to bottom, var(--mark-white) 0 50%, var(--mark-red) 50% 100%);
+  border: 2px solid var(--mark-ink);
   border-radius: 2px;
 }
 
@@ -147,7 +153,7 @@ p {
   justify-content: center;
   min-height: var(--tap);
   padding: 0.5rem 1.5rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
   font: 700 1.0625rem/1.2 var(--font-sign);
   letter-spacing: 0.01em;
@@ -156,22 +162,26 @@ p {
 }
 
 .button-primary {
-  background: var(--blaze);
-  border-color: var(--blaze-deep);
-  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent-hover);
+  color: var(--on-accent);
 }
 
+/* D-U11: en oscuro el fondo no cambia (ningún rojo más oscuro cumple 3:1 contra las superficies); se subraya el rótulo y el borde pasa a la tinta */
 .button-primary:hover {
-  background: var(--blaze-deep);
+  background: var(--accent-hover);
+  border-color: var(--text);
+  text-decoration: underline;
 }
 
 .button-secondary {
-  background: var(--paper);
-  color: var(--rock);
+  background: var(--surface);
+  color: var(--text);
 }
 
 .button-secondary:hover {
-  background: var(--signal-soft);
+  background: var(--surface-raised);
+  text-decoration: underline;
 }
 
 .button-block {
@@ -198,21 +208,21 @@ p {
   width: 100%;
   min-height: 3.25rem;
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
-  color: var(--rock);
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
 }
 
 .field input[aria-invalid='true'] {
-  border-color: var(--blaze);
-  background: var(--alarm-soft);
+  border-color: var(--accent-text);
+  background: var(--danger-soft);
 }
 
 .field-error {
   margin: 0.375rem 0 0;
-  color: var(--blaze-deep);
+  color: var(--accent-text);
   font-weight: 700;
 }
 
@@ -262,9 +272,9 @@ p {
 
 .segmented {
   display: inline-flex;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
+  background: var(--surface);
 }
 
 .segment {
@@ -273,7 +283,7 @@ p {
 }
 
 .segment + .segment {
-  border-inline-start: 2px solid var(--rock);
+  border-inline-start: 2px solid var(--border-strong);
 }
 
 .segment input {
@@ -293,14 +303,14 @@ p {
 }
 
 .segment input:checked + span {
-  background: var(--rock);
-  color: var(--paper);
+  background: var(--text);
+  color: var(--bg);
 }
 
 .segment input:focus-visible + span {
-  outline: 3px solid var(--rock);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
-  box-shadow: 0 0 0 2px var(--signal);
+  box-shadow: 0 0 0 2px var(--focus-inner);
 }
 
 /* ---------- estados ---------- */
@@ -415,8 +425,9 @@ p {
   align-items: center;
   gap: 1rem;
   padding: 1.5rem var(--gutter);
-  background: var(--rock);
-  color: var(--snow);
+  background: var(--header-bg);
+  color: var(--header-text);
+  border-bottom: 1px solid var(--border);
 }
 
 .wordmark {
@@ -430,7 +441,7 @@ p {
 
 .tagline {
   margin: 0.375rem 0 0;
-  color: #cfdadb;
+  color: var(--header-muted);
   font-size: 1.0625rem;
 }
 
@@ -466,8 +477,9 @@ a.button-link {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem var(--gutter);
-  background: var(--rock);
-  color: var(--snow);
+  background: var(--header-bg);
+  color: var(--header-text);
+  border-bottom: 1px solid var(--border);
 }
 
 .single-main {
@@ -498,8 +510,9 @@ a.button-link {
 }
 
 .app-header {
-  background: var(--rock);
-  color: var(--snow);
+  background: var(--header-bg);
+  color: var(--header-text);
+  border-bottom: 1px solid var(--border);
 }
 
 .app-header-bar {
@@ -519,7 +532,7 @@ a.button-link {
   order: 3;
   flex-basis: 100%;
   margin: 0;
-  color: #cfdadb;
+  color: var(--header-muted);
   font-size: 0.9rem;
   line-height: 1.25;
 }
@@ -527,10 +540,10 @@ a.button-link {
 .menu-button {
   min-height: var(--tap);
   padding: 0 1rem;
-  border: 2px solid var(--snow);
+  border: 2px solid var(--header-text);
   border-radius: 4px;
   background: transparent;
-  color: var(--snow);
+  color: var(--header-text);
   font: 700 1rem/1 var(--font-sign);
   cursor: pointer;
 }
@@ -541,11 +554,11 @@ a.button-link {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--slate);
+  border-top: 1px solid var(--header-hover);
 }
 
 .main-nav li + li {
-  border-top: 1px solid var(--slate);
+  border-top: 1px solid var(--header-hover);
 }
 
 .main-nav a {
@@ -554,7 +567,7 @@ a.button-link {
   gap: 0.75rem;
   min-height: 3.25rem;
   padding: 0 var(--gutter);
-  color: var(--snow);
+  color: var(--header-text);
   font: 700 1.125rem/1.2 var(--font-sign);
   text-decoration: none;
 }
@@ -569,17 +582,17 @@ a.button-link {
 }
 
 .main-nav a[aria-current='page'] {
-  background: var(--slate);
+  background: var(--header-hover);
 }
 
 .main-nav a[aria-current='page']::before {
-  border-color: var(--rock);
-  background: linear-gradient(to bottom, var(--paper) 0 50%, var(--blaze) 50% 100%);
-  box-shadow: 0 0 0 1.5px var(--paper);
+  border-color: var(--header-bg);
+  background: linear-gradient(to bottom, var(--mark-white) 0 50%, var(--mark-red) 50% 100%);
+  box-shadow: 0 0 0 1.5px var(--mark-white);
 }
 
 .main-nav a:hover {
-  background: var(--slate);
+  background: var(--header-hover);
 }
 
 .main-nav[data-open='false'] {
@@ -690,17 +703,17 @@ a.button-link {
   width: 100%;
   min-height: 3.25rem;
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--rock);
+  border: 2px solid var(--border-strong);
   border-radius: 4px;
-  background: var(--paper);
-  color: var(--rock);
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
 }
 
 .field select[aria-invalid='true'],
 .field textarea[aria-invalid='true'] {
-  border-color: var(--blaze);
-  background: var(--alarm-soft);
+  border-color: var(--accent-text);
+  background: var(--danger-soft);
 }
 
 .field-help {
@@ -724,7 +737,7 @@ a.button-link {
   padding: 0.5rem 0;
   border: 0;
   background: none;
-  color: var(--blaze-deep);
+  color: var(--accent-text);
   font: 700 1rem/1.2 var(--font-sign);
   text-decoration: underline;
   cursor: pointer;
@@ -1151,9 +1164,9 @@ html:has(.action-bar) {
 }
 
 .tab:focus-visible {
-  outline: 3px solid var(--rock);
+  outline: 3px solid var(--focus);
   outline-offset: -6px;
-  box-shadow: inset 0 0 0 5px var(--signal);
+  box-shadow: inset 0 0 0 5px var(--focus-inner);
 }
 
 #missions-panel {
@@ -2400,9 +2413,9 @@ h4 {
 }
 
 .vertex-handle:focus-visible {
-  outline: 3px solid var(--rock);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
-  box-shadow: 0 0 0 6px var(--signal);
+  box-shadow: 0 0 0 6px var(--focus-inner);
 }
 
 .editor-layout {
