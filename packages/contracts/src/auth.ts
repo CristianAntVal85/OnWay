@@ -55,4 +55,9 @@ export const UpdateMeRequest = z
 
 // ----- Recuperar contraseña (Q-33, resuelta): correo transaccional detrás del puerto Mailer y tabla password_resets (migración 0009).
 export const ForgotPasswordRequest = z.strictObject({ email: Email });
-export const ResetPasswordRequest = z.strictObject({ token: z.string().min(20).max(200), newPassword: Password });
+/**
+ * `token` carries NO length limit on purpose: a token that is too short, too long or mangled by a mail client must answer the same
+ * `422 INVALID_RESET_TOKEN` as one that does not exist, was used or expired (doc 06 §4.3), not a `VALIDATION_FAILED` that tells the
+ * shape apart. The password does keep the rule of the registration: a weak one is `VALIDATION_FAILED` and does not consume the token.
+ */
+export const ResetPasswordRequest = z.strictObject({ token: z.string().describe('Token del enlace recibido por correo (43 caracteres en base64url)'), newPassword: Password });

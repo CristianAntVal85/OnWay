@@ -55,7 +55,7 @@ pnpm --filter @onway/contracts gen:openapi  # openapi.json
 pnpm --filter @onway/contracts gen:doc gen/ # tablas del documento 06
 pnpm --filter @onway/contracts gen:client   # cliente tipado en gen/ (no versionado)
 pnpm --filter @onway/api test:db            # 34 pruebas de Vitest sobre PostGIS: las 194 comprobaciones SQL del esquema + 8 de la política 0010 + 6 de la 0011 + 6 de la 0012 + 9 de lo que lee y no escribe el rescatista en las rutas de la misión (Testcontainers, necesita Docker)
-pnpm --filter @onway/api test:api           # 413 pruebas del API sobre PostGIS (Testcontainers); el trabajo con pg-boss real incluido
+pnpm --filter @onway/api test:api           # 446 pruebas del API sobre PostGIS (Testcontainers); el trabajo con pg-boss real incluido
 pnpm --filter @onway/api test:routing       # 10 pruebas contra el GraphHopper REAL sobre la red inventada: necesita la pila de pruebas con `routing` levantado (puerto 18989, `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --build --wait routing`)
 infra/scripts/routing-regression.sh         # regresión REAL del motor (extracto de los Pirineos y DEM de verdad, ~1,3 GB la primera vez; proyecto `onway-regression`): los casos de poc/motor-rutas/cases; también el workflow manual `routing-regression`
 pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME (seed: ELEVATION_DEM_DIR para la altitud de las misiones)

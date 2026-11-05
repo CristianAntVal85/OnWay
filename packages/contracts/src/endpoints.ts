@@ -107,7 +107,7 @@ const RAW = [
     notes: 'Responde siempre 202, exista o no el correo. Envía por el puerto Mailer un enlace con un token de un solo uso que caduca en 1 h (auth_request_password_reset; máx. 3 por hora y cuenta). El enlace es PUBLIC_BASE_URL/reset-password#token=<token>: el token viaja en el fragmento, que el navegador no envía al servidor. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
   { id: 'resetPassword', method: 'POST', path: '/auth/password/reset', tag: 'Acceso', summary: 'Restablecer la contraseña con el token recibido', roles: ['public'],
     body: A.ResetPasswordRequest, response: { status: 204 }, errors: ['INVALID_RESET_TOKEN'], delivery: 1, audited: true,
-    notes: 'Cierra todas las sesiones y quita el bloqueo por intentos (auth_consume_password_reset). Token inexistente, usado, caducado o mal formado: el mismo error. La contraseña nueva cumple el mismo esquema que la del registro. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
+    notes: 'Cierra todas las sesiones y quita el bloqueo por intentos (auth_consume_password_reset). Token inexistente, usado, caducado o mal formado (también demasiado corto o largo): el mismo error 422 INVALID_RESET_TOKEN. La contraseña nueva cumple el mismo esquema que la del registro; si no lo cumple, 400 VALIDATION_FAILED y el token no se consume. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
 
   // ================= Organización =================
   { id: 'getOrganization', method: 'GET', path: '/org', tag: 'Organización', summary: 'Datos y configuración de mi organización', roles: ALL,

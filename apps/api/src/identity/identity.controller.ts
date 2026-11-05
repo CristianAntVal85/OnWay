@@ -30,6 +30,24 @@ export class IdentityController {
     return { status: 'received' };
   }
 
+  @Operation('forgotPassword')
+  async forgotPassword(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'forgotPassword'>> {
+    // Before anything else: a refused request must not reach the database or send a mail.
+    this.limiter.assert('forgotPassword', clientKey(request));
+    await this.auth.requestPasswordReset((input.body as { email: string }).email);
+    noStore(response);
+    return { ok: true };
+  }
+
+  @Operation('resetPassword')
+  async resetPassword(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<void> {
+    // Before the hash, like `register`: a flood must not make the server spend its time on Argon2id.
+    this.limiter.assert('resetPassword', clientKey(request));
+    const { token, newPassword } = input.body as { token: string; newPassword: string };
+    await this.auth.resetPassword(token, newPassword);
+    noStore(response);
+  }
+
   @Operation('login')
   async login(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'login'>> {
     const { email, password } = input.body as { email: string; password: string };

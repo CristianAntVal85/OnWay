@@ -289,10 +289,11 @@ test('las consultas con coordenadas aceptan texto y validan el rango', () => {
   bad(C.EnvironmentQuery, { lat: '99', lon: '0' });
 });
 
-test('recuperar contraseña: correo normalizado, token largo, contraseña con el mismo mínimo que el registro', () => {
+test('recuperar contraseña: correo normalizado, token de cualquier longitud (lo juzga el servidor), contraseña con el mismo mínimo que el registro', () => {
   assert.equal(C.ForgotPasswordRequest.parse({ email: 'Ana@Example.com' }).email, 'ana@example.com');
   ok(C.ResetPasswordRequest, { token: 'a'.repeat(43), newPassword: 'una-clave-larga-1' });
-  bad(C.ResetPasswordRequest, { token: 'corto', newPassword: 'una-clave-larga-1' });
+  ok(C.ResetPasswordRequest, { token: 'corto', newPassword: 'una-clave-larga-1' }); // un token mal formado es INVALID_RESET_TOKEN, no VALIDATION_FAILED
+  bad(C.ResetPasswordRequest, { token: 12345, newPassword: 'una-clave-larga-1' });
   bad(C.ResetPasswordRequest, { token: 'a'.repeat(43), newPassword: 'corta' });
   assert.equal(C.httpStatusOf('INVALID_RESET_TOKEN'), 422);
 });
