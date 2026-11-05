@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitch } from '../components/language-switch';
 import { ErrorState } from '../components/states';
+import { ThemeSwitch } from '../components/theme-switch';
 import { usePageTitle } from '../components/use-page-title';
 import { ROLE_LABEL_KEYS } from '../nav/navigation';
 import { useCurrentUser, useLogout } from '../session/session';
 
-/** Cuenta: quién soy, idioma (solo en este navegador, D-H0-21) y cerrar sesión. */
+/** Cuenta: quién soy, idioma y tema (solo en este navegador, D-H0-21 y D-U6) y cerrar sesión. */
 export function AccountPage() {
   const { t } = useTranslation();
   const user = useCurrentUser();
@@ -34,6 +35,7 @@ export function AccountPage() {
         )}
       </dl>
       <LanguageSwitch />
+      <ThemeSwitch />
       {logout.isError && <ErrorState error={logout.error} />}
       <button type="button" className="button button-primary" aria-disabled={logout.isPending} onClick={() => !logout.isPending && logout.mutate()}>
         {t('account.logout')}

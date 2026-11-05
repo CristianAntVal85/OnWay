@@ -61,6 +61,11 @@ export default defineConfig([
     },
   },
   {
+    // Scripts clásicos del navegador de `apps/web/public/` (el de arranque del tema): sus globales, declarados a mano.
+    files: ['apps/web/public/**/*.js'],
+    languageOptions: { sourceType: 'script', globals: { window: 'readonly', document: 'readonly' } },
+  },
+  {
     // Scripts de Node sin transpilar (infra/ y la prueba técnica poc/): los globales de Node que usan, declarados a mano (sin añadir el paquete `globals`).
     files: ['infra/**/*.mjs', 'poc/**/*.mjs'],
     languageOptions: {

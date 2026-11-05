@@ -6,6 +6,7 @@ import type { ApiClient } from '@onway/contracts/client';
 import { useLocaleSync } from '../i18n/use-locale';
 import { ApiProvider } from '../session/api-context';
 import { useSession } from '../session/session';
+import { ThemeProvider } from '../theme/theme-context';
 
 function LocaleSync() {
   const { data } = useSession();
@@ -26,7 +27,7 @@ export function AppProviders({ api, queryClient, i18n, children }: AppProvidersP
       <ApiProvider client={api}>
         <QueryClientProvider client={queryClient}>
           <LocaleSync />
-          {children}
+          <ThemeProvider>{children}</ThemeProvider>
         </QueryClientProvider>
       </ApiProvider>
     </I18nextProvider>

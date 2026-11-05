@@ -248,14 +248,16 @@ a {
 
 /* ---------- selector de idioma ---------- */
 
-.language-switch {
+.language-switch,
+.theme-switch {
   margin: 1.5rem 0;
   padding: 0;
   border: 0;
   min-inline-size: 0;
 }
 
-.language-switch legend {
+.language-switch legend,
+.theme-switch legend {
   margin-bottom: 0.375rem;
   padding: 0;
   font-weight: 700;
@@ -302,6 +304,36 @@ a {
   outline: 3px solid var(--focus);
   outline-offset: 3px;
   box-shadow: 0 0 0 2px var(--focus-inner);
+}
+
+/* El selector de tema tiene tres opciones y el francés las alarga: en pantalla estrecha se apilan (cada una de 48 px) y a partir de 40rem van en fila. */
+.theme-switch .segmented {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+/* Objetivo de 48 px entero (el de idioma descuenta el borde) y la opción marcada llena su fila. */
+.theme-switch .segment span {
+  flex: 1;
+  min-height: var(--tap);
+}
+
+.theme-switch .segment + .segment {
+  border-inline-start: 0;
+  border-block-start: 2px solid var(--border-strong);
+}
+
+@media (min-width: 40rem) {
+  .theme-switch .segmented {
+    display: inline-flex;
+    flex-direction: row;
+  }
+
+  .theme-switch .segment + .segment {
+    border-block-start: 0;
+    border-inline-start: 2px solid var(--border-strong);
+  }
 }
 
 /* ---------- estados ---------- */
