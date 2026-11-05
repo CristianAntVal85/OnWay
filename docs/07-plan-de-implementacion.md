@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.7 · **Estado:** borrador para revisión · **Fecha:** 2 de noviembre de 2026
+**Versión:** 0.8 · **Estado:** borrador para revisión · **Fecha:** 5 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -136,11 +136,13 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 
 ### H5 · Personas y equipos · M–L
 
+> **Partido por demostración (cambio de alcance del 2026-11-05, issue #9).** Se construye primero **`H5-acceso`** (`specs/H5-acceso/`, rama `hito/H5-acceso`): el registro con código de invitación, recuperar contraseña, el puerto `Mailer` (consola) y la parte de administración que el registro necesita (solicitudes de alta y código de invitación). Son 7 de las 26 operaciones, que conservan `x-milestone: H5`: `register`, `forgotPassword`, `resetPassword`, `listSignupRequests`, `decideSignupRequests`, `getInviteCode`, `rotateInviteCode` (58 montadas con las 51 de H0 a H4). Demostración de `H5-acceso`: una persona nueva se registra con el código, el administrador la aprueba como rescatista y ella llega a «Completa tu perfil»; y recupera su contraseña con el enlace que sale por el registro del `api`. El resto de H5 (perfil, habilidades, equipos, usuarios, `changePassword`, `updateMe`) sigue como está descrito abajo. Una cuenta aprobada llega a la página provisional «Completa tu perfil» hasta que se construya el resto.
+
 **Objetivo:** que las cuentas dejen de ser de demostración: alta, aprobación, perfil protegido, habilidades y equipos.
 
 | | |
 |---|---|
-| **Demostración** | Una persona nueva se registra con el código de invitación. El administrador la ve en solicitudes y la aprueba como rescatista. Ella completa su perfil (nombre, teléfono, documento y dirección) y añade un curso con certificado. Un coordinador ve su nombre y habilidades, pero ni documento ni dirección. El administrador crea un equipo y mete gente. Recuperar contraseña con el correo (Mailpit en local) |
+| **Demostración** | Una persona nueva se registra con el código de invitación. El administrador la ve en solicitudes y la aprueba como rescatista. Ella completa su perfil (nombre, teléfono, documento y dirección) y añade un curso con certificado. Un coordinador ve su nombre y habilidades, pero ni documento ni dirección. El administrador crea un equipo y mete gente. Recuperar contraseña con el correo (en `H5-acceso`, el enlace sale por el registro del `api`: puerto `Mailer` con `ConsoleMailer`; Mailpit queda descartado por ahora) |
 | **Alcance** | RF-104, 105 (por consola), 106, 801, 806, 807, 808, 813, 805 (completo). Bocetos 1 (registro), 2, 12, 13 y 15 |
 | **Operaciones (26)** | Registro y contraseñas (`register`, `forgotPassword`, `resetPassword`, `changePassword`, `updateMe`), administración (`listSignupRequests`, `decideSignupRequests`, `listUsers`, `getUser`, `updateUser`, `getInviteCode`, `rotateInviteCode`), perfil y habilidades (`getMyProfile`, `updateMyProfile`, `getMySensitive`, `listMySkills`, `createMySkill`, `updateMySkill`, `deleteMySkill`, `getCertificateLink`), equipos (`listTeams`, `createTeam`, `getTeam`, `updateTeam`, `addTeamMembers`, `removeTeamMember`) |
 | **Salida** | INV-18, 23, 24, 25, 29, 31, 32. Cifrado AES-256-GCM con índice ciego del documento. Ningún listado devuelve datos personales (las pruebas de contrato lo impiden). Bloqueo por intentos y límite de peticiones. El correo sale por el puerto `Mailer` |
@@ -250,6 +252,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.8 | 2026-11-05 | Cambio de alcance (issue #9): H5 se parte por demostración y se adelanta **`H5-acceso`** (registro con código de invitación, recuperar contraseña, puerto `Mailer` con consola y solicitudes de alta y código de invitación; 7 operaciones de H5, sin migración). El resto de H5 no cambia. En la demostración de H5, «Mailpit en local» pasa a consola en este primer trozo. Plan y tareas en `specs/H5-acceso/` |
 | 0.7 | 2026-11-02 | H4 (sección 3) al día tras construirlo (T9): fila «Tal como se construyó» con las 9 operaciones, la exportación por rol (P2), la semilla (P1), las desviaciones C1–C4 y la demostración del MVP. Punto de control del MVP |
 | 0.6 | 2026-11-01 | H3 (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con el motor, los trabajos, las desviaciones y la regresión real; Q-05 resuelta y la revisión de los pesos (P6) anotada como pendiente en la sección 6 |
 | 0.5 | 2026-11-01 | Prueba técnica del motor cerrada (documento 04, §7.6): H3 «Antes de empezar» con el motor elegido (GraphHopper 11.1) y su primera tarea (alimentar el motor con el DEM de OnWay) y la fila de la sección 6 resuelta |

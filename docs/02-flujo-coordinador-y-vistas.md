@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 0.9 (borrador) · Fecha: 2026-11-02 · Depende de: documento 01 (v1.3)
+Versión: 1.0 (borrador) · Fecha: 2026-11-05 · Depende de: documento 01 (v1.3)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -76,6 +76,13 @@ Boceto 1. Una sola pantalla de entrada con tres estados.
 - **Campos:** correo, contraseña, repetir contraseña y **código de invitación de la organización** *(propuesto)*, que asocia la solicitud a su organización.
 - El registro nunca concede el rol de coordinador (RN-25).
 - Un correo ya registrado no revela de quién es.
+- Al enviarse: pantalla **«Solicitud recibida»** («Un administrador de tu organización debe aprobarla») con enlace al inicio de sesión. No se abre sesión sola (RN-25). Un código inválido y un correo ya registrado dan el mismo mensaje, sin revelar cuál es el motivo.
+- En el login, enlaces visibles a **«Crear una cuenta»** y **«He olvidado mi contraseña»** (issue #9). Construido en `H5-acceso`.
+
+**Recuperar contraseña** (Q-33, `H5-acceso`)
+- **Petición:** un campo, el correo. La respuesta es siempre la misma («Si existe una cuenta con ese correo, te hemos enviado un enlace»), exista o no.
+- **Enlace:** de un solo uso, caduca a 1 h, y lleva el token en el fragmento (`/reset-password#token=…`). En desarrollo el enlace sale por el registro del `api` (puerto `Mailer`, `ConsoleMailer`).
+- **Nueva contraseña:** contraseña y repetirla. Un enlace usado, caducado o mal formado da el mismo mensaje. Al terminar se cierran todas las sesiones y se lleva al inicio de sesión.
 
 **Espera de aprobación** (RF-106)
 - Mensaje: "Tu solicitud está pendiente. Un administrador de tu organización debe aprobarla".
@@ -357,6 +364,8 @@ Secciones:
 ### 3.10 Administración
 
 Boceto 13. Vista solo para el administrador de organización (RF-106, RF-813).
+
+> Primer trozo, `H5-acceso` (2026-11-05): de esta vista se construyen solo **Solicitudes de alta** y **Código de invitación** (ver, copiar y regenerar con confirmación; al regenerarlo el anterior deja de valer). «Usuarios de la organización» y «Datos sensibles y accesos» siguen en el resto de H5.
 
 **Solicitudes de alta** (parte superior)
 - Lista tipo bandeja con casilla, nombre, correo y fecha de la solicitud. No muestra equipo ni «datos completos»: el perfil se crea al aprobar y lo rellena la persona en su primer acceso (Q-34).
@@ -654,6 +663,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.0 (2026-11-05)**
+- Cambio de alcance `H5-acceso` (issue #9): §3.1 con la pantalla «Solicitud recibida», la vista de recuperar contraseña y los enlaces del login; §3.10 con el corte de la administración que se construye primero (solicitudes y código de invitación). Sin cambios de permisos
 
 **0.9 (2026-11-02)**
 - H4 (§3.5, §4.3, §4.4, §7, §8): «Rutas de la misión» tal como se construyó (tabla comparativa con desplazamiento propio, selección con mapa y perfil, avisos, no disponible, quitar y exportar), el diálogo **Añadir ruta** en dos pasos con los otros dos caminos, **Validar** desde la fila, la vista del rescatista (tarjetas, perfil, descarga y compartir ubicación) y los casos límite nuevos (borrador fijado, no disponible, duplicada, archivada, misión cerrada, mapa caído).
