@@ -30,6 +30,8 @@
   --on-accent: #ffffff; /* 4,6:1 sobre --accent: justo, la prueba lo vigila */
   --accent-text: #ff7b72; /* enlaces rojos y errores */
 
+  --map-ctrl-icon-filter: invert(1); /* iconos oscuros de los controles de MapLibre → claros sobre `--surface-raised` */
+
   --focus: var(--attention); /* anillo exterior */
   --focus-inner: var(--bg); /* anillo interior */
 
@@ -86,6 +88,8 @@
   --accent-hover: #9d1d13;
   --on-accent: #ffffff;
   --accent-text: #9d1d13;
+
+  --map-ctrl-icon-filter: none;
 
   --focus: #17262b; /* anillo exterior: la tinta; el interior, el amarillo */
   --focus-inner: var(--attention);

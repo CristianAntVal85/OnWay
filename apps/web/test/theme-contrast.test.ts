@@ -205,6 +205,11 @@ describe('estructura de tokens.css', () => {
     ] as const) {
       for (const [name, value] of tokens) {
         if (name === 'color-scheme') continue;
+        // `--map-ctrl-icon-filter` no es un color: es el filtro que aclara los iconos de los controles de MapLibre en oscuro.
+        if (name === '--map-ctrl-icon-filter') {
+          expect(value, `${theme}: ${name}`).toBe(theme === 'oscuro' ? 'invert(1)' : 'none');
+          continue;
+        }
         // `--backdrop` lleva transparencia (#rrggbbaa); el resto, #rrggbb o una referencia a otro token
         const pattern = name === '--backdrop' ? /^#[0-9a-f]{8}$/i : /^(#[0-9a-f]{6}|var\(--[\w-]+\))$/i;
         expect(value, `${theme}: ${name}`).toMatch(pattern);

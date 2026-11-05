@@ -1148,6 +1148,35 @@ html:has(.action-bar) {
   cursor: crosshair;
 }
 
+/* Controles de MapLibre (zoom y brújula) teñidos con los tokens del tema, sin tocar su tamaño (los 29 px son de H7). El CSS de MapLibre se
+   carga después, con el trozo del mapa: de ahí `.map-view` delante y `:not(:empty)` / `:focus` en los selectores, que igualan o superan los
+   suyos sin `!important`. Los iconos son SVG oscuros sobre blanco: en oscuro se invierten (`--map-ctrl-icon-filter`). */
+.map-view .maplibregl-ctrl-group {
+  background: var(--surface-raised);
+}
+
+.map-view .maplibregl-ctrl-group:not(:empty) {
+  box-shadow: 0 0 0 2px var(--border-strong);
+}
+
+.map-view .maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--border-strong);
+}
+
+.map-view .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  filter: var(--map-ctrl-icon-filter);
+}
+
+.map-view .maplibregl-ctrl-group button:focus:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 5px var(--focus-inner);
+}
+
+.map-view .maplibregl-ctrl-group button:not(:disabled):hover {
+  background-color: var(--surface);
+}
+
 /* ---------- misiones: lista y detalle (T7) ---------- */
 
 .page-heading {

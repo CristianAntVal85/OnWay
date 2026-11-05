@@ -1,6 +1,7 @@
 // Ningún color literal fuera de los tokens (plan UI-rediseno §6, D-U3, D-U4, D-U8): los colores viven en `src/theme/tokens.css`;
-// `styles.css` (y cualquier otro CSS de `src/`) solo usa `var(--token)`. Lista cerrada de excepciones en TypeScript: las dos de
-// MapLibre, cuya pintura no lee variables CSS (D-U12; el estilo del mapa lo trata T5).
+// `styles.css` (y cualquier otro CSS de `src/`) solo usa `var(--token)`. Lista cerrada de excepciones en TypeScript: la pintura de las
+// rutas de MapLibre, que no lee variables CSS (D-U12; fijos en los dos temas, una prueba vigila que coincidan con `--route-*`). El estilo
+// del mapa base (`style.ts`) ya no lleva ningún literal desde T5: sus colores salen del sabor de Protomaps.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -110,8 +111,8 @@ describe('sin colores literales fuera de los tokens', () => {
     expect(OLD.filter((name) => defined.has(name) || used.has(name))).toEqual([]);
   });
 
-  it('en TypeScript solo quedan los colores de MapLibre (rutas y fondo del estilo), que no leen variables CSS', () => {
-    const EXCEPTIONS = new Set(['src/map/route-layers.ts', 'src/map/style.ts']);
+  it('en TypeScript solo quedan los colores de las rutas de MapLibre, que no leen variables CSS', () => {
+    const EXCEPTIONS = new Set(['src/map/route-layers.ts']);
     const offenders = files(SRC, /\.tsx?$/)
       .map((file) => relative(ROOT, file))
       .filter((file) => !EXCEPTIONS.has(file))

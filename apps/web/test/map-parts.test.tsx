@@ -22,6 +22,7 @@ import {
   tileBounds,
 } from '../src/map/ign-mix';
 import { Readout } from '../src/map/readout';
+import { namedFlavor } from '@protomaps/basemaps';
 import { buildStyle } from '../src/map/style';
 import { PYRENEES_BOUNDS, initialViewFor } from '../src/map/view';
 
@@ -111,7 +112,7 @@ describe('estilos de las capas (RF-301)', () => {
   const hostsOf = (templates: string[]) => [...new Set(templates.map((u) => new URL(u.replace(/[{}]/g, '')).host))].sort();
 
   it('el topográfico pide por el protocolo propio y sus dos fuentes son los dos anfitriones de IGN, con sus capas verificadas', () => {
-    const style = buildStyle('topographic', 'es', 'http://x.test');
+    const style = buildStyle('topographic', 'es', 'http://x.test', 'dark');
     expect(style.sources['topographic']).toMatchObject({ type: 'raster', tiles: [TOPOGRAPHIC_TILES] });
     expect(hostsOf([ES_TOPO, FR_TOPO])).toEqual([...IGN_HOSTS].sort());
     expect(ES_TOPO).toContain('layer=MTN');
@@ -119,7 +120,7 @@ describe('estilos de las capas (RF-301)', () => {
   });
 
   it('el satélite pide por el protocolo propio y sus dos fuentes son las capas verificadas de IGN', () => {
-    const style = buildStyle('satellite', 'es', 'http://x.test');
+    const style = buildStyle('satellite', 'es', 'http://x.test', 'dark');
     expect(style.sources['satellite']).toMatchObject({ type: 'raster', tiles: [SATELLITE_TILES] });
     expect(hostsOf([ES_ORTHO, FR_ORTHO])).toEqual([...IGN_HOSTS].sort());
     expect(ES_ORTHO).toContain('layer=OI.OrthoimageCoverage');
@@ -127,7 +128,7 @@ describe('estilos de las capas (RF-301)', () => {
   });
 
   it('topográfico: una sola capa compuesta por tesela (el MTN español encima del Plan IGN), no franjas apiladas', () => {
-    const style = buildStyle('topographic', 'es', 'http://x.test');
+    const style = buildStyle('topographic', 'es', 'http://x.test', 'dark');
     expect(style.layers.map((l) => l.id)).toEqual(['background', 'topographic']);
   });
 
@@ -147,12 +148,54 @@ describe('estilos de las capas (RF-301)', () => {
   });
 
   it('carreteras = PMTiles propio del mismo origen, con fuentes y sprites propios; el idioma sale de la interfaz', () => {
-    const style = buildStyle('roads', 'fr', 'https://onway.test');
+    const style = buildStyle('roads', 'fr', 'https://onway.test', 'light');
     expect(style.sources['protomaps']).toMatchObject({ type: 'vector', url: 'pmtiles://https://onway.test/tiles/pyrenees.pmtiles' });
     expect(style.glyphs).toBe('https://onway.test/tiles/assets/fonts/{fontstack}/{range}.pbf');
     expect(style.sprite).toBe('https://onway.test/tiles/assets/sprites/v4/light');
     expect(style.layers.length).toBeGreaterThan(20);
     expect(JSON.stringify(style)).toContain('name:fr');
+  });
+});
+
+describe('el mapa de carreteras sigue al tema (UI-rediseno T5, D-U2, D-U7)', () => {
+  const roads = (theme: 'dark' | 'light') => buildStyle('roads', 'es', 'https://onway.test', theme);
+  const paintOf = (style: ReturnType<typeof roads>, id: string) => (style.layers.find((layer) => layer.id === id) as { paint?: Record<string, unknown> } | undefined)?.paint;
+
+  it('en oscuro pide los sprites v4/dark y pinta con el sabor oscuro de Protomaps', () => {
+    const style = roads('dark');
+    expect(style.sprite).toBe('https://onway.test/tiles/assets/sprites/v4/dark');
+    expect(paintOf(style, 'background')?.['background-color']).toBe(namedFlavor('dark').background);
+    expect(JSON.stringify(style)).toContain(namedFlavor('dark').water);
+    expect(JSON.stringify(style)).not.toContain(namedFlavor('light').water);
+  });
+
+  it('en claro pide los sprites v4/light y pinta con el sabor claro', () => {
+    const style = roads('light');
+    expect(style.sprite).toBe('https://onway.test/tiles/assets/sprites/v4/light');
+    expect(paintOf(style, 'background')?.['background-color']).toBe(namedFlavor('light').background);
+    expect(JSON.stringify(style)).toContain(namedFlavor('light').water);
+  });
+
+  it('solo cambian los sprites y los colores: mismas fuentes, tipografías y capas, en el mismo orden', () => {
+    const dark = roads('dark');
+    const light = roads('light');
+    expect(dark.sources).toEqual(light.sources);
+    expect(dark.glyphs).toBe(light.glyphs);
+    expect(dark.layers.map((layer) => layer.id)).toEqual(light.layers.map((layer) => layer.id));
+    expect(JSON.stringify(dark)).not.toBe(JSON.stringify(light));
+  });
+
+  it('satélite y topográfico no se tematizan: mismas fuentes y capas en los dos temas; solo el fondo de relleno sigue al tema', () => {
+    for (const layer of ['satellite', 'topographic'] as const) {
+      const dark = buildStyle(layer, 'es', 'http://x.test', 'dark');
+      const light = buildStyle(layer, 'es', 'http://x.test', 'light');
+      expect(dark.sources).toEqual(light.sources);
+      expect(dark.layers.map((l) => l.id)).toEqual(light.layers.map((l) => l.id));
+      expect(dark.layers.filter((l) => l.type === 'raster')).toEqual(light.layers.filter((l) => l.type === 'raster'));
+      expect(dark.sprite).toBeUndefined();
+      expect(paintOf(dark, 'background')?.['background-color']).toBe(namedFlavor('dark').background);
+      expect(paintOf(light, 'background')?.['background-color']).toBe(namedFlavor('light').background);
+    }
   });
 });
 
