@@ -495,7 +495,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - ~~**Q-14** ¿Puede el administrador de organización ver y editar misiones, o solo gestionar usuarios, equipos y datos sensibles?~~ **Resuelta (2026-10-31): no.** El administrador lee las misiones pero no las escribe (ni crea, ni edita, ni activa, ni cierra); gestiona usuarios, equipos y datos sensibles. Lo escribe solo el coordinador (`MISSION_WRITERS`, y también las políticas de la base de datos: migración 0011).
 - **Q-15** Para informar a otras organizaciones (D-08), ¿qué formato necesitas: ficha en PDF, enlace de solo lectura, o basta con exportar las rutas?
 - **Q-16** Una misión *En planificación*, ¿solo la ven los coordinadores? ¿Los rescatistas solo pueden ofrecerse cuando está *Activa*?
-- **Q-17** ¿Pueden los rescatistas consultar la biblioteca de rutas, o solo ven las rutas de las misiones activas?
+- ~~**Q-17** ¿Pueden los rescatistas consultar la biblioteca de rutas, o solo ven las rutas de las misiones activas?~~ **Resuelta (2026-11-02, H4): no consultan la biblioteca.** Ven las rutas de las misiones que pueden ver (activas y cerradas), solo la versión validada y fijada (RN-03, INV-05); la *no disponible* se ve señalada. Lo deciden el servidor y las políticas de la base (`listMyMissionRoutes`).
 - **Q-21** ¿Quieres poder etiquetar las rutas (macizo, vertiente, época del año, tipo de terreno) para filtrar la biblioteca?
 - **Q-31** ¿El rescatista ve las misiones activas de toda la organización o solo las de sus equipos? ¿Debe recibir algún aviso al ser aceptado o al cerrarse la misión? *(nueva)*
 - **Q-32** Si el rescatista deniega la ubicación del dispositivo, ¿se usa el punto base de la organización para el tiempo del inicio? *(nueva)*
@@ -552,6 +552,7 @@ Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acom
 
 **1.3 (2026-11-02)**
 - D-34: el rescatista ve nombre y localidad de todos los equipos de su organización (construcción en H5). Nueva Q-36 (alias de coordinadores y rescatistas), aplazada. Backlog tras el MVP en `docs/backlog-post-mvp.md`.
+- H4 (cierra el MVP): RF-508 (no disponible), RF-513 (añadir ruta a la misión, por la biblioteca, generando o importando), RF-518 (aviso de versión nueva, que nunca cambia sola), RF-601 a RF-604 (el rescatista ve las rutas validadas y fijadas, las descarga y comparte la ubicación del objetivo) y RF-805 (equipo por ruta: el servidor lo admite y la interfaz lo muestra; el selector llega con los equipos en H5) quedan construidos. Resuelta Q-17. RF-603: el rescatista solo descarga validadas, fijadas y disponibles, y solo con la misión activa; el coordinador, la versión fijada de todas (las no disponibles solo si las pide).
 
 **1.2 (2026-11-01)**
 - H3: RF-304 (la ruta cruza la frontera en la misma red y sin cortes), RF-501 (generar, con puntos intermedios), RF-503 (composición real de lo generado y de lo dibujado pegado a caminos) y RF-507 (zonas a evitar) quedan construidos. Resuelta Q-05: las zonas pertenecen a la organización, con misión opcional, y no las ve el rescatista. R-01 anota la regresión sobre datos reales.

@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 0.9 (borrador) · Fecha: 2026-11-01 · Depende de: documentos 01 (v0.7), 02 (v0.5), 03 (v0.4) y 04 (v0.5)
+Versión: 1.0 (borrador) · Fecha: 2026-11-02 · Depende de: documentos 01 (v1.3), 02 (v0.9), 03 (v0.8) y 04 (v1.1)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -620,6 +620,7 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 | Cursos y habilidades | 20, algunos con certificado ficticio (un PDF de una página) | H5 |
 | Misiones | 6: dos en planificación, dos activas, dos cerradas. Las cerradas con participación confirmada y alguna desmarcada. **H1 siembra 3 (una por estado, ficticias; la activa con origen, intermedio y reunión; la cerrada sin participaciones, que llegan en H6)**, cada una con sus filas de `audit_log` y la altitud calculada por el `ElevationProvider`; las 6 completas, con participaciones, son de H6 | H1 (3 de 6) |
 | Rutas | 8 en la biblioteca, con 1 a 3 versiones. Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada. **H2 siembra 6** (una validada de una versión, una con tres versiones, una con borrador más nuevo que la validada, una derivada, una archivada y una con la validación de hace más de 90 días), a partir de GPX inventados de `data/seed/gpx/`, con sus filas de `audit_log` y las métricas que calcula el servidor; las 2 que faltan, generadas por el motor: **H3 no las siembra**, porque la semilla no depende del motor ni de su red; las produce el botón *Generar* (la demostración E2E crea por API una misión «E2E …» con un origen a cada lado de la frontera inventada y genera desde ella, y las deja archivadas) | H2 (6 de 8) |
+| Rutas en misiones | 2 a 4 por misión | **H4 siembra 4 en la misión activa «Valle de Ordesa»**, como las dejaría `addMissionRoutes`: la validada «Pradera a la Brecha»; «Senda del Circo» con la **versión 2** fijada y la 3 validada (aviso de versión nueva); «Collado con borrador nuevo» (validada) marcada **no disponible**; y «Variante de la Pradera» con el **borrador** fijado (invisible al rescatista). Con sus filas de `audit_log` (`route_added`, `route_marked_unavailable`); sin tocar las 3 misiones ni las 6 rutas. El rescatista ve 3 de las 4 y el coordinador las 4 | H4 |
 | Objetivos | En el Pirineo, escogidos con la prueba técnica del motor de rutas (documento 04, sección 7.3); la geometría de las rutas de ejemplo sale de esa prueba. Los 3 objetivos de H1 son inventados y caen dentro de la caja de `geodata` (lon −2…4, lat 42…44) | H1 (inventados) |
 
 ## 11. Pruebas de la base de datos
@@ -681,6 +682,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**1.0 (2026-11-02)** H4. **Sin migraciones SQL nuevas**: `mission_routes` y sus claves compuestas (INV-06, INV-13), los disparadores (INV-07, INV-11, origen de tipo origen) y las políticas `mroutes_rescuer`, `versions_rescuer`, `segments_rescuer` y `routes_rescuer` (0005 a 0011) solo se probaron, entre otras cosas con SQL directo como `onway_app` con rol de rescatista (`test/db/mission-routes-rescuer-policy.test.ts`, 9 pruebas): el rescatista lee la versión fijada y validada de una misión activa o cerrada, y nada más; no escribe. Hallazgo anotado: `teams_select` solo deja a un rescatista leer los equipos de los que es miembro, así que el equipo de una ruta le llega nulo si no es suyo (D-34 lo cambiará en H5, `docs/backlog-post-mvp.md` B-01). §10: las 4 rutas de la misión sembrada.
 
 **0.9 (2026-11-01)** H3. Sin migraciones SQL nuevas: `calculation_jobs` y `avoid_zones` (0005) pasan a usarse, y las políticas de 0008/0011 bastan (el personal lee y el coordinador escribe; el rescatista no accede a ninguna de las dos). §3.3 y §4 con el uso real; la cola (pg-boss) y sus permisos las instala el migrador (§9); §10: la semilla no incluye rutas generadas.
 
