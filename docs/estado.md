@@ -29,7 +29,7 @@ Contratos 89 (80 + 9 del cliente generado), i18n 8, geo 127, api unitarias 162, 
 | 9 | Cumple | Solo códigos de `ERROR_HTTP`; `INVALID_STATE_TRANSITION` y `NOT_FOUND` explícitos en el contrato y el doc 06; cada error tiene su mensaje en la web |
 | 10 | Cumple | Semilla ficticia (4 rutas en la misión activa), sin secretos; el E2E y el CI usan red y relieve inventados |
 | 11 | Cumple | Docs 01 (v1.3), 02 (v0.9), 03 (v0.8), 05 (v1.0), 06 (v1.3) y 07 (v0.7) con su registro, `CLAUDE.md` y `data/seed/README.md` al día; Q-17 resuelta; D-34 y Q-36 y el backlog tras el MVP |
-| 12 | CI_PLACEHOLDER | CI_EVIDENCE_PLACEHOLDER |
+| 12 | Cumple | CI de la rama en verde con los 6 trabajos (auditoría de dependencias, imágenes y `compose up`, API en PostGIS, formato/tipos/tests/generadores/esquema, `test:routing` y E2E) en `4211d4a` (ejecución 41983555432, 2026-11-05) y en cada tarea anterior; clon limpio con `up --build --wait`, `smoke.sh` y generación real en verde |
 
 ## Hechos que conviene recordar
 - **Una sola organización en la demostración** (D-H0-18): la B la crean las pruebas (`apps/web/e2e/global-setup.ts`) y las retira el cierre. La demostración E2E de H1 crea misiones «E2E …» y las deja **cerradas** (la auditoría es de solo añadir); si una ejecución se interrumpe, la siguiente las cierra. `down -v` las borra con la pila. El test de teclado de H0 (`access.spec.ts`) sube su tope de tabulaciones de 12 a 60: el inicio ya lleva misiones activas.
