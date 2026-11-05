@@ -2,6 +2,7 @@ import { Catch, HttpException, Logger, type ArgumentsHost, type ExceptionFilter 
 import { ERROR_HTTP, type ErrorCode, type ErrorResponse } from '@onway/contracts';
 import type { Response } from 'express';
 import { DomainError } from './domain-error.js';
+import { loggableError } from './loggable-error.js';
 import type { OnwayRequest } from './operation.js';
 
 interface Translated {
@@ -34,7 +35,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = http.getResponse<Response>();
     const translated = this.translate(exception, request);
     if (translated.code === 'INTERNAL') {
-      this.logger.error(`[${request.requestId}] ${exception instanceof Error ? (exception.stack ?? exception.message) : String(exception)}`);
+      this.logger.error(`[${request.requestId}] ${loggableError(exception)}`);
     }
     if (response.headersSent) return;
 
