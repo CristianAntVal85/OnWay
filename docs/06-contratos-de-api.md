@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.3 · **Estado:** borrador para revisión · **Fecha:** 2 de noviembre de 2026
+**Versión:** 1.4 · **Estado:** borrador para revisión · **Fecha:** 5 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -847,6 +847,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.4 | 2026-11-05 | Revisión de H4. `deleteMissionPoint` cumple lo que ya decía su resumen («no si una ruta de la misión sale de él»): responde 400 `VALIDATION_FAILED` con `issues[0]` = `{path: "pointId", code: "point_in_use"}` (antes caía en un 500 por la clave foránea de `mission_routes.origin_point_id`). Sin código de error nuevo; solo cambia su nota en el contrato. OpenAPI y tablas sin otras diferencias |
 | 1.3 | 2026-11-02 | Cierre de H4 (T9): las 9 operaciones montadas y probadas (51 en el API con las de H0 a H3; AC-02 con las 51 exactas). Durante el hito se añadieron al contrato `INVALID_STATE_TRANSITION` en `addMissionRoutes` y `updateMissionRoute`, `NOT_FOUND` explícito donde se pide una versión, un origen o un equipo ajenos, la acción de historial `route_updated`, `validationIsStale` en `MissionRouteRescuer` y notas de qué exporta cada rol; `createRoute` y `deriveRoute` implementan `addToMission` (ya estaba en el contrato). Sin operaciones nuevas fuera del hito. OpenAPI y tablas sin diferencias (96 operaciones, 79 rutas) |
 | 1.2 | 2026-11-01 | Cierre de H3 (T10): las 6 operaciones de H3 montadas y probadas (`snapRoute`, `generateRoutes`, `getJob`, `listAvoidZones`, `createAvoidZone`, `deleteAvoidZone`; 42 en el API con las de H0 a H2). Durante el hito se añadieron al contrato `MISSION_CLOSED` en las operaciones de zonas y `NOT_FOUND` en `generateRoutes` (la misión, el origen, el equipo o las zonas de otra organización), y `snapToPaths` (2 a 50 puntos) en `createRoute`; auditoría `generate_requested` y `avoid_zone_*` (§10.3). OpenAPI y tablas sin diferencias (96 operaciones, 79 rutas). Q-05 resuelta (doc. 01) |
 | 1.1 | 2026-11-01 | Prueba técnica del motor cerrada: el motor tras `RoutingProvider` es GraphHopper 11.1 (doc. 04 §7.6). Solo cambia un comentario; sin cambios de esquema |

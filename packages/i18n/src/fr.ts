@@ -500,6 +500,7 @@ export const fr: Messages = {
       removeYes: 'Oui, supprimer',
       removing: 'Suppression…',
       removeNo: 'Ne pas supprimer',
+      inUse: 'Suppression impossible : un itinéraire de la mission part de cette origine. Retirez d’abord cet itinéraire de la mission ou changez son origine.',
       added: '« {{name}} » a été ajouté.',
       updated: '« {{name}} » a été enregistré.',
       removed: '« {{name}} » a été supprimé.',

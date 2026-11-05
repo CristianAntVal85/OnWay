@@ -160,7 +160,8 @@ const RAW = [
     params: p.missionPoint, body: M.UpdatePointRequest, response: { status: 200, schema: M.MissionPoint }, errors: ['MISSION_CLOSED', 'OUTSIDE_COVERAGE'], delivery: 1, audited: true,
     notes: 'Si cambian lat o lon, el servidor recalcula la altitud.' },
   { id: 'deleteMissionPoint', method: 'DELETE', path: '/missions/{missionId}/points/{pointId}', tag: 'Puntos', summary: 'Borrar un punto (no si una ruta de la misión sale de él)', roles: MISSION_WRITERS,
-    params: p.missionPoint, response: { status: 204 }, errors: ['MISSION_CLOSED'], delivery: 1, audited: true },
+    params: p.missionPoint, response: { status: 204 }, errors: ['MISSION_CLOSED'], delivery: 1, audited: true,
+    notes: 'Si una ruta de la misión sale de ese origen: 400 `VALIDATION_FAILED` con `issues[0]` = {path: "pointId", code: "point_in_use"}; hay que quitar antes la ruta de la misión o cambiar su origen.' },
 
   // ================= Equipos de la misión =================
   { id: 'addMissionTeams', method: 'POST', path: '/missions/{missionId}/teams', tag: 'Participantes', summary: 'Asignar equipos: sus miembros entran como Aceptados', roles: MISSION_WRITERS,

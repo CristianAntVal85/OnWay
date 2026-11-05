@@ -107,6 +107,24 @@ async function closeMission(member: Member, missionId: string) {
 }
 const archive = (member: Member, routeId: string) => call(member, 'POST', `/routes/${routeId}/archive`);
 
+describe('deleteMissionPoint with a route that leaves from the origin (contract of H1, found in the H4 review)', () => {
+  it('refuses with VALIDATION_FAILED / point_in_use, keeps the point and the route, and allows it once the route is removed', async () => {
+    const coordinator = a.coordinator;
+    const mission = await newMission(coordinator);
+    const route = await newRoute(coordinator);
+    const item = await added(coordinator, mission.id, { routeId: route.routeId, originPointId: mission.originId });
+    const audits = await count(`SELECT count(*) AS n FROM audit_log WHERE entity_id = $1 AND action = 'point_removed'`, [mission.id]);
+
+    const failure = await expectError(await call(coordinator, 'DELETE', `/missions/${mission.id}/points/${mission.originId}`), 'VALIDATION_FAILED');
+    expect(failure.details).toEqual({ issues: [expect.objectContaining({ path: 'pointId', code: 'point_in_use' })] });
+    expect(await count(`SELECT count(*) AS n FROM mission_points WHERE id = $1`, [mission.originId])).toBe(1);
+    expect(await count(`SELECT count(*) AS n FROM audit_log WHERE entity_id = $1 AND action = 'point_removed'`, [mission.id])).toBe(audits);
+
+    expect((await remove(coordinator, mission.id, item.id)).status).toBe(204);
+    expect((await call(coordinator, 'DELETE', `/missions/${mission.id}/points/${mission.originId}`)).status).toBe(204);
+  });
+});
+
 describe('addMissionRoutes (RF-513, D-H4-01, D-H4-05)', () => {
   it('pins the last VALIDATED version by default (or the last one when none is validated), with origin, team and note, and says so in the history', async () => {
     const mission = await newMission(a.coordinator);

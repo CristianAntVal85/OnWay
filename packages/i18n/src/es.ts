@@ -500,6 +500,7 @@ export const es: Messages = {
       removeYes: 'Sí, borrar',
       removing: 'Borrando…',
       removeNo: 'No borrar',
+      inUse: 'No se puede borrar: una ruta de la misión sale de este origen. Quita antes esa ruta de la misión o cambia su origen.',
       added: 'Se ha añadido «{{name}}».',
       updated: 'Se ha guardado «{{name}}».',
       removed: 'Se ha borrado «{{name}}».',

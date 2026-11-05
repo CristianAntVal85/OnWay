@@ -411,6 +411,17 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
     expect(screen.queryByTestId('marker-waypoint')).toBeNull();
   });
 
+  it('borrar un origen del que sale una ruta de la misión: muestra el aviso propio en la fila y no borra nada', async () => {
+    const { user, calls } = await openDetail({
+      [`DELETE ${PATH}/points/p2`]: () => apiError(400, 'VALIDATION_FAILED', { issues: [{ path: 'pointId', code: 'point_in_use', message: 'A route of the mission leaves from this point' }] }),
+    });
+    await user.click(screen.getByRole('button', { name: P.remove.replace('{{name}}', 'Collado de Coronas') }));
+    await user.click(screen.getByRole('button', { name: P.removeYes }));
+    expect(await screen.findByText(P.inUse)).toBeTruthy();
+    expect(sends(calls(), 'DELETE', `${PATH}/points/p2`)).toHaveLength(1);
+    expect(screen.getByText('Collado de Coronas')).toBeTruthy();
+  });
+
   it('MISSION_CLOSED al escribir: avisa, relee la misión y los controles de escritura desaparecen', async () => {
     const server = detailServer();
     const { user } = await openDetail(
