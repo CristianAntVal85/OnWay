@@ -368,9 +368,13 @@ test('the library works with the keyboard only and in French', async ({ page }) 
   const link = page.getByRole('link', { name: 'Senda del Circo (ficticia)', exact: true });
   await tabTo(page, link, 140);
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'Senda del Circo (ficticia)' })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 2, name: fr.routeDetail.versions.title })).toBeVisible();
+  // En el runner del CI (2 núcleos, WebGL por software) el móvil se queda sin pintar unos 20 s al pasar del listado con mapa al detalle con mapa
+  // (trazas de los fallos de 6be9e58 y 7906d53: ni un fotograma ni una petición entre Intro y la petición del detalle; la API responde en <150 ms).
+  // Es lentitud del navegador de la prueba, no del producto: aquí se espera más que los 15 s del resto de la prueba.
+  const SLOW_NAVIGATION = { timeout: 45_000 };
+  await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/, SLOW_NAVIGATION);
+  await expect(page.getByRole('heading', { level: 1, name: 'Senda del Circo (ficticia)' })).toBeVisible(SLOW_NAVIGATION);
+  await expect(page.getByRole('heading', { level: 2, name: fr.routeDetail.versions.title })).toBeVisible(SLOW_NAVIGATION);
   await expect(page.getByRole('button', { name: fr.routeDetail.actions.exportGpx })).toBeVisible();
   // El perfil de elevación tiene su tabla equivalente, alcanzable con el teclado.
   const summary = page.getByText(fr.routeDetail.profile.showTable);
