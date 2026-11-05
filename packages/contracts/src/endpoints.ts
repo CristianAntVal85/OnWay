@@ -91,7 +91,7 @@ const RAW = [
   // ================= Acceso =================
   { id: 'register', method: 'POST', path: '/auth/register', tag: 'Acceso', summary: 'Solicitar el alta con código de invitación', roles: ['public'],
     body: A.RegisterRequest, response: { status: 202, schema: A.RegisterResponse }, errors: ['REGISTRATION_FAILED'], delivery: 1, audited: true,
-    notes: 'Código inválido y correo ya registrado devuelven el mismo REGISTRATION_FAILED. Nunca concede rol (RN-25).' },
+    notes: 'Código inválido y correo ya registrado devuelven el mismo REGISTRATION_FAILED. Nunca concede rol (RN-25): crea una cuenta pendiente, sin sesión. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
   { id: 'login', method: 'POST', path: '/auth/login', tag: 'Acceso', summary: 'Iniciar sesión (cookie de sesión + token CSRF)', roles: ['public'],
     body: A.LoginRequest, response: { status: 200, schema: A.LoginResponse }, errors: ['INVALID_CREDENTIALS', 'ACCOUNT_LOCKED', 'ACCOUNT_DISABLED', 'ACCOUNT_REJECTED'], delivery: 1,
     notes: 'Una cuenta pendiente SÍ inicia sesión: la respuesta trae nextStep = awaiting-approval y no puede llamar a nada más que /auth/me y /auth/logout.' },
@@ -104,10 +104,10 @@ const RAW = [
     body: A.ChangePasswordRequest, response: { status: 204 }, errors: ['INVALID_CREDENTIALS'], delivery: 1 },
   { id: 'forgotPassword', method: 'POST', path: '/auth/password/forgot', tag: 'Acceso', summary: 'Pedir enlace para restablecer contraseña', roles: ['public'],
     body: A.ForgotPasswordRequest, response: { status: 202, schema: Ok }, delivery: 1, audited: false,
-    notes: 'Responde siempre 202, exista o no el correo. Envía por el puerto Mailer un enlace con un token de un solo uso que caduca en 1 h (auth_request_password_reset; máx. 3 por hora y cuenta).' },
+    notes: 'Responde siempre 202, exista o no el correo. Envía por el puerto Mailer un enlace con un token de un solo uso que caduca en 1 h (auth_request_password_reset; máx. 3 por hora y cuenta). El enlace es PUBLIC_BASE_URL/reset-password#token=<token>: el token viaja en el fragmento, que el navegador no envía al servidor. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
   { id: 'resetPassword', method: 'POST', path: '/auth/password/reset', tag: 'Acceso', summary: 'Restablecer la contraseña con el token recibido', roles: ['public'],
     body: A.ResetPasswordRequest, response: { status: 204 }, errors: ['INVALID_RESET_TOKEN'], delivery: 1, audited: true,
-    notes: 'Cierra todas las sesiones y quita el bloqueo por intentos (auth_consume_password_reset). Token inexistente, usado o caducado: el mismo error.' },
+    notes: 'Cierra todas las sesiones y quita el bloqueo por intentos (auth_consume_password_reset). Token inexistente, usado, caducado o mal formado (también demasiado corto o largo): el mismo error 422 INVALID_RESET_TOKEN. La contraseña nueva cumple el mismo esquema que la del registro; si no lo cumple, 400 VALIDATION_FAILED y el token no se consume. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
 
   // ================= Organización =================
   { id: 'getOrganization', method: 'GET', path: '/org', tag: 'Organización', summary: 'Datos y configuración de mi organización', roles: ALL,
@@ -327,9 +327,11 @@ const RAW = [
 
   // ================= Administración =================
   { id: 'listSignupRequests', method: 'GET', path: '/admin/signup-requests', tag: 'Administración', summary: 'Solicitudes de alta (bandeja)', roles: ['admin'],
-    query: AD.ListSignupRequestsQuery, response: { status: 200, schema: AD.SignupRequestsPage }, delivery: 1 },
+    query: AD.ListSignupRequestsQuery, response: { status: 200, schema: AD.SignupRequestsPage }, delivery: 1,
+    notes: 'Solo las de la organización del administrador. Por defecto las pendientes; `q` busca por correo o nombre. Más recientes primero. Cada fila lleva solo `userId`, correo, nombre, estado y fecha (Q-34): nunca teléfono, documento, dirección ni rol. `Cache-Control: no-store`.' },
   { id: 'decideSignupRequests', method: 'POST', path: '/admin/signup-requests/decide', tag: 'Administración', summary: 'Aprobar (con rol) o rechazar, también en bloque', roles: ['admin'],
-    body: AD.DecideSignupRequest, response: { status: 200, schema: AD.DecideSignupResponse }, delivery: 1, audited: true },
+    body: AD.DecideSignupRequest, response: { status: 200, schema: AD.DecideSignupResponse }, errors: ['INVALID_STATE_TRANSITION'], delivery: 1, audited: true,
+    notes: 'Atómica (D-A4): toda la selección se decide en una sola transacción y, si una persona falla, no cambia ninguna. Un id que no es una solicitud de esta organización (inexistente o de otra) da `NOT_FOUND` y no se decide nada (INV-01); una solicitud que ya no está pendiente da `INVALID_STATE_TRANSITION`. Por eso `skipped` va siempre vacío y `affected` es el número de personas decididas. Con `selection.mode = "filter"` se decide lo que cumple el filtro menos `exceptIds`. Cada persona deja su fila de auditoría (`signup_approved` / `signup_rejected`).' },
   { id: 'listUsers', method: 'GET', path: '/admin/users', tag: 'Administración', summary: 'Usuarios de la organización', roles: ['admin'],
     query: AD.ListUsersQuery, response: { status: 200, schema: AD.UsersPage }, delivery: 1 },
   { id: 'getUser', method: 'GET', path: '/admin/users/{userId}', tag: 'Administración', summary: 'Ficha de usuario (contacto y habilidades, sin documento ni dirección)', roles: ['admin'],
@@ -344,9 +346,11 @@ const RAW = [
   { id: 'listAuditLog', method: 'GET', path: '/admin/audit-log', tag: 'Administración', summary: 'Registro de accesos y cambios de cuenta', roles: ['admin'],
     query: AD.ListAuditLogQuery, response: { status: 200, schema: AD.AuditLogPage }, delivery: 1 },
   { id: 'getInviteCode', method: 'GET', path: '/admin/invite-code', tag: 'Administración', summary: 'Ver el código de invitación', roles: ['admin'],
-    response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1 },
+    response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1,
+    notes: 'El código vigente de la organización del administrador (D-A6): ningún otro rol lo ve y no sale en ningún listado ni en el historial. `Cache-Control: no-store`.' },
   { id: 'rotateInviteCode', method: 'POST', path: '/admin/invite-code/rotate', tag: 'Administración', summary: 'Regenerar el código de invitación', roles: ['admin'],
-    body: Empty, response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1, audited: true },
+    body: Empty, response: { status: 200, schema: AD.InviteCodeResponse }, delivery: 1, audited: true,
+    notes: 'Genera un código nuevo (16 letras y cifras sin caracteres ambiguos, en grupos de 4) que invalida el anterior en el acto (D-A5). Deja la fila de auditoría `invite_code_rotated` sin el código. `Cache-Control: no-store`.' },
 ] as const satisfies readonly Omit<Endpoint, 'milestone'>[];
 
 export const ENDPOINTS: readonly Endpoint[] = RAW.map((e) => {

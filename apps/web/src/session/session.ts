@@ -2,7 +2,7 @@
 // El token CSRF lo recuerda el cliente generado a partir de `login` y `getMe`.
 import { createContext, useContext } from 'react';
 import { QueryCache, MutationCache, QueryClient, useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
-import { ApiError, type ApiClient, type OperationOutput } from '@onway/contracts/client';
+import { ApiError, type ApiClient, type OperationInput, type OperationOutput } from '@onway/contracts/client';
 import type { ErrorCode } from '@onway/contracts';
 import { useApi } from './api-context';
 
@@ -93,6 +93,31 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => api.logout(),
     // Solo si el servidor confirma el cierre: si falla, la persona sigue dentro y ve el error.
+    onSuccess: () => {
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== SESSION_KEY[0] });
+      queryClient.setQueryData(SESSION_KEY, anonymous());
+    },
+  });
+}
+
+/** Solicitud de alta (RF-104): no abre sesión ni concede rol (RN-25); la persona queda pendiente de aprobación. */
+export function useRegister() {
+  const api = useApi();
+  return useMutation({ mutationFn: (body: OperationInput<'register'>['body']) => api.register({ body }) });
+}
+
+/** Pide el enlace para restablecer la contraseña; el servidor responde igual exista o no el correo. */
+export function useForgotPassword() {
+  const api = useApi();
+  return useMutation({ mutationFn: (body: OperationInput<'forgotPassword'>['body']) => api.forgotPassword({ body }) });
+}
+
+/** Cambia la contraseña con el token del enlace. El servidor cierra todas las sesiones: aquí no queda ninguna en la caché. */
+export function useResetPassword() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: OperationInput<'resetPassword'>['body']) => api.resetPassword({ body }),
     onSuccess: () => {
       queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== SESSION_KEY[0] });
       queryClient.setQueryData(SESSION_KEY, anonymous());

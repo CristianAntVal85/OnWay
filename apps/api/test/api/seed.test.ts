@@ -95,6 +95,12 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
     expect(
       await count(`SELECT count(*) n FROM signup_requests s JOIN users u ON u.id = s.user_id WHERE s.organization_id = $1 AND s.status = 'pending' AND u.account_status = 'pending'`, [orgId]),
     ).toBe(1);
+    // The applicant of the demo has its own pending signup request, so the admin inbox (H5) shows it (and a second `up` adds no duplicate).
+    const pendingRequests = await fixtures.query<{ email: string }>(`SELECT u.email FROM signup_requests s JOIN users u ON u.id = s.user_id WHERE s.organization_id = $1 AND s.status = 'pending'`, [
+      orgId,
+    ]);
+    expect(pendingRequests.map((r) => r.email)).toEqual(demo.applicants.map((a) => a.email));
+    expect(demo.applicants.map((a) => a.email)).toEqual(['pendiente@example.org']);
     // INV-25: the pending account holds no membership.
     expect(await count(`SELECT count(*) n FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.account_status = 'pending' AND m.organization_id = $1`, [orgId])).toBe(0);
     // No rejected, disabled or locked account in the demo (D-H0-18): those are test data only.

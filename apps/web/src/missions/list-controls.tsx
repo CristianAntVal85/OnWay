@@ -59,21 +59,23 @@ interface TabsProps<Tab extends string> {
   label: string;
   tabLabel: (id: Tab) => string;
   onSelect: (id: Tab) => void;
+  /** Prefijo de los `id` de pestañas y panel (`<prefijo>-tab-<id>` y `<prefijo>-panel`); otra vista con pestañas usa el suyo. */
+  idPrefix?: string;
 }
 
 /** Pestañas con el patrón de flechas (Izquierda y Derecha cambian de pestaña y mueven el foco). */
-export function MissionTabs<Tab extends string>({ tabs, tab, label, tabLabel, onSelect }: TabsProps<Tab>) {
+export function MissionTabs<Tab extends string>({ tabs, tab, label, tabLabel, onSelect, idPrefix = 'missions' }: TabsProps<Tab>) {
   return (
     <div className="tabs" role="tablist" aria-label={label}>
       {tabs.map((id) => (
         <button
           key={id}
-          id={`missions-tab-${id}`}
+          id={`${idPrefix}-tab-${id}`}
           type="button"
           role="tab"
           className="tab"
           aria-selected={tab === id}
-          aria-controls="missions-panel"
+          aria-controls={`${idPrefix}-panel`}
           tabIndex={tab === id ? 0 : -1}
           onClick={() => onSelect(id)}
           onKeyDown={(event) => {
@@ -82,7 +84,7 @@ export function MissionTabs<Tab extends string>({ tabs, tab, label, tabLabel, on
             event.preventDefault();
             const next = tabs[(tabs.indexOf(id) + step + tabs.length) % tabs.length]!;
             onSelect(next);
-            document.getElementById(`missions-tab-${next}`)?.focus();
+            document.getElementById(`${idPrefix}-tab-${next}`)?.focus();
           }}
         >
           {tabLabel(id)}

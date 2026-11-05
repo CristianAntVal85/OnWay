@@ -4,7 +4,9 @@ import { Shell } from '../components/shell';
 import { SkipLink } from '../components/skip-link';
 import { PATHS } from '../nav/navigation';
 import { AccountPage } from '../pages/account-page';
+import { AdminPage } from '../pages/admin-page';
 import { CreateMissionPage } from '../pages/create-mission-page';
+import { ForgotPasswordPage } from '../pages/forgot-password-page';
 import { HomePage } from '../pages/home-page';
 import { LaterPage } from '../pages/later-page';
 import { MissionDetailPage } from '../pages/mission-detail-page';
@@ -14,6 +16,8 @@ import { NotFoundPage } from '../pages/not-found-page';
 import { ProfilePage } from '../pages/profile-page';
 import { GenerateRoutesPage } from '../pages/generate-routes-page';
 import { ImportRoutePage } from '../pages/import-route-page';
+import { RegisterPage } from '../pages/register-page';
+import { ResetPasswordPage } from '../pages/reset-password-page';
 import { RouteDetailPage } from '../pages/route-detail-page';
 import { RouteEditorPage } from '../pages/route-editor-page';
 import { RoutesPage } from '../pages/routes-page';
@@ -26,6 +30,9 @@ export function AppRoutes() {
       <SkipLink />
       <Routes>
         <Route path={PATHS.login} element={<LoginPage />} />
+        <Route path={PATHS.register} element={<RegisterPage />} />
+        <Route path={PATHS.forgotPassword} element={<ForgotPasswordPage />} />
+        <Route path={PATHS.resetPassword} element={<ResetPasswordPage />} />
         <Route element={<RequireSession />}>
           <Route path={PATHS.waiting} element={<WaitingPage />} />
           <Route element={<RequireActive />}>
@@ -123,7 +130,7 @@ export function AppRoutes() {
                 path={PATHS.admin}
                 element={
                   <RoleGate route="admin">
-                    <LaterPage section="nav.administration" />
+                    <AdminPage />
                   </RoleGate>
                 }
               />

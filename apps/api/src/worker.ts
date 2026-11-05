@@ -10,6 +10,7 @@ import { createFileStorage } from './files/config.js';
 import { createElevationProvider, createGeocodingProvider } from './geo/config.js';
 import { identityOptionsFromEnv } from './identity/config.js';
 import { JobRunner } from './jobs/job-runner.js';
+import { mailOptionsFromEnv } from './mail/config.js';
 import { PgBossQueue } from './jobs/pg-boss-queue.js';
 import { CALCULATE_QUEUE } from './jobs/queue.js';
 import { createRoutingProvider } from './routing/config.js';
@@ -25,6 +26,7 @@ const app = await NestFactory.createApplicationContext(
     database,
     identity: identityOptionsFromEnv(),
     clock,
+    mail: mailOptionsFromEnv(),
     geo: { elevation: createElevationProvider(process.env), geocoding: createGeocodingProvider(clock, process.env) },
     files: { storage: createFileStorage() },
     weather: { provider: createWeatherProvider(process.env) },

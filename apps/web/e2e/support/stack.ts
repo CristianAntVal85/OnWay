@@ -6,6 +6,7 @@ import { argon2, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { lastResetMailTo, type ResetMail } from './mail-log';
 
 export const ROOT = path.resolve(import.meta.dirname, '../../../..');
 
@@ -124,6 +125,25 @@ export async function archiveLeftoverE2eRoutes(like = 'E2E %'): Promise<void> {
     SELECT 1 FROM mission_routes mr JOIN missions m ON m.id = mr.mission_id WHERE mr.route_id = routes.id AND m.status <> 'closed');`);
 }
 
+/**
+ * Las cuentas que crea la demostración de `H5-acceso` tienen el correo `e2e-…@example.org` y el nombre «E2E …». No se pueden borrar
+ * (la auditoría es de solo añadir y las filas la referencian), así que se dejan inocuas: las pendientes, RECHAZADAS (sin sesión ni
+ * acceso) y las aprobadas, DESACTIVADAS (cuenta y membresía) y sin sesiones. Solo toca cuentas con ese correo y ese nombre; `emailLike`
+ * acota a lo de una ejecución. Idempotente: lo ya rechazado o desactivado no cambia.
+ */
+export async function retireE2eAccounts(emailLike = 'e2e-%@example.org'): Promise<void> {
+  if (!/^e2e-[a-z0-9%-]*@example\.org$/.test(emailLike)) throw new Error(`unsafe LIKE pattern for the E2E account cleanup: ${emailLike}`);
+  const mine = `SELECT id FROM users WHERE email LIKE '${emailLike}' AND display_name LIKE 'E2E %'`;
+  await psqlAsOwner(`
+BEGIN;
+UPDATE signup_requests SET status = 'rejected', decided_at = now() WHERE status = 'pending' AND user_id IN (${mine});
+UPDATE users SET account_status = 'rejected' WHERE account_status = 'pending' AND id IN (${mine});
+UPDATE users SET account_status = 'disabled' WHERE account_status = 'active' AND id IN (${mine});
+UPDATE memberships SET status = 'disabled' WHERE status = 'active' AND user_id IN (${mine});
+DELETE FROM sessions WHERE user_id IN (${mine});
+COMMIT;`);
+}
+
 function compose(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn('docker', ['compose', ...args], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -149,4 +169,48 @@ export async function startRoutingEngine(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
   throw new Error('the routing engine did not come back');
+}
+
+/**
+ * El ÚLTIMO enlace de recuperación de contraseña que el `api` ha "enviado" a un correo (el adaptador de consola lo escribe en su registro,
+ * `docker compose logs api`; formato en `mail-log.ts`). Espera con reintentos acotados a que aparezca. Con `since` solo cuenta lo escrito
+ * desde ese instante, para no confundir el enlace nuevo con uno anterior del mismo correo. Necesita `COMPOSE_PROJECT_NAME` como el resto.
+ */
+export async function lastPasswordResetMail(email: string, options: { since?: Date; timeoutMs?: number } = {}): Promise<ResetMail> {
+  const { since, timeoutMs = 20_000 } = options;
+  const args = ['logs', '--no-color', '--no-log-prefix', ...(since ? ['--since', since.toISOString()] : []), 'api'];
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const mail = lastResetMailTo(await compose(args), email);
+    if (mail) return mail;
+    if (Date.now() >= deadline) throw new Error(`no password-reset mail for ${email} appeared in the api log within ${timeoutMs} ms`);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+}
+
+/** El código de invitación vigente de la organización de la demostración (lo que el administrador ve en Administración), leído de la base. */
+export async function currentInviteCode(): Promise<string> {
+  const out = await psqlAsOwner(`SELECT invite_code FROM organizations WHERE name = '${ORG_A_NAME.replaceAll("'", "''")}';`);
+  const code = out.trim();
+  if (code.length < 10) throw new Error('the invite code of the demo organization was not found');
+  return code;
+}
+
+/**
+ * Reinicia el servicio `api` y espera a que responda. Los endpoints públicos (registro y recuperación de contraseña) tienen un
+ * limitador por IP EN MEMORIA y todas las pruebas salen de la misma IP: reiniciar vacía los contadores, de modo que una ejecución
+ * empieza siempre limpia (las repeticiones seguidas en la misma pila no se acumulan). No toca la base ni las sesiones.
+ */
+export async function restartApi(healthUrl: string): Promise<void> {
+  await compose(['restart', 'api']);
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    const ok = await fetch(healthUrl, { signal: AbortSignal.timeout(3000) }).then(
+      (r) => r.ok,
+      () => false,
+    );
+    if (ok) return;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`the api did not come back at ${healthUrl}`);
 }

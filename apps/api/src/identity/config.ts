@@ -1,3 +1,4 @@
+import type { PublicLimits } from '../common/public-rate-limiter.js';
 import { readSecret, type Env } from '../db/config.js';
 
 export const IDENTITY_OPTIONS = Symbol('IDENTITY_OPTIONS');
@@ -7,6 +8,8 @@ export interface IdentityOptions {
   csrfSecret: Buffer;
   /** Lifetime of a session (D-H0-07). */
   sessionTtlMs: number;
+  /** Per-IP limits of the public operations (`register`, then `forgotPassword` and `resetPassword`). Unset keys use `DEFAULT_PUBLIC_LIMITS`; tests pass small ones. */
+  publicLimits?: Partial<PublicLimits>;
 }
 
 const MIN_SECRET_BYTES = 32;

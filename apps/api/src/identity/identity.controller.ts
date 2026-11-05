@@ -1,6 +1,8 @@
 import { Controller, Inject, Req, Res } from '@nestjs/common';
 import type { OperationOutput } from '@onway/contracts';
 import type { Response } from 'express';
+import { clientKey } from '../common/client-ip.js';
+import { PUBLIC_RATE_LIMITER, type PublicRateLimiter } from '../common/public-rate-limiter.js';
 import { Input, Operation, type OnwayRequest, type OperationInput } from '../common/operation.js';
 import { DatabaseService } from '../db/database.service.js';
 import { AuthService } from './auth.service.js';
@@ -15,7 +17,36 @@ export class IdentityController {
     @Inject(AuthService) private readonly auth: AuthService,
     @Inject(SessionService) private readonly sessions: SessionService,
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(PUBLIC_RATE_LIMITER) private readonly limiter: PublicRateLimiter,
   ) {}
+
+  @Operation('register')
+  async register(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'register'>> {
+    // Before the hash: a flood must not make the server spend its time on Argon2id.
+    this.limiter.assert('register', clientKey(request));
+    const { email, password, displayName, inviteCode, locale } = input.body as { email: string; password: string; displayName: string; inviteCode: string; locale: 'es' | 'fr' };
+    await this.auth.register({ email, password, displayName, inviteCode, locale });
+    noStore(response);
+    return { status: 'received' };
+  }
+
+  @Operation('forgotPassword')
+  async forgotPassword(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'forgotPassword'>> {
+    // Before anything else: a refused request must not reach the database or send a mail.
+    this.limiter.assert('forgotPassword', clientKey(request));
+    await this.auth.requestPasswordReset((input.body as { email: string }).email);
+    noStore(response);
+    return { ok: true };
+  }
+
+  @Operation('resetPassword')
+  async resetPassword(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<void> {
+    // Before the hash, like `register`: a flood must not make the server spend its time on Argon2id.
+    this.limiter.assert('resetPassword', clientKey(request));
+    const { token, newPassword } = input.body as { token: string; newPassword: string };
+    await this.auth.resetPassword(token, newPassword);
+    noStore(response);
+  }
 
   @Operation('login')
   async login(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'login'>> {
