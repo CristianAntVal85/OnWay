@@ -48,7 +48,7 @@ interface Fixtures {
 }
 
 function projectDevice(info: TestInfo): BrowserContextOptions {
-  const base = info.project.name === 'mobile' ? { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } : devices['Desktop Chrome'];
+  const base = info.project.name.startsWith('mobile') ? { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } : devices['Desktop Chrome'];
   return { ...base, baseURL: info.project.use.baseURL ?? 'http://localhost:8080', locale: 'es-ES' };
 }
 
