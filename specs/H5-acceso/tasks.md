@@ -4,8 +4,8 @@ Plan aprobado el 2026-11-05 (`plan.md`, decisiones P1–P5 aceptadas). Rama `hit
 
 Operaciones del cambio (7, `x-milestone: H5` sin cambiar): `register`, `forgotPassword`, `resetPassword`, `listSignupRequests`, `decideSignupRequests`, `getInviteCode`, `rotateInviteCode`. No se monta ninguna otra de H5.
 
-- [ ] **T1. Contrato, hito en curso y AC-02.** Regla 7; las 7 operaciones.
-  - Se comprueba que los esquemas de `auth.ts` y `admin.ts` encajan con lo previsto (`RegisterResponse` 202, `ResetPasswordRequest` con token de ≥ 20 caracteres, `DecideSignupRequest` con rol al aprobar) y se corrigen primero aquí si no. Se completan las notas de `register`, `forgotPassword` y `resetPassword` (límite de peticiones, formato del enlace). `CURRENT_MILESTONE` pasa a `'H5'` y la prueba AC-02 enumera las 51 montadas más estas 7 (58) y comprueba que el resto de H5 sigue sin montarse (404).
+- [x] **T1. Contrato, hito en curso y AC-02.** Regla 7; las 7 operaciones.
+  - Se comprueba que los esquemas de `auth.ts` y `admin.ts` encajan con lo previsto (`RegisterResponse` 202, `ResetPasswordRequest` con token de ≥ 20 caracteres, `DecideSignupRequest` con rol al aprobar) y se corrigen primero aquí si no. Se completan las notas de `register`, `forgotPassword` y `resetPassword` (límite de peticiones, formato del enlace). `CURRENT_MILESTONE` pasa a `'H5'` y la prueba AC-02 enumera las 51 montadas más estas 7 (58) y comprueba que el resto de H5 sigue sin montarse (404). *Hecho así:* en T1 siguen montadas las 51 (no se monta ninguna operación nueva); las 7 se añaden a la lista `ACCESS_BUILT` de la prueba en T3 a T5 hasta llegar a 58.
   - Hecho cuando: `pnpm --filter @onway/contracts test` y `gen:openapi` / `gen:doc` sin diferencias salvo las notas; `test:api` de `app.test.ts` en verde con 58 operaciones y las 19 restantes de H5 respondiendo 404 `NOT_FOUND`.
   - Cierre: commit `feat(H5-acceso): T1 mark the access operations as the milestone in progress` + push.
 

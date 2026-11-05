@@ -91,7 +91,7 @@ const RAW = [
   // ================= Acceso =================
   { id: 'register', method: 'POST', path: '/auth/register', tag: 'Acceso', summary: 'Solicitar el alta con código de invitación', roles: ['public'],
     body: A.RegisterRequest, response: { status: 202, schema: A.RegisterResponse }, errors: ['REGISTRATION_FAILED'], delivery: 1, audited: true,
-    notes: 'Código inválido y correo ya registrado devuelven el mismo REGISTRATION_FAILED. Nunca concede rol (RN-25).' },
+    notes: 'Código inválido y correo ya registrado devuelven el mismo REGISTRATION_FAILED. Nunca concede rol (RN-25): crea una cuenta pendiente, sin sesión. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
   { id: 'login', method: 'POST', path: '/auth/login', tag: 'Acceso', summary: 'Iniciar sesión (cookie de sesión + token CSRF)', roles: ['public'],
     body: A.LoginRequest, response: { status: 200, schema: A.LoginResponse }, errors: ['INVALID_CREDENTIALS', 'ACCOUNT_LOCKED', 'ACCOUNT_DISABLED', 'ACCOUNT_REJECTED'], delivery: 1,
     notes: 'Una cuenta pendiente SÍ inicia sesión: la respuesta trae nextStep = awaiting-approval y no puede llamar a nada más que /auth/me y /auth/logout.' },
@@ -104,10 +104,10 @@ const RAW = [
     body: A.ChangePasswordRequest, response: { status: 204 }, errors: ['INVALID_CREDENTIALS'], delivery: 1 },
   { id: 'forgotPassword', method: 'POST', path: '/auth/password/forgot', tag: 'Acceso', summary: 'Pedir enlace para restablecer contraseña', roles: ['public'],
     body: A.ForgotPasswordRequest, response: { status: 202, schema: Ok }, delivery: 1, audited: false,
-    notes: 'Responde siempre 202, exista o no el correo. Envía por el puerto Mailer un enlace con un token de un solo uso que caduca en 1 h (auth_request_password_reset; máx. 3 por hora y cuenta).' },
+    notes: 'Responde siempre 202, exista o no el correo. Envía por el puerto Mailer un enlace con un token de un solo uso que caduca en 1 h (auth_request_password_reset; máx. 3 por hora y cuenta). El enlace es PUBLIC_BASE_URL/reset-password#token=<token>: el token viaja en el fragmento, que el navegador no envía al servidor. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
   { id: 'resetPassword', method: 'POST', path: '/auth/password/reset', tag: 'Acceso', summary: 'Restablecer la contraseña con el token recibido', roles: ['public'],
     body: A.ResetPasswordRequest, response: { status: 204 }, errors: ['INVALID_RESET_TOKEN'], delivery: 1, audited: true,
-    notes: 'Cierra todas las sesiones y quita el bloqueo por intentos (auth_consume_password_reset). Token inexistente, usado o caducado: el mismo error.' },
+    notes: 'Cierra todas las sesiones y quita el bloqueo por intentos (auth_consume_password_reset). Token inexistente, usado, caducado o mal formado: el mismo error. La contraseña nueva cumple el mismo esquema que la del registro. Límite de peticiones por IP y operación: 429 RATE_LIMITED con retryAfterSeconds.' },
 
   // ================= Organización =================
   { id: 'getOrganization', method: 'GET', path: '/org', tag: 'Organización', summary: 'Datos y configuración de mi organización', roles: ALL,

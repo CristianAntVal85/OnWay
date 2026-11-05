@@ -5,7 +5,7 @@ import type { Request } from 'express';
 import type { ContextRole } from '../db/database.service.js';
 
 /** Milestone in progress: operations of later milestones cannot be mounted (rule 7). */
-export const CURRENT_MILESTONE: Milestone = 'H4';
+export const CURRENT_MILESTONE: Milestone = 'H5';
 
 export const OPERATION_KEY = 'onway:operation';
 

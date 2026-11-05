@@ -8,8 +8,8 @@ import { TEST_PASSWORD } from '../support/fixtures.js';
 import { TestOnlyController } from '../support/test-controllers.js';
 
 /**
- * Operations built so far: the 42 of H0 to H3 and those of H4 that earlier tasks have mounted. AC-02 compares the routes Express
- * mounts with this list; each H4 task appends its operations here and since H4-T3 it is exactly the 51 (42 + the 9 of H4).
+ * Operations built so far: the 42 of H0 to H3 and the 9 of H4 (51). AC-02 compares the routes Express mounts with this list plus
+ * `ACCESS_BUILT`.
  */
 const BUILT = [
   'getHealth',
@@ -65,6 +65,16 @@ const BUILT = [
   'exportMyMissionRoutes', // H4-T3
 ];
 
+/**
+ * The 7 operations of the H5-acceso scope change (issue #9). They keep `x-milestone: H5`, and no other operation of H5 may be mounted
+ * in this change. Each task (T3 to T5) appends the ids it mounts to `ACCESS_BUILT`; nothing else in AC-02 needs to change.
+ */
+const ACCESS_OPERATIONS = ['register', 'forgotPassword', 'resetPassword', 'listSignupRequests', 'decideSignupRequests', 'getInviteCode', 'rotateInviteCode'];
+const ACCESS_BUILT: string[] = [];
+
+const MOUNTED_IDS = [...BUILT, ...ACCESS_BUILT];
+const routeOf = (e: { method: string; path: string }) => `${e.method} /api/v1${nestPath(e.path)}`;
+
 let real: TestApp;
 let stubbed: TestApp;
 let fixtures: Fixtures;
@@ -93,28 +103,33 @@ async function expectError(response: Response, code: keyof typeof ERROR_HTTP) {
 }
 
 describe('routes come from the registry (AC-02, rule 7)', () => {
-  it('mounts the 42 operations of H0 to H3 plus the ones of H4 built so far, and all of them are in the registry', () => {
+  it('mounts the 42 operations of H0 to H3, the 9 of H4 and the access ones built so far, and all of them are in the registry', () => {
     const before = ENDPOINTS.filter((e) => ['H0', 'H1', 'H2', 'H3'].includes(e.milestone)).map((e) => e.id);
     expect(before).toHaveLength(42);
     const ofH4 = ENDPOINTS.filter((e) => e.milestone === 'H4').map((e) => e.id);
     expect(ofH4).toHaveLength(9);
-    // Everything before H4 is mounted; of H4, only what earlier tasks built (T1 and T2: the table, the line and the three writes; T3: the rescuer's reads and the exports).
-    const builtOfH4 = BUILT.filter((id) => ofH4.includes(id));
-    expect([...BUILT].sort()).toEqual([...before, ...builtOfH4].sort());
-    expect(BUILT).toHaveLength(42 + builtOfH4.length);
+    expect([...BUILT].sort()).toEqual([...before, ...ofH4].sort());
+    // The access scope of H5 is exactly these 7 registry operations, all of them marked H5; the ones built so far are a subset.
+    const ofH5 = ENDPOINTS.filter((e) => e.milestone === 'H5').map((e) => e.id);
+    expect(ACCESS_OPERATIONS).toHaveLength(7);
+    expect(ACCESS_OPERATIONS.filter((id) => !ofH5.includes(id))).toEqual([]);
+    expect(ACCESS_BUILT.filter((id) => !ACCESS_OPERATIONS.includes(id))).toEqual([]);
+    expect(MOUNTED_IDS).toHaveLength(51 + ACCESS_BUILT.length);
+    expect(new Set(MOUNTED_IDS).size).toBe(MOUNTED_IDS.length);
   });
 
   it('mounts exactly the operations built so far, and all of them are in the registry', () => {
-    const expected = ENDPOINTS.filter((e) => BUILT.includes(e.id)).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
-    expect(expected).toHaveLength(BUILT.length);
+    const expected = ENDPOINTS.filter((e) => MOUNTED_IDS.includes(e.id)).map(routeOf);
+    expect(expected).toHaveLength(MOUNTED_IDS.length);
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing that belongs to a later milestone than H4, test controllers included', () => {
-    const later = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) > MILESTONES.indexOf('H4')).map((e) => `${e.method} /api/v1${nestPath(e.path)}`);
+  it('mounts nothing of H5 beyond the access scope, nor of a later milestone, test controllers included', () => {
+    const outside = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) >= MILESTONES.indexOf('H5') && !ACCESS_OPERATIONS.includes(e.id));
+    expect(outside.filter((e) => e.milestone === 'H5')).toHaveLength(19);
+    expect(outside).toHaveLength(38);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
-    expect(later.length).toBeGreaterThanOrEqual(45);
-    expect(later.filter((route) => mounted.has(route))).toEqual([]);
+    expect(outside.map(routeOf).filter((route) => mounted.has(route))).toEqual([]);
   });
 
   it('refuses at load time to mount an operation of a later milestone', async () => {
@@ -122,11 +137,11 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     const { Operation } = await import('../../src/common/operation.js');
     expect(() => {
       class Later {
-        listTeams() {}
+        listRescuers() {}
       }
       Controller()(Later);
-      Operation('listTeams')(Later.prototype, 'listTeams', Object.getOwnPropertyDescriptor(Later.prototype, 'listTeams')!);
-    }).toThrow(/belongs to H1|belongs to H\d/);
+      Operation('listRescuers')(Later.prototype, 'listRescuers', Object.getOwnPropertyDescriptor(Later.prototype, 'listRescuers')!);
+    }).toThrow(/belongs to H6, but the milestone in progress is H5/);
     expect(() => Operation('doesNotExist' as never)).toThrow(/not in the ENDPOINTS registry/);
   });
 
@@ -134,6 +149,17 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     await expectError(await fetch(`${real.baseUrl}/teams`), 'NOT_FOUND');
     await expectError(await fetch(`${real.baseUrl}/nothing-here`), 'NOT_FOUND');
     await expectError(await fetch(`${real.baseUrl}/health`, { method: 'POST' }), 'NOT_FOUND');
+  });
+
+  it('answers every operation of H5 that is not mounted (the 19 outside the access scope and the access ones still to build) with 404 NOT_FOUND', async () => {
+    const unmounted = ENDPOINTS.filter((e) => e.milestone === 'H5' && !MOUNTED_IDS.includes(e.id));
+    expect(unmounted).toHaveLength(26 - ACCESS_BUILT.length);
+    const someId = '00000000-0000-4000-8000-000000000000';
+    for (const e of unmounted) {
+      const url = `${real.baseUrl}${e.path.replace(/\{[^}]+\}/g, someId)}`;
+      const response = await fetch(url, { method: e.method, headers: e.method === 'GET' ? {} : { 'content-type': 'application/json' }, body: e.method === 'GET' ? undefined : '{}' });
+      await expectError(response, 'NOT_FOUND');
+    }
   });
 });
 

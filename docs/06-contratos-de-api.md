@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.5 · **Estado:** borrador para revisión · **Fecha:** 5 de noviembre de 2026
+**Versión:** 1.6 · **Estado:** borrador para revisión · **Fecha:** 5 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -94,7 +94,7 @@ Errores **transversales** que no se repiten en cada fila de la tabla de endpoint
 - `REGISTRATION_FAILED` es el mismo para código de invitación inválido y correo ya registrado.
 - `DOCUMENT_ALREADY_REGISTERED` no dice de quién es el documento (INV-24).
 - Un recurso de otra organización, o una misión en planificación pedida por un rescatista, responde `NOT_FOUND`.
-- `POST /auth/password/forgot` responde siempre 202. `INVALID_RESET_TOKEN` es el mismo para token inexistente, usado o caducado.
+- `POST /auth/password/forgot` responde siempre 202. `INVALID_RESET_TOKEN` es el mismo para token inexistente, usado, caducado o mal formado.
 
 ## 5. Decisión: solicitudes de alta (Q-34, confirmada)
 
@@ -798,12 +798,12 @@ Una prueba **encontró un fallo real** mientras se escribía el contrato: las co
 
 ### 10.2 Recuperar contraseña (Q-33, resuelta)
 
-**Decisión:** correo transaccional detrás de un puerto `Mailer` (como `FileStorage` y `RoutingProvider`), con **Resend** como primera implementación (plan gratuito: 3 000 correos al mes y 100 al día, muy por encima de lo que necesita una organización). Si cambia el proveedor o se prefiere SMTP propio, se cambia una implementación y no el contrato. En desarrollo y pruebas, un `Mailer` que escribe en consola (o Mailpit).
+**Decisión:** correo transaccional detrás de un puerto `Mailer` (como `FileStorage` y `RoutingProvider`), con **Resend** como primera implementación (plan gratuito: 3 000 correos al mes y 100 al día, muy por encima de lo que necesita una organización). Si cambia el proveedor o se prefiere SMTP propio, se cambia una implementación y no el contrato. En desarrollo y pruebas, un `Mailer` que escribe en consola (`ConsoleMailer`; Mailpit descartado, doc. 04).
 
 Flujo:
 
-1. `POST /auth/password/forgot {email}` → el API genera 32 bytes aleatorios, guarda su SHA-256 con `auth_request_password_reset` y, si la función devuelve una fila, envía el enlace `https://<dominio>/restablecer?token=…`. Responde 202 siempre, con o sin fila.
-2. La persona abre el enlace y envía `POST /auth/password/reset {token, newPassword}`. Token válido: contraseña nueva (Argon2id), todas las sesiones cerradas, bloqueo por intentos retirado. Token inexistente, usado o caducado: `422 INVALID_RESET_TOKEN`.
+1. `POST /auth/password/forgot {email}` → el API genera 32 bytes aleatorios, guarda su SHA-256 con `auth_request_password_reset` y, si la función devuelve una fila, envía el enlace `PUBLIC_BASE_URL/reset-password#token=…` (el token va en el fragmento, que el navegador no envía al servidor). Responde 202 siempre, con o sin fila.
+2. La persona abre el enlace y envía `POST /auth/password/reset {token, newPassword}`. Token válido: contraseña nueva (Argon2id), todas las sesiones cerradas, bloqueo por intentos retirado. Token inexistente, usado, caducado o mal formado: `422 INVALID_RESET_TOKEN`.
 3. El token caduca a la hora y es de un solo uso. Al usar uno, los demás pendientes de esa persona quedan anulados.
 
 Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a cualquier destinatario (Q-28, dominio aún sin comprar); hasta entonces solo envía al propietario de la cuenta, suficiente para desarrollar. Y el correo necesita su plantilla en es y fr (`packages/i18n`).
@@ -847,6 +847,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.6 | 2026-11-05 | `H5-acceso` T1. Esquemas comprobados contra el plan (`RegisterResponse` 202, `ResetPasswordRequest` con token de 20 a 200 caracteres, `DecideSignupRequest` con rol al aprobar y ninguno al rechazar): sin cambios. Notas de `register`, `forgotPassword` y `resetPassword` completas: límite de peticiones por IP y operación (`RATE_LIMITED` con `retryAfterSeconds`, que ya es un error implícito de toda operación), enlace de recuperación `PUBLIC_BASE_URL/reset-password#token=…` con el token en el fragmento, y «mal formado» como caso del mismo `INVALID_RESET_TOKEN`. §10.2 al día (el enlace era `/restablecer?token=`). `CURRENT_MILESTONE = 'H5'` en el API; ninguna operación nueva montada todavía. OpenAPI y tablas sin otras diferencias (96 operaciones) |
 | 1.5 | 2026-11-05 | Cambio de alcance `H5-acceso` (issue #9): `register`, `forgotPassword`, `resetPassword`, `listSignupRequests`, `decideSignupRequests`, `getInviteCode` y `rotateInviteCode` se construyen antes que el resto de H5 y **conservan `x-milestone: H5`** (58 montadas con las 51 de H0 a H4). Sin cambios de esquema previstos; las notas de `register`, `forgotPassword` y `resetPassword` se completarán con el límite de peticiones (`RATE_LIMITED`) y el formato del enlace al construirlas |
 | 1.4 | 2026-11-05 | Revisión de H4. `deleteMissionPoint` cumple lo que ya decía su resumen («no si una ruta de la misión sale de él»): responde 400 `VALIDATION_FAILED` con `issues[0]` = `{path: "pointId", code: "point_in_use"}` (antes caía en un 500 por la clave foránea de `mission_routes.origin_point_id`). Sin código de error nuevo; solo cambia su nota en el contrato. OpenAPI y tablas sin otras diferencias |
 | 1.3 | 2026-11-02 | Cierre de H4 (T9): las 9 operaciones montadas y probadas (51 en el API con las de H0 a H3; AC-02 con las 51 exactas). Durante el hito se añadieron al contrato `INVALID_STATE_TRANSITION` en `addMissionRoutes` y `updateMissionRoute`, `NOT_FOUND` explícito donde se pide una versión, un origen o un equipo ajenos, la acción de historial `route_updated`, `validationIsStale` en `MissionRouteRescuer` y notas de qué exporta cada rol; `createRoute` y `deriveRoute` implementan `addToMission` (ya estaba en el contrato). Sin operaciones nuevas fuera del hito. OpenAPI y tablas sin diferencias (96 operaciones, 79 rutas) |
