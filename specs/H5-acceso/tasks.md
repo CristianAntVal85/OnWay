@@ -14,9 +14,10 @@ Operaciones del cambio (7, `x-milestone: H5` sin cambiar): `register`, `forgotPa
   - Hecho cuando: pruebas unitarias del formato de la línea, de la construcción del enlace con el token en el fragmento y de los dos arranques que fallan; `pnpm --filter @onway/api test` en verde.
   - Cierre: commit `feat(H5-acceso): T2 add the Mailer port with a console adapter` + push.
 
-- [ ] **T3. `register` y limitador de los endpoints públicos.** RF-104, RN-25, INV-25, INV-01; P2, P3, P4.
+- [x] **T3. `register` y limitador de los endpoints públicos.** RF-104, RN-25, INV-25, INV-01; P2, P3, P4.
   - Pruebas primero: el registro crea una cuenta *pendiente* sin sesión ni rol; el login de esa cuenta lleva a la espera; un código inválido, un código de otra organización y un correo ya registrado dan el **mismo** `REGISTRATION_FAILED` (cuerpo y estado idénticos); contraseña débil o distinta de la repetida, `VALIDATION_FAILED`. Después, `register` con hash Argon2id y `auth_register`, y el limitador en memoria por IP y operación (`RATE_LIMITED` con `retryAfterSeconds`, IP del salto de Caddy).
   - Hecho cuando: `test:api` de `auth-register.test.ts` en verde (RN-25, INV-25, INV-01, enumeración, limitador con y sin cabecera `X-Forwarded-For`); una fila de auditoría `signup_requested` por registro.
+  - *Hecho así:* `common/public-rate-limiter.ts` (`PublicRateLimiter`, ventana deslizante en memoria, un tipo de límite por operación pública para T4: `register` 10/10 min, `forgotPassword` 5/h, `resetPassword` 10/h; se inyecta con `identity.publicLimits` y el `Clock`) y `common/client-ip.ts` (clave de cliente: `request.ip`; IPv6 por /64). La IP sale de `trust proxy` de Express, que `createApp` fija con `trustProxy` (sin valor: nadie es de fiar y se ignora `X-Forwarded-For`; `main.ts` pasa `TRUSTED_PROXIES`, por defecto los rangos privados porque a la API solo llega Caddy). Sin migración ni cambio de contrato (las notas y `RATE_LIMITED` ya estaban).
   - Cierre: commit `feat(H5-acceso): T3 add registration with an invite code` + push.
 
 - [ ] **T4. `forgotPassword` y `resetPassword`.** Q-33; migración 0009; P1, P4.

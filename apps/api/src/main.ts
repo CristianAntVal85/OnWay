@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { createApp } from './app.js';
 import { SystemClock } from './clock/clock.js';
+import { trustedProxiesFromEnv } from './common/client-ip.js';
 import { appConnectionFromEnv } from './db/config.js';
 import { createFileStorage } from './files/config.js';
 import { createElevationProvider, createGeocodingProvider } from './geo/config.js';
@@ -26,6 +27,7 @@ const app = await createApp({
   routing: { provider: createRoutingProvider(process.env) },
   jobs: { queue },
   weather: { provider: createWeatherProvider(process.env) },
+  trustProxy: trustedProxiesFromEnv(process.env),
 });
 const port = Number(process.env.PORT ?? 3000);
 await app.listen(port, process.env.HOST ?? '0.0.0.0');

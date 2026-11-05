@@ -70,7 +70,7 @@ const BUILT = [
  * in this change. Each task (T3 to T5) appends the ids it mounts to `ACCESS_BUILT`; nothing else in AC-02 needs to change.
  */
 const ACCESS_OPERATIONS = ['register', 'forgotPassword', 'resetPassword', 'listSignupRequests', 'decideSignupRequests', 'getInviteCode', 'rotateInviteCode'];
-const ACCESS_BUILT: string[] = [];
+const ACCESS_BUILT: string[] = ['register']; // T3
 
 const MOUNTED_IDS = [...BUILT, ...ACCESS_BUILT];
 const routeOf = (e: { method: string; path: string }) => `${e.method} /api/v1${nestPath(e.path)}`;

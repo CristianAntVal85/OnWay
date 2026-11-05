@@ -5,9 +5,10 @@ import { CLOCK, type Clock } from '../clock/clock.js';
 import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import { DatabaseService, type Tx } from '../db/database.service.js';
+import { pgErrorOf } from '../db/errors.js';
 import { organizations, rescuerProfiles, users } from '../db/schema.js';
 import { findAccount, standingOf, type Account } from './accounts.js';
-import { dummyHash, verifyPassword } from './password.js';
+import { dummyHash, hashPassword, verifyPassword } from './password.js';
 import { sessionCookie } from './cookies.js';
 import { SessionService } from './session.service.js';
 
@@ -58,6 +59,23 @@ export class AuthService {
       await this.sessions.persist(tx, account.id, issued, userAgent);
     });
     return { body: { user, csrfToken: issued.csrfToken }, cookie: sessionCookie(issued.token, issued.maxAgeSeconds) };
+  }
+
+  /**
+   * RF-104, RN-25. Creates a PENDING account and its signup request through `auth_register`; it never opens a session or grants a role.
+   * An invalid code and an email that is already registered answer the same `REGISTRATION_FAILED`, and both pay for the Argon2id hash
+   * first, so the time does not tell them apart (doc 06 §4.3). The password is hashed here and only the hash goes to the database.
+   */
+  async register(input: { email: string; password: string; displayName: string; inviteCode: string; locale: 'es' | 'fr' }): Promise<void> {
+    const hash = await hashPassword(input.password);
+    try {
+      await this.database.withAnonymous((tx) => tx.execute(sql`SELECT auth_register(${input.email}::citext, ${hash}, ${input.displayName}, ${input.inviteCode}, ${input.locale})`));
+    } catch (error) {
+      // `invalid_parameter_value`: the function's own refusal (code or email). `unique_violation`: the same email registered at the same instant.
+      const code = pgErrorOf(error)?.code;
+      if (code === '22023' || code === '23505') throw new DomainError('REGISTRATION_FAILED');
+      throw error;
+    }
   }
 
   /** Counts the failure; the attempt that reaches the limit already answers 423, with the time left. */
