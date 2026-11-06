@@ -175,3 +175,20 @@ Además, para lo que solo se distinguía por fondo: insignias por el trazo del b
 No son hallazgos: `<select>` del filtro de la biblioteca dentro de `<details>` cerrado (no es enfocable, correcto); el perfil de altitud SVG conserva su fondo oscuro en `forced-colors` y su texto sigue legible (T3). **Lo que no se ha podido ver:** `forced-colors` en Windows real (solo la emulación de Chrome, cuyo `GrayText` es un rojo muy oscuro: por eso el indicador de carga se distingue por trazo y no por color); el lector de pantalla y el tamaño de 29 px de los botones de zoom siguen en H7.
 
 Tamaños (gzip, `pnpm build`): CSS principal 9 131 B (T7: 8 606) y JS principal 263 595 B (sin cambio); frente a T1 (7 932 y 262 856): +1,2 kB y +0,74 kB.
+
+## 12. T10: tamaños finales y comprobaciones del cierre (2026-11-06)
+
+`pnpm build` desde el commit de T9 (sin cambios de `src/` en T10), `gzip -c <archivo> | wc -c` de `apps/web/dist/assets/`:
+
+| Archivo | T1 (partida) | Final | Diferencia | Objetivo |
+|---|---|---|---|---|
+| `index-*.css` (CSS principal) | 7 932 B | **9 131 B** | **+1 199 B (+1,2 kB)** | ≤ +5 120 B: cumple |
+| `index-*.js` (JS principal) | 262 856 B | **263 595 B** | **+739 B (+0,7 kB)** | ≤ +2 048 B: cumple |
+| `map-view-*.css` (perezoso) | 10 217 B | 10 217 B | 0 | sin objetivo |
+| `map-view-*.js` (perezoso) | 324 296 B | 324 295 B | −1 B | sin objetivo |
+
+Sin comprimir: CSS 38 309 → 45 793 B y JS 897 298 → 899 573 B. `styles.css` 3 321 líneas (3 058 al partir) y `tokens.css` 111; `!important`: 0 en código (una mención en un comentario de `styles.css`); colores literales fuera de `tokens.css`: 0 (65 al partir). El aviso de Vite de fragmentos > 500 kB es el de antes.
+
+Recuentos al cierre: web 788 (486 al partir), E2E 110 (99), contratos 89, i18n 8, geo 127, api unitarias 202. Humo (`infra/scripts/smoke.sh http://localhost:18080`) en verde contra la pila `onway-e2e` recién creada. El humo falla en la pila usada durante todo el hito («the archived demo route is not in the archived list») porque los E2E acumulan rutas archivadas (512) y «Camino antiguo» sale de la primera página del listado: es del script y del uso de la pila, no del rediseño.
+
+**Hallazgo de T9 (no se toca `apps/api` ni `infra/`):** con `routing` parado, el aviso de «motor no disponible» tarda de 4,5 a 5,5 s en la pila de pruebas (`isAvailable()` espera al DNS de Docker hasta su tope de 5 s porque `routing` también está en la red `edge`, que no es interna); `h3-engine-down.spec.ts` espera 20 s. Propuesta anotada como B-05 en `docs/backlog-post-mvp.md`.
