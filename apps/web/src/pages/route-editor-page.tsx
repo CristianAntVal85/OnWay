@@ -154,7 +154,7 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
           {t('routeDetail.archivedNotice')}
         </p>
       )}
-      <div className="editor-layout">
+      <div className="editor-layout page-wide">
         <div className="route-map">
           <MapView
             className="editor-map-view"

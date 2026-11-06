@@ -5,6 +5,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { Protocol } from 'pmtiles';
 import MapGL, { Layer, Marker, NavigationControl, Source, type MapLayerMouseEvent, type MapRef, type ViewStateChangeEvent } from 'react-map-gl/maplibre';
+import { useTheme } from '../theme/theme-context.js';
 import { Attribution } from './attribution.js';
 import { SATELLITE_PROTOCOL, TOPOGRAPHIC_PROTOCOL, satelliteTile, topographicTile } from './ign-mix.js';
 import { Readout, type Cursor } from './readout.js';
@@ -57,7 +58,10 @@ export default function MapView({
 
   const language = i18n.resolvedLanguage ?? 'es';
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
-  const style = useMemo(() => buildStyle(layer, language, origin), [layer, language, origin]);
+  // El tema entra como el idioma o la capa: un estilo nuevo para el mismo mapa, que react-map-gl aplica con `setStyle` por diferencias
+  // (sprites, colores) sin volver a montarlo; las rutas, marcadores y la vista se conservan (D-U7).
+  const { resolved: theme } = useTheme();
+  const style = useMemo(() => buildStyle(layer, language, origin, theme), [layer, language, origin, theme]);
 
   useEffect(() => {
     setRoadsFailed(false);

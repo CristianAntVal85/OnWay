@@ -194,6 +194,10 @@ export interface Messages {
     language: string;
     languageEs: string;
     languageFr: string;
+    theme: string;
+    themeDark: string;
+    themeLight: string;
+    themeSystem: string;
     logout: string;
     signedInAs: string;
     email: string;

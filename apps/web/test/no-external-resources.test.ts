@@ -68,8 +68,13 @@ describe('sin recursos externos', () => {
     }
   });
 
-  it('el CSS no importa nada ni carga fuentes remotas', () => {
-    const css = readFileSync(join(ROOT, 'src/styles.css'), 'utf8');
-    expect(css).not.toMatch(/@import|@font-face|url\(/);
+  it('ningún CSS de src/ importa nada ni carga fuentes remotas (styles.css, theme/tokens.css y los que vengan)', () => {
+    const sheets = files(join(ROOT, 'src')).filter((file) => file.endsWith('.css'));
+    const names = sheets.map((file) => relative(ROOT, file));
+    expect(names).toContain('src/styles.css');
+    expect(names).toContain('src/theme/tokens.css');
+    for (const sheet of sheets) {
+      expect(readFileSync(sheet, 'utf8'), relative(ROOT, sheet)).not.toMatch(/@import|@font-face|url\(/);
+    }
   });
 });

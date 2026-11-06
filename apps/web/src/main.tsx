@@ -8,6 +8,7 @@ import { createI18n } from './i18n';
 import { initialLocale } from './i18n/locale';
 import { browserStorage } from './i18n/use-locale';
 import { createQueryClient } from './session/session';
+import './theme/tokens.css';
 import './styles.css';
 
 const root = document.getElementById('root');

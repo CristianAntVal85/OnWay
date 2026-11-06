@@ -210,7 +210,7 @@ export function GenerateRoutesPage() {
       </div>
       <p>{t('generate.intro')}</p>
 
-      <div className="editor-layout">
+      <div className="editor-layout page-wide">
         <div className="route-map">
           <MapView
             className="editor-map-view"

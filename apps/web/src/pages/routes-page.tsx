@@ -125,7 +125,7 @@ export function RoutesPage() {
 
       <ViewTabs view={view} onSelect={setView} />
 
-      <div className="library" data-view={view}>
+      <div className="library page-wide" data-view={view}>
         <section className="library-list" id="library-panel-list" aria-labelledby="library-tab-list">
           <LibraryFilterPanel
             filters={filters}

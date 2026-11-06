@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.1 (borrador) · Fecha: 2026-11-05 · Depende de: documento 01 (v1.3)
+Versión: 1.2 (borrador) · Fecha: 2026-11-06 · Depende de: documento 01 (v1.4)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -39,6 +39,7 @@ Principios de diseño:
 - **Lo que ve el rescatista nunca cambia solo.** La misión fija una versión de cada ruta (D-19).
 - **Los datos personales se enseñan lo justo.** Las listas muestran lo mínimo; los datos de contacto están en la ficha; los datos sensibles no salen de la ficha propia ni de la administración (D-22, D-24, D-28).
 - **El historial es lo que el coordinador confirma al cerrar**, no lo que se acepta al abrir (D-27).
+- **Legible en campo.** La interfaz se ve en **oscuro** por defecto y tiene un tema **claro de alto contraste** para pleno sol; cada persona lo elige en Cuenta. El contenido va centrado bajo la cabecera y las páginas con mapa o con listas usan el ancho de la pantalla.
 
 ## 2. Navegación
 
@@ -53,11 +54,13 @@ Barra de navegación principal, visible en todas las vistas tras el login.
 | Equipos | Sí *(propuesto)* | Sí *(propuesto)* | No |
 | Administración | Sí | No | No |
 | Mi perfil | No aplica | No aplica | Sí |
-| Cuenta (idioma, cerrar sesión) | Sí | Sí | Sí |
+| Cuenta (idioma, **tema**, cerrar sesión) | Sí | Sí | Sí |
 
 El administrador no tiene «Crear misión» porque no escribe misiones (Q-14 resuelta: no, 2026-10-31); ve Misiones y el detalle en solo lectura. Rutas aparece como enlace porque la biblioteca es independiente de las misiones. Equipos, porque la lista de equipos "ya formados" tiene que gestionarse en algún sitio (Q-12). Mi perfil, porque el rescatista mantiene sus datos, habilidades e historial. Administración, porque alguien tiene que aprobar cuentas y custodiar los datos sensibles (D-25).
 
 En el boceto del rescatista (14) la barra tiene solo Misiones y Mi perfil.
+
+**Cuenta** reúne el idioma, el **tema** y cerrar sesión. El tema ofrece tres opciones, con teclado y objetivos de 48 px: «Oscuro» (el que se ve si no se ha elegido nada), «Claro (alto contraste)» y «Como el sistema» (la única que sigue la preferencia del sistema). Se aplica al momento, se recuerda solo en este navegador (no viaja al servidor) y vale también en la pantalla de acceso, sin destello al cargar. El mapa de carreteras sigue al tema; el satélite y el topográfico no.
 
 ## 3. Vistas
 
@@ -130,6 +133,8 @@ Boceto 4. Lista de misiones de la organización (RF-204), con **pestañas por es
 ### 3.4 Crear misión
 
 Boceto 5. Formulario en una sola página, con el mapa visible al lado para elegir puntos (RF-201). Una **barra inferior fija** con **Cancelar** y un botón grande **Crear misión**, siempre visible.
+
+**Alto del mapa (medido en `UI-rediseno`).** Desde 1024 px de ancho el mapa va al lado y llena el alto de la ventana bajo la cabecera, sin hueco vacío debajo (56 % del alto de la ventana a 1024×768, 58 % a 1280×720, 76 % a 1920×1080 y 83 % a 2560×1440). Por debajo de 1024 px (móvil, tableta vertical, ventana al 125 % de zoom) el mapa va arriba y entero, con el 42 % del alto de la ventana entre 320 y 576 px (`clamp(20rem, 42dvh, 36rem)`): 341 px a 375×812, 320 px a 375×667 y 430 px a 768×1024. El primer campo queda debajo del mapa, sin solape, y la barra inferior fija deja sitio al foco.
 
 **Sección 1 · Datos obligatorios**
 
@@ -666,6 +671,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.2 (2026-11-06)**
+- Cierre de `UI-rediseno` (issue #14): §1 principio «Legible en campo» (oscuro por defecto y claro de alto contraste, contenido centrado); §2 Cuenta con el **tema** y su selector de tres opciones; §3.4 alto del mapa de Crear misión medido en escritorio y en columna. Sin cambios de permisos ni de flujo.
 
 **1.1 (2026-11-05)**
 - Cierre de `H5-acceso` (T10): §3.1 y §3.10 tal como se construyeron: enlaces del login, registro con nombre visible y su validación, «Solicitud recibida», recuperar contraseña (petición, enlace con el token en el fragmento que se quita de la barra, «Enlace no válido», «Contraseña cambiada»), bandeja con pestañas, búsqueda, selección por página y diálogos de aprobar (rol sin valor marcado) y rechazar, y código de invitación con copiar y regenerar con confirmación. Sin cambios de permisos

@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.3 (borrador) · Fecha: 2026-11-02 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.4 (borrador) · Fecha: 2026-11-06 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -446,7 +446,7 @@ El detalle de cómo se cumplen está en el documento 04.
 | Internacionalización | Interfaz traducible desde el primer día (mínimo español y francés). Sin textos fijos en el código |
 | Datos | Datos geoespaciales en una base con soporte nativo (PostGIS) e índices geográficos. Fuentes de mapa, elevación y meteorología abstraídas tras una interfaz, para cambiarlas sin reescribir |
 | Privacidad | El perfil de rescatista contiene datos personales sensibles (documento de identidad, dirección) y de contacto. Diseño con buenas prácticas de RGPD aunque el proyecto sea didáctico: minimización, cifrado en reposo de los datos sensibles, acceso restringido y registrado, derecho de acceso, corrección y supresión (RF-812). La ubicación del dispositivo no se guarda. **Datos de demostración siempre ficticios** (R-10) |
-| Accesibilidad y uso en campo | Interfaz legible con luz solar y con guantes: controles grandes y alto contraste |
+| Accesibilidad y uso en campo | Interfaz legible con luz solar y con guantes: controles grandes y alto contraste. Dos temas: **oscuro por defecto** (el rojo de rescate como acento; todos los pares de color calculados a 4,5:1 el texto y 3:1 los componentes) y **claro de alto contraste** para pleno sol (texto a 7:1 o más). Se elige en la vista Cuenta («Oscuro», «Claro (alto contraste)» o «Como el sistema») y se recuerda solo en ese navegador. Respeta además `forced-colors` y `prefers-reduced-motion`. El lector de pantalla y los botones de zoom del mapa de 29 px siguen pendientes (H7) |
 | Costes | Hasta 20 €/mes en total (servidor, copias y dominio), con servicios externos gratuitos para uso no comercial (D-20, documento 04). Los cupos de los proveedores gratuitos condicionan el uso de caché |
 | Licencias de datos | Revisar licencias y condiciones de uso de OpenStreetMap, teselas satélite, modelos de elevación y proveedor meteorológico antes de elegirlos. Respetar la atribución exigida a cada uno. Verificado en parte en el documento 04 |
 
@@ -549,6 +549,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.4 (2026-11-06)**
+- Cierre de `UI-rediseno` (issue #14): §7 «Accesibilidad y uso en campo» matizado: tema oscuro por defecto y tema claro de alto contraste para pleno sol, elegible en Cuenta (el contraste, adelantado de H7). Sin requisitos nuevos ni cambios de alcance.
 
 **1.3 (2026-11-02)**
 - D-34: el rescatista ve nombre y localidad de todos los equipos de su organización (construcción en H5). Nueva Q-36 (alias de coordinadores y rescatistas), aplazada. Backlog tras el MVP en `docs/backlog-post-mvp.md`.
