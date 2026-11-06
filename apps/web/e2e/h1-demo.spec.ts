@@ -55,7 +55,7 @@ test('the coordinator creates a mission by clicking the target and adds three or
     const emptySpace = await region.evaluate((view) => view.clientHeight - [...view.children].reduce((sum, child) => sum + child.getBoundingClientRect().height, 0));
     expect(emptySpace).toBeLessThanOrEqual(1);
   } else {
-    // Columna (UI-rediseno T7): el mapa no baja de 320 px y mide al menos el 40 % del alto de la ventana (a 375x812, 325 px).
+    // Columna (UI-rediseno T7): el mapa no baja de 320 px y mide al menos el 40 % del alto de la ventana (a 375x812, 325 px como mínimo; se miden 341 px).
     const viewportHeight = page.viewportSize()?.height ?? 0;
     const canvas = page.getByRole('region', { name: es.createMission.mapRegion }).locator('.map-canvas');
     await expect(canvas).toBeVisible();

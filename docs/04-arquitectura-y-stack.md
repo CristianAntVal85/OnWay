@@ -1,6 +1,6 @@
 # OnWay — Documento 04: Arquitectura y stack
 
-Versión: 1.4 (borrador) · Fecha: 2026-11-05 · Depende de: documentos 01 (v1.3), 02 (v1.1) y 03 (v0.8)
+Versión: 1.4 (borrador) · Fecha: 2026-11-05 · Depende de: documentos 01 (v1.4), 02 (v1.2) y 03 (v0.8)
 
 Este documento decide **con qué y cómo** se construye OnWay: lenguaje, frameworks, base de datos, despliegue, proveedores externos, seguridad y estrategia para la futura app móvil. Parte de las restricciones de un proyecto didáctico (documento 03, sección 14).
 

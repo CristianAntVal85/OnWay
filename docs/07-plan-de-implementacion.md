@@ -182,7 +182,7 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 | | |
 |---|---|
 | **Demostración** | Una dirección pública con HTTPS donde entrar con las cuentas de demostración. Se instala en el móvil como aplicación web. Se restaura una copia de seguridad en una base vacía y la app arranca |
-| **Alcance** | Contratar el servidor (Q-27, Hetzner 8 GB) y el dominio (Q-28). Caddy, copias cifradas externas y restauración ensayada, observabilidad mínima, correo real con dominio verificado, cabeceras y límites de seguridad, revisión con la lista de comprobación de seguridad, accesibilidad básica, textos en francés completos, aviso de que no sirve para rescates reales (R-03), README con aviso de datos ficticios (R-10) |
+| **Alcance** | Contratar el servidor (Q-27, Hetzner 8 GB) y el dominio (Q-28). Caddy, copias cifradas externas y restauración ensayada, observabilidad mínima, correo real con dominio verificado, cabeceras y límites de seguridad, revisión con la lista de comprobación de seguridad, accesibilidad básica (el contraste y los temas ya los hizo `UI-rediseno`; quedan lector de pantalla, botones de zoom de 29 px y `forced-colors` en Windows real), textos en francés completos, aviso de que no sirve para rescates reales (R-03), README con aviso de datos ficticios (R-10) |
 | **Operaciones (0)** | Ninguna nueva |
 | **Salida** | Todas las pruebas de invariantes y la de extremo a extremo en la integración continua. Copia restaurada con éxito. Coste real dentro de 20 €/mes. Aplicación web instalable (documento 04, §13) |
 

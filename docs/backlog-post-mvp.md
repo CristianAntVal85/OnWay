@@ -15,6 +15,7 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 | B-03 | `forgotPassword` permite agotar los enlaces de recuperación de otra cuenta | Antes del despliegue (H7) |
 | B-04 | `ResetPasswordRequest.token` sin longitud máxima propia | Antes del despliegue (H7) |
 | B-05 | El aviso de «motor de rutas no disponible» tarda de 4,5 a 5,5 s con el motor parado | Con el despliegue (H7) |
+| B-06 | `smoke.sh` falla en una pila de pruebas con muchas rutas archivadas | Cuando moleste |
 
 ---
 
@@ -64,6 +65,14 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 - **Por qué se aplaza:** `UI-rediseno` no toca `apps/api` ni `infra/`; el efecto es una espera de unos segundos en un caso de error (motor caído), sin pérdida de datos.
 - **Cuándo:** con el despliegue (H7), al revisar el comportamiento con el motor caído (doc 04 §11.4), o antes si se vuelve a ver la intermitencia.
 - **Contexto:** `apps/web/e2e/h3-engine-down.spec.ts`, `apps/api/src/routing/graphhopper-routing.ts`, `infra/compose.e2e.yml`, `specs/UI-rediseno/tasks.md` (T9).
+
+## B-06 · `infra/scripts/smoke.sh` falla en una pila de pruebas muy usada
+
+- **Qué es (hallazgo de `UI-rediseno` T10, 2026-11-06):** el humo comprueba que la ruta archivada «Camino antiguo» sale en el listado de archivadas, pero lo mira solo en la primera página. Tras muchas ejecuciones del E2E (512 rutas archivadas) sale de esa página y el humo falla con «the archived demo route is not in the archived list».
+- **Qué falta:** buscar la ruta por nombre (o recorrer las páginas) en lugar de mirar solo la primera.
+- **Por qué se aplaza:** solo afecta a pilas de pruebas con uso largo; `down -v` lo arregla. `UI-rediseno` no toca `infra/`.
+- **Cuándo:** cuando moleste o al tocar `infra/scripts/`.
+- **Contexto:** `infra/scripts/smoke.sh`.
 
 ---
 
