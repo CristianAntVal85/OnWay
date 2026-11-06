@@ -184,14 +184,19 @@ test('editing creates version 2, comparing shows both, and validating version 2 
     // Con ratón: se arrastra el primer vértice.
     const handle = page.locator('.vertex-handle').first();
     await handle.scrollIntoViewIfNeeded();
-    const box = (await handle.boundingBox())!;
     const first = page.getByLabel(es.routeEditor.latLabel.replace('{{n}}', '1'), { exact: true });
     const start = await first.inputValue();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2 + 30, { steps: 6 });
-    await page.mouse.up();
-    await expect(first).not.toHaveValue(start);
+    // El mapa del editor encuadra la ruta (animación de 600 ms) cuando termina de cargar, y con la máquina ocupada eso llega DESPUÉS de que
+    // exista el vértice: se midió el vértice moviéndose 357 px entre dos lecturas seguidas de su caja. Se lee la caja en cada intento y,
+    // si el arrastre cayó donde el vértice ya no estaba, se repite (sin mover nada más: un arrastre en vacío solo desplaza el mapa).
+    await expect(async () => {
+      const box = (await handle.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2 + 30, { steps: 6 });
+      await page.mouse.up();
+      await expect(first).not.toHaveValue(start, { timeout: 4000 });
+    }).toPass({ timeout: 25_000 });
     // Deshacer vuelve al valor anterior.
     await page.getByRole('button', { name: es.routeEditor.undo }).click();
     await expect(first).toHaveValue(start);
