@@ -114,3 +114,21 @@ Sin elementos con el color antiguo ni texto ilegible. Lo que cambió respecto al
 - Marcadores, manijas de vértice y marca de sendero con tokens **fijos** (`--mark-*`, `--map-origin`, `--map-rendezvous`); perfil de altitud con `--success`, `--border` y `--text-muted`.
 - `--font-mono` ya se usa: código de invitación y coordenadas compartidas.
 - Tamaños (gzip): CSS principal 8 415 B (T2: 8 426), JS principal 262 855 B (T2: 262 854).
+
+## 9. T6: anchos «después» (2026-11-06)
+
+Pila `onway-e2e` reconstruida con `--build` desde el código de T6; coordinador, administrador, rescatista (`rescatista1`), cuenta pendiente y vistas públicas de la semilla, a 375×812, 768×1024, 1280×720, 1920×1080 y 2560×1440, en oscuro y en claro. Los números salen de un guion de Playwright (`getBoundingClientRect` de `main.content`, `.single-main` y `.login-main` y de sus hijos, `scrollWidth` frente a `clientWidth`) que recorre toda la matriz (las 8 vistas del coordinador, 2 del administrador, 3 del rescatista, las 3 públicas y la espera, por ancho y tema: 160 filas); con Chrome DevTools (contexto aislado `t6-medicion`, coordinador) se miraron capturas de login a 1920, Misiones a 1920 y 375, Rutas a 1920 y Cuenta a 2560.
+
+Cambios de la hoja: `.content` con `margin-inline: auto` (64rem por defecto, 80rem con `.page-wide-flow`, sin límite con `.page-wide`; la cabecera sigue a todo el ancho); `.login-main` y `.single-main` con `margin-inline: auto`. Clases de tipo de página que faltaban: `page-wide` en la biblioteca de Rutas, el detalle de ruta, el editor, Generar rutas e Importar ruta (todas con mapa); `page-wide-flow` en el panel de Misiones (la lista; Mis misiones e Inicio ya la tenían). Administración, Cuenta, Mi perfil, 403, 404 y «más adelante» se quedan de lectura (64rem). `max-width` que se quedan (prueba `layout-widths.test.ts`): medida de lectura (`--measure`), acceso (30rem), pantallas sueltas (38rem), diálogos (34rem y 44rem), columna de Administración (48rem), celda de ruta de la misión (22rem), nombre de la organización (14rem) y `100%`; no hay ningún tope que deje huecos a 1920 px o más que no sea el de su tipo de página.
+
+| Tipo (vista) | max-width | Hueco por lado 375 | 768 | 1280 | 1920 | 2560 | Umbral (§6) | Resultado |
+|---|---|---|---|---|---|---|---|---|
+| Lectura (Cuenta, Administración, Mi perfil) | 1024 | 0 | 0 | 128 | 448 | 768 | centrado ±1; ≤ 449 a 1920 y ≤ 769 a 2560 | cumple (izq. = der., diferencia 0) |
+| Lista (Inicio, Misiones, Mis misiones) | 1280 | 0 | 0 | 0 | 320 | 640 | centrado ±1; ≤ 321 a 1920 y ≤ 641 a 2560 | cumple (diferencia 0) |
+| Mapa (detalle de misión, Crear misión, Rutas, detalle de ruta, Generar) | ninguno | 0 | 0 | 0 | 0 | 0 | ≤ 24 + 1 de relleno | cumple (hijos a 24 px por lado, 16 en 375) |
+| Acceso (`.login-main`, centrado en su columna a partir de 768 px) | 480 | 0 | 0 | 0 | 0 | 0 | centrado ±1 | cumple (desviación del centro de la columna 0 a 768, 1280, 1920 y 2560; a 375 llena el ancho) |
+| Espera (`.single-main`) | 608 | 0 | 80 | 336 | 656 | 976 | centrado ±1 | cumple (izq. = der.) |
+
+Los huecos son los del recuadro de `.content`; los de los hijos suman el relleno de 16 px (< 768 px) o 24 px. La cabecera mantiene izquierda y derecha 0 en todos los anchos. **Sin desborde horizontal** (`scrollWidth` = ancho) en ninguna de las 160 filas, en oscuro y en claro. Antes (§4): ninguna página centrada, hueco derecho de 896 y 1536 px a 1920 y 2560 en las de lectura y de 640 y 1280 en Inicio. Efecto lateral buscado: Misiones y las vistas de Rutas ya no usan 1024 px (las pone en su tipo, §4 «T6 decide»).
+
+Tamaños (gzip, `pnpm build`): CSS principal 8 584 B (T5: 8,56 kB) y JS principal 263 595 B (T5: 263,86 kB); frente a T1 (7 932 y 262 856): +0,65 kB y +0,74 kB.

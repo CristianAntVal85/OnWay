@@ -59,7 +59,7 @@ function StaffMissions({ canCreate }: { canCreate: boolean }) {
 
       <MissionTabs tabs={TABS} tab={tab} label={t('missions.tabsLabel')} tabLabel={(id) => t(`missions.tabs.${id}`)} onSelect={(id) => update({ tab: id, page: null })} />
 
-      <div id="missions-panel" role="tabpanel" aria-labelledby={`missions-tab-${tab}`}>
+      <div id="missions-panel" className="page-wide-flow" role="tabpanel" aria-labelledby={`missions-tab-${tab}`}>
         <MissionSearch draft={draft} onDraft={setDraft} onSubmit={submit} />
 
         {missions.isPending && <LoadingState />}

@@ -136,7 +136,7 @@ export function RouteDetailPage() {
         </p>
       )}
 
-      <div className="route-layout">
+      <div className="route-layout page-wide">
         <div className="route-map">
           <MapView className="route-map-view" label={t('routeDetail.mapLabel')} routes={mapRoutes} fitRoutesKey={fitKey} />
           {comparing && (

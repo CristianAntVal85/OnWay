@@ -471,6 +471,7 @@ a {
 .login-main {
   width: 100%;
   max-width: 30rem;
+  margin-inline: auto;
   padding: 2rem var(--gutter) 3rem;
 }
 
@@ -507,6 +508,7 @@ a.button-link {
 
 .single-main {
   max-width: 38rem;
+  margin-inline: auto;
   padding: 2rem var(--gutter) 3rem;
 }
 
@@ -622,8 +624,11 @@ a.button-link {
   display: none;
 }
 
+/* Ancho por tipo de página, centrado debajo de la cabecera (que va a todo el ancho): lectura y formularios 64rem aquí; listas y
+   tablas (`.page-wide-flow`) 80rem; páginas con mapa (`.page-wide`) sin límite. */
 .content {
   max-width: 64rem;
+  margin-inline: auto;
   padding: 1.5rem var(--gutter) 3rem;
 }
 
