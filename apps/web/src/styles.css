@@ -1159,6 +1159,19 @@ html:has(.action-bar) {
   cursor: crosshair;
 }
 
+/* El lienzo llena su contenedor (`.maplibregl-map` recorta con `overflow: hidden`) y un anillo por fuera no se vería: con el foco del teclado
+   el anillo doble va por dentro del mapa, sobre el lienzo y bajo los controles. */
+.map-view .maplibregl-map:has(.maplibregl-canvas:focus-visible)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 5px var(--focus-inner);
+  pointer-events: none;
+}
+
 /* Controles de MapLibre (zoom y brújula) teñidos con los tokens del tema, sin tocar su tamaño (los 29 px son de H7). El CSS de MapLibre se
    carga después, con el trozo del mapa: de ahí `.map-view` delante y `:not(:empty)` / `:focus` en los selectores, que igualan o superan los
    suyos sin `!important`. Los iconos son SVG oscuros sobre blanco: en oscuro se invierten (`--map-ctrl-icon-filter`). */
@@ -2544,6 +2557,12 @@ h4 {
   border: 2px solid var(--border-strong);
 }
 
+/* La tabla se desplaza dentro de su caja (`overflow: auto`) y un anillo por fuera quedaría recortado: aquí el anillo doble va por dentro. */
+.vertex-scroll :focus-visible {
+  outline-offset: -3px;
+  box-shadow: inset 0 0 0 5px var(--focus-inner);
+}
+
 @media (min-width: 64rem) {
   .editor-layout {
     grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 1fr);
@@ -3125,4 +3144,178 @@ label.signup-info {
 
 .invite-code .point-row-actions {
   margin-top: 0.75rem;
+}
+
+/* ---------- contraste alto del sistema (forced-colors) y movimiento ----------
+   Con `forced-colors: active` el navegador cambia los fondos y los colores de borde por los del sistema y quita las sombras: lo que solo se
+   distinguía por fondo (pulsado, seleccionado, insignias, bandas de vías, marca de sendero, marcadores) pasa a distinguirse por el color de
+   sistema `Highlight`, el subrayado o el trazo del borde. Los colores son de sistema (los tokens los sustituiría el navegador). No hay
+   transiciones: cambiar de tema es instantáneo, y cualquiera que se añada va dentro de `(prefers-reduced-motion: no-preference)`. */
+@media (forced-colors: active) {
+  /* pulsado y seleccionado */
+  .segment input:checked + span,
+  .map-layer-button[aria-pressed='true'],
+  .tab[aria-selected='true'],
+  .mission-pick[aria-pressed='true'] {
+    forced-color-adjust: none; /* sin esto Chrome pinta tras el texto un fondo `Canvas` y el texto `HighlightText` no se ve */
+    background: Highlight;
+    color: HighlightText;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  /* «estás aquí» del menú: el fondo y la marca (que conserva sus colores, como la del resto de la identidad) */
+  .main-nav a[aria-current='page'] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    text-decoration: underline;
+    text-underline-offset: 0.25em;
+  }
+
+  /* la marca ocupa siempre su sitio con un borde transparente: sin esto el navegador lo pinta en todos los enlaces, no solo en el actual */
+  .main-nav a::before,
+  .main-nav a[aria-current='page']::before {
+    forced-color-adjust: none;
+  }
+
+  /* la marca de sendero conserva su blanco y su rojo; sobre un fondo claro del sistema el blanco se perdería, así que lleva marco de texto */
+  .login-brand .blaze,
+  .single-brand .blaze,
+  .app-header-bar .blaze {
+    border-color: CanvasText;
+    background-clip: border-box;
+  }
+
+  /* sobre el mapa los marcadores y las manijas conservan su color y su borde: el lienzo no cambia con el contraste alto */
+  .map-marker,
+  .map-marker[data-kind='origin'],
+  .map-marker[data-kind='waypoint'],
+  .map-marker[data-kind='rendezvous'],
+  .vertex-handle,
+  .vertex-handle[data-end='start'],
+  .vertex-handle[data-end='end'],
+  .vertex-handle[aria-pressed='true'] {
+    forced-color-adjust: none;
+  }
+
+  /* insignias: el trazo del borde dice lo que decía el fondo (continuo grueso: bien; discontinuo: en curso; punteado: inactivo; doble: aviso) */
+  .status-badge[data-status='active'],
+  .status-badge[data-version='validated'],
+  .status-badge[data-signup='approved'] {
+    border-style: solid;
+    border-width: 3px;
+  }
+
+  .status-badge[data-status='planning'],
+  .status-badge[data-version='draft'] {
+    border-style: dashed;
+  }
+
+  .status-badge[data-status='closed'],
+  .status-badge[data-archived='true'],
+  .status-badge[data-route='unavailable'] {
+    border-style: dotted;
+  }
+
+  .status-badge[data-stale='true'],
+  .status-badge[data-route='stale'],
+  .status-badge[data-signup='rejected'] {
+    border-style: double;
+    border-width: 4px;
+  }
+
+  /* filas y tarjetas marcadas, seleccionadas o resaltadas */
+  .route-card[data-selected],
+  .version-row[data-shown='true'],
+  .signup-row[data-checked],
+  .mission-card[data-picked] {
+    border-color: Highlight;
+  }
+
+  .mission-card[data-picked],
+  .version-row[data-shown='true'],
+  .signup-row[data-checked] {
+    border-width: 4px;
+  }
+
+  .vertex-table tr[data-selected='true'],
+  .results-table tr[data-highlighted] {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+
+  .my-route-card[data-unavailable] {
+    border-style: dashed;
+  }
+
+  /* campos con error: borde doble además del mensaje */
+  .field input[aria-invalid='true'],
+  .field select[aria-invalid='true'],
+  .field textarea[aria-invalid='true'] {
+    border-style: double;
+    border-width: 4px;
+  }
+
+  /* composición por tipo de vía: un patrón por tipo (el texto de debajo lleva los porcentajes). Chrome descarta los degradados con
+     forced-colors: active (`background-image` queda en `none`), así que las bandas conservan los suyos con `forced-color-adjust: none` y
+     solo con colores de sistema. */
+  .road-mix-part {
+    forced-color-adjust: none;
+  }
+
+  .road-mix-part + .road-mix-part {
+    border-inline-start: 1px solid CanvasText;
+  }
+
+  .road-mix-road {
+    forced-color-adjust: none;
+    background: CanvasText;
+  }
+
+  .road-mix-track {
+    forced-color-adjust: none;
+    background: repeating-linear-gradient(90deg, CanvasText 0 2px, Canvas 2px 4px);
+  }
+
+  .road-mix-path {
+    forced-color-adjust: none;
+    background: repeating-linear-gradient(0deg, CanvasText 0 2px, Canvas 2px 4px);
+  }
+
+  .road-mix-offtrail {
+    forced-color-adjust: none;
+    background: radial-gradient(circle, CanvasText 0 1px, Canvas 1.5px) 0 0 / 4px 4px;
+  }
+
+  .road-mix-unknown {
+    forced-color-adjust: none;
+    background: repeating-linear-gradient(45deg, CanvasText 0 1px, Canvas 1px 4px);
+  }
+
+  /* los iconos de los controles de MapLibre ya traen su versión clara u oscura según el esquema del sistema: sin el filtro del tema */
+  .map-view .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+    filter: none;
+  }
+
+  /* indicador de carga: el arco de color pasa a ser un arco continuo sobre un aro punteado (el trazo, no el color, los distingue) */
+  .spinner {
+    border-color: CanvasText;
+    border-style: dotted;
+    border-top-style: solid;
+  }
+}
+
+@media (forced-colors: active) and (prefers-reduced-motion: reduce) {
+  .spinner {
+    border-top-style: dotted;
+    border-bottom-style: solid;
+  }
+}
+
+/* Con la preferencia de reducir el movimiento, los marcadores del mapa tampoco se desvanecen (la hoja de MapLibre les pone `transition: opacity 0.2s`). */
+@media (prefers-reduced-motion: reduce) {
+  .map-view .maplibregl-marker {
+    transition: none;
+  }
 }
