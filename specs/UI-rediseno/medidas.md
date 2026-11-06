@@ -132,3 +132,20 @@ Cambios de la hoja: `.content` con `margin-inline: auto` (64rem por defecto, 80r
 Los huecos son los del recuadro de `.content`; los de los hijos suman el relleno de 16 px (< 768 px) o 24 px. La cabecera mantiene izquierda y derecha 0 en todos los anchos. **Sin desborde horizontal** (`scrollWidth` = ancho) en ninguna de las 160 filas, en oscuro y en claro. Antes (§4): ninguna página centrada, hueco derecho de 896 y 1536 px a 1920 y 2560 en las de lectura y de 640 y 1280 en Inicio. Efecto lateral buscado: Misiones y las vistas de Rutas ya no usan 1024 px (las pone en su tipo, §4 «T6 decide»).
 
 Tamaños (gzip, `pnpm build`): CSS principal 8 584 B (T5: 8,56 kB) y JS principal 263 595 B (T5: 263,86 kB); frente a T1 (7 932 y 262 856): +0,65 kB y +0,74 kB.
+
+## 10. T7: alto del mapa de Crear misión «después» (2026-11-06)
+
+Pila `onway-e2e` reconstruida con `--build` desde el código de T7; coordinador de la semilla, un guion de Playwright con `getBoundingClientRect` (alto de `.map-canvas`, hueco vacío de `h1-demo.spec.ts`, cajas de la sección del mapa y del primer campo, `scroll-padding-bottom`) en oscuro y en claro, más capturas con Chrome DevTools a 375×812 en los dos temas (también con el primer campo enfocado). Cambio de la hoja: `.split-map .map-canvas { height: clamp(20rem, 42vh, 36rem); height: clamp(20rem, 42dvh, 36rem) }` (solo en columna; el bloque de escritorio, que va después, sigue con `flex: 1 1 auto; height: auto`).
+
+| Ventana (CSS px) | Disposición | `.map-canvas` antes | **Después** | Alto / ventana | Umbral (§6) | Hueco vacío | Primer campo (arriba, página) | Solape con el mapa | Barra |
+|---|---|---|---|---|---|---|---|---|---|
+| 375×812 | columna | 320 (39 %) | **341** | 42 % | ≥ 40 % (325) | 0,4 | 941 | no | 136 |
+| 375×667 | columna | 320 (48 %) | **320** | 48 % | ≥ 320 | 0,4 | 920 | no | 136 |
+| 768×1024 | columna | 320 (31 %) | **430** | 42 % | ≥ 40 % (410) | 0,1 | 944 | no | 113 |
+| 819×614 | columna | 320 (52 %) | **320** | 52 % | ≥ 320 | 0,2 | 833 | no | 113 |
+| 1024×768 | escritorio | 427 (56 %) | **427** | 56 % | ≥ 50 %, hueco ≤ 1 | 0 | 322 | lado a lado | 136 |
+| 1280×720 | escritorio | 417 (58 %) | **417** | 58 % | ≥ 50 %, hueco ≤ 1 | 0 | 282 | lado a lado | 136 |
+| 1920×1080 | escritorio | 824 (76 %) | **824** | 76 % | ≥ 70 %, hueco ≤ 1 | 0 | 282 | lado a lado | 136 |
+| 2560×1440 | escritorio | 1199 (83 %) | **1199** | 83 % | ≥ 75 %, hueco ≤ 1 | 0 | 282 | lado a lado | 136 |
+
+Mismas cifras en oscuro y en claro (la maquetación no depende del tema); sin desborde horizontal en ningún tamaño. El primer campo sigue bajo el pliegue en móvil (la sección del mapa llega a 600 px a 375×812, frente a 579): por diseño el mapa va arriba y entero, y el formulario debajo; lo que se exigía era que no se tapen (no hay solape: la sección del mapa termina antes de donde empieza el formulario). **Barra inferior:** `scroll-padding-bottom` es 176 px (11rem) frente a una barra de 136 px como máximo: con el foco en el primer campo a 375×812 el campo queda en 292–344 px y la barra empieza en 676 px; al enfocar el último control del formulario, queda a 595 px y la barra empieza en 628 px (visible, no recortado). Tamaños (gzip): CSS principal 8 606 B (T6: 8 584) y JS principal 263 595 B (sin cambio).

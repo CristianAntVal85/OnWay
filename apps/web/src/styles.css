@@ -968,6 +968,12 @@ html:has(.action-bar) {
   margin-inline: calc(var(--gutter) * -1);
 }
 
+/* En columna el mapa sigue al alto de la ventana (al menos el 40 % a 375x812 y a 768x1024) sin bajar de los 20rem de siempre ni pasar de 36rem; el respaldo sin `dvh` va antes. */
+.split-map .map-canvas {
+  height: clamp(20rem, 42vh, 36rem);
+  height: clamp(20rem, 42dvh, 36rem);
+}
+
 @media (min-width: 64rem) {
   .split-layout {
     grid-template-columns: minmax(0, 32rem) minmax(0, 1fr);
