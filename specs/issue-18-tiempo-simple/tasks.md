@@ -6,7 +6,7 @@ Operaciones del cambio: ninguna (`getEnvironment` no cambia; doc 06 y OpenAPI si
 
 - [x] **T1. Medición previa y documentos.** RF-704, RF-705.
   - Medir la altura de la tarjeta del tiempo actual a 375 px y a 1280 px (pila de pruebas, ubicación del dispositivo simulada o misión elegida) y anotarla en `medidas.md` con el umbral: la nueva ≤ 55 %. Después, docs 01 (RF-704 y RF-705: dónde se ve cada cosa), 02 (§3.2 con la tarjeta compacta y la vista nueva «Tiempo en detalle»), 04 (§3: iconos propios y `weatherSymbol`/`dayPartSymbols` en `packages/geo`) y 07 (sección del cambio), cada uno con su registro de cambios.
-  - *Hecho así:* tarjeta actual **770 px** de alto a 1280 y a 375 px (`medidas.md`); umbral **≤ 423 px**. Docs 01 v1.6, 02 v1.4 (con la §3.2.1 nueva), 04 v1.5 y 07 v0.13. La rama se apila sobre `hito/issue-17-eliminar-rutas` (PR #19) para que las versiones de los documentos sean consecutivas: **la PR de esta issue va después de la #19**.
+  - *Hecho así:* tarjeta actual **770 px** de alto a 1280 y a 375 px (`medidas.md`); umbral **≤ 423 px**. Docs 01 v1.6, 02 v1.4 (con la §3.2.1 nueva), 04 v1.5 y 07 v0.13. La rama se apila sobre `hito/issue-17-eliminar-rutas` (PR #19) para que las versiones de los documentos sean consecutivas: **la PR de esta issue iba después de la #19**; al final las dos issues van en una sola PR conjunta (`hito/issues-17-18-rutas-y-tiempo`).
   - Hecho cuando: `medidas.md` con las dos alturas y el umbral; documentos coherentes entre sí; `pnpm format:check` limpio.
   - Cierre: commit `docs(issue-18): T1 measure the current weather card and document the simple card` + push.
 
