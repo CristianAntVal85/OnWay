@@ -627,7 +627,7 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 
 La base de datos tiene su propio juego de pruebas, independiente de la API, porque las invariantes viven aquí. En el repositorio están en `apps/api/test/db/`: una prueba de Vitest levanta PostGIS con Testcontainers (`postgis/postgis:16-3.4`), aplica las migraciones con el migrador de Drizzle y ejecuta los SQL de `db/tests/` (`seed_and_tests.sql` y `run_tests.sql`, que no se editan) (documento 04, sección 12).
 
-**Cobertura actual: 194 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** De ellas, 76 son de Q-14 (migración 0011) y 21 de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 19: las 4 del migrador y los roles, la que lanza las 194, las 8 de la política de la migración 0010 en `audit-policy.test.ts` y las 6 de la 0011 en `mission-writers-policy.test.ts`, con el inicio de sesión real de `onway_app`).
+**Cobertura actual: 194 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** De ellas, 76 son de Q-14 (migración 0011) y 21 de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 48: las 4 del migrador y los roles, la que lanza las 194, las 8 de la política de la migración 0010 en `audit-policy.test.ts`, las 6 de la 0011 en `mission-writers-policy.test.ts`, las 6 de la 0012, las 9 de lo que lee el rescatista en las rutas de la misión y las 14 de la 0013 en `route-delete-guard.test.ts` —INV-04 e INV-07 al borrar una ruta archivada y sin misión—, con el inicio de sesión real de `onway_app`).
 
 | Grupo | Qué se comprueba |
 |---|---|

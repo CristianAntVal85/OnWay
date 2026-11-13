@@ -34,7 +34,8 @@ Operación del cambio (1): `deleteRoute` (`x-milestone: H2`).
   - Hecho cuando: `pnpm --filter @onway/web e2e` entero en verde contra la pila de pruebas (`onway-e2e`, puerto 18080).
   - Cierre: commit `test(issue-17): T5 add the route deletion demonstration` + push.
 
-- [ ] **T6. Cierre.** Criterios del doc 07 §4.
+- [x] **T6. Cierre.** Criterios del doc 07 §4.
   - Sección del cambio en `docs/07` («Tal como se construyó»), `docs/estado.md`, recuentos de `CLAUDE.md`, pendiente (g) y esta decisión; los 12 criterios.
+  - *Hecho así:* doc 07 v0.12 con la subsección «Issue #17», `CLAUDE.md` (regla 4, recuentos y la demostración nueva), doc 05 (cobertura de `test:db`) y `docs/estado.md`. Todo en verde el 2026-11-13: contratos 90, i18n 8, geo 127, api 202, web 797, `test:db` 48, `test:api` 499, E2E 118, `lint`, `format:check`, `typecheck` y `build`. `test:routing` y `smoke.sh` no se han corrido (no se tocó el motor ni la pila). El CI de la rama y los revisores quedan para la validación.
   - Hecho cuando: `pnpm lint`, `format:check`, `typecheck`, `test`, `build`, `test:db`, `test:api` y E2E en verde; CI de la rama en verde.
   - Cierre: commit `docs(issue-17): T6 record the build and close the change` + push.
