@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.3 (borrador) · Fecha: 2026-11-13 · Depende de: documento 01 (v1.5)
+Versión: 1.4 (borrador) · Fecha: 2026-11-13 · Depende de: documento 01 (v1.6)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -101,8 +101,8 @@ Boceto 3. Vista informativa. No se edita nada desde aquí (RF-701). El criterio 
 | Bloque | Qué muestra | Prioridad |
 |---|---|---|
 | Misiones activas | Tarjetas **pinchables** con nombre, coordinador responsable, voluntarios por decidir, participantes aceptados y pendientes (rutas sin validar, sin origen). La tarjeta elegida queda resaltada | Should (RF-703) |
-| Meteorología | Para la ubicación mostrada, calculada a la **altitud del punto**: temperatura, viento y rachas, precipitación y nieve, nubosidad, isoterma de 0 °C si hay dato. Resumen de los próximos días y detalle desplegable por hora | Should (RF-704) |
-| Luz y luna | Amanecer, atardecer, crepúsculos, fase lunar con porcentaje de iluminación, salida y puesta de la luna, de la misma ubicación | Should (RF-705) |
+| Meteorología | **Tarjeta simple** (issue #18): tres iconos por tramo del día con su horario (Mañana 06–12 h, Tarde 12–18 h, Noche 18–24 h; el tramo en curso primero), el **termómetro con la temperatura actual** y el **viento** (icono y km/h), calculados a la **altitud del punto**. Un botón «Ver todo el detalle del tiempo» lleva a la vista de detalle (3.2.1) | Should (RF-704) |
+| Luz y luna | Ya no está en Inicio: se ve en la vista de detalle del tiempo (3.2.1) | Should (RF-705) |
 | Boletines oficiales | Enlaces a la predicción de montaña de AEMET y Météo-France y, en temporada, a los boletines de aludes, según la zona mostrada | Could (RF-706) |
 | Mapa | Posición del dispositivo y objetivos de las misiones activas, con la misión elegida resaltada | Could (RF-707) |
 | Acceso rápido a Crear misión | Botón destacado (solo coordinador) | Must |
@@ -114,6 +114,14 @@ Boceto 3. Vista informativa. No se edita nada desde aquí (RF-701). El criterio 
 - **Sin misiones activas:** mensaje claro y botón para crear una misión. El tiempo sigue mostrándose para la ubicación del dispositivo.
 - **Fallo del proveedor meteorológico:** la tarjeta muestra "no disponible" o el último dato con su hora, y el resto del inicio sigue funcionando.
 - **Rescatista:** versión reducida con las misiones activas, aquellas en las que se ha ofrecido (con su estado) y la misma meteorología, luz y luna, con la misma regla de ubicación (boceto 14).
+
+### 3.2.1 Tiempo en detalle
+
+Vista a la que lleva el botón «Ver todo el detalle del tiempo» de la tarjeta de Inicio, de Mis misiones y del detalle de una misión del rescatista (`/weather`; con `?mission=<id>` para el objetivo de una misión, sin él la ubicación del dispositivo). La puede abrir quien tiene acceso a la aplicación; no tiene entrada en la barra. Enlace «Volver».
+
+- **Qué muestra:** la ubicación y su altitud; **ahora** (temperatura, viento y rachas, precipitación, nieve, nubosidad e isoterma de 0 °C); **próximos días**; **detalle por hora** de las próximas 24 horas; y la tarjeta de **luz y luna** (amanecer, atardecer, crepúsculos, fase lunar). Todo lo que antes mostraba Inicio.
+- **Estados:** carga; sin ubicación (la misma explicación y el reintento que Inicio); error; dato guardado con su hora (`stale`); no disponible. La posición del dispositivo no se guarda ni viaja en la dirección (RN-26).
+- **Los iconos de la tarjeta simple** se derivan en `packages/geo` de la nubosidad, la precipitación y la nieve de las horas de cada tramo. No hay probabilidad de lluvia, índice UV ni tormenta, y ninguna valoración de «buenas condiciones».
 
 ### 3.3 Misiones
 
@@ -671,6 +679,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.4 (2026-11-13)**
+- Issue #18: §3.2 con la tarjeta del tiempo simple (tres iconos por tramo, temperatura y viento) y la luz y luna fuera de Inicio; nueva §3.2.1 «Tiempo en detalle».
 
 **1.3 (2026-11-13)**
 - Issue #17: §3.6 y §8 con «Eliminar seleccionadas» en la lista de archivadas (el detalle y la lista de activas no tienen botón de eliminar) y el protocolo quitar → archivar → eliminar.

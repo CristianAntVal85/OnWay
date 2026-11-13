@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.5 (borrador) · Fecha: 2026-11-13 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.6 (borrador) · Fecha: 2026-11-13 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -328,13 +328,15 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 
 **RF-704 (Should) Previsión meteorológica de montaña.** Por defecto, para la **ubicación del dispositivo**, leída al iniciar sesión (RF-708). Si el coordinador pincha una misión de la lista, pasa al **objetivo de esa misión**. Hay un enlace para volver a la ubicación propia.
 - Se calcula siempre a la altitud del punto, no a la del valle.
-- Muestra, para los próximos días: temperatura, viento y rachas, precipitación y nieve, nubosidad, y la altitud de la isoterma de 0 °C si el proveedor la ofrece.
+- **Inicio y las cabeceras de misión muestran solo lo imprescindible** (issue #18): tres iconos del tiempo por tramo del día (mañana, tarde y noche, con su horario), la temperatura actual y el viento. Un botón lleva a la **vista de detalle**, que muestra para los próximos días: temperatura, viento y rachas, precipitación y nieve, nubosidad, y la altitud de la isoterma de 0 °C si el proveedor la ofrece, además de la luz y la luna (RF-705).
+- Los iconos se derivan de los datos que ya trae el proveedor (nubosidad, precipitación y nieve de las horas de cada tramo): no hay probabilidad de lluvia, índice UV ni código de tormenta, y no se muestra ninguna valoración del tipo «buenas condiciones».
 - Cita al proveedor, como exigen sus condiciones.
 - Los datos se guardan en caché por punto y altitud redondeados para limitar las llamadas y respetar los cupos gratuitos. Si el proveedor falla, la tarjeta lo indica y el resto del inicio sigue funcionando.
 - Proveedores propuestos en D-18.
 
 **RF-705 (Should) Luz y luna del mismo punto.** Amanecer, atardecer, crepúsculos, fase lunar con porcentaje de iluminación, y salida y puesta de la luna. Se calculan en local, sin proveedor externo *(propuesto en lo que va más allá de la fase lunar)*.
 - Sin estimación de tiempos (D-03), la luz y la luna son la referencia temporal útil para planificar aproximaciones nocturnas.
+- Se ven en la **vista de detalle del tiempo**, no en Inicio (issue #18).
 
 **RF-706 (Could) Enlaces a boletines oficiales** (meteorología de montaña de AEMET y Météo-France, y boletines de aludes cuando haya temporada) de la zona mostrada *(propuesto)*.
 
@@ -549,6 +551,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.6 (2026-11-13)**
+- Issue #18: RF-704 y RF-705 reparten lo que se ve. Inicio y las cabeceras de misión enseñan tres iconos por tramo del día, la temperatura y el viento; el detalle (próximos días, por hora, rachas, nieve, nubosidad, isoterma, luz y luna) va a una vista propia. Sin requisitos nuevos ni datos nuevos del proveedor.
 
 **1.5 (2026-11-13)**
 - Issue #17: RN-14 y RF-512 permiten eliminar definitivamente una ruta **archivada y sin misión** (antes: «solo archivar»). Protocolo: quitar de las misiones abiertas → archivar → eliminar desde la lista de archivadas. Se revisa también el punto 10 de `docs/constitution.md` y la regla 4 de `CLAUDE.md`.

@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.12 · **Estado:** borrador para revisión · **Fecha:** 13 de noviembre de 2026
+**Versión:** 0.13 · **Estado:** borrador para revisión · **Fecha:** 13 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -176,6 +176,19 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 | **Fuera** | Botón de eliminar en el detalle y en la lista de activas, desarchivar, eliminar versiones sueltas, papelera, deshacer, borrado por lotes atómico en el servidor |
 | **Tal como se construyó** | **T1** documentos (constitución, `CLAUDE.md`, 01, 02, 03, 05, 06) y contrato `deleteRoute` (contratos 90 pruebas). **T2** migración `0013_route_delete.sql`: `route_versions_guard()` pasa a `SECURITY DEFINER` y permite borrar una versión validada solo si su ruta está archivada y no figura en `mission_routes` (tampoco en misiones cerradas); editar una validada sigue prohibido; 15 pruebas con `onway_app` (`test:db` 49; las 194 SQL no cambian). **T3** `RouteWrites.remove`: bloquea la ruta, `INVALID_STATE_TRANSITION` si no está archivada, `ROUTE_IN_USE` si está en cualquier misión, quita el vínculo «deriva de» a las derivadas (D-I4), borra versiones y ruta, marca como borrado el GPX de origen si nadie más lo usa y quita sus bytes al final (un fallo ahí solo se registra) y deja `route_deleted` en la auditoría (`name`, `versions`, `derivativesUnlinked`); 13 pruebas (`test:api` 499). **T4** web: «Eliminar seleccionadas» (clase `btn-eliminar-ruta`) **no se monta** fuera de `?status=archived` ni para el administrador; informe de hechas y fallidas; la selección se vacía al cambiar el filtro de estado; textos es y fr (web 798). **T5** `route-delete-demo.spec.ts` (4 pruebas por formato, escritorio y 375 px; francés solo con teclado). **Validación (2026-11-13):** `reviewer`, `reviewer-db`, `reviewer-ui` y `reviewer-security`; una vuelta de correcciones: el primero halló que el spec E2E no cargaba (`_fixtures` en vez de `{}` en los hooks, cambiado por el lint tras la primera ejecución completa) y que faltaba la fila 0013 de la tabla de migraciones del doc 05; se corrigieron también el informe que se arrastraba al cambiar de filtro (`key` en `SelectionBar`), el margen de la nota del diálogo, las claves por id, el filtro por organización y el bloqueo de las filas de `files` al retirar el GPX. **Aceptado sin cambio:** los bytes del GPX se borran antes del commit (se pierde solo el original si el commit falla), `search_path` sin `pg_temp` (deuda de todas las funciones `SECURITY DEFINER` desde 0007) y que SQL directo podría borrar una versión validada suelta (la API nunca lo hace; lo fija una prueba). **Desviaciones:** la prueba de montaje de rutas (AC-02) usó una lista temporal `NOT_BUILT_YET` entre T1 y T3; la constitución no tiene registro de cambios, así que la decisión se anota en `docs/estado.md`. **Consecuencia aceptada (D-I6):** una ruta archivada que quedó en una misión cerrada no se puede eliminar nunca. Dependencias nuevas: ninguna |
 
+### Issue #18 · Tarjeta del tiempo simple (fuera de la hoja de ruta, issue #18) · S
+
+> **No es un hito nuevo de v1 ni añade requisitos.** Cambio de alcance aprobado por el usuario el 2026-11-13 (issue #18), como `UI-rediseno`: cambia cómo se ve y se reparte el tiempo de Inicio, **sin contrato, proveedor, base de datos ni operaciones nuevas**. Plan y tareas en `specs/issue-18-tiempo-simple/` (rama `hito/issue-18-tiempo-simple`, siete tareas).
+
+| | |
+|---|---|
+| **Demostración** | Inicio enseña **tres iconos por tramo del día** (Mañana 06–12 h, Tarde 12–18 h, Noche 18–24 h, con su horario y el tramo en curso primero), el **termómetro con la temperatura actual** y el **viento** (icono y km/h). Un botón lleva a la vista **`/weather`** con todos los datos que ya había (ahora, próximos días, por hora, luz y luna) |
+| **Alcance** | RF-704 y RF-705 (se reparte lo que se ve), doc 02 §3.2 y §3.2.1. Decisiones D-W1 a D-W9 del plan |
+| **Operaciones (0)** | Ninguna: `getEnvironment` no cambia; `CURRENT_MILESTONE` sigue en `'H5'` y las 59 operaciones montadas no cambian |
+| **Salida** | `weatherSymbol` y `dayPartSymbols` probados en `packages/geo`; tokens `--wx-*` con contraste calculado; la tarjeta de Inicio **mide como mucho el 55 % de la anterior** (≤ 423 px; antes 770 px, `specs/issue-18-tiempo-simple/medidas.md`); E2E entero en verde |
+| **Fuera** | UV, probabilidad de lluvia, semáforo de «buenas condiciones» y tormenta (no hay dato en el contrato; la issue los pedía), cualquier campo nuevo del proveedor, boletines (RF-706) |
+| **Tal como se construyó** | *(se completa al cerrar el cambio)* |
+
 ### H6 · Voluntariado, cierre con asistencia, historial y privacidad · M
 
 **Objetivo:** el ciclo completo de una misión con personas.
@@ -279,6 +292,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.13 | 2026-11-13 | Cambio de alcance (issue #18): tarjeta del tiempo simple con vista de detalle. Nueva subsección «Issue #18» en la sección 3, tras la «Issue #17»: tres iconos por tramo del día, temperatura y viento; sin contrato ni operaciones nuevas |
 | 0.12 | 2026-11-13 | Cambio de alcance (issue #17): eliminar rutas archivadas y sin misión. Nueva subsección «Issue #17» en la sección 3, tras `UI-rediseno`, con el protocolo quitar → archivar → eliminar, la operación `deleteRoute` (97 en el registro, 59 montadas), la migración 0013 y lo construido en T1 a T5. Revierte la regla «las rutas no se borran» (constitución, `CLAUDE.md`, RN-14, INV-04, INV-07) |
 | 0.11 | 2026-11-06 | `UI-rediseno` (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con los temas, el arranque sin destello, el mapa que sigue al tema, los anchos, el alto del mapa de Crear misión, la accesibilidad, las pruebas (web 788, E2E 110), el tamaño del bundle, las desviaciones y lo pendiente del usuario (mapa oscuro real y `forced-colors` en Windows). El lector de pantalla y los botones de zoom siguen en H7 |
 | 0.10 | 2026-11-05 | Cambio de alcance (issue #14): rediseño visual fuera de la hoja de ruta. Nueva subsección «UI-rediseno» en la sección 3, tras H5: tema oscuro por defecto y claro de alto contraste con selector en Cuenta, mapa de carreteras que sigue al tema, contenido centrado y alto del mapa de Crear misión; 0 operaciones y sin invariantes. Adelanta de H7 solo el contraste (el lector de pantalla y los botones de zoom siguen en H7). Plan y tareas en `specs/UI-rediseno/` |
