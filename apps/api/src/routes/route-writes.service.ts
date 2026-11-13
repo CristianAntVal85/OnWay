@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { CreateRouteRequest, CreateVersionRequest, DeriveRouteRequest, OperationOutput, ValidateVersionRequest } from '@onway/contracts';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -7,6 +7,7 @@ import { assertCanLink, pinRoute } from '../mission-routes/mission-route-links.j
 import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import { DatabaseService, type Tx } from '../db/database.service.js';
+import { FILE_STORAGE, type FileStorage } from '../files/file-storage.js';
 import { ImportedTracks } from '../files/imported-tracks.js';
 import { viewerOf } from '../missions/mission-support.js';
 import { translateRouteWriteError } from './errors.js';
@@ -48,7 +49,8 @@ const lineString = (coordinates: readonly (readonly number[])[]) => sql`ST_SetSR
  * Writes of the route library (RF-505, RF-506, RF-510, RF-516, RF-517, RN-10, RN-12, RN-14). The server measures every
  * geometry itself (`RouteMeasurement`); a version is never changed once saved (INV-04): editing adds the next one, and the
  * row of the route is locked while it does, so two edits at once become versions 2 and 3. Each write leaves its audit row in
- * the same transaction (INV-16, D-H2-07). Routes are archived, never deleted (RN-14); an archived one is read-only (D-H2-08).
+ * the same transaction (INV-16, D-H2-07). Routes are archived (RN-14); an archived one is read-only (D-H2-08) and, when no mission has
+ * it, can be deleted for good (`remove`, issue #17).
  */
 @Injectable()
 export class RouteWrites {
@@ -58,7 +60,10 @@ export class RouteWrites {
     @Inject(ImportedTracks) private readonly tracks: ImportedTracks,
     @Inject(RouteMeasurement) private readonly measurement: RouteMeasurement,
     @Inject(ROUTING_PROVIDER) private readonly routing: RoutingProvider,
+    @Inject(FILE_STORAGE) private readonly storage: FileStorage,
   ) {}
+
+  private readonly logger = new Logger(RouteWrites.name);
 
   private get tx(): Tx {
     return this.database.current();
@@ -268,6 +273,80 @@ export class RouteWrites {
     }
     await this.audit.recordRoute({ orgId: viewer.orgId, routeId, action: 'route_archived', actorUserId: viewer.userId, detail: { name: route.name } });
     return readRouteDetail(this.tx, viewer.orgId, routeId);
+  }
+
+  /**
+   * Deletes for good an ARCHIVED route that no mission has, closed ones included (issue #17, RN-14, D-I1 and D-I6). Looked at first, because
+   * a statement the database refuses aborts the transaction (INV-04 and INV-07 are the second defence). In this order: the routes that
+   * derive from it lose the link (D-I4), its versions go (segments with them), then the route; the original files nobody else uses are
+   * retired (D-I5); one audit line stays (INV-16). The bytes are removed last and a failure there is only logged: the route is gone either way.
+   */
+  async remove(principal: Principal, routeId: string): Promise<void> {
+    const viewer = viewerOf(principal);
+    const route = await this.lockRoute(viewer.orgId, routeId);
+    if (route.status !== 'archived') throw new DomainError('INVALID_STATE_TRANSITION', 'Only an archived route can be deleted');
+    const inUse = (
+      await this.tx.execute(sql`
+      SELECT DISTINCT m.id, m.name FROM mission_routes mr JOIN missions m ON m.id = mr.mission_id
+       WHERE mr.route_id = ${routeId} AND mr.organization_id = ${viewer.orgId} ORDER BY m.name, m.id`)
+    ).rows as { id: string; name: string }[];
+    if (inUse.length > 0) throw new DomainError('ROUTE_IN_USE', 'The route is in missions', { missions: inUse });
+
+    const derivatives = (
+      await this.tx.execute(sql`
+      UPDATE routes SET derived_from_route_id = NULL, derived_from_version_id = NULL
+       WHERE derived_from_route_id = ${routeId} AND organization_id = ${viewer.orgId} RETURNING id`)
+    ).rows as { id: string }[];
+    const sources = (
+      await this.tx.execute(sql`SELECT DISTINCT source_file_id AS id FROM route_versions WHERE route_id = ${routeId} AND organization_id = ${viewer.orgId} AND source_file_id IS NOT NULL`)
+    ).rows as { id: string }[];
+    let versions: number;
+    try {
+      versions = (await this.tx.execute(sql`DELETE FROM route_versions WHERE route_id = ${routeId} AND organization_id = ${viewer.orgId}`)).rowCount ?? 0;
+      await this.tx.execute(sql`DELETE FROM routes WHERE id = ${routeId} AND organization_id = ${viewer.orgId}`);
+    } catch (error) {
+      translateRouteWriteError(error);
+    }
+    const retired =
+      sources.length === 0
+        ? []
+        : await this.retireFiles(
+            viewer.orgId,
+            sources.map((file) => file.id),
+          );
+    await this.audit.recordRoute({
+      orgId: viewer.orgId,
+      routeId,
+      action: 'route_deleted',
+      actorUserId: viewer.userId,
+      detail: { name: route.name, versions, derivativesUnlinked: derivatives.map((row) => row.id) },
+    });
+    for (const key of retired) {
+      try {
+        await this.storage.delete(key);
+      } catch (error) {
+        this.logger.warn(`the bytes of a retired route file could not be removed: ${(error as Error).message}`);
+      }
+    }
+  }
+
+  /** Marks as deleted the route files that no version uses any more and returns their storage keys. */
+  private async retireFiles(orgId: string, fileIds: string[]): Promise<string[]> {
+    const ids = sql.join(
+      fileIds.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    );
+    // The rows are locked first: a version that is being saved with the same file holds a share lock on its row through the foreign key,
+    // so the check below never races with it.
+    await this.tx.execute(sql`SELECT id FROM files WHERE organization_id = ${orgId} AND id IN (${ids}) ORDER BY id FOR UPDATE`);
+    const rows = (
+      await this.tx.execute(sql`
+      UPDATE files SET deleted_at = now()
+       WHERE organization_id = ${orgId} AND purpose = 'route_import' AND deleted_at IS NULL AND id IN (${ids})
+         AND NOT EXISTS (SELECT 1 FROM route_versions v WHERE v.source_file_id = files.id)
+       RETURNING storage_key`)
+    ).rows as { storage_key: string }[];
+    return rows.map((row) => row.storage_key);
   }
 
   /**

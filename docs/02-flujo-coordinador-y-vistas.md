@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.2 (borrador) · Fecha: 2026-11-06 · Depende de: documento 01 (v1.4)
+Versión: 1.4 (borrador) · Fecha: 2026-11-13 · Depende de: documento 01 (v1.6)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -96,13 +96,13 @@ Boceto 1. Una sola pantalla de entrada con tres estados.
 
 Boceto 3. Vista informativa. No se edita nada desde aquí (RF-701). El criterio es mostrar lo que un alpinista consultaría antes de salir, en una sola pantalla.
 
-**Ubicación para el tiempo (RF-704, RF-708, D-30).** La meteorología, la luz y la luna se calculan por defecto para la **ubicación del dispositivo**, leída al iniciar sesión. El título de las tarjetas indica "📍 Mi ubicación". Si el coordinador pincha una de las **misiones activas** de la lista, las tarjetas cambian al **objetivo de esa misión** y el título lo indica. Un enlace "Volver a mi ubicación" restablece la posición del dispositivo.
+**Ubicación para el tiempo (RF-704, RF-708, D-30).** El tiempo (tarjeta simple) se calcula por defecto para la **ubicación del dispositivo**, leída al iniciar sesión; la luz y la luna se ven en la vista de detalle (3.2.1) para el mismo punto. El título de la tarjeta indica "📍 Mi ubicación". Si el coordinador pincha una de las **misiones activas** de la lista, la tarjeta cambia al **objetivo de esa misión** y el título lo indica. Un enlace "Volver a mi ubicación" restablece la posición del dispositivo.
 
 | Bloque | Qué muestra | Prioridad |
 |---|---|---|
 | Misiones activas | Tarjetas **pinchables** con nombre, coordinador responsable, voluntarios por decidir, participantes aceptados y pendientes (rutas sin validar, sin origen). La tarjeta elegida queda resaltada | Should (RF-703) |
-| Meteorología | Para la ubicación mostrada, calculada a la **altitud del punto**: temperatura, viento y rachas, precipitación y nieve, nubosidad, isoterma de 0 °C si hay dato. Resumen de los próximos días y detalle desplegable por hora | Should (RF-704) |
-| Luz y luna | Amanecer, atardecer, crepúsculos, fase lunar con porcentaje de iluminación, salida y puesta de la luna, de la misma ubicación | Should (RF-705) |
+| Meteorología | **Tarjeta simple** (issue #18): tres iconos por tramo del día con su horario (Mañana 06–12 h, Tarde 12–18 h, Noche 18–24 h; el tramo en curso primero), el **termómetro con la temperatura actual** y el **viento** (icono y km/h), calculados a la **altitud del punto**. Un botón «Ver todo el detalle del tiempo» lleva a la vista de detalle (3.2.1) | Should (RF-704) |
+| Luz y luna | Ya no está en Inicio: se ve en la vista de detalle del tiempo (3.2.1) | Should (RF-705) |
 | Boletines oficiales | Enlaces a la predicción de montaña de AEMET y Météo-France y, en temporada, a los boletines de aludes, según la zona mostrada | Could (RF-706) |
 | Mapa | Posición del dispositivo y objetivos de las misiones activas, con la misión elegida resaltada | Could (RF-707) |
 | Acceso rápido a Crear misión | Botón destacado (solo coordinador) | Must |
@@ -113,7 +113,15 @@ Boceto 3. Vista informativa. No se edita nada desde aquí (RF-701). El criterio 
 - **Sin permiso de ubicación o sin señal:** la tarjeta muestra "Activa la ubicación o elige una misión". Está pendiente decidir si se usa el punto base de la organización como alternativa (Q-32).
 - **Sin misiones activas:** mensaje claro y botón para crear una misión. El tiempo sigue mostrándose para la ubicación del dispositivo.
 - **Fallo del proveedor meteorológico:** la tarjeta muestra "no disponible" o el último dato con su hora, y el resto del inicio sigue funcionando.
-- **Rescatista:** versión reducida con las misiones activas, aquellas en las que se ha ofrecido (con su estado) y la misma meteorología, luz y luna, con la misma regla de ubicación (boceto 14).
+- **Rescatista:** versión reducida con las misiones activas, aquellas en las que se ha ofrecido (con su estado) y la misma tarjeta del tiempo simple (la luz y la luna, en el detalle, 3.2.1), con la misma regla de ubicación (boceto 14).
+
+### 3.2.1 Tiempo en detalle
+
+Vista a la que lleva el botón «Ver todo el detalle del tiempo» de la tarjeta de Inicio, de Mis misiones y del detalle de una misión del rescatista (`/weather`; con `?mission=<id>` para el objetivo de una misión, sin él la ubicación del dispositivo). La puede abrir quien tiene acceso a la aplicación; no tiene entrada en la barra. Enlace «Volver».
+
+- **Qué muestra:** la ubicación y su altitud; **ahora** (temperatura, viento y rachas, precipitación, nieve, nubosidad e isoterma de 0 °C); **próximos días**; **detalle por hora** de las próximas 24 horas; y la tarjeta de **luz y luna** (amanecer, atardecer, crepúsculos, fase lunar). Todo lo que antes mostraba Inicio.
+- **Estados:** carga; sin ubicación (la misma explicación y el reintento que Inicio); error; dato guardado con su hora (`stale`); no disponible. La posición del dispositivo no se guarda ni viaja en la dirección (RN-26).
+- **Los iconos de la tarjeta simple** se derivan en `packages/geo` de la nubosidad, la precipitación y la nieve de las horas de cada tramo. No hay probabilidad de lluvia, índice UV ni tormenta, y ninguna valoración de «buenas condiciones».
 
 ### 3.3 Misiones
 
@@ -198,7 +206,7 @@ Boceto 9. Vista nueva (RF-512). Es el fondo permanente de rutas de la organizaci
 - La lista muestra las rutas del **área visible del mapa** y se actualiza al moverlo. Una opción permite buscar solo al pulsar "Buscar en esta zona".
 - Pasar el ratón por una tarjeta resalta su trazado en el mapa, y al revés.
 - Filtros: estado, distancia, desnivel, antigüedad de la validación y búsqueda por nombre o lugar. Etiquetas si se acepta Q-21. Orden y paginación.
-- Acciones sobre la selección: **exportar** y archivar. Botones **Generar rutas**, **Dibujar ruta** e **Importar ruta**. La composición por tipo de vía (barra y texto) es real en lo generado o dibujado pegado a los caminos; en lo importado o dibujado en línea recta dice «sin clasificar».
+- Acciones sobre la selección: **exportar** y archivar. En la vista de **archivadas** (`?status=archived`) la selección también se puede **eliminar** («Eliminar seleccionadas»): confirmación que dice cuántas rutas son y que no se puede deshacer; solo se eliminan las que no están en ninguna misión. En las demás vistas, incluido el detalle, no hay botón de eliminar (issue #17). Botones **Generar rutas**, **Dibujar ruta** e **Importar ruta**. La composición por tipo de vía (barra y texto) es real en lo generado o dibujado pegado a los caminos; en lo importado o dibujado en línea recta dice «sin clasificar».
 
 **Mapa (derecha)**
 - Capas satélite, topográfica y carreteras, conmutables.
@@ -249,7 +257,7 @@ En la primera entrega, **Guardar como nueva ruta** también existe al editar una
 - "Derivadas": rutas creadas a partir de esta.
 - "Usada en": misiones (activas, en planificación, cerradas) y qué versión fija cada una.
 - Acciones: editar (crea versión nueva), derivar, validar, archivar, exportar.
-- Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14).
+- Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14). El detalle no elimina: para borrar una ruta se quita de sus misiones, se archiva y se elimina desde la lista de archivadas.
 
 ### 3.7 Voluntarios y participantes (dentro de la misión)
 
@@ -579,7 +587,7 @@ Boceto 14. Se detallará en un documento posterior, pero el recorrido base es:
 
 1. Registro con código de invitación → pantalla de espera → el administrador aprueba (3.1).
 2. Primer acceso → **formulario de alta** (3.9).
-3. Login → Inicio reducido, con meteorología, luz y luna de su ubicación o de la misión que elija.
+3. Login → Inicio reducido, con la tarjeta del tiempo simple de su ubicación o de la misión que elija (luz y luna, en el detalle).
 4. Misiones activas → Detalle en solo lectura.
 5. En la misión: ver mapa, puntos y rutas validadas con métricas, **compartir la ubicación del objetivo** (coordenadas que se copian con un aviso para el lector de pantalla, y un enlace `geo:` que abre la aplicación de mapas del móvil) y elegir una ruta para verla en el mapa con su perfil.
 6. **Me ofrezco como voluntario**, y consultar el estado de la oferta. Puede retirarla.
@@ -596,7 +604,7 @@ Boceto 14. Se detallará en un documento posterior, pero el recorrido base es:
 | Búsqueda por punto sin resultados (segunda entrega) | "No hay rutas a menos de X km". Opciones: ampliar radio, crear una ruta nueva |
 | Aparece versión validada nueva de una ruta de la misión | Aviso en la misión. El coordinador decide si actualiza. Nada cambia solo |
 | Ruta fijada en una misión se archiva | No se puede archivar mientras esté en una misión no cerrada. Se explica en qué misiones se usa |
-| Se intenta eliminar una ruta usada | Solo se permite archivar (RN-14) |
+| Se intenta eliminar una ruta usada | No se elimina (RN-14): el informe dice en qué misiones está, abiertas o cerradas. Solo se elimina lo archivado y sin misión |
 | Validación antigua | Marca "posiblemente desactualizada". Sigue usable, pero visible |
 | Versión fijada en borrador | En la tabla del coordinador se dice, con el aviso de que el rescatista no la ve, y ofrece **Validar**. El rescatista no recibe la fila ni su geometría (INV-05) |
 | Ruta marcada como no disponible | El coordinador la ve apagada y con la marca; el rescatista la ve señalada, con su aviso y sin descarga; no cuenta como validada al activar la misión |
@@ -672,6 +680,12 @@ Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registr
 
 ## 12. Registro de cambios
 
+**1.4 (2026-11-13)**
+- Issue #18: §3.2 con la tarjeta del tiempo simple (tres iconos por tramo, temperatura y viento) y la luz y luna fuera de Inicio; nueva §3.2.1 «Tiempo en detalle».
+
+**1.3 (2026-11-13)**
+- Issue #17: §3.6 y §8 con «Eliminar seleccionadas» en la lista de archivadas (el detalle y la lista de activas no tienen botón de eliminar) y el protocolo quitar → archivar → eliminar.
+
 **1.2 (2026-11-06)**
 - Cierre de `UI-rediseno` (issue #14): §1 principio «Legible en campo» (oscuro por defecto y claro de alto contraste, contenido centrado); §2 Cuenta con el **tema** y su selector de tres opciones; §3.4 alto del mapa de Crear misión medido en escritorio y en columna. Sin cambios de permisos ni de flujo.
 
@@ -700,7 +714,7 @@ Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registr
 - El producto pasa a llamarse **OnWay**.
 - Alineado con los 15 bocetos (nueva sección 13).
 - Acceso con registro y pantalla de espera (3.1). Nueva vista de Administración (3.10) y columna Administrador en navegación y permisos.
-- Inicio: meteorología, luz y luna de la ubicación del dispositivo o del objetivo de la misión elegida (3.2).
+- Inicio: tarjeta del tiempo simple de la ubicación del dispositivo o del objetivo de la misión elegida (3.2); el detalle del tiempo, con la luz y la luna (3.2.1).
 - Biblioteca de rutas con lista y mapa, como Wikiloc (3.6).
 - Ficha del voluntario con teléfono, correo y acceso al certificado; sin historial (3.7).
 - Alta y perfil: correo de contacto igual al de acceso, bloque de contacto separado de los sensibles, certificado opcional (3.9).

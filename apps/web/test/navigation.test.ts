@@ -56,6 +56,7 @@ describe('cada ruta rechaza los roles no permitidos (RF-103 en interfaz)', () =>
     admin: ['admin'],
     profile: ['rescuer'],
     account: ['admin', 'coordinator', 'rescuer'],
+    weather: ['admin', 'coordinator', 'rescuer'],
   };
 
   it('coincide con la matriz esperada, rol por rol', () => {

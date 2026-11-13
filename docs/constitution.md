@@ -16,7 +16,7 @@ Principios innegociables. Cualquier plan o código que los contradiga se corrige
 7. **Aislamiento por organización**: seguridad por filas en la base de datos como defensa real y filtro en la aplicación como segunda. Recurso de otra organización → 404. La aplicación no usa superusuario ni `BYPASSRLS`.
 8. **Los permisos los decide el servidor.** El rescatista nunca escribe en misiones, rutas ni equipos.
 9. **Datos personales mínimos.** Ningún listado los devuelve; documento y dirección cifrados y solo por la función auditada; la ubicación del dispositivo no se guarda.
-10. **Versiones de ruta inmutables**; se archivan, no se borran. El servidor calcula elevación y métricas; nunca se fía del cliente ni de un GPX.
+10. **Versiones de ruta inmutables**; las rutas se archivan. Solo se elimina del todo una ruta **ya archivada y sin misión**, por decisión expresa del coordinador y con confirmación (issue #17; antes: «no se borran»). El servidor calcula elevación y métricas; nunca se fía del cliente ni de un GPX.
 11. **Solo datos ficticios** y cero secretos en el repositorio, las pruebas o las demostraciones. Orientación civil: ningún texto ni decisión adopta un encuadre militar.
 
 ## Arquitectura

@@ -22,6 +22,7 @@ import { RouteDetailPage } from '../pages/route-detail-page';
 import { RouteEditorPage } from '../pages/route-editor-page';
 import { RoutesPage } from '../pages/routes-page';
 import { WaitingPage } from '../pages/waiting-page';
+import { WeatherPage } from '../pages/weather-page';
 
 /** Rutas de la web. Cada ruta de la barra pasa por `RoleGate`; el servidor decide igualmente (RF-103). */
 export function AppRoutes() {
@@ -147,6 +148,14 @@ export function AppRoutes() {
                 element={
                   <RoleGate route="account">
                     <AccountPage />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={PATHS.weather}
+                element={
+                  <RoleGate route="weather">
+                    <WeatherPage />
                   </RoleGate>
                 }
               />

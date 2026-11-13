@@ -8,7 +8,7 @@ import { TEST_PASSWORD } from '../support/fixtures.js';
 import { TestOnlyController } from '../support/test-controllers.js';
 
 /**
- * Operations built so far: the 42 of H0 to H3 and the 9 of H4 (51). AC-02 compares the routes Express mounts with this list plus
+ * Operations built so far: the 43 of H0 to H3 (`deleteRoute`, issue #17, included) and the 9 of H4 (52). AC-02 compares the routes Express mounts with this list plus
  * `ACCESS_BUILT`.
  */
 const BUILT = [
@@ -43,6 +43,7 @@ const BUILT = [
   'deriveRoute',
   'validateRouteVersion',
   'archiveRoute', // H2-T5
+  'deleteRoute', // issue #17
   'listRoutes',
   'getRoute',
   'getRouteVersion',
@@ -103,9 +104,9 @@ async function expectError(response: Response, code: keyof typeof ERROR_HTTP) {
 }
 
 describe('routes come from the registry (AC-02, rule 7)', () => {
-  it('mounts the 42 operations of H0 to H3, the 9 of H4 and the access ones built so far, and all of them are in the registry', () => {
+  it('mounts the 43 operations of H0 to H3, the 9 of H4 and the access ones built so far, and all of them are in the registry', () => {
     const before = ENDPOINTS.filter((e) => ['H0', 'H1', 'H2', 'H3'].includes(e.milestone)).map((e) => e.id);
-    expect(before).toHaveLength(42);
+    expect(before).toHaveLength(43);
     const ofH4 = ENDPOINTS.filter((e) => e.milestone === 'H4').map((e) => e.id);
     expect(ofH4).toHaveLength(9);
     expect([...BUILT].sort()).toEqual([...before, ...ofH4].sort());
@@ -114,7 +115,7 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(ACCESS_OPERATIONS).toHaveLength(7);
     expect(ACCESS_OPERATIONS.filter((id) => !ofH5.includes(id))).toEqual([]);
     expect(ACCESS_BUILT.filter((id) => !ACCESS_OPERATIONS.includes(id))).toEqual([]);
-    expect(MOUNTED_IDS).toHaveLength(51 + ACCESS_BUILT.length);
+    expect(MOUNTED_IDS).toHaveLength(52 + ACCESS_BUILT.length);
     expect(new Set(MOUNTED_IDS).size).toBe(MOUNTED_IDS.length);
   });
 

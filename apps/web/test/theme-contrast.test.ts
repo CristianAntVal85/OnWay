@@ -68,6 +68,9 @@ const SOFT: Record<string, string> = { '--success': '--success-soft', '--warn': 
 
 const ROUTE_TOKENS = ['validated', 'draft', 'stale', 'archived', 'compare-a', 'compare-b', 'avoid'].map((tone) => `--route-${tone}`);
 
+// Iconos del tiempo (issue #18, D-W6): cada color es un gráfico junto a su texto, así que pide 3:1 contra los tres fondos en los dos temas.
+const WX_TOKENS = ['sun', 'moon', 'cloud', 'rain', 'snow', 'wind', 'heat'].map((name) => `--wx-${name}`);
+
 const COMMON: Pair[] = [
   ...pair('--on-accent', ['--accent'], TEXT),
   ...pair('--accent-text', ['--bg', '--surface', '--danger-soft'], TEXT),
@@ -112,6 +115,7 @@ const DARK_PAIRS: Pair[] = [
   ...pair('--info', ['--surface-raised'], TEXT),
   ...pair('--text-muted', ['--success-soft', '--warn-soft', '--danger-soft'], TEXT),
   ...pair('--bg', ['--text'], TEXT), // elemento pulsado (capas del mapa, selector): --bg sobre --text
+  ...WX_TOKENS.flatMap((token) => pair(token, SURFACES, COMPONENT)),
 ];
 
 const LIGHT_PAIRS: Pair[] = [
@@ -121,6 +125,7 @@ const LIGHT_PAIRS: Pair[] = [
   ...pair('--accent-text', ['--surface-raised'], TEXT),
   ...pair('--text-muted', ['--success-soft', '--warn-soft', '--danger-soft'], AAA),
   ...pair('--bg', ['--text'], AAA),
+  ...WX_TOKENS.flatMap((token) => pair(token, SURFACES, COMPONENT)),
 ];
 
 describe.each([

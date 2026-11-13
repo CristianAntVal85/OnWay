@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 1.0 (borrador) · Fecha: 2026-11-02 · Depende de: documentos 01 (v1.3), 02 (v0.9), 03 (v0.8) y 04 (v1.1)
+Versión: 1.1 (borrador) · Fecha: 2026-11-13 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -343,10 +343,10 @@ Las 32 invariantes del documento 03, sección 7. "Restricción" es una restricci
 | INV-01 | **RLS + claves compuestas** | Política restrictiva `org_isolation` en 20 tablas. Claves foráneas compuestas (DB-05) |
 | INV-02 | Restricción | `missions.coordinator_id NOT NULL`, `target NOT NULL`, clave foránea a la membresía |
 | INV-03 | Disparador | `missions_guard` (reemplazada en la 0011): el responsable es un miembro activo con rol `coordinator`; un administrador no puede serlo (Q-14 = no) |
-| INV-04 | Disparador | `route_versions_guard`: solo se permite Borrador → Validada; una validada no se edita ni se borra. `route_segments_immutable` |
+| INV-04 | Disparador | `route_versions_guard`: solo se permite Borrador → Validada; una validada no se edita, y solo se borra si su ruta está archivada y no figura en ninguna misión (migración 0013, issue #17). `route_segments_immutable` |
 | INV-05 | RLS | `versions_rescuer`, `mroutes_rescuer` con `version_is_validated()` |
 | INV-06 | Restricción | Clave foránea compuesta `(pinned_version_id, route_id)` → `route_versions (id, route_id)` |
-| INV-07 | Disparador | `routes_archive_guard`. Además, `mission_routes.route_id` impide borrar una ruta usada |
+| INV-07 | Disparador | `routes_archive_guard`. Además, `mission_routes.route_id` (sin cascada) impide borrar una ruta que figure en cualquier misión, también cerrada |
 | INV-08 | RLS | `missions_select`: el rescatista solo ve `active` y `closed` |
 | INV-09 | RLS + disparador | `part_offer`, `part_withdraw`; `participations_guard` exige misión activa y rescatista |
 | INV-10 | RLS | El rescatista no puede dejar una participación en `accepted`; solo `pending` o `withdrawn` |
@@ -597,10 +597,11 @@ Las migraciones son aditivas y se ejecutan en orden. Cada entrega solo estrena l
 | 0010 | 1 (H1) | Política `audit_mission_staff`: el personal lee las filas `entity_type = 'mission'` de `audit_log` de su organización (§6.3) | `apps/api/test/db/audit-policy.test.ts` |
 | 0011 | 1 (H1) | Q-14 = no: función `app_is_coordinator()`; en las nueve tablas de misión y ruta, lectura para el personal y escritura solo para el coordinador (§6.3); `missions_guard` solo acepta a un coordinador como responsable (INV-03) | `db/tests/run_tests.sql` (sección Q-14) y `apps/api/test/db/mission-writers-policy.test.ts` |
 | 0012 | 1 (H2) | Tipo de vía `unknown` («sin clasificar») en `road_type`: las rutas importadas, dibujadas o editadas a mano no tienen clasificación hasta que exista el motor (H3, RF-503). `files_insert`: los archivos `route_import` solo los inserta el coordinador (defensa en profundidad de Q-14) | `apps/api/test/db/routes-h2-policy.test.ts` |
-| 0013+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
+| 0013 | 1 (issue #17) | `route_versions_guard` (INV-04): una versión validada se borra solo si su ruta está archivada y no figura en ninguna misión (cerradas incluidas); editarla sigue prohibido. Función `SECURITY DEFINER` con `search_path` fijo | `route-delete-guard.test.ts` (15 con `onway_app`) |
+| 0014+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
 
 Orden de ejecución y responsabilidades:
-- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0012** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
+- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0013** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
 - Las contraseñas de `onway_owner`, `onway_app` y `onway_platform` se fijan en el despliegue con `ALTER ROLE ... PASSWORD`, leídas de archivos de secretos, nunca del repositorio. En local las genera al azar el servicio `secrets` de `docker compose`.
 - Las tablas internas de la cola (pg-boss 12) las crea la propia biblioteca en su esquema `pgboss`, **no una migración SQL**: el migrador (`apps/api/src/jobs/install-queue.ts`, como `onway_owner`, tras las migraciones) instala el esquema y la cola `calculate` y da a `onway_app` solo USAGE del esquema y SELECT/INSERT/UPDATE/DELETE, secuencias y EXECUTE, con privilegios por defecto para lo que cree una migración futura de pg-boss; `onway_app` no crea nada (hay una prueba). Los procesos en marcha arrancan con `createSchema: false, migrate: false`. La cola solo guarda identificadores (trabajo, organización, usuario). El envío es transaccional con la fila de `calculation_jobs`. H3 no añade ninguna migración SQL.
 - Cada migración debe poder aplicarse sobre una base vacía en CI con la imagen de PostGIS, y las pruebas de la sección 11 deben pasar después de la última.
@@ -627,7 +628,7 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 
 La base de datos tiene su propio juego de pruebas, independiente de la API, porque las invariantes viven aquí. En el repositorio están en `apps/api/test/db/`: una prueba de Vitest levanta PostGIS con Testcontainers (`postgis/postgis:16-3.4`), aplica las migraciones con el migrador de Drizzle y ejecuta los SQL de `db/tests/` (`seed_and_tests.sql` y `run_tests.sql`, que no se editan) (documento 04, sección 12).
 
-**Cobertura actual: 194 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** De ellas, 76 son de Q-14 (migración 0011) y 21 de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 19: las 4 del migrador y los roles, la que lanza las 194, las 8 de la política de la migración 0010 en `audit-policy.test.ts` y las 6 de la 0011 en `mission-writers-policy.test.ts`, con el inicio de sesión real de `onway_app`).
+**Cobertura actual: 194 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** De ellas, 76 son de Q-14 (migración 0011) y 21 de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 49: las 4 del migrador y los roles, la que lanza las 194, las 8 de la política de la migración 0010 en `audit-policy.test.ts`, las 6 de la 0011 en `mission-writers-policy.test.ts`, las 6 de la 0012, las 9 de lo que lee el rescatista en las rutas de la misión y las 15 de la 0013 en `route-delete-guard.test.ts` —INV-04 e INV-07 al borrar una ruta archivada y sin misión—, con el inicio de sesión real de `onway_app`).
 
 | Grupo | Qué se comprueba |
 |---|---|
@@ -682,6 +683,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**1.1 (2026-11-13)** Issue #17. **Migración 0013** (`0013_route_delete.sql`): `route_versions_guard()` pasa a `SECURITY DEFINER` y permite el `DELETE` de una versión validada solo si su ruta está `archived` y no hay filas de `mission_routes` para ella; el resto de INV-04 no cambia. Las políticas de borrado del coordinador (0011) bastan. INV-04 e INV-07 reformulados en §5.
 
 **1.0 (2026-11-02)** H4. **Sin migraciones SQL nuevas**: `mission_routes` y sus claves compuestas (INV-06, INV-13), los disparadores (INV-07, INV-11, origen de tipo origen) y las políticas `mroutes_rescuer`, `versions_rescuer`, `segments_rescuer` y `routes_rescuer` (0005 a 0011) solo se probaron, entre otras cosas con SQL directo como `onway_app` con rol de rescatista (`test/db/mission-routes-rescuer-policy.test.ts`, 9 pruebas): el rescatista lee la versión fijada y validada de una misión activa o cerrada, y nada más; no escribe. Hallazgo anotado: `teams_select` solo deja a un rescatista leer los equipos de los que es miembro, así que el equipo de una ruta le llega nulo si no es suyo (D-34 lo cambiará en H5, `docs/backlog-post-mvp.md` B-01). §10: las 4 rutas de la misión sembrada.
 

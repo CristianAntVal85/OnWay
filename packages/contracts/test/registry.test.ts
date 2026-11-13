@@ -284,9 +284,9 @@ test('una ruta archivada es de solo lectura: editar, validar y archivar declaran
   assert.ok(!C.ENDPOINTS.find((e) => e.id === 'deriveRoute')!.errors?.includes('INVALID_STATE_TRANSITION'), 'derivar una archivada está permitido');
 });
 
-test('H2 monta 13 operaciones y exportRoutes va antes que /routes/{routeId}', () => {
+test('H2 monta 14 operaciones y exportRoutes va antes que /routes/{routeId}', () => {
   const h2 = C.ENDPOINTS.filter((e) => e.milestone === 'H2').map((e) => e.id);
-  assert.equal(h2.length, 13);
+  assert.equal(h2.length, 14);
   assert.ok(h2.includes('exportRoutes'));
   const order = C.ENDPOINTS.map((e) => e.id);
   assert.ok(order.indexOf('exportRoutes') < order.indexOf('getRoute'));
@@ -304,4 +304,15 @@ test('la consulta de exportRoutes acepta de 1 a 50 ids y rechaza lo demás', () 
 test('el tipo de vía «sin clasificar» existe y las rutas importadas lo usan (P1)', () => {
   assert.ok(C.RoadType.options.includes('unknown'));
   assert.ok(C.RoadMix.safeParse([{ roadType: 'unknown', distanceM: 1200 }]).success);
+});
+
+test('deleteRoute: DELETE de una ruta, solo el coordinador, 204, auditada y sin errores nuevos (issue #17, RN-14)', () => {
+  const endpoint = C.ENDPOINTS.find((e) => e.id === 'deleteRoute')!;
+  assert.equal(endpoint.method, 'DELETE');
+  assert.equal(endpoint.path, '/routes/{routeId}');
+  assert.equal(endpoint.milestone, 'H2');
+  assert.deepEqual(endpoint.roles, ['coordinator']);
+  assert.equal(endpoint.response.status, 204);
+  assert.equal(endpoint.audited, true);
+  assert.deepEqual([...(endpoint.errors ?? [])].sort(), ['INVALID_STATE_TRANSITION', 'ROUTE_IN_USE']);
 });

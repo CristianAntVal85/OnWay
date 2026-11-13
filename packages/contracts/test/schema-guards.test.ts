@@ -129,11 +129,11 @@ test('lecturas con efecto de auditoría son POST', () => {
   for (const id of ['readUserSensitive', 'getCertificateLink']) assert.equal(find(id).method, 'POST', id);
 });
 
-test('no existe ningún DELETE de rutas ni de misiones (RN-14)', () => {
+test('no existe ningún DELETE de misiones, y el único de rutas es deleteRoute (RN-14, issue #17)', () => {
   const bad = C.ENDPOINTS.filter((e) => e.method === 'DELETE' && /^\/(routes|missions)\/\{[a-zA-Z]+\}$/.test(e.path));
   assert.deepEqual(
     bad.map((e) => e.id),
-    [],
+    ['deleteRoute'],
   );
 });
 

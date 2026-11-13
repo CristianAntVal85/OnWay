@@ -141,7 +141,7 @@ describe('inicio: misiones activas (RF-703)', () => {
 });
 
 describe('inicio: tiempo, luz y luna de la ubicación (RF-704, RF-705, RF-708)', () => {
-  it('con la ubicación concedida pide el entorno de la celda redondeada y pinta tiempo, luz y luna con la atribución', async () => {
+  it('con la ubicación concedida pide el entorno de la celda redondeada y pinta la tarjeta simple con la atribución (issue #18)', async () => {
     const geolocation = mockGeolocation('granted');
     const { calls } = setup('/home', activeList);
     expect(await screen.findByRole('heading', { level: 3, name: E.weather.title })).toBeTruthy();
@@ -154,26 +154,24 @@ describe('inicio: tiempo, luz y luna de la ubicación (RF-704, RF-705, RF-708)',
     expect(requests[0]!.query.get('missionId')).toBeNull();
 
     expect(screen.getByText(E.basis.device)).toBeTruthy();
-    expect(screen.getByText(/calculado a 2\.?140 m de altitud/)).toBeTruthy();
-    // Tiempo actual
+    // Tarjeta simple: tres iconos por tramo del día, el termómetro con la temperatura y el viento
     const weather = screen.getByRole('heading', { level: 3, name: E.weather.title }).closest('section')!;
-    expect(within(weather).getAllByText('2 °C').length).toBeGreaterThan(0);
-    expect(within(weather).getByText('17 km/h, rachas de 32 km/h')).toBeTruthy();
-    expect(within(weather).getByText(/^2\.?890 m$/)).toBeTruthy();
+    expect(within(weather).getByRole('list', { name: E.simple.partsLabel }).querySelectorAll('li')).toHaveLength(3);
+    expect(within(weather).getByText('2 °C')).toBeTruthy();
+    expect(within(weather).getByText('17 km/h')).toBeTruthy();
     // Atribución: texto, sin enlace
     const attribution = within(weather).getByText(E.weather.attribution);
     expect(attribution.closest('a')).toBeNull();
     expect(attribution.querySelector('a')).toBeNull();
-    // Próximos días y detalle por hora
-    expect(within(weather).getByText(E.weather.nextDays)).toBeTruthy();
-    expect(within(weather).getByText(E.weather.hourly)).toBeTruthy();
-    // Luz y luna
-    const light = screen.getByRole('heading', { level: 3, name: E.light.title }).closest('section')!;
-    expect(within(light).getByText(E.light.sunrise)).toBeTruthy();
-    expect(within(light).getByText(E.light.phases.waxing_gibbous)).toBeTruthy();
-    expect(within(light).getByText('73 % iluminada')).toBeTruthy();
-    // Un instante nulo (la luna no se pone ese día) se dice con palabras
-    expect(within(light).getByText(E.light.none)).toBeTruthy();
+    // El botón lleva al detalle de este punto (el dispositivo: sin misión)
+    expect(within(weather).getByRole('link', { name: E.simple.detailCta }).getAttribute('href')).toBe('/weather');
+    // Lo demás ya no está en Inicio: ni altitud, ni rachas, ni isoterma, ni próximos días, ni detalle por hora, ni luz y luna
+    expect(screen.queryByText(/calculado a/)).toBeNull();
+    expect(within(weather).queryByText(/rachas/)).toBeNull();
+    expect(within(weather).queryByText(/^2\.?890 m$/)).toBeNull();
+    expect(within(weather).queryByText(E.weather.nextDays)).toBeNull();
+    expect(within(weather).queryByText(E.weather.hourly)).toBeNull();
+    expect(screen.queryByRole('heading', { level: 3, name: E.light.title })).toBeNull();
   });
 
   it('la ubicación se pide una sola vez por sesión aunque se navegue y se vuelva al inicio', async () => {
@@ -210,7 +208,7 @@ describe('inicio: tiempo, luz y luna de la ubicación (RF-704, RF-705, RF-708)',
     await user.click(pick);
 
     expect(await screen.findByText(E.basis.mission.replace('{{name}}', 'Simulacro ficticio · Valle de Ordesa'))).toBeTruthy();
-    await waitFor(() => expect(screen.getByText(/calculado a 3\.?100 m/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('link', { name: E.simple.detailCta }).getAttribute('href')).toBe(`/weather?mission=${MISSION_ID}`));
     expect(pick.getAttribute('aria-pressed')).toBe('true');
     expect(pick.closest('li')!.getAttribute('data-picked')).toBe('true');
     const missionCall = envCalls(calls()).at(-1)!;
@@ -276,7 +274,7 @@ describe('inicio: tiempo, luz y luna de la ubicación (RF-704, RF-705, RF-708)',
     expect(within(weather).getByText(E.weather.attribution)).toBeTruthy();
   });
 
-  it('tiempo no disponible (unavailable): lo dice con un reintento, y luz, luna y misiones siguen funcionando', async () => {
+  it('tiempo no disponible (unavailable): lo dice con un reintento, y las misiones siguen funcionando', async () => {
     mockGeolocation('granted');
     let calls = 0;
     const { user } = setup('/home', {
@@ -289,7 +287,6 @@ describe('inicio: tiempo, luz y luna de la ubicación (RF-704, RF-705, RF-708)',
     const weather = (await screen.findByRole('heading', { level: 3, name: E.weather.title })).closest('section')!;
     expect(within(weather).getByText(E.weather.unavailable)).toBeTruthy();
     expect(within(weather).queryByText(E.weather.attribution)).toBeNull();
-    expect(screen.getByRole('heading', { level: 3, name: E.light.title })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Otra misión' })).toBeTruthy();
     await user.click(within(weather).getByRole('button', { name: E.weather.retry }));
     await waitFor(() => expect(within(screen.getByRole('heading', { level: 3, name: E.weather.title }).closest('section')!).getAllByText('2 °C').length).toBeGreaterThan(0));
@@ -316,7 +313,6 @@ describe('inicio: tiempo, luz y luna de la ubicación (RF-704, RF-705, RF-708)',
     await screen.findByRole('heading', { level: 3, name: E.weather.title });
     await user.tab();
     await user.tab();
-    await user.click(screen.getByText(E.weather.hourly));
     expect(envCalls(calls())).toHaveLength(1);
   });
 
@@ -326,7 +322,7 @@ describe('inicio: tiempo, luz y luna de la ubicación (RF-704, RF-705, RF-708)',
     expect(await screen.findByRole('heading', { level: 1, name: fr.home.title })).toBeTruthy();
     expect(await screen.findByRole('heading', { level: 3, name: fr.environment.weather.title })).toBeTruthy();
     expect(screen.getByText(fr.environment.weather.attribution)).toBeTruthy();
-    expect(screen.getByText(fr.environment.light.phases.waxing_gibbous)).toBeTruthy();
+    expect(screen.getByRole('link', { name: fr.environment.simple.detailCta })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: fr.home.missionsTitle })).toBeTruthy();
   });
 });
@@ -574,7 +570,6 @@ describe('rescatista: detalle en solo lectura (RF-602)', () => {
     mockGeolocation('none');
     setup(`/missions/${MISSION_ID}`, { ...detailHandlers(), 'GET /environment': () => json(200, environment({ weather: unavailableWeather })) }, { user: complete() });
     expect(await screen.findByText(E.weather.unavailable)).toBeTruthy();
-    expect(screen.getByRole('heading', { level: 3, name: E.light.title })).toBeTruthy();
     expect(screen.getByText(es.missionDetail.points.groups.origin)).toBeTruthy();
   });
 

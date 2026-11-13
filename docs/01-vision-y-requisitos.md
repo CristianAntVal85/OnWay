@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.4 (borrador) · Fecha: 2026-11-06 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.6 (borrador) · Fecha: 2026-11-13 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -268,7 +268,7 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 - Filtros: estado de validación, distancia, desnivel, antigüedad de la validación y búsqueda por nombre o lugar. Orden y paginación.
 - Capas de mapa conmutables, botón de "mi posición" y, en la segunda entrega, dibujar una zona.
 - Detalle de cada ruta: mapa, métricas, historial de versiones, ruta de la que deriva y misiones donde se usa.
-- Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14).
+- Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14). Una ruta **archivada y sin misión** se elimina definitivamente desde la lista de archivadas, con confirmación y selección múltiple; para eliminar una activa hay que quitarla de sus misiones, archivarla y eliminarla (issue #17).
 - La biblioteca es visible solo para coordinadores (Q-17).
 
 **RF-513 (Must) Añadir ruta a una misión.** El coordinador elige una ruta de la biblioteca y la misión fija una versión concreta (D-19).
@@ -328,20 +328,22 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 
 **RF-704 (Should) Previsión meteorológica de montaña.** Por defecto, para la **ubicación del dispositivo**, leída al iniciar sesión (RF-708). Si el coordinador pincha una misión de la lista, pasa al **objetivo de esa misión**. Hay un enlace para volver a la ubicación propia.
 - Se calcula siempre a la altitud del punto, no a la del valle.
-- Muestra, para los próximos días: temperatura, viento y rachas, precipitación y nieve, nubosidad, y la altitud de la isoterma de 0 °C si el proveedor la ofrece.
+- **Inicio y las cabeceras de misión muestran solo lo imprescindible** (issue #18): tres iconos del tiempo por tramo del día (mañana, tarde y noche, con su horario), la temperatura actual y el viento. Un botón lleva a la **vista de detalle**, que muestra para los próximos días: temperatura, viento y rachas, precipitación y nieve, nubosidad, y la altitud de la isoterma de 0 °C si el proveedor la ofrece, además de la luz y la luna (RF-705).
+- Los iconos se derivan de los datos que ya trae el proveedor (nubosidad, precipitación y nieve de las horas de cada tramo): no hay probabilidad de lluvia, índice UV ni código de tormenta, y no se muestra ninguna valoración del tipo «buenas condiciones».
 - Cita al proveedor, como exigen sus condiciones.
 - Los datos se guardan en caché por punto y altitud redondeados para limitar las llamadas y respetar los cupos gratuitos. Si el proveedor falla, la tarjeta lo indica y el resto del inicio sigue funcionando.
 - Proveedores propuestos en D-18.
 
 **RF-705 (Should) Luz y luna del mismo punto.** Amanecer, atardecer, crepúsculos, fase lunar con porcentaje de iluminación, y salida y puesta de la luna. Se calculan en local, sin proveedor externo *(propuesto en lo que va más allá de la fase lunar)*.
 - Sin estimación de tiempos (D-03), la luz y la luna son la referencia temporal útil para planificar aproximaciones nocturnas.
+- Se ven en la **vista de detalle del tiempo**, no en Inicio (issue #18).
 
 **RF-706 (Could) Enlaces a boletines oficiales** (meteorología de montaña de AEMET y Météo-France, y boletines de aludes cuando haya temporada) de la zona mostrada *(propuesto)*.
 
 **RF-707 (Could) Mapa en el inicio** con la posición del dispositivo y los objetivos de las misiones activas, con la misión elegida resaltada *(propuesto)*.
 
 **RF-708 (Should) Ubicación del dispositivo.** Al iniciar sesión la app solicita permiso y lee la posición una vez.
-- Solo se usa para consultar el tiempo, la luz y la luna del inicio. **No se guarda** *(propuesto)*.
+- Solo se usa para consultar el tiempo, la luz y la luna (la tarjeta de Inicio y la vista de detalle). **No se guarda** *(propuesto)*.
 - Sin permiso o sin señal, la tarjeta indica que se active la ubicación o se pinche una misión. Si se decide, se usará el punto base de la organización como alternativa *(propuesto)*.
 - Con coordenadas redondeadas (~1 km) para aprovechar la caché.
 
@@ -419,7 +421,7 @@ Offline (v2), campo a través (v2), seguimiento en vivo (v3+), notificaciones (v
 - **RN-11** Toda misión tiene siempre un coordinador responsable. Si su cuenta se desactiva, la misión debe reasignarse *(propuesto)*.
 - **RN-12** Las versiones de ruta son inmutables. Editar crea una versión nueva.
 - **RN-13** Una misión referencia una versión concreta de cada ruta y no cambia sola *(propuesto, D-19)*.
-- **RN-14** Una ruta usada en alguna misión no se elimina. Se archiva.
+- **RN-14** Una ruta usada en alguna misión (abierta o cerrada) no se elimina: se archiva. Solo una ruta **archivada y sin misión** se puede eliminar definitivamente, y es irreversible; las rutas derivadas de ella siguen existiendo sin el vínculo «deriva de».
 - **RN-15** El voluntariado solo se abre en misiones *Activas*. Solo un coordinador puede aceptar o rechazar. Un rescatista no puede aceptarse a sí mismo.
 - **RN-16** Una misión *En planificación* solo es visible para coordinadores *(propuesto, Q-16)*.
 - **RN-17** Las rutas y sus versiones pertenecen a una organización y no se comparten con otras (D-08).
@@ -549,6 +551,12 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.6 (2026-11-13)**
+- Issue #18: RF-704 y RF-705 reparten lo que se ve. Inicio y las cabeceras de misión enseñan tres iconos por tramo del día, la temperatura y el viento; el detalle (próximos días, por hora, rachas, nieve, nubosidad, isoterma, luz y luna) va a una vista propia. Sin requisitos nuevos ni datos nuevos del proveedor.
+
+**1.5 (2026-11-13)**
+- Issue #17: RN-14 y RF-512 permiten eliminar definitivamente una ruta **archivada y sin misión** (antes: «solo archivar»). Protocolo: quitar de las misiones abiertas → archivar → eliminar desde la lista de archivadas. Se revisa también el punto 10 de `docs/constitution.md` y la regla 4 de `CLAUDE.md`.
 
 **1.4 (2026-11-06)**
 - Cierre de `UI-rediseno` (issue #14): §7 «Accesibilidad y uso en campo» matizado: tema oscuro por defecto y tema claro de alto contraste para pleno sol, elegible en Cuenta (el contraste, adelantado de H7). Sin requisitos nuevos ni cambios de alcance.

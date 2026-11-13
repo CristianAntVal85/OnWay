@@ -2,12 +2,15 @@
 // Es una ayuda de interfaz: quien decide los permisos es el servidor (RF-103).
 import type { MemberRole } from '@onway/contracts';
 
-export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'createRoute' | 'generateRoutes' | 'teams' | 'admin' | 'profile' | 'account';
+export type RouteId = 'home' | 'missions' | 'createMission' | 'routes' | 'createRoute' | 'generateRoutes' | 'teams' | 'admin' | 'profile' | 'account' | 'weather';
 
 export type NextStep = 'home' | 'complete-profile' | 'awaiting-approval';
 
 /** Dirección del detalle de una misión. */
 export const missionPath = (missionId: string) => `${'/missions'}/${missionId}`;
+
+/** Dirección de la vista de detalle del tiempo (issue #18): con `mission` para el objetivo de una misión; sin ella, la ubicación del dispositivo. */
+export const weatherPath = (missionId?: string | null) => (missionId ? `${'/weather'}?mission=${encodeURIComponent(missionId)}` : '/weather');
 
 /** Dirección del detalle de una ruta de la biblioteca. */
 export const routePath = (routeId: string) => `${'/routes'}/${routeId}`;
@@ -29,6 +32,7 @@ export const PATHS = {
   admin: '/admin',
   profile: '/profile',
   account: '/account',
+  weather: '/weather',
 } as const satisfies Record<'login' | 'register' | 'forgotPassword' | 'resetPassword' | 'waiting' | 'routeImport' | RouteId, string>;
 
 const STAFF: readonly MemberRole[] = ['admin', 'coordinator'];
@@ -48,6 +52,7 @@ export const ROUTE_ROLES: Readonly<Record<RouteId, readonly MemberRole[]>> = {
   admin: ['admin'],
   profile: ['rescuer'],
   account: EVERYONE,
+  weather: EVERYONE,
 };
 
 /** Claves de `packages/i18n` de la etiqueta de cada enlace. */

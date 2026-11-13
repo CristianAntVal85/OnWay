@@ -1,5 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { EmptyState, ErrorState, LoadingState } from '../components/states';
@@ -71,6 +71,18 @@ export function RoutesPage() {
   // El mapa encuadra las rutas cuando cambian los filtros o la página; mover el mapa no lo vuelve a encuadrar.
   const filterKey = JSON.stringify({ ...query, bbox: undefined });
   const fitKey = data && !routes.isFetching && !zone ? filterKey : undefined;
+
+  const dropFromSelection = (ids: string[]) =>
+    setSelected((previous) => {
+      const next = new Map(previous);
+      for (const id of ids) next.delete(id);
+      return next;
+    });
+
+  // La selección es de lo que se ve: al pasar de activas a archivadas (o al revés) no se arrastra nada, y menos algo que se pueda eliminar.
+  useEffect(() => {
+    setSelected(new Map());
+  }, [filters.status]);
 
   const toggle = (id: string, name: string) =>
     setSelected((previous) => {
@@ -154,16 +166,13 @@ export function RoutesPage() {
             </p>
           )}
           <SelectionBar
+            key={filters.status}
             selected={selected}
             canArchive={canWrite && filters.status === 'active'}
+            canDelete={canWrite && filters.status === 'archived'}
             onClear={() => setSelected(new Map())}
-            onArchived={(ids) =>
-              setSelected((previous) => {
-                const next = new Map(previous);
-                for (const id of ids) next.delete(id);
-                return next;
-              })
-            }
+            onArchived={dropFromSelection}
+            onDeleted={dropFromSelection}
           />
 
           {routes.isPending && <LoadingState />}

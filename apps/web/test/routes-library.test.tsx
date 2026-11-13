@@ -305,6 +305,149 @@ describe('selección: conserva entre páginas, exporta y archiva', () => {
   });
 });
 
+describe('eliminar rutas archivadas (issue #17, RN-14, INV-04)', () => {
+  const archived = (n: number) => item(n, { status: 'archived' });
+  const select = async (user: ReturnType<typeof setup>['user'], n: number) => user.click(await screen.findByRole('checkbox', { name: T.card.select.replace('{{name}}', `Ruta ${n}`) }));
+  const deleteButtons = () => screen.queryAllByRole('button', { name: T.selection.delete });
+
+  it('en la lista de activas no hay botón de eliminar, ni con rutas seleccionadas', async () => {
+    const { user, container } = setup({ 'GET /routes': () => json(200, page([item(1), item(2)])) });
+    await select(user, 1);
+    await select(user, 2);
+    expect(screen.getByRole('button', { name: T.selection.archive })).toBeTruthy();
+    expect(deleteButtons()).toHaveLength(0);
+    expect(container.querySelector('.btn-eliminar-ruta')).toBeNull();
+  });
+
+  it('en la lista de archivadas hay «Eliminar seleccionadas» (y no «Archivar») solo cuando hay selección', async () => {
+    const { user, container } = setup({ 'GET /routes': () => json(200, page([archived(1), archived(2)])) }, { route: '/routes?status=archived' });
+    await screen.findByRole('link', { name: 'Ruta 1' });
+    expect(deleteButtons()).toHaveLength(0);
+    expect(screen.getByText(T.selection.hintDelete)).toBeTruthy();
+    await select(user, 1);
+    expect(deleteButtons()).toHaveLength(1);
+    expect(container.querySelectorAll('.btn-eliminar-ruta')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: T.selection.archive })).toBeNull();
+  });
+
+  it('la confirmación dice cuántas son y que no se puede deshacer; el foco está en «Cancelar» y cancelar no llama a la API', async () => {
+    const { user, calls } = setup({ 'GET /routes': () => json(200, page([archived(1), archived(2), archived(3)])) }, { route: '/routes?status=archived' });
+    for (const n of [1, 2, 3]) await select(user, n);
+    await user.click(screen.getByRole('button', { name: T.selection.delete }));
+    const dialog = await screen.findByRole('dialog', { name: T.delete.title });
+    expect(within(dialog).getByText(T.delete.description.replace('{{count}}', '3'))).toBeTruthy();
+    expect(T.delete.description).toContain('no se puede deshacer');
+    expect(
+      within(dialog)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['Ruta 1', 'Ruta 2', 'Ruta 3']);
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: T.delete.cancel }));
+    await user.click(within(dialog).getByRole('button', { name: T.delete.cancel }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(calls().some((c) => c.method === 'DELETE')).toBe(false);
+    expect(screen.getByText('Seleccionadas: 3')).toBeTruthy();
+  });
+
+  it('con una sola ruta el texto va en singular', async () => {
+    const { user } = setup({ 'GET /routes': () => json(200, page([archived(1)])) }, { route: '/routes?status=archived' });
+    await select(user, 1);
+    await user.click(screen.getByRole('button', { name: T.selection.delete }));
+    const dialog = await screen.findByRole('dialog', { name: T.delete.title });
+    expect(within(dialog).getByText(T.delete.descriptionOne)).toBeTruthy();
+    expect(within(dialog).getByRole('button', { name: T.delete.confirmOne })).toBeTruthy();
+  });
+
+  it('confirmar elimina una a una, cuenta las hechas, explica las que están en misiones y deja seleccionadas solo las que fallan', async () => {
+    const { user, calls } = setup(
+      {
+        'GET /routes': () => json(200, page([archived(1), archived(2)])),
+        [`DELETE /routes/${ID(1)}`]: () => new Response(null, { status: 204 }),
+        [`DELETE /routes/${ID(2)}`]: () => apiError(409, 'ROUTE_IN_USE', { missions: [{ id: ID(7), name: 'Misión del Aneto' }] }),
+      },
+      { route: '/routes?status=archived' },
+    );
+    await select(user, 1);
+    await select(user, 2);
+    await user.click(screen.getByRole('button', { name: T.selection.delete }));
+    const dialog = await screen.findByRole('dialog', { name: T.delete.title });
+    await user.click(within(dialog).getByRole('button', { name: T.delete.confirm.replace('{{count}}', '2') }));
+    expect(await screen.findByText('Rutas eliminadas: 1.')).toBeTruthy();
+    expect(screen.getByText('«Ruta 2» está en misiones y no se puede eliminar: Misión del Aneto.')).toBeTruthy();
+    expect(
+      calls()
+        .filter((c) => c.method === 'DELETE')
+        .map((c) => c.path),
+    ).toEqual([`/routes/${ID(1)}`, `/routes/${ID(2)}`]);
+    expect(screen.getByText('Seleccionadas: 1')).toBeTruthy();
+    // La lista se vuelve a pedir para reflejar lo eliminado.
+    await waitFor(() => expect(listCalls(calls()).length).toBeGreaterThan(1));
+  });
+
+  it('una ruta que ya no está archivada se explica, y cualquier otro error sale con su mensaje', async () => {
+    const { user } = setup(
+      {
+        'GET /routes': () => json(200, page([archived(1), archived(2)])),
+        [`DELETE /routes/${ID(1)}`]: () => apiError(409, 'INVALID_STATE_TRANSITION'),
+        [`DELETE /routes/${ID(2)}`]: () => apiError(404, 'NOT_FOUND'),
+      },
+      { route: '/routes?status=archived' },
+    );
+    await select(user, 1);
+    await select(user, 2);
+    await user.click(screen.getByRole('button', { name: T.selection.delete }));
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: T.delete.confirm.replace('{{count}}', '2') }));
+    expect(await screen.findByText('«Ruta 1» ya no está archivada: archívala antes de eliminarla.')).toBeTruthy();
+    expect(screen.getByText(/Ruta 2/, { selector: 'li' })).toBeTruthy();
+    expect(screen.queryByText(/Rutas eliminadas/)).toBeNull();
+  });
+
+  it('cambiar el filtro de estado vacía la selección: nunca se elimina algo que no se ve', async () => {
+    const { user, calls } = setup({ 'GET /routes': () => json(200, page([archived(1)])) }, { route: '/routes?status=archived' });
+    await select(user, 1);
+    expect(screen.getByText('Seleccionadas: 1')).toBeTruthy();
+    await user.selectOptions(screen.getByLabelText(T.filters.status), 'active');
+    await waitFor(() => expect(lastList(calls()).query.get('status')).toBe('active'));
+    expect(screen.queryByText('Seleccionadas: 1')).toBeNull();
+    expect(deleteButtons()).toHaveLength(0);
+  });
+
+  it('el informe de una eliminación no se arrastra al cambiar de filtro', async () => {
+    const { user, calls } = setup(
+      {
+        'GET /routes': () => json(200, page([archived(1)])),
+        [`DELETE /routes/${ID(1)}`]: () => apiError(409, 'ROUTE_IN_USE', { missions: [{ id: ID(7), name: 'Misión del Aneto' }] }),
+      },
+      { route: '/routes?status=archived' },
+    );
+    await select(user, 1);
+    await user.click(screen.getByRole('button', { name: T.selection.delete }));
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: T.delete.confirmOne }));
+    expect(await screen.findByText('«Ruta 1» está en misiones y no se puede eliminar: Misión del Aneto.')).toBeTruthy();
+    await user.selectOptions(screen.getByLabelText(T.filters.status), 'active');
+    await waitFor(() => expect(lastList(calls()).query.get('status')).toBe('active'));
+    expect(screen.queryByText(/no se puede eliminar: Misión del Aneto/)).toBeNull();
+    expect(screen.getByText(T.selection.hint)).toBeTruthy();
+  });
+
+  it('el administrador no ve el botón de eliminar', async () => {
+    const { user } = setup({ 'GET /routes': () => json(200, page([archived(1)])) }, { user: admin(), route: '/routes?status=archived' });
+    await select(user, 1);
+    expect(screen.getByRole('button', { name: T.selection.exportGpx })).toBeTruthy();
+    expect(deleteButtons()).toHaveLength(0);
+  });
+
+  it('en francés: el botón y el diálogo se leen en francés', async () => {
+    const F = fr.routes;
+    const { user } = setup({ 'GET /routes': () => json(200, page([archived(1), archived(2)])) }, { language: 'fr', route: '/routes?status=archived' });
+    await user.click(await screen.findByRole('checkbox', { name: F.card.select.replace('{{name}}', 'Ruta 1') }));
+    await user.click(await screen.findByRole('checkbox', { name: F.card.select.replace('{{name}}', 'Ruta 2') }));
+    await user.click(screen.getByRole('button', { name: F.selection.delete }));
+    const dialog = await screen.findByRole('dialog', { name: F.delete.title });
+    expect(within(dialog).getByText(F.delete.description.replace('{{count}}', '2'))).toBeTruthy();
+  });
+});
+
 describe('roles', () => {
   it('el administrador ve la biblioteca y puede exportar, pero no ve importar, dibujar ni archivar', async () => {
     const { user } = setup({ 'GET /routes': () => json(200, page([item(1)])) }, { user: admin() });
