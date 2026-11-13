@@ -34,8 +34,9 @@ Operaciones del cambio: ninguna (`getEnvironment` no cambia; doc 06 y OpenAPI si
   - Hecho cuando: `pnpm --filter @onway/web test`, `lint` y `typecheck` en verde.
   - Cierre: commit `feat(issue-18): T5 add the full weather detail view` + push.
 
-- [ ] **T6. Demostración E2E.**
+- [x] **T6. Demostración E2E.**
   - `weather-simple-demo.spec.ts` (escritorio y 375 px; francés solo con teclado): Inicio con los tres tramos, temperatura y viento y sin lo técnico; la altura de la tarjeta ≤ 55 % de la medida de `medidas.md`; el botón lleva al detalle con todos los datos y se vuelve; sin desborde horizontal. Se ajustan las aserciones del tiempo en `h1-demo.spec.ts`.
+  - *Hecho así:* `weather-simple-demo.spec.ts` (4 pruebas por formato, escritorio y 375 px; el proyecto `mobile` la incluye): la tarjeta con tres tramos (el primero es el del reloj del navegador, con su horario), termómetro y viento, sin lo técnico ni luz y luna, y **alto ≤ 423 px** (medido: **335 px**, el 43 % de los 770 anteriores); el botón al detalle con todo y la vuelta (la posición no sale en la dirección); el rescatista en Mis misiones y vuelta a Misiones; francés solo con teclado. `h1-demo.spec.ts` ajustado a la tarjeta simple y al detalle. **Hallazgo:** el stub del tiempo del E2E (`providers-stub`) tenía fechas fijas del 1 al 7 de noviembre y el servidor descarta las horas pasadas, así que `hourly` salía vacío y los tramos «Sin datos» (y la tabla por hora nunca se veía en la pila). Ahora `openmeteo-forecast.json` es una **plantilla de Caddy** que genera sus fechas desde hoy (`templates` solo para ese archivo). E2E **126 de 126** con `CI=1` (3,8 min).
   - Hecho cuando: `pnpm --filter @onway/web e2e` entero en verde con `CI=1` contra la pila `onway-e2e`.
   - Cierre: commit `test(issue-18): T6 add the simple weather demonstration` + push.
 

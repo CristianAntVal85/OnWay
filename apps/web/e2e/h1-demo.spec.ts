@@ -232,7 +232,7 @@ test('activating asks for confirmation because no route is validated, and only a
   await expect(page.getByRole('button', { name: es.missionDetail.lifecycle.close, exact: true })).toBeVisible();
 });
 
-test('the home shows weather, light and moon for the granted device location and for the mission target', async ({ page }) => {
+test('the home shows the simple weather card for the granted device location and for the mission target, and its button opens the full detail', async ({ page }) => {
   // La ubicación concedida lleva decimales de más: lo que sale del navegador ya está redondeado a la celda (INV-30).
   const environmentCalls: string[] = [];
   page.on('request', (request) => {
@@ -241,34 +241,51 @@ test('the home shows weather, light and moon for the granted device location and
   await login(page, ACCOUNTS.coordinator);
   await expect(page).toHaveURL(/\/home$/);
 
+  // Inicio (issue #18): tres iconos por tramo del día, el termómetro con la temperatura y el viento; nada técnico, ni luz y luna.
   const section = page.getByRole('region', { name: es.environment.title, exact: true });
   await expect(section.locator('.env-basis')).toContainText(es.environment.basis.device);
   const weather = section.getByRole('region', { name: es.environment.weather.title, exact: true });
-  const light = section.getByRole('region', { name: es.environment.light.title, exact: true });
   await expect(weather).toHaveAttribute('data-status', 'ok');
-  await expect(weather.getByText(es.environment.weather.temperature)).toBeVisible();
-  await expect(weather.getByText(es.environment.weather.freezingLevel)).toBeVisible();
+  await expect(weather.getByRole('list', { name: es.environment.simple.partsLabel }).getByRole('listitem')).toHaveCount(3);
+  await expect(weather.locator('.wx-now')).toContainText('°C');
+  await expect(weather.locator('.wx-now')).toContainText('km/h');
   await expect(weather).toContainText(es.environment.weather.attribution); // Open-Meteo, citado en texto (RF-704)
+  await expect(weather.getByText(es.environment.weather.freezingLevel)).toHaveCount(0);
+  await expect(section.getByRole('region', { name: es.environment.light.title, exact: true })).toHaveCount(0);
+  await expect(section.locator('.env-place')).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+
+  // El botón lleva al detalle del mismo punto: todo lo que ya no cabe en la tarjeta, y la luz y la luna. La posición no viaja en la dirección.
+  await weather.getByRole('link', { name: es.environment.simple.detailCta }).click();
+  await expect(page).toHaveURL(/\/weather$/);
+  await expect(page.getByRole('heading', { level: 1, name: es.environment.detail.title })).toBeVisible();
+  const detail = page.getByRole('region', { name: es.environment.weather.title, exact: true });
+  const light = page.getByRole('region', { name: es.environment.light.title, exact: true });
+  await expect(detail).toHaveAttribute('data-status', 'ok');
+  await expect(detail.getByText(es.environment.weather.temperature)).toBeVisible();
+  await expect(detail.getByText(es.environment.weather.freezingLevel)).toBeVisible();
+  await expect(detail).toContainText(es.environment.weather.attribution);
   await expect(light.getByText(es.environment.light.sunrise)).toBeVisible();
   await expect(light.getByText(es.environment.light.sunset)).toBeVisible();
   await expect(light.getByText(/% iluminada/)).toBeVisible();
-  await expect(section.locator('.env-place')).toContainText(`${DEVICE_CELL.lat}`);
-  expect(environmentCalls.length).toBeGreaterThan(0);
-  for (const call of environmentCalls) {
-    const url = new URL(call);
-    expect(url.searchParams.get('lat'), call).toBe(DEVICE_CELL.lat);
-    expect(url.searchParams.get('lon'), call).toBe(DEVICE_CELL.lon);
-  }
+  await expect(page.locator('.env-place')).toContainText(`${DEVICE_CELL.lat}`);
   await expectNoHorizontalOverflow(page);
+  await page.getByRole('link', { name: es.environment.detail.backHome }).click();
+  await expect(page).toHaveURL(/\/home$/);
 
-  // Al elegir la misión (ya activa), el tiempo pasa a ser el de su objetivo y hay camino de vuelta.
+  // Al elegir la misión (ya activa), la tarjeta pasa a ser la de su objetivo, el botón mira ese objetivo y hay camino de vuelta.
   await page.getByRole('button', { name: es.home.pickLabel.replace('{{name}}', run.name) }).click();
   await expect(section.locator('.env-basis')).toContainText(es.environment.basis.mission.replace('{{name}}', run.name));
   await expect(page.getByRole('status').filter({ hasText: es.environment.announceMission.replace('{{name}}', run.name) })).toBeAttached();
-  await expect(section.locator('.env-place')).toContainText(run.target);
   await expect(weather).toHaveAttribute('data-status', 'ok');
-  await expect(light.getByText(es.environment.light.sunrise)).toBeVisible();
-  await section.getByRole('button', { name: es.environment.backToDevice }).click();
+  await weather.getByRole('link', { name: es.environment.simple.detailCta }).click();
+  await expect(page).toHaveURL(/\/weather\?mission=[0-9a-f-]{36}$/);
+  await expect(page.locator('.env-basis')).toContainText(es.environment.basis.missionUnnamed);
+  await expect(page.locator('.env-place')).toContainText(run.target);
+  await expect(page.getByRole('region', { name: es.environment.light.title, exact: true }).getByText(es.environment.light.sunrise)).toBeVisible();
+  await expect(page.getByRole('link', { name: es.environment.detail.backToMission })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.goto('/home');
   await expect(section.locator('.env-basis')).toContainText(es.environment.basis.device);
   await expectNoHorizontalOverflow(page);
 });
@@ -281,8 +298,7 @@ test('when the weather provider is down the card says so and the rest of the hom
   await expect(weather).toHaveAttribute('data-status', 'unavailable');
   await expect(weather.getByText(es.environment.weather.unavailable)).toBeVisible();
   await expect(weather.getByRole('button', { name: es.environment.weather.retry })).toBeVisible();
-  // Nada más se rompe: la luz y la luna se calculan sin proveedor y la lista de misiones sigue ahí.
-  await expect(section.getByRole('region', { name: es.environment.light.title, exact: true }).getByText(es.environment.light.sunrise)).toBeVisible();
+  // Nada más se rompe: la lista de misiones sigue ahí y la luz y la luna (que se calculan sin proveedor) siguen en el detalle.
   await expect(page.getByRole('link', { name: run.name })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
   // Y al elegir una misión, su objetivo (otra celda) sí tiene tiempo.

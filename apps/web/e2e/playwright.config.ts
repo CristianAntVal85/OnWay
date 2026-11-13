@@ -25,7 +25,7 @@ export default defineConfig({
   projects: [
     { name: 'desktop', testIgnore: /(mobile|h3-engine-down)\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
     // Móvil de 375 px de ancho (iPhone SE/mini); Chromium con pantalla táctil.
-    { name: 'mobile', testMatch: /(mobile|h1-demo|h2-demo|h3-demo|h4-demo|route-delete-demo)\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } },
+    { name: 'mobile', testMatch: /(mobile|h1-demo|h2-demo|h3-demo|h4-demo|route-delete-demo|weather-simple-demo)\.spec\.ts/, use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } },
     // La demostración de H5-acceso en 375 px. Regenera el código de invitación, que es de TODA la organización: no puede correr a la vez que el
     // registro de escritorio (la misma demostración). Espera a que termine `desktop`; no comparte nada con las demostraciones del proyecto `mobile`.
     { name: 'mobile-access', testMatch: /h5-acceso-demo\.spec\.ts/, dependencies: ['desktop'], use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } } },

@@ -40,6 +40,12 @@
 		@forecast path /v1/forecast
 		rewrite @forecast /openmeteo-forecast.json
 
+		# El pronostico se genera con fechas de HOY (issue #18): el servidor descarta las horas ya pasadas y una fecha fija lo dejaria vacio.
+		@template path /openmeteo-forecast.json
+		templates @template {
+			mime application/json
+		}
+
 		file_server
 	}
 }
