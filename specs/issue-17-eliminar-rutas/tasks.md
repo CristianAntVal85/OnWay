@@ -22,8 +22,9 @@ Operación del cambio (1): `deleteRoute` (`x-milestone: H2`).
   - Hecho cuando: `pnpm --filter @onway/api test`, `test:api` y `typecheck` en verde.
   - Cierre: commit `feat(issue-17): T3 add the deleteRoute operation` + push.
 
-- [ ] **T4. Botón «Eliminar seleccionadas» en la lista archivada.** RF-512; D-I7.
+- [x] **T4. Botón «Eliminar seleccionadas» en la lista archivada.** RF-512; D-I7.
   - Pruebas primero (`@onway/web`): `btn-eliminar-ruta` no existe en la lista de activas ni en el detalle; existe con `?status=archived`; diálogo con el número de rutas y el aviso de irreversibilidad, foco en «Cancelar»; cancelar no llama a la API; informe de hechas y fallidas; la selección se vacía al cambiar de filtro. Textos es/fr en `packages/i18n`.
+  - *Hecho así:* `SelectionBar` gana `canDelete` (solo con `?status=archived` y para quien escribe) y `onDeleted`; el botón lleva la clase `btn-eliminar-ruta` y fuera de esa vista **no se monta** (no se oculta con CSS). El diálogo pone el foco en «Cancelar» y trae una nota con lo que sí se elimina. `routes-page.tsx` vacía la selección al cambiar `filters.status`. Textos nuevos `routes.selection.delete|hintDelete` y `routes.delete.*` en es y fr. 9 pruebas web nuevas (web 797). El repaso a 375 px y con teclado va en el E2E de T5.
   - Hecho cuando: `pnpm --filter @onway/web test`, `@onway/i18n test`, `lint` y `typecheck` en verde; revisado a 375 px y con teclado.
   - Cierre: commit `feat(issue-17): T4 add bulk delete to the archived routes list` + push.
 

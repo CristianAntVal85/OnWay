@@ -518,8 +518,35 @@ export interface Messages {
       copy: string;
       open: string;
     };
-    selection: { count: string; exportGpx: string; exportKml: string; exporting: string; exportError: string; archive: string; clear: string; tooMany: string; validatedOnly: string; hint: string };
+    selection: {
+      count: string;
+      exportGpx: string;
+      exportKml: string;
+      exporting: string;
+      exportError: string;
+      archive: string;
+      delete: string;
+      clear: string;
+      tooMany: string;
+      validatedOnly: string;
+      hint: string;
+      hintDelete: string;
+    };
     archive: { title: string; description: string; confirm: string; cancel: string; working: string; done: string; failed: string; inUse: string };
+    delete: {
+      title: string;
+      description: string;
+      descriptionOne: string;
+      note: string;
+      confirm: string;
+      confirmOne: string;
+      cancel: string;
+      working: string;
+      done: string;
+      failed: string;
+      inUse: string;
+      notArchived: string;
+    };
     map: {
       label: string;
       myPosition: string;
