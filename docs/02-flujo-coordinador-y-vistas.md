@@ -96,7 +96,7 @@ Boceto 1. Una sola pantalla de entrada con tres estados.
 
 Boceto 3. Vista informativa. No se edita nada desde aquí (RF-701). El criterio es mostrar lo que un alpinista consultaría antes de salir, en una sola pantalla.
 
-**Ubicación para el tiempo (RF-704, RF-708, D-30).** La meteorología, la luz y la luna se calculan por defecto para la **ubicación del dispositivo**, leída al iniciar sesión. El título de las tarjetas indica "📍 Mi ubicación". Si el coordinador pincha una de las **misiones activas** de la lista, las tarjetas cambian al **objetivo de esa misión** y el título lo indica. Un enlace "Volver a mi ubicación" restablece la posición del dispositivo.
+**Ubicación para el tiempo (RF-704, RF-708, D-30).** El tiempo (tarjeta simple) se calcula por defecto para la **ubicación del dispositivo**, leída al iniciar sesión; la luz y la luna se ven en la vista de detalle (3.2.1) para el mismo punto. El título de la tarjeta indica "📍 Mi ubicación". Si el coordinador pincha una de las **misiones activas** de la lista, la tarjeta cambia al **objetivo de esa misión** y el título lo indica. Un enlace "Volver a mi ubicación" restablece la posición del dispositivo.
 
 | Bloque | Qué muestra | Prioridad |
 |---|---|---|
@@ -113,7 +113,7 @@ Boceto 3. Vista informativa. No se edita nada desde aquí (RF-701). El criterio 
 - **Sin permiso de ubicación o sin señal:** la tarjeta muestra "Activa la ubicación o elige una misión". Está pendiente decidir si se usa el punto base de la organización como alternativa (Q-32).
 - **Sin misiones activas:** mensaje claro y botón para crear una misión. El tiempo sigue mostrándose para la ubicación del dispositivo.
 - **Fallo del proveedor meteorológico:** la tarjeta muestra "no disponible" o el último dato con su hora, y el resto del inicio sigue funcionando.
-- **Rescatista:** versión reducida con las misiones activas, aquellas en las que se ha ofrecido (con su estado) y la misma meteorología, luz y luna, con la misma regla de ubicación (boceto 14).
+- **Rescatista:** versión reducida con las misiones activas, aquellas en las que se ha ofrecido (con su estado) y la misma tarjeta del tiempo simple (la luz y la luna, en el detalle, 3.2.1), con la misma regla de ubicación (boceto 14).
 
 ### 3.2.1 Tiempo en detalle
 
@@ -587,7 +587,7 @@ Boceto 14. Se detallará en un documento posterior, pero el recorrido base es:
 
 1. Registro con código de invitación → pantalla de espera → el administrador aprueba (3.1).
 2. Primer acceso → **formulario de alta** (3.9).
-3. Login → Inicio reducido, con meteorología, luz y luna de su ubicación o de la misión que elija.
+3. Login → Inicio reducido, con la tarjeta del tiempo simple de su ubicación o de la misión que elija (luz y luna, en el detalle).
 4. Misiones activas → Detalle en solo lectura.
 5. En la misión: ver mapa, puntos y rutas validadas con métricas, **compartir la ubicación del objetivo** (coordenadas que se copian con un aviso para el lector de pantalla, y un enlace `geo:` que abre la aplicación de mapas del móvil) y elegir una ruta para verla en el mapa con su perfil.
 6. **Me ofrezco como voluntario**, y consultar el estado de la oferta. Puede retirarla.
@@ -714,7 +714,7 @@ Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registr
 - El producto pasa a llamarse **OnWay**.
 - Alineado con los 15 bocetos (nueva sección 13).
 - Acceso con registro y pantalla de espera (3.1). Nueva vista de Administración (3.10) y columna Administrador en navegación y permisos.
-- Inicio: meteorología, luz y luna de la ubicación del dispositivo o del objetivo de la misión elegida (3.2).
+- Inicio: tarjeta del tiempo simple de la ubicación del dispositivo o del objetivo de la misión elegida (3.2); el detalle del tiempo, con la luz y la luna (3.2.1).
 - Biblioteca de rutas con lista y mapa, como Wikiloc (3.6).
 - Ficha del voluntario con teléfono, correo y acceso al certificado; sin historial (3.7).
 - Alta y perfil: correo de contacto igual al de acceso, bloque de contacto separado de los sensibles, certificado opcional (3.9).

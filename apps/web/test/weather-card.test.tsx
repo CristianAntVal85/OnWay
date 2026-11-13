@@ -39,7 +39,7 @@ function renderCard(data: Weather, options: { now?: Date; language?: 'es' | 'fr'
     </I18nextProvider>,
   );
 }
-const parts = () => screen.getAllByRole('listitem').map((item) => item.getAttribute('aria-label'));
+const parts = () => screen.getAllByRole('listitem').map((item) => item.querySelector('.visually-hidden')!.textContent);
 
 describe('tarjeta del tiempo simple', () => {
   it('por la mañana salen Mañana, Tarde y Noche, cada una con su horario y su símbolo', () => {

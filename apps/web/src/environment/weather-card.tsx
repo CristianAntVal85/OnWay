@@ -54,7 +54,7 @@ export function WeatherCard({ weather, sun, locale, missionId, onRetry, now, clo
 
       {current && (
         <>
-          <ul className="wx-parts" aria-label={t('environment.simple.partsLabel')}>
+          <ul className="wx-parts" role="list" aria-label={t('environment.simple.partsLabel')}>
             {parts.map((part) => (
               <DayPart key={part.part} part={part} />
             ))}
@@ -95,7 +95,9 @@ function DayPart({ part }: { part: DayPartSymbol }) {
   const text = part.symbol ? t(`environment.simple.symbols.${SYMBOL_TEXT[part.symbol.name]}`) : t('environment.simple.symbols.none');
   const name = t(`environment.simple.parts.${part.part}`);
   return (
-    <li className="wx-part" data-symbol={part.symbol?.name ?? 'none'} aria-label={t('environment.simple.partLabel', { part: name, range, symbol: text })}>
+    <li className="wx-part" data-symbol={part.symbol?.name ?? 'none'}>
+      {/* El texto que lee un lector de pantalla (nombre, horario y símbolo); lo visual va oculto para que no se lea dos veces. */}
+      <span className="visually-hidden">{t('environment.simple.partLabel', { part: name, range, symbol: text })}</span>
       {part.symbol ? <WeatherIcon name={symbolIcon(part.symbol)} /> : <span className="wx-empty" aria-hidden="true" />}
       <span className="wx-part-name" aria-hidden="true">
         {name}

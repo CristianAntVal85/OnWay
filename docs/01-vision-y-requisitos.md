@@ -343,7 +343,7 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 **RF-707 (Could) Mapa en el inicio** con la posición del dispositivo y los objetivos de las misiones activas, con la misión elegida resaltada *(propuesto)*.
 
 **RF-708 (Should) Ubicación del dispositivo.** Al iniciar sesión la app solicita permiso y lee la posición una vez.
-- Solo se usa para consultar el tiempo, la luz y la luna del inicio. **No se guarda** *(propuesto)*.
+- Solo se usa para consultar el tiempo, la luz y la luna (la tarjeta de Inicio y la vista de detalle). **No se guarda** *(propuesto)*.
 - Sin permiso o sin señal, la tarjeta indica que se active la ubicación o se pinche una misión. Si se decide, se usará el punto base de la organización como alternativa *(propuesto)*.
 - Con coordenadas redondeadas (~1 km) para aprovechar la caché.
 

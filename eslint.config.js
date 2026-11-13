@@ -31,7 +31,8 @@ export const ALLOWED_GEO_IMPORTS = [
 ];
 
 const MAP_MESSAGE = 'MapLibre, react-map-gl y pmtiles solo se importan desde apps/web/src/map/ (D-H1-07); las páginas pasan datos a ese módulo.';
-const GEO_MESSAGE = 'Las páginas y los componentes solo pueden importar de @onway/geo la lectura y el formato de coordenadas (decimal, GMS y UTM); la geometría vive en packages/geo o en el servidor.';
+const GEO_MESSAGE =
+  'Las páginas y los componentes solo pueden importar de @onway/geo la lectura y el formato de coordenadas (decimal, GMS y UTM), el redondeo de la ubicación y los símbolos del tiempo (lista en eslint.config.js); la geometría vive en packages/geo o en el servidor.';
 
 const mapLibraries = ['maplibre-gl', 'maplibre-gl/**', 'react-map-gl', 'react-map-gl/**', 'pmtiles', 'pmtiles/**'];
 

@@ -28,7 +28,7 @@ test('home shows three day parts, the temperature and the wind in a card at most
   const order = ['morning', 'afternoon', 'night'];
   const expected = [0, 1, 2].map((step) => order[(order.indexOf(first) + step) % 3]!);
   for (const [index, part] of expected.entries()) {
-    const label = await parts.nth(index).getAttribute('aria-label');
+    const label = await parts.nth(index).locator('.visually-hidden').textContent();
     expect(label, `tramo ${index + 1}`).toMatch(new RegExp(`^${E.simple.parts[part as 'morning' | 'afternoon' | 'night']}, \\d{2}–\\d{2} h: `));
     await expect(parts.nth(index).locator('svg.wx-icon[aria-hidden="true"]')).toHaveCount(1);
   }
@@ -104,7 +104,7 @@ test('in French and with the keyboard alone the card reaches the detail and come
   await expect(card).toHaveAttribute('data-status', 'ok', { timeout: 30_000 });
   const parts = card.getByRole('list', { name: F.simple.partsLabel }).getByRole('listitem');
   await expect(parts).toHaveCount(3);
-  expect(await parts.first().getAttribute('aria-label')).toMatch(/^(Matin|Après-midi|Soir), \d{2}–\d{2} h : /);
+  expect(await parts.first().locator('.visually-hidden').textContent()).toMatch(/^(Matin|Après-midi|Soir), \d{2}–\d{2} h : /);
 
   const open = card.getByRole('link', { name: F.simple.detailCta });
   await tabTo(page, open);

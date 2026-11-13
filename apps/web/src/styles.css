@@ -3358,12 +3358,12 @@ label.signup-info {
 
 .wx-part-range {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
 
 .wx-part-text {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   overflow-wrap: anywhere;
 }
 

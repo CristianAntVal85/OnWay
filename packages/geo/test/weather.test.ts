@@ -180,7 +180,7 @@ describe('dayPartSymbols (D-W8, D-W9)', () => {
     expect(at('2026-07-01T04:00:00Z')).toBe('morning'); // 06:00
   });
 
-  it('con el cambio de hora (26 de octubre de 2026, de UTC+2 a UTC+1) cada tramo sigue en su hora de reloj', () => {
+  it('con el cambio de hora (25 de octubre de 2026, de UTC+2 a UTC+1) cada tramo sigue en su hora de reloj', () => {
     // El reloj de quien mira cambia de desfase a las 01:00 UTC; el tramo de la Mañana sigue siendo 06–12 de reloj.
     const clock = (iso: string): ClockTime => {
       const offset = Date.parse(iso) >= Date.parse('2026-10-25T01:00:00Z') ? 1 : 2;
