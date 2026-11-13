@@ -3,6 +3,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
+import type { OperationOutput } from '@onway/contracts/client';
 import { describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
 import { createI18n } from '../src/i18n';
@@ -23,11 +24,12 @@ function weather(make: (hourOfDay: number, day: number) => Partial<Hour> = () =>
     const hourOfDay = (8 + index) % 24;
     return { ...base.hourly[0]!, time, cloudCoverPct: 5, precipitationMm: 0, snowfallCm: 0, temperatureC: 6, ...make(hourOfDay, Math.floor((8 + index) / 24)) };
   });
-  return { ...base, hourly, ...overrides } as ReturnType<typeof environment>['weather'];
+  return { ...base, hourly, ...overrides } as unknown as Weather;
 }
+type Weather = OperationOutput<'getEnvironment'>['weather'];
 const sun = environment().sun;
 
-function renderCard(data: ReturnType<typeof environment>['weather'], options: { now?: Date; language?: 'es' | 'fr'; missionId?: string | null } = {}) {
+function renderCard(data: Weather, options: { now?: Date; language?: 'es' | 'fr'; missionId?: string | null } = {}) {
   const language = options.language ?? 'es';
   return render(
     <I18nextProvider i18n={createI18n(language)}>
