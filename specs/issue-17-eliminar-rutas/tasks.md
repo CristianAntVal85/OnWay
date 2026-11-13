@@ -10,8 +10,9 @@ Operación del cambio (1): `deleteRoute` (`x-milestone: H2`).
   - Hecho cuando: `pnpm --filter @onway/contracts test` en verde con 97 operaciones; `gen:openapi` y `gen:doc` sin diferencias salvo las esperadas; `pnpm format:check` limpio.
   - Cierre: commit `docs(issue-17): T1 allow deleting archived routes and add the deleteRoute contract` + push.
 
-- [ ] **T2. Migración 0013 e INV-04 / INV-07 en la base.** INV-04, INV-07.
+- [x] **T2. Migración 0013 e INV-04 / INV-07 en la base.** INV-04, INV-07.
   - Pruebas primero (`test:db`): borrar una versión validada de una ruta activa falla; de una archivada con misión (abierta o cerrada) falla; de una archivada sin misión pasa y se llevan los tramos; `UPDATE` de una validada sigue fallando; el borrador sigue pudiendo borrarse; `DELETE` de una ruta con `mission_routes` falla. Después `0013_route_delete.sql` con `route_versions_guard()` nueva (`SECURITY DEFINER SET search_path = public`).
+  - *Hecho así:* 14 pruebas nuevas en `apps/api/test/db/route-delete-guard.test.ts` (con `onway_app` de verdad: activa, archivada en misión abierta o cerrada, UPDATE, borrado completo con derivadas, borrador, administrador, rescatista y otra organización); `test:db` pasa de 34 a 48 pruebas y las 194 comprobaciones SQL no cambian. Una misión cerrada solo se prepara cerrándola después de fijar la ruta (INV-11). El diario de Drizzle y los rangos «0002-0013» (migrate.ts, compose, doc 05 §9) quedan al día; el recuento de migraciones de `schema.test.ts` pasa de 11 a 12.
   - Hecho cuando: `pnpm --filter @onway/api test:db` y `db/tests/run-postgis.sh` en verde con las comprobaciones nuevas; las existentes de INV-04 siguen pasando.
   - Cierre: commit `feat(issue-17): T2 let the database delete validated versions of an archived unused route` + push.
 
