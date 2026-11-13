@@ -198,6 +198,21 @@ describe('INV-04: a validated version is deleted only with its archived route th
     });
   });
 
+  it('known and accepted (plan D-I3): on an archived route in no mission, SQL could delete one older validated version; the API never does, it deletes the whole route', async () => {
+    const world = await route({ archived: true });
+    // The deferred "latest" pointers still protect the newest and the latest validated version; one that no pointer names is not protected.
+    await owner.query(`UPDATE routes SET latest_validated_version_id = NULL WHERE id = $1`, [world.route]);
+    await asApp(as('coordinator'), async (client) => {
+      expect((await client.query(`DELETE FROM route_versions WHERE id = $1`, [world.validated])).rowCount).toBe(1);
+      await client.query('SET CONSTRAINTS ALL IMMEDIATE');
+    });
+    const active = await route({ archived: false });
+    await owner.query(`UPDATE routes SET latest_validated_version_id = NULL WHERE id = $1`, [active.route]);
+    await asApp(as('coordinator'), async (client) => {
+      await expect(client.query(`DELETE FROM route_versions WHERE id = $1`, [active.validated])).rejects.toThrow(/INV-04/);
+    });
+  });
+
   it('a draft version can still be deleted by itself (unchanged)', async () => {
     const world = await route({ archived: false });
     await asApp(as('coordinator'), async (client) => {

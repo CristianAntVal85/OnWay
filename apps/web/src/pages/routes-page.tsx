@@ -166,6 +166,7 @@ export function RoutesPage() {
             </p>
           )}
           <SelectionBar
+            key={filters.status}
             selected={selected}
             canArchive={canWrite && filters.status === 'active'}
             canDelete={canWrite && filters.status === 'archived'}

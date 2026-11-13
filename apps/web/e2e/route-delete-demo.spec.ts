@@ -41,12 +41,14 @@ const listUrl = (info: { project: { name: string } }, status: 'active' | 'archiv
 const card = (page: Page, text: string) => page.locator('.route-card', { hasText: text });
 const pick = (page: Page, name: string, labels: typeof R) => page.getByRole('checkbox', { name: fill(labels.card.select, { name }) });
 
-test.beforeAll(async (_fixtures, info) => {
+// eslint-disable-next-line no-empty-pattern -- Playwright exige desestructurar el primer argumento aunque no se use ninguno
+test.beforeAll(async ({}, info) => {
   await closeLeftoverE2eMissions(`E2E ${info.project.name} ${STAMP} %`);
   await archiveLeftoverE2eRoutes(`E2E ${info.project.name} ${STAMP} %`);
 });
 
-test.afterAll(async (_fixtures, info) => {
+// eslint-disable-next-line no-empty-pattern -- Playwright exige desestructurar el primer argumento aunque no se use ninguno
+test.afterAll(async ({}, info) => {
   await closeLeftoverE2eMissions(`E2E ${info.project.name} ${STAMP} %`);
   await archiveLeftoverE2eRoutes(`E2E ${info.project.name} ${STAMP} %`);
 });

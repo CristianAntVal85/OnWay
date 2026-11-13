@@ -1644,6 +1644,11 @@ html:has(.action-bar) {
   margin: 0 0 0.75rem;
 }
 
+/* Nota que sigue a la descripción del diálogo (que es texto suelto, sin <p>): la separa de ella. */
+.dialog-note {
+  margin: 0.75rem 0;
+}
+
 .dialog-actions {
   display: flex;
   flex-wrap: wrap;

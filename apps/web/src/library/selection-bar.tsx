@@ -22,7 +22,7 @@ interface Props {
 
 interface Report {
   done: string[];
-  failed: { name: string; message: string }[];
+  failed: { id: string; name: string; message: string }[];
 }
 type Action = 'archive' | 'delete';
 
@@ -55,9 +55,9 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
         } catch (error) {
           if (error instanceof ApiError && error.code === 'ROUTE_IN_USE') {
             const missions = (error.details as { missions?: { name: string }[] } | undefined)?.missions ?? [];
-            result.failed.push({ name, message: t('routes.archive.inUse', { name, missions: missions.map((mission) => mission.name).join(', ') }) });
+            result.failed.push({ id, name, message: t('routes.archive.inUse', { name, missions: missions.map((mission) => mission.name).join(', ') }) });
           } else {
-            result.failed.push({ name, message: `${name}: ${errorMessage(t, error)}` });
+            result.failed.push({ id, name, message: `${name}: ${errorMessage(t, error)}` });
           }
         }
       }
@@ -82,11 +82,11 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
         } catch (error) {
           if (error instanceof ApiError && error.code === 'ROUTE_IN_USE') {
             const missions = (error.details as { missions?: { name: string }[] } | undefined)?.missions ?? [];
-            result.failed.push({ name, message: t('routes.delete.inUse', { name, missions: missions.map((mission) => mission.name).join(', ') }) });
+            result.failed.push({ id, name, message: t('routes.delete.inUse', { name, missions: missions.map((mission) => mission.name).join(', ') }) });
           } else if (error instanceof ApiError && error.code === 'INVALID_STATE_TRANSITION') {
-            result.failed.push({ name, message: t('routes.delete.notArchived', { name }) });
+            result.failed.push({ id, name, message: t('routes.delete.notArchived', { name }) });
           } else {
-            result.failed.push({ name, message: `${name}: ${errorMessage(t, error)}` });
+            result.failed.push({ id, name, message: `${name}: ${errorMessage(t, error)}` });
           }
         }
       }
@@ -145,7 +145,7 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
               <p>{t(`routes.${report.action}.failed`, { names: report.failed.map((failure) => failure.name).join(', ') })}</p>
               <ul>
                 {report.failed.map((failure) => (
-                  <li key={failure.name}>{failure.message}</li>
+                  <li key={failure.id}>{failure.message}</li>
                 ))}
               </ul>
             </>
@@ -155,8 +155,8 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
       {confirming && (
         <Dialog title={t('routes.archive.title')} description={t('routes.archive.description')} onClose={() => !archive.isPending && setConfirming(false)}>
           <ul className="dialog-list">
-            {[...selected.values()].map((name) => (
-              <li key={name}>{name}</li>
+            {[...selected].map(([id, name]) => (
+              <li key={id}>{name}</li>
             ))}
           </ul>
           <div className="dialog-actions">
@@ -175,10 +175,10 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
           description={t(count === 1 ? 'routes.delete.descriptionOne' : 'routes.delete.description', { count })}
           onClose={() => !remove.isPending && setConfirmingDelete(false)}
         >
-          <p>{t('routes.delete.note')}</p>
+          <p className="dialog-note">{t('routes.delete.note')}</p>
           <ul className="dialog-list">
-            {[...selected.values()].map((name) => (
-              <li key={name}>{name}</li>
+            {[...selected].map(([id, name]) => (
+              <li key={id}>{name}</li>
             ))}
           </ul>
           <div className="dialog-actions">

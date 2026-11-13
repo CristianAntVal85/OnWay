@@ -412,6 +412,24 @@ describe('eliminar rutas archivadas (issue #17, RN-14, INV-04)', () => {
     expect(deleteButtons()).toHaveLength(0);
   });
 
+  it('el informe de una eliminación no se arrastra al cambiar de filtro', async () => {
+    const { user, calls } = setup(
+      {
+        'GET /routes': () => json(200, page([archived(1)])),
+        [`DELETE /routes/${ID(1)}`]: () => apiError(409, 'ROUTE_IN_USE', { missions: [{ id: ID(7), name: 'Misión del Aneto' }] }),
+      },
+      { route: '/routes?status=archived' },
+    );
+    await select(user, 1);
+    await user.click(screen.getByRole('button', { name: T.selection.delete }));
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: T.delete.confirmOne }));
+    expect(await screen.findByText('«Ruta 1» está en misiones y no se puede eliminar: Misión del Aneto.')).toBeTruthy();
+    await user.selectOptions(screen.getByLabelText(T.filters.status), 'active');
+    await waitFor(() => expect(lastList(calls()).query.get('status')).toBe('active'));
+    expect(screen.queryByText(/no se puede eliminar: Misión del Aneto/)).toBeNull();
+    expect(screen.getByText(T.selection.hint)).toBeTruthy();
+  });
+
   it('el administrador no ve el botón de eliminar', async () => {
     const { user } = setup({ 'GET /routes': () => json(200, page([archived(1)])) }, { user: admin(), route: '/routes?status=archived' });
     await select(user, 1);

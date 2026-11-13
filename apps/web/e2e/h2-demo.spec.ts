@@ -4,7 +4,7 @@
 // las compara, valida la 2, deriva una copia, exporta varias rutas y una versión, la vuelve a importar y obtiene la misma geometría,
 // archiva una ruta e importa puntos en una misión. El administrador ve la biblioteca sin botones de escritura y el rescatista «Sin acceso».
 // Todo es ficticio: los GPX salen de data/seed/gpx (inventados), el terreno es el DEM sintético y las teselas de IGN, una imagen vacía.
-// Cada ejecución crea sus rutas con nombre único («E2E …») y las deja ARCHIVADAS (las rutas no se borran, RN-14), y una misión «E2E …»
+// Cada ejecución crea sus rutas con nombre único («E2E …») y las deja ARCHIVADAS (RN-14; la demostración de la issue #17 es la que elimina), y una misión «E2E …»
 // que queda cerrada; si una ejecución se interrumpe, la preparación y el cierre las recogen.
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';

@@ -39,3 +39,7 @@ Operación del cambio (1): `deleteRoute` (`x-milestone: H2`).
   - *Hecho así:* doc 07 v0.12 con la subsección «Issue #17», `CLAUDE.md` (regla 4, recuentos y la demostración nueva), doc 05 (cobertura de `test:db`) y `docs/estado.md`. Todo en verde el 2026-11-13: contratos 90, i18n 8, geo 127, api 202, web 797, `test:db` 48, `test:api` 499, E2E 118, `lint`, `format:check`, `typecheck` y `build`. `test:routing` y `smoke.sh` no se han corrido (no se tocó el motor ni la pila). El CI de la rama y los revisores quedan para la validación.
   - Hecho cuando: `pnpm lint`, `format:check`, `typecheck`, `test`, `build`, `test:db`, `test:api` y E2E en verde; CI de la rama en verde.
   - Cierre: commit `docs(issue-17): T6 record the build and close the change` + push.
+
+## Validación (2026-11-13)
+
+`reviewer`, `reviewer-db`, `reviewer-ui` y `reviewer-security`. Primera pasada: tres APROBADO y un CAMBIOS NECESARIOS (el spec E2E no cargaba con Playwright por `_fixtures` en los hooks; la tabla de migraciones del doc 05 no tenía la 0013). Segunda pasada tras corregir eso y los hallazgos bajos aprobados: `test:api` 499, `test:db` 49, web 798, E2E 118 de 118 con la pila reconstruida. Sin cambios por decisión: bytes del GPX borrados antes del commit, `search_path` sin `pg_temp`, borrado de una versión validada suelta por SQL directo.

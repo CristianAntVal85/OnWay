@@ -297,7 +297,9 @@ export class RouteWrites {
       UPDATE routes SET derived_from_route_id = NULL, derived_from_version_id = NULL
        WHERE derived_from_route_id = ${routeId} AND organization_id = ${viewer.orgId} RETURNING id`)
     ).rows as { id: string }[];
-    const sources = (await this.tx.execute(sql`SELECT DISTINCT source_file_id AS id FROM route_versions WHERE route_id = ${routeId} AND source_file_id IS NOT NULL`)).rows as { id: string }[];
+    const sources = (
+      await this.tx.execute(sql`SELECT DISTINCT source_file_id AS id FROM route_versions WHERE route_id = ${routeId} AND organization_id = ${viewer.orgId} AND source_file_id IS NOT NULL`)
+    ).rows as { id: string }[];
     let versions: number;
     try {
       versions = (await this.tx.execute(sql`DELETE FROM route_versions WHERE route_id = ${routeId} AND organization_id = ${viewer.orgId}`)).rowCount ?? 0;
@@ -330,13 +332,17 @@ export class RouteWrites {
 
   /** Marks as deleted the route files that no version uses any more and returns their storage keys. */
   private async retireFiles(orgId: string, fileIds: string[]): Promise<string[]> {
+    const ids = sql.join(
+      fileIds.map((id) => sql`${id}::uuid`),
+      sql`, `,
+    );
+    // The rows are locked first: a version that is being saved with the same file holds a share lock on its row through the foreign key,
+    // so the check below never races with it.
+    await this.tx.execute(sql`SELECT id FROM files WHERE organization_id = ${orgId} AND id IN (${ids}) ORDER BY id FOR UPDATE`);
     const rows = (
       await this.tx.execute(sql`
       UPDATE files SET deleted_at = now()
-       WHERE organization_id = ${orgId} AND purpose = 'route_import' AND deleted_at IS NULL AND id IN (${sql.join(
-         fileIds.map((id) => sql`${id}::uuid`),
-         sql`, `,
-       )})
+       WHERE organization_id = ${orgId} AND purpose = 'route_import' AND deleted_at IS NULL AND id IN (${ids})
          AND NOT EXISTS (SELECT 1 FROM route_versions v WHERE v.source_file_id = files.id)
        RETURNING storage_key`)
     ).rows as { storage_key: string }[];
