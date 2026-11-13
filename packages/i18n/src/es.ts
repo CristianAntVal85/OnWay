@@ -145,6 +145,16 @@ export const es: Messages = {
       retry: 'Probar de nuevo',
       pickHint: 'Elige una misión de la lista para ver el tiempo en su objetivo.',
     },
+    simple: {
+      partsLabel: 'El tiempo por tramos del día',
+      parts: { morning: 'Mañana', afternoon: 'Tarde', night: 'Noche' },
+      range: '{{start}}–{{end}} h',
+      symbols: { clear: 'Despejado', partly: 'Poco nuboso', cloudy: 'Nuboso', rain: 'Lluvia', heavyRain: 'Lluvia fuerte', snow: 'Nieve', none: 'Sin datos' },
+      partLabel: '{{part}}, {{range}}: {{symbol}}',
+      temperatureNow: 'Temperatura ahora',
+      windNow: 'Viento ahora',
+      detailCta: 'Ver todo el detalle del tiempo',
+    },
     weather: {
       title: 'Meteorología',
       stale: 'Último dato guardado a las {{time}}: no se ha podido actualizar.',

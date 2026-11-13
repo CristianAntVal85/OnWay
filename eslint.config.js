@@ -12,10 +12,23 @@ import tseslint from 'typescript-eslint';
  * nunca geometría de rutas. T6 añade la lectura de coordenadas y su error; el formato de coordenadas lo usan las páginas para mostrar un punto.
  * T9 añade `roundToCell` (INV-30): la ubicación del dispositivo se redondea a la celda de ~1 km en el cliente antes de usarse; es
  * redondeo de privacidad, no geometría de rutas.
+ * Issue #18 añade `dayPartSymbols` y sus tipos: derivan el símbolo del tiempo de cada tramo del día a partir de datos que ya trae el servidor
+ * (nubosidad, lluvia, nieve); es presentación de tiempo meteorológico, no geometría, y la lógica sigue viviendo en `packages/geo` (regla 9).
  * Es la única lista: ampliarla es una decisión de diseño, no un arreglo de lint.
  * @type {readonly string[]}
  */
-export const ALLOWED_GEO_IMPORTS = ['parseCoordinates', 'formatCoordinate', 'CoordinateError', 'roundToCell'];
+export const ALLOWED_GEO_IMPORTS = [
+  'parseCoordinates',
+  'formatCoordinate',
+  'CoordinateError',
+  'roundToCell',
+  'dayPartSymbols',
+  'DayPartSymbol',
+  'DayPartHour',
+  'ClockTime',
+  'SunTimes',
+  'WeatherSymbol',
+];
 
 const MAP_MESSAGE = 'MapLibre, react-map-gl y pmtiles solo se importan desde apps/web/src/map/ (D-H1-07); las páginas pasan datos a ese módulo.';
 const GEO_MESSAGE = 'Las páginas y los componentes solo pueden importar de @onway/geo la lectura y el formato de coordenadas (decimal, GMS y UTM); la geometría vive en packages/geo o en el servidor.';

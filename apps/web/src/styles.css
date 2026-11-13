@@ -3324,3 +3324,69 @@ label.signup-info {
     transition: none;
   }
 }
+
+/* ---------- iconos del tiempo (issue #18) ----------
+   Los colores salen de los tokens `--wx-*` (con su contraste calculado); el trazo y el relleno comparten color por clase. */
+.wx-icon {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  flex: none;
+}
+
+.wx-icon .wx-sun {
+  fill: var(--wx-sun);
+  stroke: var(--wx-sun);
+}
+
+.wx-icon .wx-moon {
+  fill: var(--wx-moon);
+  stroke: none;
+}
+
+.wx-icon .wx-cloud {
+  fill: var(--wx-cloud);
+  stroke: none;
+}
+
+.wx-icon .wx-rain {
+  fill: var(--wx-rain);
+  stroke: var(--wx-rain);
+}
+
+.wx-icon .wx-snow {
+  fill: var(--wx-snow);
+  stroke: none;
+}
+
+.wx-icon .wx-wind {
+  fill: none;
+  stroke: var(--wx-wind);
+}
+
+.wx-icon .wx-heat {
+  fill: var(--wx-heat);
+  stroke: var(--wx-heat);
+}
+
+.wx-icon .wx-stroke {
+  fill: none;
+}
+
+@media (forced-colors: active) {
+  .wx-icon .wx-sun,
+  .wx-icon .wx-moon,
+  .wx-icon .wx-cloud,
+  .wx-icon .wx-rain,
+  .wx-icon .wx-snow,
+  .wx-icon .wx-wind,
+  .wx-icon .wx-heat {
+    fill: currentColor;
+    stroke: currentColor;
+  }
+
+  .wx-icon .wx-stroke,
+  .wx-icon .wx-wind {
+    fill: none;
+  }
+}

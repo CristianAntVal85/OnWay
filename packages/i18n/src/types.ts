@@ -109,6 +109,17 @@ export interface Messages {
     announceMission: string;
     locating: string;
     noLocation: { title: string; denied: string; failed: string; unsupported: string; retry: string; pickHint: string };
+    /** Tarjeta del tiempo simple (issue #18). */
+    simple: {
+      partsLabel: string;
+      parts: { morning: string; afternoon: string; night: string };
+      range: string;
+      symbols: { clear: string; partly: string; cloudy: string; rain: string; heavyRain: string; snow: string; none: string };
+      partLabel: string;
+      temperatureNow: string;
+      windNow: string;
+      detailCta: string;
+    };
     weather: {
       title: string;
       stale: string;

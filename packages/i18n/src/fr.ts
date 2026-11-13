@@ -145,6 +145,16 @@ export const fr: Messages = {
       retry: 'Réessayer',
       pickHint: 'Choisissez une mission dans la liste pour voir la météo à son objectif.',
     },
+    simple: {
+      partsLabel: 'La météo par moment de la journée',
+      parts: { morning: 'Matin', afternoon: 'Après-midi', night: 'Soir' },
+      range: '{{start}}–{{end}} h',
+      symbols: { clear: 'Dégagé', partly: 'Peu nuageux', cloudy: 'Nuageux', rain: 'Pluie', heavyRain: 'Forte pluie', snow: 'Neige', none: 'Pas de données' },
+      partLabel: '{{part}}, {{range}} : {{symbol}}',
+      temperatureNow: 'Température actuelle',
+      windNow: 'Vent actuel',
+      detailCta: 'Voir tout le détail de la météo',
+    },
     weather: {
       title: 'Météo',
       stale: 'Dernière donnée enregistrée à {{time}} : mise à jour impossible.',

@@ -16,8 +16,9 @@ Operaciones del cambio: ninguna (`getEnvironment` no cambia; doc 06 y OpenAPI si
   - Hecho cuando: `pnpm --filter @onway/geo test` y `typecheck` en verde (127 + las nuevas).
   - Cierre: commit `feat(issue-18): T2 derive the weather symbols and day parts in packages/geo` + push.
 
-- [ ] **T3. Iconos, colores y textos.** Constitución 12 (sin dependencia nueva), 15.
+- [x] **T3. Iconos, colores y textos.** Constitución 12 (sin dependencia nueva), 15.
   - SVG propios en `apps/web/src/environment/weather-icons.tsx` (sol, sol con nube, nube, nube con lluvia, con lluvia fuerte, con nieve, luna y luna con nube, termómetro, viento), `aria-hidden`; tokens `--wx-*` en `tokens.css` para oscuro y claro con contraste ≥ 3:1 sobre la superficie y `forced-colors`; textos es/fr (tramos y horarios, rótulos de símbolo, viento, botón, vista de detalle). Pruebas primero: `theme-contrast.test.ts` con los tokens nuevos, paridad de i18n, `no-literal-colors`.
+  - *Hecho así:* `weather-icons.tsx` (10 SVG: 8 símbolos con luna de noche, termómetro y viento; `symbolIcon` los elige por símbolo), siete tokens `--wx-*` por tema (3:1 contra los tres fondos, medidos entre 4,1 y 13,8:1) con su `forced-colors`, y textos es/fr `environment.simple.*`. **Decisión de diseño:** la frontera de `@onway/geo` en el lint es una lista cerrada que fija `map-boundary.test.ts`; se amplía con `dayPartSymbols` y sus tipos (derivan el tiempo de datos que ya trae el servidor, no es geometría y la lógica sigue en `packages/geo`). Web 853 (+55).
   - Hecho cuando: `pnpm --filter @onway/web test`, `@onway/i18n test`, `lint` y `typecheck` en verde.
   - Cierre: commit `feat(issue-18): T3 add the weather icons, their colours and texts` + push.
 

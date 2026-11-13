@@ -62,7 +62,18 @@ describe('límite del mapa: apps/web/src fuera de src/map/', () => {
   });
 
   it('la lista real de @onway/geo es lectura y formato de coordenadas más el redondeo de privacidad (INV-30), y lo demás falla en una página', async () => {
-    expect(config.ALLOWED_GEO_IMPORTS).toEqual(['parseCoordinates', 'formatCoordinate', 'CoordinateError', 'roundToCell']);
+    expect(config.ALLOWED_GEO_IMPORTS).toEqual([
+      'parseCoordinates',
+      'formatCoordinate',
+      'CoordinateError',
+      'roundToCell',
+      'dayPartSymbols',
+      'DayPartSymbol',
+      'DayPartHour',
+      'ClockTime',
+      'SunTimes',
+      'WeatherSymbol',
+    ]);
     const allowed =
       "import { parseCoordinates, formatCoordinate, roundToCell, type CoordinateError } from '@onway/geo';\nexport const x = [parseCoordinates, formatCoordinate, roundToCell, undefined as CoordinateError | undefined];\n";
     expect(await rulesBroken(baseline, PAGE, allowed)).toEqual([]);

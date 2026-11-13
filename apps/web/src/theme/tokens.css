@@ -45,6 +45,15 @@
 
   --backdrop: #010409b8; /* velo detrás de un diálogo (72 %) */
 
+  /* Iconos del tiempo (issue #18): cada color pide 3:1 contra los tres fondos (la prueba lo recalcula) y va siempre junto a su texto */
+  --wx-sun: #f5b82e;
+  --wx-moon: #c3cbff;
+  --wx-cloud: #9fb3c8;
+  --wx-rain: #4aa3ff;
+  --wx-snow: #9be7ff;
+  --wx-wind: #3dd1b5;
+  --wx-heat: #ff7a59;
+
   /* Cabecera y portadas de acceso: en oscuro, la superficie con el texto normal */
   --header-bg: var(--surface);
   --header-text: var(--text);
@@ -103,6 +112,14 @@
   --violet: #7b2d8e;
 
   --backdrop: #17262bb8;
+
+  --wx-sun: #b25e00;
+  --wx-moon: #4f55c2;
+  --wx-cloud: #55687a;
+  --wx-rain: #0b5cad;
+  --wx-snow: #12708f;
+  --wx-wind: #0b7565;
+  --wx-heat: #c4271b;
 
   --header-bg: #17262b;
   --header-text: #eef1f0;
