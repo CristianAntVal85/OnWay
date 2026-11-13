@@ -40,7 +40,8 @@ Operaciones del cambio: ninguna (`getEnvironment` no cambia; doc 06 y OpenAPI si
   - Hecho cuando: `pnpm --filter @onway/web e2e` entero en verde con `CI=1` contra la pila `onway-e2e`.
   - Cierre: commit `test(issue-18): T6 add the simple weather demonstration` + push.
 
-- [ ] **T7. Cierre.** Criterios del doc 07 §4.
+- [x] **T7. Cierre.** Criterios del doc 07 §4.
   - Doc 07 «Tal como se construyó», `CLAUDE.md` (recuentos), `docs/estado.md` y la nota para cerrar la issue (UV, probabilidad de lluvia, semáforo y tormenta no se muestran por falta de dato); los 12 criterios y la validación con `reviewer`, `reviewer-ui` y `reviewer-security` si se tocó el acceso a la ubicación.
+  - *Hecho así:* doc 07 «Tal como se construyó», `CLAUDE.md` (recuentos y la demostración nueva) y `docs/estado.md`. Nota para cerrar la issue #18: la tarjeta de Inicio enseña tres iconos por tramo del día, la temperatura y el viento, y el botón lleva a `/weather` con todo; **no se muestran** UV, probabilidad de lluvia, semáforo ni tormenta por falta de dato en el contrato. Validación con `reviewer`, `reviewer-ui` y `reviewer-security` (ver abajo).
   - Hecho cuando: `pnpm lint`, `format:check`, `typecheck`, `test`, `build` y E2E en verde.
   - Cierre: commit `docs(issue-18): T7 record the build and close the change` + push.
