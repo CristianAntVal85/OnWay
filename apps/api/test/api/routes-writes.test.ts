@@ -7,7 +7,7 @@ import { SyntheticElevationProvider } from '../../src/geo/synthetic-elevation.js
 import { mustLogin, startApp, withSession, type Session, type TestApp } from '../support/app.js';
 import { Fixtures, TEST_PASSWORD, type Member } from '../support/fixtures.js';
 
-// createRoute, createRouteVersion, deriveRoute, validateRouteVersion and archiveRoute (H2-T5) on real PostGIS.
+// createRoute, createRouteVersion, deriveRoute, validateRouteVersion and archiveRoute (H2-T5; deleteRoute has its own file, issue #17) on real PostGIS.
 // INV-01 (404 across organizations), INV-04 (versions do not change), INV-07 (archive vs open missions), INV-15 (provenance), INV-16 (audit).
 let app: TestApp;
 let fixtures: Fixtures;
@@ -414,14 +414,13 @@ describe('deriveRoute (RF-517)', () => {
 });
 
 describe('archiveRoute (RN-14; INV-07)', () => {
-  it('archives a route and answers its detail; there is no DELETE', async () => {
+  it('archives a route and answers its detail', async () => {
     const created = await createDrawn(a.coordinator);
     const response = await call(a.coordinator, 'POST', `/routes/${created.routeId}/archive`);
     expect(response.status).toBe(200);
     const body = RouteDetail.parse(await response.json());
     expect(body).toMatchObject({ id: created.routeId, status: 'archived', versions: [{ number: 1, status: 'draft' }], derivedFrom: null, derivatives: [], usedIn: [] });
     expect((await auditOf(created.routeId)).at(-1)).toMatchObject({ action: 'route_archived', detail: { name: body.name } });
-    expect((await call(a.coordinator, 'DELETE', `/routes/${created.routeId}`)).status).toBe(404);
     expect((await routeRow(created.routeId)).status).toBe('archived');
   });
 

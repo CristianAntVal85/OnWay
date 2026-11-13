@@ -90,6 +90,11 @@ export class RoutesController {
     return this.writes.archive(request.principal!, (input.params as RouteParams).routeId);
   }
 
+  @Operation('deleteRoute')
+  async remove(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<void> {
+    await this.writes.remove(request.principal!, (input.params as RouteParams).routeId);
+  }
+
   @Operation('createRouteVersion')
   createVersion(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'createRouteVersion'>> {
     return this.writes.createVersion(request.principal!, (input.params as RouteParams).routeId, input.body as z.infer<typeof CreateVersionRequest>);

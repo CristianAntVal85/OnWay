@@ -16,8 +16,9 @@ Operación del cambio (1): `deleteRoute` (`x-milestone: H2`).
   - Hecho cuando: `pnpm --filter @onway/api test:db` y `db/tests/run-postgis.sh` en verde con las comprobaciones nuevas; las existentes de INV-04 siguen pasando.
   - Cierre: commit `feat(issue-17): T2 let the database delete validated versions of an archived unused route` + push.
 
-- [ ] **T3. API de `deleteRoute`.** INV-01, INV-04, INV-07, reglas 1 y 2.
+- [x] **T3. API de `deleteRoute`.** INV-01, INV-04, INV-07, reglas 1 y 2.
   - Pruebas primero (`test:api`, `routes-delete.test.ts`): coordinador elimina una archivada (204) y `getRoute` da 404; activa → 409 `INVALID_STATE_TRANSITION`; en misión abierta o cerrada → 409 `ROUTE_IN_USE` con las misiones; derivadas vivas y desvinculadas; GPX de origen retirado si nadie más lo usa; `route_deleted` en `audit_log`; rescatista y administrador no pueden; otra organización → 404; dos eliminaciones a la vez → 204 y 404; AC-02 con 59 montadas.
+  - *Hecho así:* `RouteWrites.remove` (módulo `src/routes/`) y `deleteRoute` en el controlador; `route_deleted` en `RouteAuditAction`. 13 pruebas nuevas en `routes-delete.test.ts` y AC-02 con 59 montadas (`NOT_BUILT_YET` retirada; `BUILT` gana `deleteRoute`). La prueba de `archiveRoute` ya no comprueba el 404 de `DELETE`. Orden en la transacción: ruta bloqueada → `INVALID_STATE_TRANSITION` si no está archivada → `ROUTE_IN_USE` si está en cualquier misión → derivadas sin vínculo → versiones → ruta → GPX de origen marcado (`files.deleted_at`) si ninguna otra versión lo usa → auditoría `route_deleted` (`name`, `versions`, `derivativesUnlinked`) → bytes del almacén, al final y con el fallo solo registrado. `test:api` pasa de 486 a 499.
   - Hecho cuando: `pnpm --filter @onway/api test`, `test:api` y `typecheck` en verde.
   - Cierre: commit `feat(issue-17): T3 add the deleteRoute operation` + push.
 
