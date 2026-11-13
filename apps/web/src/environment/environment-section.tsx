@@ -19,7 +19,7 @@ export function revealEnvironment(): void {
 
 interface Props {
   /** Misión elegida: se muestra su objetivo. Sin ella, la ubicación del dispositivo (RF-704). */
-  mission: { id: string; name: string } | null;
+  mission: { id: string; name: string | null } | null;
   /** Para volver a la ubicación propia. Sin esta función no hay enlace (p. ej. en el detalle de una misión). */
   onBackToDevice?: () => void;
   /** Título de la sección; por defecto «Tiempo, luz y luna». */
@@ -43,10 +43,10 @@ export function EnvironmentSection({ mission, onBackToDevice, title, locale, var
   const environment = useEnvironment(source);
 
   // La región `status` dice, sin mover el foco, de qué punto se está hablando cuando cambia.
-  const announcement = mission ? t('environment.announceMission', { name: mission.name }) : source ? t('environment.announceDevice') : '';
+  const announcement = mission ? (mission.name ? t('environment.announceMission', { name: mission.name }) : t('environment.announceMissionUnnamed')) : source ? t('environment.announceDevice') : '';
 
   const data = environment.data;
-  const basis = mission ? t('environment.basis.mission', { name: mission.name }) : t('environment.basis.device');
+  const basis = mission ? (mission.name ? t('environment.basis.mission', { name: mission.name }) : t('environment.basis.missionUnnamed')) : t('environment.basis.device');
   const waitingForLocation = !mission && location.status === 'pending';
   const noLocation = !mission && (location.status === 'denied' || location.status === 'failed' || location.status === 'unsupported');
 

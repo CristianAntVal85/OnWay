@@ -130,12 +130,13 @@ export const fr: Messages = {
   },
   environment: {
     title: 'Météo, lumière et lune',
-    basis: { device: 'Ma position', mission: 'Objectif de « {{name}} »' },
+    basis: { device: 'Ma position', mission: 'Objectif de « {{name}} »', missionUnnamed: 'Objectif de la mission choisie' },
     place: '{{position}} · calculé à {{meters}} m d’altitude',
     altitudeNote: 'La prévision est calculée à l’altitude du point, pas à celle de la vallée.',
     backToDevice: 'Revenir à ma position',
     announceDevice: 'Météo affichée pour votre position.',
     announceMission: 'Météo affichée à l’objectif de « {{name}} ».',
+    announceMissionUnnamed: 'Météo affichée à l’objectif de la mission choisie.',
     locating: 'Recherche de votre position…',
     noLocation: {
       title: 'Activez la localisation ou choisissez une mission',
@@ -145,6 +146,7 @@ export const fr: Messages = {
       retry: 'Réessayer',
       pickHint: 'Choisissez une mission dans la liste pour voir la météo à son objectif.',
     },
+    detail: { title: 'La météo en détail', backHome: '← Retour à l’accueil', backMissions: '← Retour aux missions', backToMission: '← Retour à la mission' },
     simple: {
       partsLabel: 'La météo par moment de la journée',
       parts: { morning: 'Matin', afternoon: 'Après-midi', night: 'Soir' },

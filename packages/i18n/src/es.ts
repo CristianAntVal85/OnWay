@@ -130,12 +130,13 @@ export const es: Messages = {
   },
   environment: {
     title: 'Tiempo, luz y luna',
-    basis: { device: 'Mi ubicación', mission: 'Objetivo de «{{name}}»' },
+    basis: { device: 'Mi ubicación', mission: 'Objetivo de «{{name}}»', missionUnnamed: 'Objetivo de la misión elegida' },
     place: '{{position}} · calculado a {{meters}} m de altitud',
     altitudeNote: 'La previsión se calcula a la altitud del punto, no a la del valle.',
     backToDevice: 'Volver a mi ubicación',
     announceDevice: 'Mostrando el tiempo de tu ubicación.',
     announceMission: 'Mostrando el tiempo en el objetivo de «{{name}}».',
+    announceMissionUnnamed: 'Mostrando el tiempo en el objetivo de la misión elegida.',
     locating: 'Obteniendo tu ubicación…',
     noLocation: {
       title: 'Activa la ubicación o elige una misión',
@@ -145,6 +146,7 @@ export const es: Messages = {
       retry: 'Probar de nuevo',
       pickHint: 'Elige una misión de la lista para ver el tiempo en su objetivo.',
     },
+    detail: { title: 'Tiempo en detalle', backHome: '← Volver a Inicio', backMissions: '← Volver a Misiones', backToMission: '← Volver a la misión' },
     simple: {
       partsLabel: 'El tiempo por tramos del día',
       parts: { morning: 'Mañana', afternoon: 'Tarde', night: 'Noche' },

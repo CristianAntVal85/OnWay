@@ -28,8 +28,9 @@ Operaciones del cambio: ninguna (`getEnvironment` no cambia; doc 06 y OpenAPI si
   - Hecho cuando: `pnpm --filter @onway/web test`, `lint` y `typecheck` en verde; revisado a 375 px y con teclado.
   - Cierre: commit `feat(issue-18): T4 replace the weather card with the simple one` + push.
 
-- [ ] **T5. Vista de detalle `/weather`.** RF-704, RF-705, RN-26.
+- [x] **T5. Vista de detalle `/weather`.** RF-704, RF-705, RN-26.
   - Pruebas primero: con la ubicación del dispositivo y con `?mission=`; trae todo lo que mostraba la tarjeta (ahora, próximos días, detalle por hora) y la tarjeta de Luz y luna; carga, vacío (sin ubicación y reintento), error, `stale` y `unavailable`; la coordenada no aparece en la dirección ni se guarda; enlace de vuelta; es y fr. Ruta `PATHS.weather` para todos los roles con acceso, sin entrada en la barra.
+  - *Hecho así:* `pages/weather-page.tsx` (`/weather`, `PATHS.weather`, `RoleGate route="weather"`, sin entrada en la barra): h1 «Tiempo en detalle», enlace de vuelta según el rol y el origen (Inicio, Misiones o la misión) y `EnvironmentSection variant="detail"` con `WeatherDetail` y `LightCard`. Con `?mission=<id>` mira esa misión (la página no conoce su nombre: texto «Objetivo de la misión elegida»); un identificador que no es un UUID es «no encontrado» y no pide nada. La posición no viaja en la dirección. 13 pruebas en `weather-page.test.tsx` (web 875).
   - Hecho cuando: `pnpm --filter @onway/web test`, `lint` y `typecheck` en verde.
   - Cierre: commit `feat(issue-18): T5 add the full weather detail view` + push.
 

@@ -101,14 +101,17 @@ export interface Messages {
   };
   environment: {
     title: string;
-    basis: { device: string; mission: string };
+    basis: { device: string; mission: string; missionUnnamed: string };
     place: string;
     altitudeNote: string;
     backToDevice: string;
     announceDevice: string;
     announceMission: string;
+    announceMissionUnnamed: string;
     locating: string;
     noLocation: { title: string; denied: string; failed: string; unsupported: string; retry: string; pickHint: string };
+    /** Vista «Tiempo en detalle» (issue #18). */
+    detail: { title: string; backHome: string; backMissions: string; backToMission: string };
     /** Tarjeta del tiempo simple (issue #18). */
     simple: {
       partsLabel: string;
