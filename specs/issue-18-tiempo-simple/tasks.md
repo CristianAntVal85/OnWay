@@ -10,8 +10,9 @@ Operaciones del cambio: ninguna (`getEnvironment` no cambia; doc 06 y OpenAPI si
   - Hecho cuando: `medidas.md` con las dos alturas y el umbral; documentos coherentes entre sí; `pnpm format:check` limpio.
   - Cierre: commit `docs(issue-18): T1 measure the current weather card and document the simple card` + push.
 
-- [ ] **T2. `weatherSymbol` y `dayPartSymbols` en `packages/geo`.** Regla 9.
+- [x] **T2. `weatherSymbol` y `dayPartSymbols` en `packages/geo`.** Regla 9.
   - Pruebas primero: un umbral por símbolo (`clear`, `partly`, `cloudy`, `rain`, `heavy-rain`, `snow`), variante noche, tramo con lluvia solo en parte de sus horas, tramo ya pasado al final con su rango, tramo en curso con las horas que le quedan, de 00 a 06 h empieza Mañana, sin horas suficientes, límites 06, 12 y 18 h y cambio de hora de verano. Después la implementación pura (la hora de reloj de cada instante la inyecta quien llama).
+  - *Hecho así:* `packages/geo/src/weather.ts` con `weatherSymbol` (umbrales: despejado < 20 %, nube con sol < 65 %, lluvia desde 1 mm y fuerte desde 10 mm por tramo, nieve desde 0,5 cm o 1 mm con 0 °C o menos; la nieve gana a la lluvia y esta a la nubosidad) y `dayPartSymbols(hourly, now, clock, sun)`: el reloj de quien mira lo inyecta la web, el tramo en curso va primero con las horas que le quedan, el tramo ya pasado al final con `day: 'tomorrow'`, y de noche solo si más de la mitad de las horas del tramo lo son. 19 pruebas nuevas en `test/weather.test.ts`.
   - Hecho cuando: `pnpm --filter @onway/geo test` y `typecheck` en verde (127 + las nuevas).
   - Cierre: commit `feat(issue-18): T2 derive the weather symbols and day parts in packages/geo` + push.
 
