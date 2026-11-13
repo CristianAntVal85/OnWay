@@ -14,3 +14,5 @@ test-results
 report
 .mcp.json
 poc/motor-rutas/results
+# Plantilla de Caddy con forma de JSON (no es JSON valido hasta que Caddy la rellena): el stub del tiempo del E2E, issue #18
+infra/providers-stub/responses/openmeteo-forecast.json
