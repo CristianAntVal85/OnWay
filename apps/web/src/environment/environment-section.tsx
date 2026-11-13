@@ -8,6 +8,7 @@ import { useDeviceLocation } from './device-location';
 import { LightCard } from './light-card';
 import { useEnvironment, type EnvironmentSource } from './use-environment';
 import { WeatherCard } from './weather-card';
+import { WeatherDetail } from './weather-detail';
 
 const SECTION_ID = 'environment';
 
@@ -23,6 +24,8 @@ interface Props {
   onBackToDevice?: () => void;
   /** Título de la sección; por defecto «Tiempo, luz y luna». */
   title?: string;
+  /** `simple` (Inicio y cabeceras de misión): tarjeta con tres iconos, temperatura y viento y el botón al detalle. `detail`: todos los datos y la luz y la luna. */
+  variant?: 'simple' | 'detail';
   locale: string;
 }
 
@@ -31,7 +34,7 @@ interface Props {
  * personal, a la cabecera de Mis misiones y al detalle de una misión del rescatista. Una consulta por punto: no se refresca sola.
  * Cada fallo se queda en su tarjeta; el resto de la pantalla sigue funcionando.
  */
-export function EnvironmentSection({ mission, onBackToDevice, title, locale }: Props) {
+export function EnvironmentSection({ mission, onBackToDevice, title, locale, variant = 'simple' }: Props) {
   const { t } = useTranslation();
   const { location, request } = useDeviceLocation();
   const headingId = useId();
@@ -89,11 +92,21 @@ export function EnvironmentSection({ mission, onBackToDevice, title, locale }: P
 
       {data && (
         <>
-          <p className="env-place">{t('environment.place', { position: formatCoordinate(data.location, 'decimal'), meters: decimal(data.location.elevationM, locale) })}</p>
-          <p className="field-help">{t('environment.altitudeNote')}</p>
-          <div className="env-cards" aria-busy={environment.isFetching}>
-            <WeatherCard weather={data.weather} locale={locale} onRetry={() => void environment.refetch()} />
-            <LightCard sun={data.sun} moon={data.moon} locale={locale} />
+          {variant === 'detail' && (
+            <>
+              <p className="env-place">{t('environment.place', { position: formatCoordinate(data.location, 'decimal'), meters: decimal(data.location.elevationM, locale) })}</p>
+              <p className="field-help">{t('environment.altitudeNote')}</p>
+            </>
+          )}
+          <div className={variant === 'detail' ? 'env-cards' : 'env-cards env-cards-simple'} aria-busy={environment.isFetching}>
+            {variant === 'detail' ? (
+              <>
+                <WeatherDetail weather={data.weather} locale={locale} onRetry={() => void environment.refetch()} />
+                <LightCard sun={data.sun} moon={data.moon} locale={locale} />
+              </>
+            ) : (
+              <WeatherCard weather={data.weather} sun={data.sun} locale={locale} missionId={mission?.id ?? null} onRetry={() => void environment.refetch()} />
+            )}
           </div>
         </>
       )}

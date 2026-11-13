@@ -22,8 +22,9 @@ Operaciones del cambio: ninguna (`getEnvironment` no cambia; doc 06 y OpenAPI si
   - Hecho cuando: `pnpm --filter @onway/web test`, `@onway/i18n test`, `lint` y `typecheck` en verde.
   - Cierre: commit `feat(issue-18): T3 add the weather icons, their colours and texts` + push.
 
-- [ ] **T4. Tarjeta compacta y botón.** RF-704; Inicio, Mis misiones y detalle de misión del rescatista.
+- [x] **T4. Tarjeta compacta y botón.** RF-704; Inicio, Mis misiones y detalle de misión del rescatista.
   - Pruebas primero: la tarjeta muestra solo los tres iconos con su horario y orden, el termómetro con la temperatura y el viento; no muestra nieve, nubosidad, isoterma, rachas, próximos días, tabla por hora ni luz y luna; estados `stale`, `unavailable` y sin datos; el botón enlaza a `/weather` con y sin `?mission=`. Se reescriben las pruebas que describían la tarjeta antigua (`home.test.tsx`, `device-location.test.tsx`, `environment-support.ts`). `EnvironmentSection` deja de pintar `LightCard`.
+  - *Hecho así:* `weather-card.tsx` nueva (tres tramos con horario, temperatura y viento, y el botón con `weatherPath(missionId)`); el contenido antiguo pasa **tal cual** a `weather-detail.tsx` (`WeatherDetail`) para la T5. `EnvironmentSection` gana `variant: 'simple' | 'detail'` (por defecto `simple`: sin altitud, sin luz y luna). `PATHS.weather`, `ROUTE_ROLES.weather` (todos los roles) y `weatherPath` en `navigation.ts`; `clockTime()` en `format.ts` da la hora de reloj del navegador. La tarjeta recibe `now` y `clock` inyectables para probarla sin depender de la zona. Seis pruebas de `home.test.tsx` reescritas. Web 862. Hasta T5 el botón apunta a una ruta que aún no existe (rama intermedia).
   - Hecho cuando: `pnpm --filter @onway/web test`, `lint` y `typecheck` en verde; revisado a 375 px y con teclado.
   - Cierre: commit `feat(issue-18): T4 replace the weather card with the simple one` + push.
 

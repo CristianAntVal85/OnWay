@@ -3325,6 +3325,92 @@ label.signup-info {
   }
 }
 
+/* ---------- tarjeta del tiempo simple (issue #18) ---------- */
+.env-cards-simple {
+  grid-template-columns: minmax(0, 28rem);
+}
+
+.wx-parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-part {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.5rem 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-raised);
+  text-align: center;
+}
+
+.wx-part-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.wx-part-range {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.wx-part-text {
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.wx-empty {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  color: var(--text-muted);
+}
+
+.wx-empty::before {
+  content: '–';
+  font-size: 1.5rem;
+}
+
+.wx-now {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.wx-now dd {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.wx-now .wx-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.wx-now strong {
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.wx-detail-link {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
 /* ---------- iconos del tiempo (issue #18) ----------
    Los colores salen de los tokens `--wx-*` (con su contraste calculado); el trazo y el relleno comparten color por clase. */
 .wx-icon {
