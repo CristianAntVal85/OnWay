@@ -1,6 +1,6 @@
 # OnWay — Documento 03: Modelo de dominio y flujos clave
 
-Versión: 0.8 (borrador) · Fecha: 2026-11-02 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
+Versión: 0.9 (borrador) · Fecha: 2026-11-13 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
 
 Este documento traduce los requisitos y las vistas en un modelo conceptual: qué cosas existen en el sistema, cómo se relacionan, qué reglas deben cumplirse siempre y cómo fluyen los datos en los procesos clave. No fija tecnologías ni tablas: la arquitectura está en el documento 04 y el modelo de datos será el documento 05. Los IDs RF, RN, D y Q remiten al documento 01.
 
@@ -164,7 +164,7 @@ Tu necesidad (D-16) mezcla dos cosas distintas y el modelo las representa por se
 - Una versión guardada nunca se modifica, ni siquiera por quien la creó (RN-12).
 - Mientras se edita en pantalla, el trabajo vive en una copia de trabajo del cliente. Solo se guarda una versión al pulsar guardar. Así no se llena la historia de versiones intermedias.
 - Una versión en *Borrador* que nunca se validó ni se usó en ninguna misión puede descartarse por quien la creó *(propuesto)*.
-- Una versión validada no se borra. Si ya no se quiere usar, se archiva la ruta (RN-14).
+- Una versión validada no se borra por sí sola. Si ya no se quiere usar, se archiva la ruta (RN-14). Solo desaparece junto con su ruta, cuando esta se elimina estando archivada y sin misión (INV-04).
 - La versión validada más reciente de una ruta se guarda aparte de la versión más reciente, porque pueden ser distintas: puede haber un borrador más nuevo que la última versión validada.
 - En la primera entrega, derivar significa copiar y editar (RF-517). El cálculo automático del tramo final llega con la adaptación en la segunda entrega (RF-515).
 
@@ -191,7 +191,7 @@ Los diagramas de estados de misión, versión de ruta, ruta en misión, particip
 - *Validada* es terminal e inmutable.
 
 **Ruta**
-- *Activa ⇄ Archivada*. No se puede archivar una ruta que esté en una misión no cerrada *(propuesto)*.
+- *Activa ⇄ Archivada → Eliminada* (terminal). No se puede archivar una ruta que esté en una misión no cerrada *(propuesto)*. Solo se elimina una ruta **archivada y que no esté (ni haya estado) en ninguna misión**; la eliminación es irreversible, deja una línea de auditoría y las rutas derivadas pierden el vínculo «deriva de» (issue #17).
 
 **Participación**
 - Ofrecerse crea *Pendiente* (solo en misiones activas y con el perfil completo, RN-15, RN-20).
@@ -213,10 +213,10 @@ Condiciones que el sistema debe garantizar siempre, independientemente de la int
 | INV-01 | Ninguna consulta ni escritura cruza organizaciones | RN-01, RN-17 |
 | INV-02 | Una misión siempre tiene organización, coordinador responsable y objetivo | RN-07, RN-11 |
 | INV-03 | El coordinador responsable pertenece a la organización de la misión y tiene rol de coordinador (nunca de administrador: Q-14 = no). Lo comprueba el servidor y también un disparador de la base | RN-11 |
-| INV-04 | Una versión de ruta guardada no cambia | RN-12 |
+| INV-04 | Una versión de ruta guardada no cambia, y una validada solo se borra junto con su ruta archivada y sin misión | RN-12, RN-14 |
 | INV-05 | Solo una versión validada es visible para un rescatista, y solo la fijada por la misión | RN-03, RN-13 |
 | INV-06 | Una ruta en una misión referencia una versión de esa misma ruta | RN-13 |
-| INV-07 | Una ruta en alguna misión no cerrada no se elimina ni se archiva | RN-14 |
+| INV-07 | Una ruta en alguna misión no cerrada no se archiva, y una ruta en cualquier misión (también cerrada) no se elimina | RN-14 |
 | INV-08 | Una misión *En planificación* no es visible ni accesible para un rescatista | RN-16 |
 | INV-09 | Un rescatista solo puede crear su propia participación, solo en misiones activas | RN-02, RN-15 |
 | INV-10 | Solo un coordinador cambia el estado de una participación pendiente | RN-15 |
@@ -579,6 +579,9 @@ La arquitectura y el stack están en el documento 04, el modelo de datos en el 0
 Consultadas el 29 de octubre de 2026. Las condiciones y precios de terceros pueden cambiar. Hay que confirmarlas directamente con cada proveedor antes de publicar la demo.
 
 ## 19. Registro de cambios
+
+**0.9 (2026-11-13)**
+- Issue #17: ciclo de la ruta *Activa ⇄ Archivada → Eliminada*; INV-04 e INV-07 reformulados (una versión validada solo se borra con su ruta archivada y sin misión; una ruta en cualquier misión no se elimina).
 
 **0.8 (2026-11-02)**
 - H4: §8.5 con la versión por defecto, el rechazo de rutas archivadas o repetidas, el historial de cada cambio y que una ruta *No disponible* no cuenta como validada. Sin cambios en el modelo ni en las invariantes: INV-03, 05, 06, 07 y 13 tienen su prueba contra la base (también las políticas del rescatista con SQL directo).

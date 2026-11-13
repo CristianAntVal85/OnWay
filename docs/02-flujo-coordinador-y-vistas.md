@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.2 (borrador) · Fecha: 2026-11-06 · Depende de: documento 01 (v1.4)
+Versión: 1.3 (borrador) · Fecha: 2026-11-13 · Depende de: documento 01 (v1.5)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -198,7 +198,7 @@ Boceto 9. Vista nueva (RF-512). Es el fondo permanente de rutas de la organizaci
 - La lista muestra las rutas del **área visible del mapa** y se actualiza al moverlo. Una opción permite buscar solo al pulsar "Buscar en esta zona".
 - Pasar el ratón por una tarjeta resalta su trazado en el mapa, y al revés.
 - Filtros: estado, distancia, desnivel, antigüedad de la validación y búsqueda por nombre o lugar. Etiquetas si se acepta Q-21. Orden y paginación.
-- Acciones sobre la selección: **exportar** y archivar. Botones **Generar rutas**, **Dibujar ruta** e **Importar ruta**. La composición por tipo de vía (barra y texto) es real en lo generado o dibujado pegado a los caminos; en lo importado o dibujado en línea recta dice «sin clasificar».
+- Acciones sobre la selección: **exportar** y archivar. En la vista de **archivadas** (`?status=archived`) la selección también se puede **eliminar** («Eliminar seleccionadas»): confirmación que dice cuántas rutas son y que no se puede deshacer; solo se eliminan las que no están en ninguna misión. En las demás vistas, incluido el detalle, no hay botón de eliminar (issue #17). Botones **Generar rutas**, **Dibujar ruta** e **Importar ruta**. La composición por tipo de vía (barra y texto) es real en lo generado o dibujado pegado a los caminos; en lo importado o dibujado en línea recta dice «sin clasificar».
 
 **Mapa (derecha)**
 - Capas satélite, topográfica y carreteras, conmutables.
@@ -249,7 +249,7 @@ En la primera entrega, **Guardar como nueva ruta** también existe al editar una
 - "Derivadas": rutas creadas a partir de esta.
 - "Usada en": misiones (activas, en planificación, cerradas) y qué versión fija cada una.
 - Acciones: editar (crea versión nueva), derivar, validar, archivar, exportar.
-- Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14).
+- Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14). El detalle no elimina: para borrar una ruta se quita de sus misiones, se archiva y se elimina desde la lista de archivadas.
 
 ### 3.7 Voluntarios y participantes (dentro de la misión)
 
@@ -596,7 +596,7 @@ Boceto 14. Se detallará en un documento posterior, pero el recorrido base es:
 | Búsqueda por punto sin resultados (segunda entrega) | "No hay rutas a menos de X km". Opciones: ampliar radio, crear una ruta nueva |
 | Aparece versión validada nueva de una ruta de la misión | Aviso en la misión. El coordinador decide si actualiza. Nada cambia solo |
 | Ruta fijada en una misión se archiva | No se puede archivar mientras esté en una misión no cerrada. Se explica en qué misiones se usa |
-| Se intenta eliminar una ruta usada | Solo se permite archivar (RN-14) |
+| Se intenta eliminar una ruta usada | No se elimina (RN-14): el informe dice en qué misiones está, abiertas o cerradas. Solo se elimina lo archivado y sin misión |
 | Validación antigua | Marca "posiblemente desactualizada". Sigue usable, pero visible |
 | Versión fijada en borrador | En la tabla del coordinador se dice, con el aviso de que el rescatista no la ve, y ofrece **Validar**. El rescatista no recibe la fila ni su geometría (INV-05) |
 | Ruta marcada como no disponible | El coordinador la ve apagada y con la marca; el rescatista la ve señalada, con su aviso y sin descarga; no cuenta como validada al activar la misión |
@@ -671,6 +671,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.3 (2026-11-13)**
+- Issue #17: §3.6 y §8 con «Eliminar seleccionadas» en la lista de archivadas (el detalle y la lista de activas no tienen botón de eliminar) y el protocolo quitar → archivar → eliminar.
 
 **1.2 (2026-11-06)**
 - Cierre de `UI-rediseno` (issue #14): §1 principio «Legible en campo» (oscuro por defecto y claro de alto contraste, contenido centrado); §2 Cuenta con el **tema** y su selector de tres opciones; §3.4 alto del mapa de Crear misión medido en escritorio y en columna. Sin cambios de permisos ni de flujo.

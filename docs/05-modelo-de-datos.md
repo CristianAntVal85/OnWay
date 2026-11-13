@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 1.0 (borrador) · Fecha: 2026-11-02 · Depende de: documentos 01 (v1.3), 02 (v0.9), 03 (v0.8) y 04 (v1.1)
+Versión: 1.1 (borrador) · Fecha: 2026-11-13 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -343,10 +343,10 @@ Las 32 invariantes del documento 03, sección 7. "Restricción" es una restricci
 | INV-01 | **RLS + claves compuestas** | Política restrictiva `org_isolation` en 20 tablas. Claves foráneas compuestas (DB-05) |
 | INV-02 | Restricción | `missions.coordinator_id NOT NULL`, `target NOT NULL`, clave foránea a la membresía |
 | INV-03 | Disparador | `missions_guard` (reemplazada en la 0011): el responsable es un miembro activo con rol `coordinator`; un administrador no puede serlo (Q-14 = no) |
-| INV-04 | Disparador | `route_versions_guard`: solo se permite Borrador → Validada; una validada no se edita ni se borra. `route_segments_immutable` |
+| INV-04 | Disparador | `route_versions_guard`: solo se permite Borrador → Validada; una validada no se edita, y solo se borra si su ruta está archivada y no figura en ninguna misión (migración 0013, issue #17). `route_segments_immutable` |
 | INV-05 | RLS | `versions_rescuer`, `mroutes_rescuer` con `version_is_validated()` |
 | INV-06 | Restricción | Clave foránea compuesta `(pinned_version_id, route_id)` → `route_versions (id, route_id)` |
-| INV-07 | Disparador | `routes_archive_guard`. Además, `mission_routes.route_id` impide borrar una ruta usada |
+| INV-07 | Disparador | `routes_archive_guard`. Además, `mission_routes.route_id` (sin cascada) impide borrar una ruta que figure en cualquier misión, también cerrada |
 | INV-08 | RLS | `missions_select`: el rescatista solo ve `active` y `closed` |
 | INV-09 | RLS + disparador | `part_offer`, `part_withdraw`; `participations_guard` exige misión activa y rescatista |
 | INV-10 | RLS | El rescatista no puede dejar una participación en `accepted`; solo `pending` o `withdrawn` |
@@ -682,6 +682,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**1.1 (2026-11-13)** Issue #17. **Migración 0013** (`0013_route_delete.sql`): `route_versions_guard()` pasa a `SECURITY DEFINER` y permite el `DELETE` de una versión validada solo si su ruta está `archived` y no hay filas de `mission_routes` para ella; el resto de INV-04 no cambia. Las políticas de borrado del coordinador (0011) bastan. INV-04 e INV-07 reformulados en §5.
 
 **1.0 (2026-11-02)** H4. **Sin migraciones SQL nuevas**: `mission_routes` y sus claves compuestas (INV-06, INV-13), los disparadores (INV-07, INV-11, origen de tipo origen) y las políticas `mroutes_rescuer`, `versions_rescuer`, `segments_rescuer` y `routes_rescuer` (0005 a 0011) solo se probaron, entre otras cosas con SQL directo como `onway_app` con rol de rescatista (`test/db/mission-routes-rescuer-policy.test.ts`, 9 pruebas): el rescatista lee la versión fijada y validada de una misión activa o cerrada, y nada más; no escribe. Hallazgo anotado: `teams_select` solo deja a un rescatista leer los equipos de los que es miembro, así que el equipo de una ruta le llega nulo si no es suyo (D-34 lo cambiará en H5, `docs/backlog-post-mvp.md` B-01). §10: las 4 rutas de la misión sembrada.
 
