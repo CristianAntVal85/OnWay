@@ -28,8 +28,9 @@ Operación del cambio (1): `deleteRoute` (`x-milestone: H2`).
   - Hecho cuando: `pnpm --filter @onway/web test`, `@onway/i18n test`, `lint` y `typecheck` en verde; revisado a 375 px y con teclado.
   - Cierre: commit `feat(issue-17): T4 add bulk delete to the archived routes list` + push.
 
-- [ ] **T5. Demostración E2E.** Protocolo quitar → archivar → eliminar.
+- [x] **T5. Demostración E2E.** Protocolo quitar → archivar → eliminar.
   - `route-delete-demo.spec.ts`, escritorio y móvil, francés solo con teclado: sin botón en activas ni en el detalle; archivar dos rutas propias; en `/routes?status=archived` cancelar una vez y confirmar después; desaparecen de la lista y dan 404; una archivada en una misión cerrada no se elimina y el informe lo explica. La prueba no deja residuos.
+  - *Hecho así:* `route-delete-demo.spec.ts` con 4 pruebas por formato (sin botón en activas ni en el detalle; archivar tres y eliminar dos con cancelar y confirmar; una archivada en una misión cerrada no se elimina y el informe nombra la misión; francés solo con teclado) y el proyecto `mobile` de `playwright.config.ts` la incluye. La lista de archivadas se filtra con `q` por el sello de la ejecución. E2E 118 de 118 (3,4 min, `CI=1`) contra la pila `onway-e2e`.
   - Hecho cuando: `pnpm --filter @onway/web e2e` entero en verde contra la pila de pruebas (`onway-e2e`, puerto 18080).
   - Cierre: commit `test(issue-17): T5 add the route deletion demonstration` + push.
 
