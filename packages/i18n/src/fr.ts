@@ -258,7 +258,6 @@ export const fr: Messages = {
     },
     share: {
       title: 'Partager la position de l’objectif',
-      help: 'Copiez les coordonnées pour les envoyer à votre équipe, ou ouvrez-les dans l’application de cartes de votre téléphone.',
       coordinates: 'Coordonnées de l’objectif',
       copy: 'Copier les coordonnées',
       copied: 'Coordonnées copiées : {{value}}',
@@ -287,7 +286,6 @@ export const fr: Messages = {
   admin: {
     signups: {
       title: 'Demandes d’inscription',
-      intro: 'Personnes qui ont demandé l’accès avec le code d’invitation. Tant que vous n’approuvez pas leur demande, elles ne voient que l’écran d’attente.',
       tabsLabel: 'Demandes par statut',
       tabs: { pending: 'En attente', approved: 'Approuvées', rejected: 'Refusées' },
       status: { pending: 'En attente', approved: 'Approuvée', rejected: 'Refusée' },
@@ -334,7 +332,6 @@ export const fr: Messages = {
     },
     inviteCode: {
       title: 'Code d’invitation',
-      intro: 'Avec ce code, une personne peut demander l’inscription dans votre organisation ; vous décidez ensuite de l’approuver ou non. Ne le partagez qu’avec qui doit l’avoir.',
       codeLabel: 'Code actuel',
       rotatedAt: 'Généré le {{date}}',
       copy: 'Copier le code',
@@ -1022,7 +1019,6 @@ export const fr: Messages = {
       added: 'Itinéraires ajoutés à la mission : {{count}}.',
       details: {
         title: 'Version, origine et note',
-        help: 'Par défaut, la dernière version validée est figée. Une version en brouillon peut être ajoutée, mais le secouriste ne la voit pas tant qu’elle n’est pas validée.',
         version: 'Version figée par la mission',
         versionOption: 'Version {{number}} · {{status}}',
         origin: 'Origine de la mission',
@@ -1040,10 +1036,8 @@ export const fr: Messages = {
       other: {
         title: 'Créer un nouvel itinéraire pour cette mission',
         generate: 'Générer des itinéraires',
-        generateHint: 'Calcule des itinéraires depuis une origine de la mission jusqu’à l’objectif et les ajoute.',
         generateNoOrigin: 'Pour générer des itinéraires, la mission a besoin d’une origine : ajoutez-la dans Points.',
         import: 'Importer un fichier GPX ou KML',
-        importHint: 'Envoyez un fichier, vérifiez l’aperçu : il est ajouté à la mission à l’enregistrement.',
       },
     },
     validate: {

@@ -103,9 +103,7 @@ export function HomePage() {
         <SectionCard className="home-missions" icon="flag" title={t('home.missionsTitle')}>
           {missions.isPending && <LoadingState />}
           {missions.isError && <ErrorState error={missions.error} onRetry={() => void missions.refetch()} />}
-          {missions.data && items.length === 0 && (
-            <EmptyState title={t('home.missionsEmptyTitle')}>{t('home.missionsEmpty')}</EmptyState>
-          )}
+          {missions.data && items.length === 0 && <EmptyState title={t('home.missionsEmptyTitle')}>{t('home.missionsEmpty')}</EmptyState>}
           {items.length > 0 && (
             <ul className="mission-list home-mission-list">
               {items.map((item) => (

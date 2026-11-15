@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router';
 import { Icon, type IconName } from './icon';
 
@@ -57,37 +58,39 @@ export function Menu({ label, items, icon, iconOnly = false, variant = 'secondar
     if (refocus) button.current?.focus();
   };
 
-  // Al abrir: la lista se coloca respecto a la ventana (así no la recorta una tabla o un panel con desplazamiento), alineada con el borde
-  // del botón que tenga sitio y hacia arriba si debajo no cabe; el foco entra en la opción que toca.
-  useLayoutEffect(() => {
-    if (!open) return;
+  // La lista se coloca respecto a la ventana (así no la recorta una tabla o un panel con desplazamiento), alineada con el borde del botón
+  // que tenga sitio y hacia arriba si debajo no cabe. Se vuelve a colocar si la página se desplaza o cambia de tamaño.
+  const place_ = () => {
     const box = list.current?.getBoundingClientRect();
     const anchor = button.current?.getBoundingClientRect();
-    if (box && anchor && box.width > 0) {
-      const gap = 4;
-      const fitsStart = anchor.left + box.width <= window.innerWidth;
-      const fitsEnd = anchor.right - box.width >= 0;
-      const start = align === 'start' ? fitsStart || !fitsEnd : !(fitsEnd || !fitsStart);
-      const below = anchor.bottom + gap + box.height <= window.innerHeight || anchor.top - gap - box.height < 0;
-      setPlace({
-        top: below ? anchor.bottom + gap : anchor.top - gap - box.height,
-        left: start ? Math.max(0, Math.min(anchor.left, window.innerWidth - box.width)) : Math.max(0, anchor.right - box.width),
-      });
-    }
+    if (!box || !anchor || box.width === 0) return;
+    const gap = 4;
+    const fitsStart = anchor.left + box.width <= window.innerWidth;
+    const fitsEnd = anchor.right - box.width >= 0;
+    const start = align === 'start' ? fitsStart || !fitsEnd : !(fitsEnd || !fitsStart);
+    const below = anchor.bottom + gap + box.height <= window.innerHeight || anchor.top - gap - box.height < 0;
+    setPlace({
+      top: below ? anchor.bottom + gap : anchor.top - gap - box.height,
+      left: start ? Math.max(0, Math.min(anchor.left, window.innerWidth - box.width)) : Math.max(0, anchor.right - box.width),
+    });
+  };
+
+  // Al abrir, el foco entra en la opción que toca (sin desplazar la página).
+  useLayoutEffect(() => {
+    if (!open) return;
+    place_();
     const all = entries();
     const target = open === 'last' ? all.at(-1) : (open === 'checked' && all.find((entry) => entry.getAttribute('aria-checked') === 'true')) || all[0];
-    target?.focus();
+    target?.focus({ preventScroll: true });
   }, [open, align]);
 
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) setOpen(null);
+      const target = event.target as Node;
+      if (!root.current?.contains(target) && !list.current?.contains(target)) setOpen(null);
     };
-    // La lista va fija a la ventana: si la página se desplaza o cambia de tamaño dejaría de estar junto al botón, así que se cierra.
-    const onMove = (event: Event) => {
-      if (!(event.target instanceof Node) || !list.current?.contains(event.target)) setOpen(null);
-    };
+    const onMove = () => place_();
     document.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('scroll', onMove, true);
     window.addEventListener('resize', onMove);
@@ -150,39 +153,41 @@ export function Menu({ label, items, icon, iconOnly = false, variant = 'secondar
         {!iconOnly && <span>{label}</span>}
         {!iconOnly && <Icon name="chevron-down" className="menu-caret" />}
       </button>
-      {open && (
-        <ul ref={list} id={listId} className="menu-list" role="menu" aria-label={label} style={place} onKeyDown={onListKeyDown}>
-          {items.map((item) => {
-            const content = (
-              <>
-                {selection ? <Icon name="check" className="menu-check" /> : item.icon && <Icon name={item.icon} />}
-                <span>{item.label}</span>
-              </>
-            );
-            const common = {
-              role,
-              tabIndex: -1,
-              className: 'menu-item',
-              'data-danger': item.danger ? 'true' : undefined,
-              'aria-disabled': item.disabled ? true : undefined,
-              'aria-checked': selection ? Boolean(item.checked) : undefined,
-            } as const;
-            return (
-              <li key={item.id} role="none">
-                {item.to && !item.disabled ? (
-                  <Link {...common} to={item.to} onClick={() => select(item)}>
-                    {content}
-                  </Link>
-                ) : (
-                  <button {...common} type="button" onClick={() => select(item)}>
-                    {content}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      {open &&
+        createPortal(
+          <ul ref={list} id={listId} className="menu-list" role="menu" aria-label={label} style={place} onKeyDown={onListKeyDown}>
+            {items.map((item) => {
+              const content = (
+                <>
+                  {selection ? <Icon name="check" className="menu-check" /> : item.icon && <Icon name={item.icon} />}
+                  <span>{item.label}</span>
+                </>
+              );
+              const common = {
+                role,
+                tabIndex: -1,
+                className: 'menu-item',
+                'data-danger': item.danger ? 'true' : undefined,
+                'aria-disabled': item.disabled ? true : undefined,
+                'aria-checked': selection ? Boolean(item.checked) : undefined,
+              } as const;
+              return (
+                <li key={item.id} role="none">
+                  {item.to && !item.disabled ? (
+                    <Link {...common} to={item.to} onClick={() => select(item)}>
+                      {content}
+                    </Link>
+                  ) : (
+                    <button {...common} type="button" onClick={() => select(item)}>
+                      {content}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>,
+          document.body,
+        )}
     </div>
   );
 }

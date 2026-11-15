@@ -73,7 +73,7 @@ test('the coordinator creates a mission by clicking the target and adds three or
   await expect(page.getByLabel(es.createMission.coordinator)).toHaveValue(/.+/); // por defecto, quien crea
 
   // El objetivo: se pincha en el mapa (el punto espera el clic desde el principio).
-  const objective = page.getByRole('group', { name: es.createMission.objective });
+  const objective = page.getByRole('region', { name: es.createMission.objective, exact: true });
   await clickMapCenter(page.getByRole('region', { name: es.createMission.mapRegion }));
   const picked = objective.getByText(/^Punto elegido: /);
   await expect(picked).toBeVisible();
@@ -174,8 +174,8 @@ test('adds a waypoint and a rendezvous point, and switches the three map layers 
 
   await chooseMapLayer(map, es.map.layers.satellite);
   await mapLayerButton(map).click();
-  await expect(map.getByRole('menuitemradio', { name: es.map.layers.satellite, exact: true })).toHaveAttribute('aria-checked', 'true');
-  await expect(map.getByRole('menuitemradio', { name: es.map.layers.topographic, exact: true })).toHaveAttribute('aria-checked', 'false');
+  await expect(page.getByRole('menuitemradio', { name: es.map.layers.satellite, exact: true })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('menuitemradio', { name: es.map.layers.topographic, exact: true })).toHaveAttribute('aria-checked', 'false');
   await page.keyboard.press('Escape');
   await expect(attribution).toContainText(es.map.attribution.ignEsSatellite);
   await expect(attribution).toContainText(es.map.attribution.ignFr);
@@ -437,7 +437,7 @@ test('the whole journey works with the keyboard only and in French: create, acti
   await tabTo(page, page.getByLabel(fr.createMission.name));
   await page.keyboard.type(frName);
   // Objetivo: grupo de opciones con las flechas (Mapa -> Coordenadas), texto, Intro.
-  const objective = page.getByRole('group', { name: fr.createMission.objective });
+  const objective = page.getByRole('region', { name: fr.createMission.objective, exact: true });
   await tabTo(page, objective.getByRole('radio', { name: fr.point.byMap }));
   await key('ArrowRight');
   await expect(objective.getByRole('radio', { name: fr.point.byCoordinates })).toBeChecked();

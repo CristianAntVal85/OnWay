@@ -89,7 +89,6 @@ export function SignupInbox() {
       <h2 id="signups-title" ref={heading} tabIndex={-1}>
         {t('admin.signups.title')}
       </h2>
-      <p className="field-help admin-intro">{t('admin.signups.intro')}</p>
 
       <MissionTabs
         idPrefix="signups"

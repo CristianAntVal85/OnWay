@@ -202,7 +202,8 @@ test('the administrator finds the request in the inbox and approves it as a resc
   for (const label of [S.approve, S.reject]) {
     const button = inbox.getByRole('button', { name: label, exact: true });
     await button.scrollIntoViewIfNeeded();
-    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    // 40 px con puntero fino y 48 px con táctil (UI-simplificacion, D-S8).
+    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(39.5);
     const box = (await button.boundingBox())!;
     expect(box.x + box.width).toBeLessThanOrEqual((admin.viewportSize()?.width ?? 0) + 0.5);
   }

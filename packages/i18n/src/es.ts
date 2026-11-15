@@ -258,7 +258,6 @@ export const es: Messages = {
     },
     share: {
       title: 'Compartir la ubicación del objetivo',
-      help: 'Copia las coordenadas para enviarlas a tu equipo, o ábrelas en la aplicación de mapas de tu móvil.',
       coordinates: 'Coordenadas del objetivo',
       copy: 'Copiar coordenadas',
       copied: 'Coordenadas copiadas: {{value}}',
@@ -287,7 +286,6 @@ export const es: Messages = {
   admin: {
     signups: {
       title: 'Solicitudes de alta',
-      intro: 'Personas que han pedido acceso con el código de invitación. Hasta que apruebes su solicitud solo ven la pantalla de espera.',
       tabsLabel: 'Solicitudes por estado',
       tabs: { pending: 'Pendientes', approved: 'Aprobadas', rejected: 'Rechazadas' },
       status: { pending: 'Pendiente', approved: 'Aprobada', rejected: 'Rechazada' },
@@ -334,7 +332,6 @@ export const es: Messages = {
     },
     inviteCode: {
       title: 'Código de invitación',
-      intro: 'Con este código una persona puede pedir el alta en tu organización; después decides tú si la apruebas. Compártelo solo con quien deba tenerlo.',
       codeLabel: 'Código actual',
       rotatedAt: 'Generado el {{date}}',
       copy: 'Copiar el código',
@@ -1022,7 +1019,6 @@ export const es: Messages = {
       added: 'Rutas añadidas a la misión: {{count}}.',
       details: {
         title: 'Versión, origen y nota',
-        help: 'Por defecto se fija la última versión validada. Una versión en borrador se puede añadir, pero el rescatista no la ve hasta que se valide.',
         version: 'Versión que fija la misión',
         versionOption: 'Versión {{number}} · {{status}}',
         origin: 'Origen de la misión',
@@ -1040,10 +1036,8 @@ export const es: Messages = {
       other: {
         title: 'Crear una ruta nueva para esta misión',
         generate: 'Generar rutas',
-        generateHint: 'Calcula rutas desde un origen de la misión hasta el objetivo y las añade.',
         generateNoOrigin: 'Para generar rutas la misión necesita un origen: añádelo en Puntos.',
         import: 'Importar un archivo GPX o KML',
-        importHint: 'Sube un archivo, revisa la vista previa y se añade a la misión al guardarlo.',
       },
     },
     validate: {

@@ -117,7 +117,11 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
               label={t('common.export')}
               icon="download"
               disabled={tooMany || exportFile.isPending}
-              items={(['gpx', 'kml'] as const).map((format) => ({ id: format, label: t(format === 'gpx' ? 'routes.selection.exportGpx' : 'routes.selection.exportKml'), onSelect: () => exportFile.mutate(format) }))}
+              items={(['gpx', 'kml'] as const).map((format) => ({
+                id: format,
+                label: t(format === 'gpx' ? 'routes.selection.exportGpx' : 'routes.selection.exportKml'),
+                onSelect: () => exportFile.mutate(format),
+              }))}
             />
             {canArchive && (
               <button type="button" className="button button-secondary" onClick={() => setConfirming(true)}>

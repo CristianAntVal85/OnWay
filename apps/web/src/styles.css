@@ -872,15 +872,6 @@ a.button-link {
   min-width: 0;
 }
 
-.form-section {
-  margin-bottom: var(--space-6);
-}
-
-.form-section h3 {
-  margin: var(--space-5) 0 var(--space-1);
-  font-size: var(--text-lg);
-}
-
 /* Un punto con nombre dentro de una sección (cada origen de Crear misión): sin caja, separado por una línea. */
 .point-group {
   min-inline-size: 0;
@@ -890,7 +881,7 @@ a.button-link {
   border-block-start: 1px solid var(--border);
 }
 
-.point-group legend {
+.point-group > legend {
   float: inline-start;
   inline-size: 100%;
   margin-block-end: var(--space-3);
@@ -898,7 +889,7 @@ a.button-link {
   font-weight: 600;
 }
 
-.point-group legend + * {
+.point-group > legend + * {
   clear: both;
 }
 
@@ -2132,12 +2123,6 @@ h4 {
 
 /* ---------- biblioteca de rutas (H2-T7) ---------- */
 
-.page-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
 .check-row {
   display: flex;
   align-items: center;
@@ -2947,9 +2932,6 @@ h4 {
 .results-table tr[data-highlighted] {
   background: var(--warn-soft);
 }
-.detail-generate {
-  margin: 1rem 0;
-}
 
 /* Dibujar uniendo los puntos por los caminos (H3-T9). */
 .snap-panel {
@@ -3054,7 +3036,6 @@ h4 {
   font-weight: 700;
 }
 
-.mission-routes-export,
 .mission-routes-profiles {
   margin-top: 1.25rem;
 }
@@ -3240,10 +3221,6 @@ h4 {
   margin: 0 0 0.375rem;
 }
 
-.admin-intro {
-  margin: 0 0 1rem;
-}
-
 .signups-panel {
   padding-top: 1rem;
 }
@@ -3386,7 +3363,7 @@ label.signup-info {
   accent-color: var(--text);
 }
 
-.role-option .field-help {
+.role-option .form-note {
   display: block;
   margin-top: 0.125rem;
 }
@@ -3869,6 +3846,7 @@ label.signup-info {
 
 .section-card-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
   min-block-size: var(--control-h);
@@ -4041,4 +4019,23 @@ label.signup-info {
 .mission-routes.section-card,
 .detail-points.section-card {
   margin: 0;
+}
+
+/* Los grupos de campos no imponen su ancho mínimo (un fieldset lo hace por defecto) y, a 375 px, el segmentado deja solo el texto. */
+.plain-fieldset {
+  min-inline-size: 0;
+}
+
+.segmented[data-block='true'] .segment {
+  min-inline-size: 0;
+}
+
+.segmented .segment .icon {
+  display: none;
+}
+
+@media (min-width: 30rem) {
+  .segmented .segment .icon {
+    display: inline;
+  }
 }

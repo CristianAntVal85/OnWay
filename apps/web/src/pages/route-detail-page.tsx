@@ -160,7 +160,11 @@ export function RouteDetailPage() {
               icon="download"
               align="end"
               disabled={!shown || exportFile.isPending}
-              items={(['gpx', 'kml'] as const).map((format) => ({ id: format, label: t(format === 'gpx' ? 'routeDetail.actions.exportGpx' : 'routeDetail.actions.exportKml'), onSelect: () => exportFile.mutate(format) }))}
+              items={(['gpx', 'kml'] as const).map((format) => ({
+                id: format,
+                label: t(format === 'gpx' ? 'routeDetail.actions.exportGpx' : 'routeDetail.actions.exportKml'),
+                onSelect: () => exportFile.mutate(format),
+              }))}
             />
             {canWrite && shown && <Menu label={t('common.more')} icon="more" iconOnly align="end" items={moreItems} />}
           </>

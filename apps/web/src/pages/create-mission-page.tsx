@@ -193,7 +193,13 @@ export function CreateMissionPage() {
                 {coordinators.isError && <ErrorState error={coordinators.error} onRetry={() => void coordinators.refetch()} />}
                 {coordinatorList && coordinatorList.length === 0 && <EmptyState title={t('createMission.coordinator')}>{t('createMission.coordinatorsEmpty')}</EmptyState>}
                 {coordinatorList && coordinatorList.length > 0 && (
-                  <select id="mission-coordinator" aria-required="true" value={coordinatorId} onChange={(event) => setCoordinatorId(event.target.value)} aria-invalid={showErrors && coordinatorId === ''}>
+                  <select
+                    id="mission-coordinator"
+                    aria-required="true"
+                    value={coordinatorId}
+                    onChange={(event) => setCoordinatorId(event.target.value)}
+                    aria-invalid={showErrors && coordinatorId === ''}
+                  >
                     <option value="" disabled>
                       {t('createMission.coordinator')}
                     </option>
@@ -205,7 +211,6 @@ export function CreateMissionPage() {
                   </select>
                 )}
               </div>
-
             </SectionCard>
 
             <SectionCard icon="target" title={t('createMission.objective')}>

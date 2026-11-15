@@ -202,7 +202,7 @@ export interface Messages {
       fileName: string;
       fileNameAll: string;
     };
-    share: { title: string; help: string; coordinates: string; copy: string; copied: string; copyFailed: string; open: string };
+    share: { title: string; coordinates: string; copy: string; copied: string; copyFailed: string; open: string };
   };
   account: {
     title: string;
@@ -226,7 +226,6 @@ export interface Messages {
   admin: {
     signups: {
       title: string;
-      intro: string;
       tabsLabel: string;
       tabs: { pending: string; approved: string; rejected: string };
       status: { pending: string; approved: string; rejected: string };
@@ -265,7 +264,6 @@ export interface Messages {
     };
     inviteCode: {
       title: string;
-      intro: string;
       codeLabel: string;
       rotatedAt: string;
       copy: string;
@@ -743,9 +741,9 @@ export interface Messages {
       submit: string;
       submitting: string;
       added: string;
-      details: { title: string; help: string; version: string; versionOption: string; origin: string; noOrigin: string; note: string; draftWarning: string; loadingVersions: string };
+      details: { title: string; version: string; versionOption: string; origin: string; noOrigin: string; note: string; draftWarning: string; loadingVersions: string };
       errors: { alreadyIn: string; alreadyInUnknown: string; archived: string; notFound: string };
-      other: { title: string; generate: string; generateHint: string; generateNoOrigin: string; import: string; importHint: string };
+      other: { title: string; generate: string; generateNoOrigin: string; import: string };
     };
     validate: { action: string; done: string };
   };

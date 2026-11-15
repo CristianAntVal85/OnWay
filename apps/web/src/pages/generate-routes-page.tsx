@@ -341,22 +341,22 @@ export function GenerateRoutesPage() {
               </SectionCard>
 
               <SectionCard icon="filter" title={t('generate.optionsTitle')}>
-               <div className="field-pair">
-              <div className="field">
-                <label htmlFor="generate-alternatives">{t('generate.alternativesLabel')}</label>
-                <select id="generate-alternatives" value={alternatives} onChange={(event) => setAlternatives(Number(event.target.value))}>
-                  {[1, 2, 3, 4].map((count) => (
-                    <option key={count} value={count}>
-                      {count}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="generate-name">{t('generate.nameLabel')}</label>
-                <input id="generate-name" type="text" maxLength={100} value={prefix} onChange={(event) => setPrefix(event.target.value)} />
-              </div>
-               </div>
+                <div className="field-pair">
+                  <div className="field">
+                    <label htmlFor="generate-alternatives">{t('generate.alternativesLabel')}</label>
+                    <select id="generate-alternatives" value={alternatives} onChange={(event) => setAlternatives(Number(event.target.value))}>
+                      {[1, 2, 3, 4].map((count) => (
+                        <option key={count} value={count}>
+                          {count}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="generate-name">{t('generate.nameLabel')}</label>
+                    <input id="generate-name" type="text" maxLength={100} value={prefix} onChange={(event) => setPrefix(event.target.value)} />
+                  </div>
+                </div>
               </SectionCard>
             </fieldset>
 
