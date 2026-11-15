@@ -1,0 +1,404 @@
+# REDISEÑO UX/UI GLOBAL DE ONWAY — RESCUE OPERATIONS
+
+## 1. Rol y objetivo
+
+Actúa como un **Senior Product Designer especializado en UX/UI y Frontend Architect**, con experiencia en aplicaciones profesionales de operaciones, emergencias, GIS y sistemas de coordinación de equipos.
+
+Tu misión es realizar un rediseño integral del frontend de OnWay, una aplicación destinada a equipos de rescate, bomberos y servicios de emergencias.
+
+No quiero un simple cambio de colores o una actualización estética superficial.
+
+Quiero transformar la interfaz en un producto profesional, moderno, coherente, intuitivo y visualmente sólido, comparable con aplicaciones comerciales de gestión de operaciones y sistemas GIS.
+
+Tienes acceso al código fuente del proyecto. Debes inspeccionar su arquitectura antes de realizar modificaciones.
+
+## 2. Contexto funcional de la aplicación
+
+OnWay es una plataforma de coordinación de operaciones de rescate.
+
+Sus principales funcionalidades incluyen:
+
+- Gestión de usuarios y organizaciones.
+- Gestión de misiones de rescate.
+- Creación de misiones mediante selección de un punto objetivo.
+- Introducción del objetivo mediante mapa, coordenadas o dirección.
+- Visualización y planificación de rutas.
+- Importación y gestión de archivos GPX.
+- Análisis del desnivel, pendiente y perfil de una ruta.
+- Consulta de meteorología y condiciones del entorno.
+- Gestión de equipos y puntos de origen.
+- Seguimiento del estado de las misiones.
+
+La aplicación está destinada a utilizarse en situaciones donde la claridad, rapidez de interpretación y facilidad de interacción son fundamentales.
+
+**La experiencia de usuario debe priorizar la eficiencia operativa.**
+
+## 3. Dirección visual
+
+Establece una identidad visual basada en estas características:
+
+- Estética profesional y tecnológica.
+- Inspiración en sistemas GIS, centros de operaciones y aplicaciones de emergencias.
+- Diseño limpio, moderno y funcional.
+- Evitar interfaces excesivamente decorativas.
+- Evitar el exceso de tarjetas, bordes y elementos visuales innecesarios.
+- Evitar efectos glassmorphism exagerados.
+- Evitar gradientes decorativos sin finalidad funcional.
+
+### Paleta de colores
+
+Mantener la identidad cromática de OnWay:
+
+- Fondo principal oscuro: #0D131C.
+- Superficie secundaria: #151E2A.
+- Superficie elevada: #1B2635.
+- Bordes: #303D4D.
+- Texto principal: #F1F5F9.
+- Texto secundario: #A5B4C7.
+- Naranja de acción: #F15A32.
+- Turquesa informativo: #28C7BE.
+- Verde para estados positivos.
+- Rojo para errores y situaciones críticas.
+- Ámbar para advertencias.
+
+Estos colores son una base inicial. Puedes ajustarlos para conseguir un mejor contraste y equilibrio.
+
+### Tipografía
+
+Utilizar una tipografía sans-serif moderna y altamente legible.
+
+Establecer una escala tipográfica consistente para:
+
+- Títulos de página.
+- Títulos de sección.
+- Títulos de tarjetas.
+- Etiquetas de formularios.
+- Texto descriptivo.
+- Información secundaria.
+
+Evitar tamaños arbitrarios y pesos tipográficos excesivos.
+
+## 4. Crear un sistema de diseño global
+
+Antes de modificar individualmente las páginas, establece un sistema de diseño reutilizable.
+
+Define variables CSS para:
+
+- Colores.
+- Tipografía.
+- Espaciados.
+- Radios.
+- Bordes.
+- Sombras.
+- Alturas de controles.
+- Tamaños de iconos.
+- Estados interactivos.
+
+Utiliza una escala de espaciado basada en múltiplos de 4 u 8 píxeles.
+
+Crea o unifica componentes reutilizables para:
+
+- Botones.
+- Inputs.
+- Selectores.
+- Textareas.
+- Etiquetas.
+- Tarjetas.
+- Modales.
+- Paneles.
+- Tabs.
+- Badges de estado.
+- Alertas.
+- Mensajes de validación.
+- Estados vacíos.
+- Indicadores de carga.
+
+Todos los componentes deben compartir los mismos criterios visuales.
+
+No quiero que cada página tenga sus propios estilos independientes.
+
+## 5. Reglas de UX para toda la aplicación
+
+### Alineación y consistencia
+
+Este es uno de los aspectos prioritarios.
+
+- Todos los campos de formulario deben tener alturas uniformes.
+- Las etiquetas deben estar alineadas verticalmente.
+- Los campos deben ocupar el ancho de su contenedor salvo que exista una razón funcional para lo contrario.
+- Los botones de una misma categoría deben compartir dimensiones.
+- Las tarjetas deben utilizar el mismo sistema de padding.
+- Los elementos deben alinearse mediante grids y flexbox.
+- Evitar márgenes arbitrarios utilizados para corregir visualmente problemas de alineación.
+
+### Formularios
+
+Agrupar los campos por bloques funcionales.
+
+Cada bloque debe disponer de una jerarquía visual clara.
+
+- Etiquetas encima de los campos.
+- Separación uniforme entre campos.
+- Indicadores de obligatoriedad.
+- Mensajes de error próximos al campo correspondiente.
+- Estados focus, hover, disabled y error.
+- Ayudas contextuales cuando sean necesarias.
+
+No utilizar placeholders como sustitutos de etiquetas.
+
+### Navegación
+
+Mantener una navegación global coherente.
+
+- Identificar claramente la sección activa.
+- Mantener una jerarquía consistente.
+- Utilizar iconos homogéneos.
+- Evitar cambios de dimensiones entre páginas.
+- Adaptar la navegación a pantallas pequeñas.
+
+### Información operativa
+
+Los estados de las misiones y equipos deben ser fáciles de interpretar.
+
+Utilizar indicadores visuales consistentes para:
+
+- Activo.
+- Pendiente.
+- En curso.
+- Completado.
+- Cancelado.
+- Advertencia.
+- Error.
+
+No depender exclusivamente del color para comunicar estados.
+
+## 6. Rediseño de la pantalla de inicio
+
+Transformar la pantalla de inicio en un auténtico centro de operaciones.
+
+Organizar la información priorizando:
+
+1. Resumen de actividad.
+2. Misiones activas.
+3. Estado de los equipos.
+4. Información meteorológica.
+5. Accesos rápidos.
+
+Las misiones deben tener una presentación compacta, legible y orientada a la acción.
+
+La meteorología debe mostrarse de forma clara, sin ocupar espacio innecesario.
+
+Utilizar una distribución responsive que aproveche el espacio disponible.
+
+Evitar grandes áreas vacías y tarjetas con información mal distribuida.
+
+## 7. Rediseño de Crear misión
+
+Esta pantalla es especialmente importante.
+
+Debe permitir crear una misión de forma rápida y sin distracciones.
+
+### Distribución
+
+En escritorio, utilizar una distribución de dos columnas:
+
+- Columna izquierda: formulario.
+- Columna derecha: mapa.
+
+El mapa debe disponer de espacio suficiente para trabajar cómodamente.
+
+El formulario debe estar organizado en secciones:
+
+1. Datos de la misión.
+2. Coordinador responsable.
+3. Punto objetivo.
+4. Información adicional.
+5. Puntos de origen.
+
+### Mapa
+
+El mapa es una herramienta operativa fundamental.
+
+Su interfaz debe tener una jerarquía clara:
+
+- Selector de cartografía.
+- Herramientas de navegación.
+- Punto objetivo.
+- Información de coordenadas.
+- Altitud.
+- Atribución cartográfica.
+
+Los controles deben integrarse visualmente sin ocultar información geográfica.
+
+No modificar el funcionamiento de los mapas ni sus proveedores cartográficos.
+
+### Acciones
+
+Mantener las acciones principales en una zona fácilmente accesible.
+
+El botón de creación debe mostrar claramente cuándo está habilitado y cuándo faltan requisitos.
+
+No alterar las reglas de validación existentes.
+
+## 8. Responsive design
+
+Toda la aplicación debe funcionar correctamente en:
+
+- Escritorios grandes.
+- Portátiles.
+- Tablets.
+- Teléfonos móviles.
+
+No basta con reducir el tamaño de los elementos.
+
+Hay que reorganizar la información según el espacio disponible.
+
+En móviles:
+
+- Formularios en una columna.
+- Botones accesibles.
+- Navegación adaptada.
+- Mapas con altura suficiente.
+- Sin desplazamiento horizontal accidental.
+- Información prioritaria visible.
+
+## 9. Accesibilidad y usabilidad
+
+Aplicar buenas prácticas WCAG 2.2 AA siempre que sea viable.
+
+Especial atención a:
+
+- Contraste de texto.
+- Tamaños de interacción.
+- Navegación mediante teclado.
+- Focus visible.
+- Etiquetas accesibles.
+- Estados de error comprensibles.
+- No depender únicamente de colores.
+- Legibilidad de información secundaria.
+
+## 10. Modo claro y oscuro
+
+Mantener ambos modos.
+
+Implementar un sistema de temas mediante variables CSS.
+
+No duplicar componentes ni crear dos versiones de una misma página.
+
+Ambos temas deben disponer de:
+
+- Contraste adecuado.
+- Superficies diferenciadas.
+- Bordes visibles.
+- Estados interactivos coherentes.
+- Colores semánticos equivalentes.
+
+El modo claro debe tener la misma calidad visual que el oscuro.
+
+## 11. Restricciones fundamentales
+
+Esta tarea consiste en mejorar el frontend, no en reconstruir la aplicación.
+
+Por tanto:
+
+- NO modificar la lógica de negocio.
+- NO modificar los contratos de API.
+- NO modificar endpoints.
+- NO cambiar modelos de datos.
+- NO alterar las reglas de validación.
+- NO eliminar funcionalidades existentes.
+- NO sustituir proveedores de mapas.
+- NO modificar la lógica de planificación de rutas.
+- NO introducir datos ficticios en la aplicación real.
+- NO eliminar componentes que tengan una función operativa.
+
+Puedes reorganizar componentes, refactorizar CSS y mejorar la estructura del frontend cuando sea necesario.
+
+Preserva la funcionalidad existente.
+
+## 12. Metodología de trabajo
+
+Trabaja por fases.
+
+### Fase 1. Auditoría
+
+Inspecciona el proyecto completo.
+
+Identifica:
+
+- Framework y arquitectura.
+- Sistema de estilos actual.
+- Componentes reutilizables.
+- Páginas existentes.
+- Navegación.
+- Gestión de temas.
+- Problemas de responsive.
+- Duplicidades de CSS.
+- Inconsistencias de diseño.
+
+No empieces modificando páginas sin conocer la estructura global.
+
+### Fase 2. Sistema de diseño
+
+Define las variables y componentes globales.
+
+Implementa primero la base visual común.
+
+### Fase 3. Página de referencia
+
+Rediseña Inicio y Crear misión.
+
+Estas dos páginas deben convertirse en la referencia visual para el resto de la aplicación.
+
+Comprueba que ambas comparten exactamente los mismos criterios de diseño.
+
+### Fase 4. Aplicación global
+
+Extiende el sistema de diseño al resto de las páginas.
+
+Revisa una por una:
+
+- Misiones.
+- Detalle de misión.
+- Rutas.
+- Gestión de equipos.
+- Cuenta.
+- Formularios.
+- Modales.
+- Componentes secundarios.
+
+No dejes páginas antiguas con un diseño diferente.
+
+### Fase 5. Validación
+
+Comprueba:
+
+- Que todas las rutas siguen funcionando.
+- Que los formularios mantienen sus validaciones.
+- Que los mapas funcionan.
+- Que no se han roto las interacciones.
+- Que los dos temas funcionan.
+- Que las pantallas se adaptan correctamente.
+- Que no existen errores de consola.
+- Que no hay desbordamientos ni problemas de alineación.
+
+## 13. Criterio de calidad final
+
+Quiero que el resultado parezca un producto comercial profesional de gestión de operaciones de rescate.
+
+No quiero una aplicación que simplemente funcione.
+
+Quiero una aplicación que:
+
+- Transmita profesionalidad.
+- Sea visualmente coherente.
+- Permita localizar rápidamente la información.
+- Facilite el trabajo de los coordinadores.
+- Reduzca la carga cognitiva.
+- Sea cómoda de utilizar durante operaciones reales.
+
+**Prioriza siempre la claridad operativa sobre la decoración visual.**
+
+Antes de terminar, presenta un resumen de los cambios realizados, los componentes globales creados, las páginas modificadas y cualquier problema que no hayas podido resolver.
+
+No des por terminada la tarea hasta haber revisado visual y funcionalmente todas las páginas.
