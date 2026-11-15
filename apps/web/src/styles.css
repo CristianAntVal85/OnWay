@@ -8,8 +8,8 @@
 */
 
 :root {
-  --font-sign: 'Bahnschrift', 'DIN Alternate', 'DIN 1451 Std', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sign: var(--font-body); /* UI-simplificacion: una sola familia; los títulos se distinguen por tamaño y peso */
 
   --tap: var(--control-h); /* alto de control y objetivo mínimo: 40 px con puntero fino y 48 px con táctil (D-S8, theme/tokens.css) */
   --gutter: 1rem;
@@ -33,7 +33,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
-  font-size: 1.0625rem;
+  font-size: var(--text-md);
   line-height: 1.5;
 }
 
@@ -47,11 +47,11 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(1.9rem, 6vw, 2.75rem);
+  font-size: clamp(1.5rem, 5vw, var(--text-2xl));
 }
 
 h2 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
 }
 
 p {
@@ -64,7 +64,7 @@ a {
 }
 
 .lead {
-  font-size: 1.1875rem;
+  color: var(--text-muted);
 }
 
 /* ---------- foco: anillo doble (--focus fuera, --focus-inner pegado), visible en los dos temas ---------- */
@@ -233,7 +233,7 @@ a {
 .notice {
   margin-bottom: 1.25rem;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   border-inline-start-width: 8px;
   border-inline-start-color: var(--attention);
   background: var(--warn-soft);
@@ -344,11 +344,25 @@ a {
 
 .state {
   max-width: var(--measure);
-  margin: 1.5rem 0;
-  padding: 1rem 1.25rem;
-  border: 2px solid var(--border);
-  border-radius: 4px;
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
+}
+
+.state h2,
+.state h3 {
+  font-size: var(--text-lg);
+}
+
+/* Dentro de una tarjeta el estado no repite el marco: ocupa el ancho y solo se separa con una línea discontinua. */
+.section-card .state,
+.env-section-simple .state {
+  max-width: none;
+  margin: 0;
+  border-style: dashed;
+  background: transparent;
 }
 
 .state h2 {
@@ -411,8 +425,8 @@ a {
   max-width: var(--measure);
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -990,7 +1004,7 @@ html:has(.action-bar) {
   z-index: 3;
   margin-inline: calc(var(--gutter) * -1);
   padding: 0.75rem var(--gutter);
-  border-top: 2px solid var(--border-strong);
+  border-top: 1px solid var(--border);
   background: var(--surface-raised);
 }
 
@@ -1279,7 +1293,7 @@ html:has(.action-bar) {
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 2px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
 }
 
 .tab {
@@ -1329,8 +1343,8 @@ html:has(.action-bar) {
 
 .mission-card {
   padding: 0.875rem 1rem 1rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -1795,8 +1809,46 @@ h4 {
   align-items: start;
 }
 
-.home-organization {
-  margin-bottom: 1.5rem;
+/* Franja de resumen de Inicio: organización a la izquierda y cifras a la derecha, en casillas iguales. */
+.home-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+}
+
+.stat-row {
+  display: flex;
+  flex: 1 1 18rem;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.stat {
+  flex: 1 1 8rem;
+  min-inline-size: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.stat dt {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.stat dd {
+  margin: var(--space-1) 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.stat-figure dd {
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .home-environment,
@@ -1808,9 +1860,38 @@ h4 {
   margin-bottom: 1.5rem;
 }
 
+.env-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-h);
+  margin: 0;
+  font: 600 var(--text-lg) / 1.2 var(--font-body);
+  letter-spacing: 0;
+}
+
+.env-title .icon {
+  color: var(--text-muted);
+}
+
+/* Variante simple (Inicio y cabeceras de misión): la sección es la tarjeta y la del tiempo va dentro sin marco propio. */
+.env-section-simple {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.env-section-simple .env-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .env-basis {
-  margin-bottom: 0.25rem;
-  font-size: 1.1rem;
+  margin-bottom: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 .env-place {
@@ -1827,8 +1908,8 @@ h4 {
 .env-card {
   min-width: 0;
   padding: 0.875rem 1rem 1rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -1925,7 +2006,6 @@ h4 {
 
 .env-nolocation h3 {
   margin-bottom: 0.5rem;
-  font-size: 1.35rem;
 }
 
 .env-nolocation .button {
@@ -1958,6 +2038,44 @@ h4 {
 
 .mission-pick {
   margin-top: 0.75rem;
+}
+
+/* Tarjeta de misión compacta (Inicio y Mis misiones): datos a la izquierda y el botón del tiempo a la derecha. */
+.mission-card-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  background: var(--surface-raised);
+}
+
+.mission-card-compact .mission-card-body {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+.mission-card-compact h3 {
+  display: block;
+  margin: 0 0 var(--space-1);
+  font: 600 var(--text-md) / 1.3 var(--font-body);
+}
+
+.mission-card-compact .mission-card-line {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.mission-card-compact .mission-pick {
+  margin: 0;
+}
+
+.home-missions {
+  margin: 0;
+}
+
+.home-see-all {
+  margin: var(--space-3) 0 0;
 }
 
 .mission-pick[aria-pressed='true'] {
@@ -2077,8 +2195,8 @@ h4 {
 .library-filter-details {
   margin: 0 0 1rem;
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -2111,8 +2229,8 @@ h4 {
 .selection-report {
   margin-bottom: 0.75rem;
   padding: 0.625rem 0.75rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--warn-soft);
 }
 
@@ -2148,9 +2266,9 @@ h4 {
 
 .route-card {
   padding: 0.75rem 1rem 1rem;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   border-inline-start-width: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -2370,7 +2488,7 @@ h4 {
 
 .dialog-warning {
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   background: var(--warn-soft);
   font-weight: 700;
 }
@@ -2383,7 +2501,7 @@ h4 {
   display: block;
   width: 100%;
   height: auto;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   background: var(--surface);
 }
 
@@ -2474,8 +2592,8 @@ h4 {
 
 .version-row {
   padding: 0.625rem 0.875rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -2619,7 +2737,7 @@ h4 {
 .vertex-scroll {
   max-height: 18rem;
   overflow: auto;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
 }
 
 /* La tabla se desplaza dentro de su caja (`overflow: auto`) y un anillo por fuera quedaría recortado: aquí el anillo doble va por dentro. */
@@ -2977,7 +3095,7 @@ h4 {
 
 .my-route-card {
   padding: 0.875rem var(--gutter);
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   background: var(--surface);
 }
 
@@ -3056,8 +3174,8 @@ h4 {
   align-items: stretch;
   gap: 0.5rem;
   min-height: var(--tap);
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -3180,8 +3298,8 @@ label.signup-info {
 
 .invite-code {
   padding: 0.875rem var(--gutter);
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 

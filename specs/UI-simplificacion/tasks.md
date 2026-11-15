@@ -22,7 +22,7 @@ Plan: `specs/UI-simplificacion/plan.md`. Comprobación rápida de todas: `pnpm c
 - Comprobación: `pnpm check @onway/web @onway/i18n` y `pnpm --filter @onway/web exec playwright test -c e2e h1-demo.spec.ts ui-rediseno-demo.spec.ts` contra la pila `onway-e2e`.
 - Hecho cuando: el mapa no tiene franja superior; un botón con icono de capas y `aria-label` abre Satélite / Topográfico / Carreteras como `menuitemradio`; cambiar de capa no vuelve a montar el mapa; la atribución sigue visible.
 
-- [ ] **T5. Inicio como centro de operaciones.**
+- [x] **T5. Inicio como centro de operaciones.**
 - Archivos: `apps/web/src/pages/home-page.tsx`, `apps/web/src/environment/weather-card.tsx`, `apps/web/src/environment/environment-section.tsx`, `apps/web/src/styles.css` (secciones «inicio, tiempo…» y «tarjeta del tiempo simple»), `apps/web/test/home.test.tsx`, `apps/web/test/weather-card.test.tsx`, `apps/web/e2e/weather-simple-demo.spec.ts`, `packages/i18n/src/es.ts` y `fr.ts`.
 - Comprobación: `pnpm check @onway/web @onway/i18n`.
 - Hecho cuando: la vista sigue el boceto (cabecera con una sola «Crear misión», franja de organización, tarjetas de tiempo y de misiones activas, fila de cifras) solo con datos que ya da el API; conserva los estados de carga, vacío y error; a 375 px queda en una columna.

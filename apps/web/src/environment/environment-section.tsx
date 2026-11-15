@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '@onway/contracts/client';
 import { formatCoordinate } from '@onway/geo';
+import { Icon } from '../components/icon';
 import { ErrorState, LoadingState } from '../components/states';
 import { decimal } from './format';
 import { useDeviceLocation } from './device-location';
@@ -51,8 +52,11 @@ export function EnvironmentSection({ mission, onBackToDevice, title, locale, var
   const noLocation = !mission && (location.status === 'denied' || location.status === 'failed' || location.status === 'unsupported');
 
   return (
-    <section id={SECTION_ID} className="env-section" aria-labelledby={headingId}>
-      <h2 id={headingId}>{title ?? t('environment.title')}</h2>
+    <section id={SECTION_ID} className={variant === 'simple' ? 'env-section env-section-simple' : 'env-section'} aria-labelledby={headingId}>
+      <h2 id={headingId} className="env-title">
+        <Icon name="cloud" />
+        <span>{title ?? t('environment.title')}</span>
+      </h2>
       <p className="env-basis">
         <strong>{basis}</strong>
         {mission && onBackToDevice && (
@@ -95,7 +99,6 @@ export function EnvironmentSection({ mission, onBackToDevice, title, locale, var
           {variant === 'detail' && (
             <>
               <p className="env-place">{t('environment.place', { position: formatCoordinate(data.location, 'decimal'), meters: decimal(data.location.elevationM, locale) })}</p>
-              <p className="field-help">{t('environment.altitudeNote')}</p>
             </>
           )}
           <div className={variant === 'detail' ? 'env-cards' : 'env-cards env-cards-simple'} aria-busy={environment.isFetching}>

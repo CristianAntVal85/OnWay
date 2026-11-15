@@ -89,6 +89,7 @@ export interface Messages {
   profile: { completeTitle: string; completeBody: string };
   home: {
     title: string;
+    stats: { active: string; volunteers: string; noRoute: string };
     organization: string;
     country: string;
     missionsTitle: string;
@@ -104,7 +105,6 @@ export interface Messages {
     title: string;
     basis: { device: string; mission: string; missionUnnamed: string };
     place: string;
-    altitudeNote: string;
     backToDevice: string;
     announceDevice: string;
     announceMission: string;
