@@ -7,7 +7,7 @@ Plan: `specs/UI-simplificacion/plan.md`. Comprobación rápida de todas: `pnpm c
 - Comprobación: `pnpm check @onway/web`.
 - Hecho cuando: los dos temas usan la paleta nueva, la prueba de contraste pasa con todos sus pares, existen `--space-*`, `--radius-*`, `--text-*`, `--control-h` (40 px; 48 px con `pointer: coarse`) e `--icon`, y botones, campos y selectores miden lo mismo de alto.
 
-- [ ] **T2. Componentes comunes: iconos, menú, tarjeta, cabecera de página, segmentado y campo.** D-S4, D-S5, D-S7, D-S10
+- [x] **T2. Componentes comunes: iconos, menú, tarjeta, cabecera de página, segmentado y campo.** D-S4, D-S5, D-S7, D-S10
 - Archivos: nuevos `apps/web/src/components/icon.tsx`, `menu.tsx`, `section-card.tsx`, `page-header.tsx`, `segmented.tsx`; `apps/web/src/components/text-field.tsx`; `apps/web/src/styles.css` (sección nueva «componentes comunes»); nuevo `apps/web/test/menu.test.tsx`; `packages/i18n/src/es.ts` y `fr.ts` (`common.more`, `common.export`).
 - Comprobación: `pnpm check @onway/web @onway/i18n`.
 - Hecho cuando: `menu.test.tsx` cubre abrir con clic, Enter y flecha abajo, moverse con flechas, Inicio y Fin, activar, Escape con vuelta del foco al botón, cierre al pulsar fuera y `menuitemradio` con `aria-checked`; `TextField` no admite ayuda y marca los obligatorios con asterisco y `aria-required`.

@@ -20,10 +20,8 @@ export const fr: Messages = {
     email: 'Adresse e-mail',
     displayName: 'Nom affiché',
     password: 'Mot de passe',
-    passwordHelp: 'Au moins {{min}} caractères.',
     passwordConfirm: 'Répétez le mot de passe',
     inviteCode: 'Code d’invitation',
-    inviteCodeHelp: 'Un administrateur de votre organisation vous le remet. Saisissez-le tel que vous l’avez reçu.',
     submit: 'Demander l’inscription',
     submitting: 'Envoi…',
     haveAccount: 'J’ai déjà un compte',
@@ -91,6 +89,7 @@ export const fr: Messages = {
     errorTitle: 'Chargement impossible',
     retry: 'Réessayer',
   },
+  common: { more: 'Plus d’actions', export: 'Exporter' },
   forbidden: {
     title: 'Accès refusé',
     body: 'Votre rôle ne permet pas d’ouvrir cette page.',

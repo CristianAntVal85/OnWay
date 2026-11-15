@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '@onway/contracts/client';
 import { fieldErrorText } from '../access/field-error';
-import { LIMITS, newPasswordProblems, serverProblems, type Problems } from '../access/validation';
+import { newPasswordProblems, serverProblems, type Problems } from '../access/validation';
 import { AuthFrame } from '../components/auth-frame';
 import { TextField } from '../components/text-field';
 import { usePageTitle } from '../components/use-page-title';
@@ -137,7 +137,6 @@ function ResetPasswordForm() {
           name="newPassword"
           type="password"
           label={t('recovery.newPassword')}
-          help={t('register.passwordHelp', { min: LIMITS.passwordMin })}
           inputRef={ref('password')}
           value={values.password}
           onChange={set('password')}

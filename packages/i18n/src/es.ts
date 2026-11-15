@@ -20,10 +20,8 @@ export const es: Messages = {
     email: 'Correo electrónico',
     displayName: 'Nombre visible',
     password: 'Contraseña',
-    passwordHelp: 'Al menos {{min}} caracteres.',
     passwordConfirm: 'Repite la contraseña',
     inviteCode: 'Código de invitación',
-    inviteCodeHelp: 'Te lo da un administrador de tu organización. Escríbelo tal como lo recibes.',
     submit: 'Pedir el alta',
     submitting: 'Enviando…',
     haveAccount: 'Ya tengo una cuenta',
@@ -91,6 +89,7 @@ export const es: Messages = {
     errorTitle: 'No se ha podido cargar',
     retry: 'Reintentar',
   },
+  common: { more: 'Más acciones', export: 'Exportar' },
   forbidden: {
     title: 'Sin acceso',
     body: 'Tu rol no permite abrir esta página.',

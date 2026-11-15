@@ -25,10 +25,8 @@ export interface Messages {
     email: string;
     displayName: string;
     password: string;
-    passwordHelp: string;
     passwordConfirm: string;
     inviteCode: string;
-    inviteCodeHelp: string;
     submit: string;
     submitting: string;
     haveAccount: string;
@@ -82,6 +80,7 @@ export interface Messages {
     closeMenu: string;
   };
   state: { loading: string; offline: string; emptyTitle: string; emptyBody: string; errorTitle: string; retry: string };
+  common: { more: string; export: string };
   forbidden: { title: string; body: string; goHome: string };
   notFound: { title: string; body: string; goHome: string };
   later: { title: string; body: string };
