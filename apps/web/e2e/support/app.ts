@@ -51,6 +51,17 @@ export async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   expect(scrollWidth, `scrollWidth ${scrollWidth} > clientWidth ${clientWidth} en ${page.url()}`).toBeLessThanOrEqual(clientWidth);
 }
 
+/** El botón de capas del mapa (UI-simplificacion, D-S6): su nombre dice la capa vigente. Sin `layer`, cualquiera. */
+export const mapLayerButton = (map: Locator, layer?: string): Locator =>
+  map.getByRole('button', { name: layer ? es.map.layers.current.replace('{{layer}}', layer) : new RegExp(`^${es.map.layers.label}`), exact: true });
+
+/** Abre el desplegable de capas del mapa, elige una y espera a que el botón la nombre. */
+export async function chooseMapLayer(map: Locator, layer: string): Promise<void> {
+  await mapLayerButton(map).click();
+  await map.getByRole('menuitemradio', { name: layer, exact: true }).click();
+  await expect(mapLayerButton(map, layer)).toBeVisible();
+}
+
 export const heading = (page: Page, name: string): Locator => page.getByRole('heading', { level: 1, name });
 
 // PNG transparente de 1×1: las teselas de IGN se sustituyen por él para que estas pruebas no salgan a Internet (D-H1-15).

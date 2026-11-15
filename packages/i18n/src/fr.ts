@@ -355,7 +355,7 @@ export const fr: Messages = {
   map: {
     label: 'Carte',
     loading: 'Chargement de la carte…',
-    layers: { label: 'Fond de carte', satellite: 'Satellite', topographic: 'Topographique', roads: 'Routes' },
+    layers: { current: 'Couche de la carte : {{layer}}', label: 'Fond de carte', satellite: 'Satellite', topographic: 'Topographique', roads: 'Routes' },
     zoomIn: 'Zoom avant',
     zoomOut: 'Zoom arrière',
     resetNorth: 'Orienter vers le nord',

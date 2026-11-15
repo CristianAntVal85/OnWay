@@ -17,7 +17,7 @@ Plan: `specs/UI-simplificacion/plan.md`. Comprobación rápida de todas: `pnpm c
 - Comprobación: `pnpm check @onway/web @onway/i18n`.
 - Hecho cuando: cada entrada lleva icono y la activa un subrayado de acento; hay un botón de tema (alterna oscuro y claro, con `aria-label`) y el acceso a Cuenta como icono; a 375 px el menú desplegable sigue funcionando con teclado y la cabecera no cambia de alto entre páginas.
 
-- [ ] **T4. Mapa: capas en un desplegable con icono y pie compacto.** D-S6
+- [x] **T4. Mapa: capas en un desplegable con icono y pie compacto.** D-S6
 - Archivos: `apps/web/src/map/map-view.tsx` (líneas 198-203), `apps/web/src/map/readout.tsx`, `apps/web/src/styles.css` (sección «mapa (src/map)»), `apps/web/test/map-parts.test.tsx`, `apps/web/test/map-theme.test.tsx`, `apps/web/e2e/support/` (ayuda `chooseMapLayer`), las demostraciones que cambian de capa (`h1-demo.spec.ts`, `ui-rediseno-demo.spec.ts`), `packages/i18n/src/es.ts` y `fr.ts`.
 - Comprobación: `pnpm check @onway/web @onway/i18n` y `pnpm --filter @onway/web exec playwright test -c e2e h1-demo.spec.ts ui-rediseno-demo.spec.ts` contra la pila `onway-e2e`.
 - Hecho cuando: el mapa no tiene franja superior; un botón con icono de capas y `aria-label` abre Satélite / Topográfico / Carreteras como `menuitemradio`; cambiar de capa no vuelve a montar el mapa; la atribución sigue visible.

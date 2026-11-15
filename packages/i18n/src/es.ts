@@ -355,7 +355,7 @@ export const es: Messages = {
   map: {
     label: 'Mapa',
     loading: 'Cargando el mapa…',
-    layers: { label: 'Capa del mapa', satellite: 'Satélite', topographic: 'Topográfico', roads: 'Carreteras' },
+    layers: { current: 'Capa del mapa: {{layer}}', label: 'Capa del mapa', satellite: 'Satélite', topographic: 'Topográfico', roads: 'Carreteras' },
     zoomIn: 'Acercar',
     zoomOut: 'Alejar',
     resetNorth: 'Orientar al norte',

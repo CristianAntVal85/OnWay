@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ReactNode } from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { I18nextProvider } from 'react-i18next';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
@@ -12,6 +12,8 @@ import { es } from '@onway/i18n';
 import { createI18n } from '../src/i18n';
 import { ThemeProvider, useTheme } from '../src/theme/theme-context';
 import type { MapRoute } from '../src/map/types';
+
+const layerButton = (layer: string) => screen.getByRole('button', { name: es.map.layers.current.replace('{{layer}}', layer) });
 
 const gl = vi.hoisted(() => ({ mounts: 0, unmounts: 0, styles: [] as unknown[], viewStates: [] as unknown[] }));
 
@@ -133,8 +135,7 @@ describe('MapView y el tema (D-U7)', () => {
       expect(screen.getAllByTestId('marker')).toHaveLength(1);
       expect(screen.getByRole('img', { name: es.map.markers.target })).toBeTruthy();
       expect(screen.getByTestId('navigation-control')).toBeTruthy();
-      const layers = screen.getByRole('group', { name: es.map.layers.label });
-      expect(within(layers).getByRole('button', { name: es.map.layers.roads }).getAttribute('aria-pressed')).toBe('true');
+      expect(layerButton(es.map.layers.roads)).toBeTruthy();
       const attribution = screen.getByRole('list', { name: es.map.attribution.label });
       expect(attribution.textContent).toContain('OpenStreetMap');
     };
@@ -148,14 +149,13 @@ describe('MapView y el tema (D-U7)', () => {
   it('una capa de IGN que se ha elegido sigue siendo la elegida al cambiar de tema, y sin sprites', async () => {
     const user = userEvent.setup();
     harness();
-    await user.click(screen.getByRole('button', { name: es.map.layers.satellite }));
+    await user.click(layerButton(es.map.layers.roads));
+    await user.click(screen.getByRole('menuitemradio', { name: es.map.layers.satellite }));
     expect(screen.getByTestId('gl').getAttribute('data-sprite')).toBe('');
     await user.click(screen.getByText('to-light'));
-    expect(
-      within(screen.getByRole('group', { name: es.map.layers.label }))
-        .getByRole('button', { name: es.map.layers.satellite })
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
+    await user.click(layerButton(es.map.layers.satellite));
+    expect(screen.getByRole('menuitemradio', { name: es.map.layers.satellite }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('menuitemradio', { name: es.map.layers.roads }).getAttribute('aria-checked')).toBe('false');
     expect(screen.getByTestId('gl').getAttribute('data-sprite')).toBe('');
     expect(gl.mounts).toBe(1);
   });

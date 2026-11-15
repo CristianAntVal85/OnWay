@@ -12,7 +12,7 @@
 // `localStorage`, ni sesión); la preferencia de tema solo se guarda en el navegador de esa prueba.
 import type { Locator, Page } from '@playwright/test';
 import { THEME_STORAGE_KEY } from '../src/theme/theme';
-import { ACCOUNTS, fr } from './support/app';
+import { ACCOUNTS, chooseMapLayer, fr, mapLayerButton } from './support/app';
 import { es, expect, expectNoHorizontalOverflow, login, tabTo, test } from './support/demo';
 
 const WIDTHS = [375, 768, 1280, 1920, 2560] as const;
@@ -583,10 +583,9 @@ test('library with the roads layer: dark.json then light.json, the same canvas a
   await expect(page).toHaveURL(/\/routes$/);
   for (const name of [PRADERA, 'Senda del Circo (ficticia)', 'Collado con borrador nuevo (ficticia)']) await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
   const mapRegion = page.getByRole('region', { name: es.routes.map.label });
-  const roads = mapRegion.getByRole('button', { name: es.map.layers.roads, exact: true });
-  await expect(roads).toBeVisible({ timeout: 30_000 });
-  await roads.click();
-  await expect(roads).toHaveAttribute('aria-pressed', 'true');
+  const roads = mapLayerButton(mapRegion, es.map.layers.roads);
+  await expect(mapLayerButton(mapRegion)).toBeVisible({ timeout: 30_000 });
+  await chooseMapLayer(mapRegion, es.map.layers.roads);
   const canvas = mapRegion.locator('canvas.maplibregl-canvas');
   await expect(canvas).toBeVisible({ timeout: 30_000 });
 
@@ -622,7 +621,7 @@ test('library with the roads layer: dark.json then light.json, the same canvas a
   expect(await sameCanvas(), 'el lienzo es el mismo nodo tras pasar a claro').toBe(true);
   const onLight = await painted((paint) => paint.backgroundLuminance > 0.3 && paint.marks >= MIN_MARKS, 'mapa claro con las rutas pintadas');
   expect(onLight.backgroundLuminance, 'el fondo del mapa se aclara').toBeGreaterThan(onDark.backgroundLuminance);
-  await expect(roads, 'la capa elegida sigue elegida').toHaveAttribute('aria-pressed', 'true');
+  await expect(roads, 'la capa elegida sigue elegida').toBeVisible();
 
   // Y de vuelta a oscuro: otra petición del sprite oscuro, otra vez el mismo lienzo.
   const darkRequests = sprites.filter((name) => name === 'dark').length;
@@ -638,7 +637,7 @@ test('library with the roads layer: dark.json then light.json, the same canvas a
   await page.getByRole('navigation', { name: es.nav.label }).getByRole('link', { name: es.nav.account, exact: true }).click();
   await themeRadio(page, es.account.themeLight).check();
   await page.getByRole('navigation', { name: es.nav.label }).getByRole('link', { name: es.nav.routes, exact: true }).click();
-  await expect(mapRegion.getByRole('button', { name: es.map.layers.roads, exact: true })).toBeVisible({ timeout: 30_000 });
-  await mapRegion.getByRole('button', { name: es.map.layers.roads, exact: true }).click();
+  await expect(mapLayerButton(mapRegion)).toBeVisible({ timeout: 30_000 });
+  await chooseMapLayer(mapRegion, es.map.layers.roads);
   await expect.poll(() => sprites.filter((name) => name === 'light').length, { message: 'sprite claro pedido al entrar', timeout: 20_000 }).toBeGreaterThan(lightRequests);
 });

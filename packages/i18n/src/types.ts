@@ -284,7 +284,7 @@ export interface Messages {
   map: {
     label: string;
     loading: string;
-    layers: { label: string; satellite: string; topographic: string; roads: string };
+    layers: { current: string; label: string; satellite: string; topographic: string; roads: string };
     zoomIn: string;
     zoomOut: string;
     resetNorth: string;
