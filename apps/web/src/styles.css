@@ -185,13 +185,19 @@ a {
 }
 
 .field {
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--space-4);
 }
 
 .field label {
   display: block;
-  margin-bottom: 0.375rem;
-  font-weight: 700;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.field ::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
 }
 
 .field input {
@@ -201,7 +207,7 @@ a {
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--bg);
   color: var(--text);
   font: inherit;
 }
@@ -212,9 +218,10 @@ a {
 }
 
 .field-error {
-  margin: 0.375rem 0 0;
+  margin: var(--space-1) 0 0;
   color: var(--accent-text);
-  font-weight: 700;
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .form-alert:not(:empty) {
@@ -811,7 +818,7 @@ a.button-link {
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: var(--bg);
   color: var(--text);
   font: inherit;
 }
@@ -822,16 +829,17 @@ a.button-link {
   background: var(--danger-soft);
 }
 
-.field-help {
-  margin: 0.375rem 0 0;
+/* Nota breve de un formulario (un límite, un estado): una línea apagada, nunca una explicación larga (D-S3). */
+.form-note {
+  margin: 0;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
 }
 
 .field-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .field-row input {
@@ -865,60 +873,50 @@ a.button-link {
 }
 
 .form-section {
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-6);
 }
 
 .form-section h3 {
-  margin: 1.5rem 0 0.25rem;
-  font-family: var(--font-sign);
-  font-size: 1.15rem;
+  margin: var(--space-5) 0 var(--space-1);
+  font-size: var(--text-lg);
 }
 
+/* Un punto con nombre dentro de una sección (cada origen de Crear misión): sin caja, separado por una línea. */
 .point-group {
   min-inline-size: 0;
-  margin: 0 0 1.25rem;
-  padding: 0.75rem 1rem 1rem;
-  border: 2px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4) 0 0;
+  border: 0;
+  border-block-start: 1px solid var(--border);
 }
 
 .point-group legend {
-  padding: 0 0.375rem;
-  font-weight: 700;
+  float: inline-start;
+  inline-size: 100%;
+  margin-block-end: var(--space-3);
+  padding: 0;
+  font-weight: 600;
+}
+
+.point-group legend + * {
+  clear: both;
+}
+
+.origin-remove {
+  margin-block-start: var(--space-2);
+  color: var(--text-muted);
 }
 
 .method-switch {
-  margin: 0 0 1rem;
-  padding: 0;
-  border: 0;
-  min-inline-size: 0;
-}
-
-.method-switch legend {
-  margin-bottom: 0.375rem;
-  padding: 0;
-  font-weight: 700;
-}
-
-.method-switch .segmented {
-  display: flex;
-  width: 100%;
-}
-
-.method-switch .segment {
-  flex: 1 1 auto;
-}
-
-.method-switch .segment span {
-  flex: 1;
-  justify-content: center;
-  padding: 0 0.5rem;
-  font-size: 1rem;
+  margin-block-end: var(--space-3);
 }
 
 .method-body {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
+}
+
+.method-body .field {
+  margin-bottom: 0;
 }
 
 .candidates {
@@ -968,13 +966,24 @@ a.button-link {
 }
 
 .point-summary {
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  font-size: var(--text-sm);
 }
 
 .point-summary p {
-  margin: 0 0 0.25rem;
+  margin: 0;
+}
+
+.point-summary .button-link {
+  margin-inline-start: auto;
+  padding-block: var(--space-1);
+  font-size: var(--text-sm);
 }
 
 .point-summary-position {
@@ -992,29 +1001,21 @@ a.button-link {
   font-weight: 700;
 }
 
-/* la barra inferior fija y el mapa pegado no deben tapar lo que el foco o un desplazamiento lleva a la vista */
-html:has(.action-bar) {
-  scroll-padding-bottom: 11rem;
-}
-
-/* barra inferior fija: Cancelar y Crear misión siempre a la vista */
+/* Barra de acciones al final del formulario (D-S10): en el flujo, así no tapa ningún campo; la principal a la derecha y más ancha. */
 .action-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 3;
-  margin-inline: calc(var(--gutter) * -1);
-  padding: 0.75rem var(--gutter);
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
   border-top: 1px solid var(--border);
-  background: var(--surface-raised);
 }
 
 .action-bar-alert:not(:empty) {
-  margin-bottom: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--accent-text);
-  border-inline-start-width: 8px;
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--accent-text);
+  border-inline-start-width: 4px;
+  border-radius: var(--radius-md);
   background: var(--danger-soft);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .action-bar-alert p,
@@ -1023,21 +1024,21 @@ html:has(.action-bar) {
 }
 
 .action-bar-hint {
-  margin-bottom: 0.5rem;
+  flex: 1 1 100%;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
 }
 
 .action-bar-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
 }
 
 .action-bar-buttons .button-primary {
   flex: 1 1 12rem;
-  min-height: 3.5rem;
-  font-size: 1.2rem;
 }
 
 /* en el móvil el mapa va arriba, entero (con sus atribuciones a la vista), y el formulario debajo */
@@ -3888,4 +3889,10 @@ label.signup-info {
 
 .segmented[data-block='true'] .segment span {
   flex: 1;
+}
+
+/* El último elemento de una tarjeta no añade hueco bajo el contenido */
+.section-card > :last-child,
+.section-card > :last-child > .field:last-child {
+  margin-block-end: 0;
 }

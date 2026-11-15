@@ -27,7 +27,7 @@ Plan: `specs/UI-simplificacion/plan.md`. Comprobación rápida de todas: `pnpm c
 - Comprobación: `pnpm check @onway/web @onway/i18n`.
 - Hecho cuando: la vista sigue el boceto (cabecera con una sola «Crear misión», franja de organización, tarjetas de tiempo y de misiones activas, fila de cifras) solo con datos que ya da el API; conserva los estados de carga, vacío y error; a 375 px queda en una columna.
 
-- [ ] **T6. Crear misión: secciones, sin ayudas y barra que no tapa.** D-S3, D-S10
+- [x] **T6. Crear misión: secciones, sin ayudas y barra que no tapa.** D-S3, D-S10
 - Archivos: `apps/web/src/pages/create-mission-page.tsx`, `apps/web/src/missions/point-input.tsx`, `apps/web/src/missions/point-form.tsx`, `apps/web/src/missions/point-row.tsx`, `apps/web/src/styles.css` (secciones «utilidades de formulario» y «páginas con mapa»), `apps/web/test/create-mission.test.tsx`, `apps/web/test/create-mission-map-height.test.ts`, `apps/web/e2e/h1-demo.spec.ts`, `packages/i18n/src/es.ts` y `fr.ts`.
 - Comprobación: `pnpm check @onway/web @onway/i18n` y `pnpm --filter @onway/web exec playwright test -c e2e h1-demo.spec.ts`.
 - Hecho cuando: el formulario tiene las cuatro secciones del plan §5 con cabecera de icono; no queda ningún `.field-help` ni párrafo de introducción; las reglas de validación son las mismas y sus mensajes salen como error; la barra de acciones no cubre ningún campo a 1440 × 900 ni a 375 px.

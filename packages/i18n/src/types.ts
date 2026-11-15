@@ -300,14 +300,12 @@ export interface Messages {
     byMap: string;
     byCoordinates: string;
     byAddress: string;
-    mapHelp: string;
     mapPicking: string;
     pickOnMap: string;
     coordinates: string;
-    coordinatesHelp: string;
+    coordinatesPlaceholder: string;
     useCoordinates: string;
     address: string;
-    addressHelp: string;
     search: string;
     searching: string;
     candidates: string;
@@ -326,11 +324,9 @@ export interface Messages {
   };
   createMission: {
     title: string;
-    intro: string;
     required: string;
-    optional: string;
+    additional: string;
     name: string;
-    nameHint: string;
     nameInvalid: string;
     duplicateName: string;
     description: string;
@@ -340,7 +336,7 @@ export interface Messages {
     objective: string;
     objectiveRequired: string;
     origins: string;
-    originsHint: string;
+    originsEmpty: string;
     originsLimit: string;
     addOrigin: string;
     originTitle: string;

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ApiError, type OperationOutput } from '@onway/contracts/client';
 import { formatCoordinate, parseCoordinates, type CoordinateError } from '@onway/geo';
+import { Segmented } from '../components/segmented';
 import { countryName } from '../i18n/country-name';
 import { errorMessage } from '../i18n/error-message';
 import type { ElevationLookup } from '../map';
@@ -15,6 +16,7 @@ type Search = { status: 'idle' } | { status: 'loading' } | { status: 'error'; er
 
 const METHODS: readonly Method[] = ['map', 'coordinates', 'address'];
 const METHOD_LABEL = { map: 'point.byMap', coordinates: 'point.byCoordinates', address: 'point.byAddress' } as const;
+const METHOD_ICON = { map: 'map', coordinates: 'target', address: 'search' } as const;
 const MIN_QUERY = 3;
 
 interface Props {
@@ -116,21 +118,20 @@ export function PointInput({ id, value, onChange, picking, onPicking, organizati
 
   return (
     <div className="point-input">
-      <fieldset className="method-switch">
-        <legend>{t('point.methodLabel')}</legend>
-        <div className="segmented">
-          {METHODS.map((option) => (
-            <label key={option} className="segment">
-              <input type="radio" name={field('method')} value={option} checked={method === option} onChange={() => choose(option)} />
-              <span>{t(METHOD_LABEL[option])}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <Segmented
+        className="method-switch"
+        legend={t('point.methodLabel')}
+        hideLegend
+        block
+        name={field('method')}
+        value={method}
+        onChange={choose}
+        options={METHODS.map((option) => ({ value: option, label: t(METHOD_LABEL[option]), icon: METHOD_ICON[option] }))}
+      />
 
       {method === 'map' && (
         <div className="method-body">
-          <p>{picking ? t('point.mapPicking') : t('point.mapHelp')}</p>
+          {picking && <p className="form-note">{t('point.mapPicking')}</p>}
           {!picking && (
             <button type="button" className="button button-secondary" onClick={() => onPicking(true)}>
               {t('point.pickOnMap')}
@@ -143,33 +144,33 @@ export function PointInput({ id, value, onChange, picking, onPicking, organizati
         <div className="method-body">
           <div className="field">
             <label htmlFor={field('coordinates')}>{t('point.coordinates')}</label>
-            <input
-              id={field('coordinates')}
-              type="text"
-              inputMode="text"
-              autoComplete="off"
-              spellCheck={false}
-              value={coordinatesText}
-              aria-invalid={coordinatesError !== null}
-              aria-describedby={`${field('coordinates-help')}${coordinatesError ? ` ${field('coordinates-error')}` : ''}`}
-              onChange={(event) => {
-                setCoordinatesText(event.target.value);
-                setCoordinatesError(null);
-              }}
-              onKeyDown={submitOnEnter(applyCoordinates)}
-            />
-            <p id={field('coordinates-help')} className="field-help">
-              {t('point.coordinatesHelp')}
-            </p>
+            <div className="field-row">
+              <input
+                id={field('coordinates')}
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={t('point.coordinatesPlaceholder')}
+                value={coordinatesText}
+                aria-invalid={coordinatesError !== null}
+                aria-describedby={coordinatesError ? field('coordinates-error') : undefined}
+                onChange={(event) => {
+                  setCoordinatesText(event.target.value);
+                  setCoordinatesError(null);
+                }}
+                onKeyDown={submitOnEnter(applyCoordinates)}
+              />
+              <button type="button" className="button button-secondary" onClick={applyCoordinates}>
+                {t('point.useCoordinates')}
+              </button>
+            </div>
             {coordinatesError && (
               <p id={field('coordinates-error')} className="field-error" role="alert">
                 {t(`coordinates.${coordinatesError}`)}
               </p>
             )}
           </div>
-          <button type="button" className="button button-secondary" onClick={applyCoordinates}>
-            {t('point.useCoordinates')}
-          </button>
         </div>
       )}
 
@@ -184,7 +185,7 @@ export function PointInput({ id, value, onChange, picking, onPicking, organizati
                 autoComplete="off"
                 spellCheck={false}
                 value={query}
-                aria-describedby={`${field('address-help')}${tooShort ? ` ${field('address-error')}` : ''}`}
+                aria-describedby={tooShort ? field('address-error') : undefined}
                 aria-invalid={tooShort}
                 onChange={(event) => {
                   setQuery(event.target.value);
@@ -196,9 +197,6 @@ export function PointInput({ id, value, onChange, picking, onPicking, organizati
                 {search.status === 'loading' ? t('point.searching') : t('point.search')}
               </button>
             </div>
-            <p id={field('address-help')} className="field-help">
-              {t('point.addressHelp')}
-            </p>
             {tooShort && (
               <p id={field('address-error')} className="field-error" role="alert">
                 {t('point.searchTooShort')}
