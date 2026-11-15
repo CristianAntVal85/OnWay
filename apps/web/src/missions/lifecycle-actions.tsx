@@ -1,3 +1,4 @@
+import { Menu } from '../components/menu';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +25,8 @@ export interface LifecycleResult {
 interface Props {
   mission: Mission;
   onSettled: (result: LifecycleResult) => void;
+  /** «Editar datos», si se puede editar: va en el menú «Más» junto a Duplicar (D-S4). */
+  onEdit?: () => void;
 }
 
 /** Nombre propuesto para la copia: el original con «(copia)», recortado para no pasar de 120 caracteres. */
@@ -39,7 +42,7 @@ function proposedName(name: string, suffixed: (name: string) => string): string 
  * Quien decide qué se puede hacer es el servidor: aquí solo se pintan los botones y se explican sus respuestas.
  * Sin voluntarios en H1, el cierre solo confirma (doc 02 §4.5) y envía una asistencia vacía.
  */
-export function LifecycleActions({ mission, onSettled }: Props) {
+export function LifecycleActions({ mission, onSettled, onEdit }: Props) {
   const { t } = useTranslation();
   const api = useApi();
   const queryClient = useQueryClient();
@@ -162,7 +165,7 @@ export function LifecycleActions({ mission, onSettled }: Props) {
       <div role="alert" className="form-alert">
         {blockError && <p>{blockError}</p>}
       </div>
-      {(actions.activate || actions.close || actions.reopen || actions.duplicate) && (
+      {(actions.activate || actions.close || actions.reopen || actions.duplicate || onEdit) && (
         <div className="lifecycle-actions" role="group" aria-label={t('missionDetail.lifecycle.groupLabel')}>
           {actions.activate && (
             <button type="button" className="button button-primary" aria-disabled={busy !== null} onClick={() => void activate(false)}>
@@ -189,20 +192,31 @@ export function LifecycleActions({ mission, onSettled }: Props) {
               {label(t('missionDetail.lifecycle.reopen'), t('missionDetail.lifecycle.reopening'), 'reopen')}
             </button>
           )}
-          {actions.duplicate && (
-            <button
-              id="mission-duplicate-button"
-              type="button"
-              className="button button-secondary"
-              aria-disabled={busy !== null}
-              onClick={() => {
-                if (busy) return;
-                setBlockError(null);
-                setStep('duplicate');
-              }}
-            >
-              {t('missionDetail.lifecycle.duplicate')}
-            </button>
+          {(onEdit || actions.duplicate) && (
+            <Menu
+              buttonId="mission-edit-button"
+              label={t('common.more')}
+              icon="more"
+              iconOnly
+              align="end"
+              disabled={busy !== null}
+              items={[
+                ...(onEdit ? [{ id: 'edit', label: t('missionDetail.editData'), icon: 'edit' as const, onSelect: onEdit }] : []),
+                ...(actions.duplicate
+                  ? [
+                      {
+                        id: 'duplicate',
+                        label: t('missionDetail.lifecycle.duplicate'),
+                        icon: 'copy' as const,
+                        onSelect: () => {
+                          setBlockError(null);
+                          setStep('duplicate');
+                        },
+                      },
+                    ]
+                  : []),
+              ]}
+            />
           )}
         </div>
       )}

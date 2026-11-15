@@ -4,7 +4,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
-import { admin, apiError, json, renderApp, sessionServer, sessionUser, type Call } from './support';
+import { admin, apiError, chooseMenuItem, json, menuItemNames, renderApp, sessionServer, sessionUser, type Call } from './support';
 
 interface FakeMapProps {
   routes?: readonly { id: string; name: string; tone: string }[];
@@ -64,6 +64,10 @@ const textOf = (blob: Blob) =>
 const region = async (name = R.title) => screen.findByRole('region', { name });
 const tableOf = async () => within(await region()).findByRole('table');
 const rowOf = async (name: string) => within(await tableOf()).getByRole('row', { name: new RegExp(name) });
+const ACTIONS = (name: string) => R.actionsFor.replace('{{name}}', name);
+type User = Parameters<typeof chooseMenuItem>[0];
+/** Abre el «⋯» de la fila y pulsa una de sus acciones. */
+const rowAction = async (user: User, name: string, item: string | RegExp) => chooseMenuItem(user, ACTIONS(name), item, await rowOf(name));
 const writes = (calls: Call[]) => calls.filter((c) => c.method !== 'GET' && c.path.startsWith(`/missions/${MISSION_ID}/routes`));
 
 beforeEach(() => {
@@ -126,7 +130,6 @@ describe('tabla de rutas de la misión (RF-502, RF-504)', () => {
     setup([row(1, 'Ruta antigua', { validationIsStale: true }), row(2, 'Ruta cortada', { status: 'unavailable' })]);
     const stale = await rowOf('Ruta antigua');
     expect(within(stale).getByText(R.badges.stale)).toBeTruthy();
-    expect(within(stale).getByText(R.notices.stale)).toBeTruthy();
     const cut = await rowOf('Ruta cortada');
     expect(within(cut).getByText(R.badges.unavailable)).toBeTruthy();
     expect(within(await rowOf('Ruta antigua')).queryByText(R.badges.unavailable)).toBeNull();
@@ -237,16 +240,16 @@ describe('versión nueva validada (RF-518, RN-13): se avisa y nunca cambia sola'
   const withNewer = () => row(1, 'Senda del Circo', { newerValidatedVersion: { versionId: '99999999-cccc-4ccc-8ccc-cccccccccccc', number: 3 } });
 
   it('avisa de la versión 3 y no cambia nada al cargar', async () => {
-    const { calls } = setup([withNewer()]);
+    const { user, calls } = setup([withNewer()]);
     const line = await rowOf('Senda del Circo');
-    expect(within(line).getByText('Hay una versión 3 validada más reciente.')).toBeTruthy();
-    expect(within(line).getByRole('button', { name: 'Actualizar «Senda del Circo» a la versión 3' })).toBeTruthy();
+    expect(within(line).getByText('Versión 3 disponible')).toBeTruthy();
+    expect(await menuItemNames(user, ACTIONS('Senda del Circo'), line)).toContain('Actualizar a la versión 3');
     expect(writes(calls())).toEqual([]);
   });
 
   it('pide confirmación con el foco en la opción segura; «No actualizar» no envía nada', async () => {
     const { user, calls } = setup([withNewer()]);
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: /Actualizar «Senda del Circo»/ }));
+    await rowAction(user, 'Senda del Circo', /^Actualizar a la versión/);
     const confirm = await screen.findByRole('group', { name: '¿Actualizar «Senda del Circo» a la versión 3? Los rescatistas verán la versión nueva.' });
     expect(document.activeElement).toBe(within(confirm).getByRole('button', { name: R.update.no }));
     await user.click(within(confirm).getByRole('button', { name: R.update.no }));
@@ -265,7 +268,7 @@ describe('versión nueva validada (RF-518, RN-13): se avisa y nunca cambia sola'
         },
       },
     });
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: /Actualizar «Senda del Circo»/ }));
+    await rowAction(user, 'Senda del Circo', /^Actualizar a la versión/);
     await user.click(await screen.findByRole('button', { name: R.update.yes }));
     const [patch] = writes(calls());
     expect(patch).toMatchObject({ method: 'PATCH', path: `/missions/${MISSION_ID}/routes/${original.id}`, body: { pinnedVersionId: '99999999-cccc-4ccc-8ccc-cccccccccccc' } });
@@ -277,7 +280,7 @@ describe('versión nueva validada (RF-518, RN-13): se avisa y nunca cambia sola'
   it('si el servidor lo rechaza (la misión se cerró), lo dice con su mensaje', async () => {
     const original = withNewer();
     const { user } = setup([original], { extra: { [`PATCH /missions/${MISSION_ID}/routes/${original.id}`]: () => apiError(409, 'MISSION_CLOSED') } });
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: /Actualizar «Senda del Circo»/ }));
+    await rowAction(user, 'Senda del Circo', /^Actualizar a la versión/);
     await user.click(await screen.findByRole('button', { name: R.update.yes }));
     expect(await screen.findByText(es.missionDetail.closedMeanwhile)).toBeTruthy();
   });
@@ -296,12 +299,12 @@ describe('no disponible (RF-508)', () => {
         },
       },
     });
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: 'Marcar «Senda del Circo» como no disponible' }));
+    await rowAction(user, 'Senda del Circo', R.unavailable.mark);
     expect(writes(calls()).at(-1)).toMatchObject({ method: 'PATCH', body: { status: 'unavailable' } });
     expect(await within(await region()).findByText('«Senda del Circo» queda marcada como no disponible en esta misión.')).toBeTruthy();
     expect(within(await rowOf('Senda del Circo')).getByText(R.badges.unavailable)).toBeTruthy();
 
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: 'Reactivar «Senda del Circo»' }));
+    await rowAction(user, 'Senda del Circo', R.unavailable.reactivate);
     expect(writes(calls()).at(-1)).toMatchObject({ body: { status: 'added' } });
     expect(await within(await region()).findByText('«Senda del Circo» vuelve a estar disponible.')).toBeTruthy();
     await waitFor(() => expect(within(screen.getByRole('table')).queryByText(R.badges.unavailable)).toBeNull());
@@ -310,7 +313,7 @@ describe('no disponible (RF-508)', () => {
   it('un fallo al marcar se dice junto a la tabla', async () => {
     const original = row(1, 'Senda del Circo');
     const { user } = setup([original], { extra: { [`PATCH /missions/${MISSION_ID}/routes/${original.id}`]: () => apiError(409, 'INVALID_STATE_TRANSITION') } });
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: /Marcar «Senda del Circo»/ }));
+    await rowAction(user, 'Senda del Circo', R.unavailable.mark);
     expect(await within(await region()).findByText(es.errors.INVALID_STATE_TRANSITION)).toBeTruthy();
   });
 });
@@ -326,7 +329,7 @@ describe('quitar de la misión (RN-14)', () => {
         },
       },
     });
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: 'Quitar «Senda del Circo» de la misión' }));
+    await rowAction(user, 'Senda del Circo', R.remove.action);
     const confirm = await screen.findByRole('group', { name: '¿Quitar «Senda del Circo» de la misión? La ruta sigue en la biblioteca.' });
     expect(document.activeElement).toBe(within(confirm).getByRole('button', { name: R.remove.no }));
     expect(writes(calls())).toEqual([]);
@@ -340,10 +343,10 @@ describe('quitar de la misión (RN-14)', () => {
   it('cancelar no envía nada; un fallo se dice en la confirmación', async () => {
     const original = row(1, 'Senda del Circo');
     const { user, calls } = setup([original], { extra: { [`DELETE /missions/${MISSION_ID}/routes/${original.id}`]: () => apiError(409, 'MISSION_CLOSED') } });
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: /Quitar «Senda del Circo»/ }));
+    await rowAction(user, 'Senda del Circo', R.remove.action);
     await user.click(await screen.findByRole('button', { name: R.remove.no }));
     expect(writes(calls())).toEqual([]);
-    await user.click(within(await rowOf('Senda del Circo')).getByRole('button', { name: /Quitar «Senda del Circo»/ }));
+    await rowAction(user, 'Senda del Circo', R.remove.action);
     await user.click(await screen.findByRole('button', { name: R.remove.yes }));
     expect(await screen.findByText(es.missionDetail.closedMeanwhile)).toBeTruthy();
   });
@@ -354,14 +357,13 @@ describe('misión cerrada o sin permiso de escribir: solo lectura', () => {
     ['cerrada', { actions: noActions, status: 'closed' }],
     ['administrador (Q-14: lee, no escribe)', { actions: noActions, user: admin() }],
   ])('%s: la tabla se lee y se exporta, pero no hay ningún control que escriba', async (_name, options) => {
-    setup([row(1, 'Senda del Circo', { newerValidatedVersion: { versionId: '99999999-cccc-4ccc-8ccc-cccccccccccc', number: 3 } })], options);
+    const { user } = setup([row(1, 'Senda del Circo', { newerValidatedVersion: { versionId: '99999999-cccc-4ccc-8ccc-cccccccccccc', number: 3 } })], options);
     const line = await rowOf('Senda del Circo');
-    expect(within(line).getByText('Hay una versión 3 validada más reciente.')).toBeTruthy(); // se informa
-    expect(within(line).queryByRole('button', { name: /Actualizar/ })).toBeNull();
-    expect(within(line).queryByRole('button', { name: /no disponible/ })).toBeNull();
-    expect(within(line).queryByRole('button', { name: /Quitar/ })).toBeNull();
+    expect(within(line).getByText('Versión 3 disponible')).toBeTruthy(); // se informa
+    expect(within(line).queryByRole('button')).toBeNull(); // sin «⋯»: ninguna acción de fila
     expect(within(line).getByRole('checkbox', { name: /Senda del Circo/ })).toBeTruthy(); // ver en el mapa sigue siendo leer
-    expect(within(await region()).getByRole('button', { name: R.export.gpx })).toBeTruthy();
+    expect(await menuItemNames(user, R.more, await region())).toEqual([R.export.gpx, R.export.kml]);
+    expect(within(await region()).queryByRole('button', { name: R.add.open })).toBeNull();
   });
 });
 
@@ -370,8 +372,7 @@ describe('exportar las rutas de la misión (RF-508, RF-603)', () => {
     const { user, calls } = setup([row(1, 'Senda del Circo')]);
     const section = await region();
     await within(section).findByRole('table');
-    expect(within(section).getByText(R.export.help)).toBeTruthy();
-    await user.click(within(section).getByRole('button', { name: R.export.gpx }));
+    await chooseMenuItem(user, R.more, R.export.gpx, section);
     await waitFor(() => expect(saved).toHaveLength(1));
     expect(saved[0]!.name).toBe('onway-rutas-mision.gpx');
     expect(await textOf(saved[0]!.blob)).toBe('archivo gpx');
@@ -380,7 +381,7 @@ describe('exportar las rutas de la misión (RF-508, RF-603)', () => {
         .filter((c) => c.path.endsWith('/routes/export'))
         .map((c) => c.query.get('format')),
     ).toEqual(['gpx']);
-    await user.click(within(section).getByRole('button', { name: R.export.kml }));
+    await chooseMenuItem(user, R.more, R.export.kml, section);
     await waitFor(() => expect(saved).toHaveLength(2));
     expect(saved[1]!.name).toBe('onway-rutas-mision.kml');
   });
@@ -388,26 +389,27 @@ describe('exportar las rutas de la misión (RF-508, RF-603)', () => {
   it('un fallo al exportar se dice y no descarga nada; sin rutas no hay botón', async () => {
     const { user } = setup([row(1, 'Senda del Circo')], { extra: { [`GET /missions/${MISSION_ID}/routes/export`]: () => apiError(404, 'NOT_FOUND') } });
     const section = await region();
-    await user.click(await within(section).findByRole('button', { name: R.export.gpx }));
+    await within(section).findByRole('table');
+    await chooseMenuItem(user, R.more, R.export.gpx, section);
     expect(await within(section).findByText(R.export.nothing)).toBeTruthy();
     expect(saved).toEqual([]);
   });
 
   it('sin rutas no se ofrece exportar', async () => {
-    setup([]);
+    const { user } = setup([]);
     const section = await region();
     await within(section).findByText(R.empty);
-    expect(within(section).queryByRole('button', { name: R.export.gpx })).toBeNull();
+    expect(await menuItemNames(user, R.more, section)).toEqual([es.generate.cta]);
   });
 });
 
 describe('en francés', () => {
   it('títulos, columnas y avisos salen de packages/i18n (fr)', async () => {
-    setup([row(1, 'Senda del Circo', { newerValidatedVersion: { versionId: '99999999-cccc-4ccc-8ccc-cccccccccccc', number: 3 } })], { language: 'fr' });
+    const { user } = setup([row(1, 'Senda del Circo', { newerValidatedVersion: { versionId: '99999999-cccc-4ccc-8ccc-cccccccccccc', number: 3 } })], { language: 'fr' });
     const section = await region(fr.missionRoutes.title);
     const table = await within(section).findByRole('table');
     expect(within(table).getByRole('columnheader', { name: fr.missionRoutes.columns.distance })).toBeTruthy();
     expect(within(table).getByText(fr.missionRoutes.notices.newer.replace('{{number}}', '3'))).toBeTruthy();
-    expect(within(section).getByRole('button', { name: fr.missionRoutes.export.gpx })).toBeTruthy();
+    expect(await menuItemNames(user, fr.missionRoutes.more, section)).toContain(fr.missionRoutes.export.gpx);
   });
 });

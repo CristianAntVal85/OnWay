@@ -56,10 +56,10 @@ export function MyRoutesSection({ missionId, active, locale, routes, selectedId,
       <h2 id="routes-title">{t('myMissions.detail.routesTitle')}</h2>
       {routes.isPending && <LoadingState />}
       {routes.isError && <ErrorState error={routes.error} onRetry={() => void routes.refetch()} />}
-      {routes.isSuccess && rows.length === 0 && <p className="field-help">{t('myMissions.detail.noRoutes')}</p>}
+      {routes.isSuccess && rows.length === 0 && <p className="form-note">{t('myMissions.detail.noRoutes')}</p>}
       {routes.isSuccess && rows.length > 0 && (
         <>
-          <p className="field-help">{t('myMissions.routes.intro')}</p>
+          <p className="form-note">{t('myMissions.routes.intro')}</p>
           {!active && (
             <p className="notice" role="status">
               {t('myMissions.routes.closedNotice')}

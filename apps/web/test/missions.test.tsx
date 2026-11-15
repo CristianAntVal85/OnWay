@@ -3,7 +3,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
-import { admin, apiError, json, renderApp, rescuer, sessionServer, sessionUser, type Call } from './support';
+import { admin, apiError, chooseMenuItem, json, menuItemNames, renderApp, rescuer, sessionServer, sessionUser, type Call } from './support';
 
 interface FakeMapProps {
   markers?: readonly { id: string; kind: string; lat: number; lon: number }[];
@@ -310,9 +310,9 @@ describe('detalle de misión: lectura (RF-205)', () => {
     expect(screen.getByText(D.readOnlyClosed)).toBeTruthy();
     expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.closed);
     expect(screen.queryByRole('button', { name: D.editData })).toBeNull();
-    expect(screen.queryByRole('button', { name: P.add.origin })).toBeNull();
-    expect(screen.queryByRole('button', { name: P.edit.replace('{{name}}', 'Refugio de la Renclusa') })).toBeNull();
-    expect(screen.queryByRole('button', { name: P.remove.replace('{{name}}', 'Collado de Coronas') })).toBeNull();
+    expect(screen.queryByRole('button', { name: P.addMenu })).toBeNull();
+    expect(screen.queryByRole('button', { name: P.actions.replace('{{name}}', 'Refugio de la Renclusa') })).toBeNull();
+    expect(screen.queryByRole('button', { name: P.actions.replace('{{name}}', 'Collado de Coronas') })).toBeNull();
   });
 
   it('el rescatista no usa este detalle (tiene el suyo, solo lectura): no se llama a getMission', async () => {
@@ -326,7 +326,7 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
   it('alta por coordenadas: abre con el foco en el nombre, envía el cuerpo sin altitud, refresca y avisa', async () => {
     const { user, calls } = await openDetail();
     const reads = missionReads(calls());
-    await user.click(screen.getByRole('button', { name: P.add.origin }));
+    await chooseMenuItem(user, P.addMenu, P.add.origin);
     expect(document.activeElement).toBe(screen.getByLabelText(P.name));
     await user.type(screen.getByLabelText(P.name), '  Parking de Benasque  ');
     await user.type(screen.getByLabelText(P.note), 'Pista cerrada');
@@ -343,7 +343,7 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
 
   it('alta pinchando el mapa: el mapa espera el clic y el punto sale con la forma de entrada del mapa', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: P.add.rendezvous }));
+    await chooseMenuItem(user, P.addMenu, P.add.rendezvous);
     expect(screen.getByTestId('map').getAttribute('data-picking')).toBe('yes');
     mapProps.current.onPick?.({ lat: 42.7, lon: 0.05 });
     expect(await screen.findByTestId('marker-rendezvous')).toBeTruthy();
@@ -355,7 +355,7 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
 
   it('sin nombre o sin ubicación no se llama al servidor y el foco va a lo que falta', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: P.add.waypoint }));
+    await chooseMenuItem(user, P.addMenu, P.add.waypoint);
     await user.click(screen.getByRole('button', { name: P.save }));
     expect(await screen.findByText(P.nameRequired)).toBeTruthy();
     expect(screen.getByText(P.locationRequired)).toBeTruthy();
@@ -365,7 +365,7 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
 
   it('editar: solo viaja lo que cambió; sin cambios no se llama al servidor', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: P.edit.replace('{{name}}', 'Refugio de la Renclusa') }));
+    await chooseMenuItem(user, P.actions.replace('{{name}}', 'Refugio de la Renclusa'), P.editShort);
     expect((screen.getByLabelText(P.name) as HTMLInputElement).value).toBe('Refugio de la Renclusa');
     expect((screen.getByLabelText(P.note) as HTMLInputElement).value).toBe('Aparcamiento');
     expect(screen.getByText(es.point.selected.replace('{{position}}', '42.60000, 0.65000'))).toBeTruthy();
@@ -384,7 +384,7 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
 
   it('editar la ubicación por el mapa envía lat y lon', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: P.edit.replace('{{name}}', 'Refugio de la Renclusa') }));
+    await chooseMenuItem(user, P.actions.replace('{{name}}', 'Refugio de la Renclusa'), P.editShort);
     await user.click(screen.getByRole('button', { name: es.point.pickOnMap }));
     mapProps.current.onPick?.({ lat: 42.61, lon: 0.66 });
     await screen.findByText(es.point.selected.replace('{{position}}', '42.61000, 0.66000'));
@@ -396,13 +396,13 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
   it('borrar pide confirmación en la fila, con el foco en «No borrar»; confirmar borra y refresca', async () => {
     const { user, calls } = await openDetail();
     const reads = missionReads(calls());
-    await user.click(screen.getByRole('button', { name: P.remove.replace('{{name}}', 'Collado de Coronas') }));
+    await chooseMenuItem(user, P.actions.replace('{{name}}', 'Collado de Coronas'), P.removeShort);
     expect(screen.getByText(P.removeConfirm.replace('{{name}}', 'Collado de Coronas'), { selector: 'p' })).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: P.removeNo }));
     await user.click(screen.getByRole('button', { name: P.removeNo }));
     expect(sends(calls(), 'DELETE', `${PATH}/points/p2`)).toHaveLength(0);
 
-    await user.click(screen.getByRole('button', { name: P.remove.replace('{{name}}', 'Collado de Coronas') }));
+    await chooseMenuItem(user, P.actions.replace('{{name}}', 'Collado de Coronas'), P.removeShort);
     await user.click(screen.getByRole('button', { name: P.removeYes }));
     await waitFor(() => expect(sends(calls(), 'DELETE', `${PATH}/points/p2`)).toHaveLength(1));
     expect(await screen.findByText(P.removed.replace('{{name}}', 'Collado de Coronas'))).toBeTruthy();
@@ -415,7 +415,7 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
     const { user, calls } = await openDetail({
       [`DELETE ${PATH}/points/p2`]: () => apiError(400, 'VALIDATION_FAILED', { issues: [{ path: 'pointId', code: 'point_in_use', message: 'A route of the mission leaves from this point' }] }),
     });
-    await user.click(screen.getByRole('button', { name: P.remove.replace('{{name}}', 'Collado de Coronas') }));
+    await chooseMenuItem(user, P.actions.replace('{{name}}', 'Collado de Coronas'), P.removeShort);
     await user.click(screen.getByRole('button', { name: P.removeYes }));
     expect(await screen.findByText(P.inUse)).toBeTruthy();
     expect(sends(calls(), 'DELETE', `${PATH}/points/p2`)).toHaveLength(1);
@@ -433,19 +433,19 @@ describe('detalle de misión: puntos (RF-402, RF-403, RF-404)', () => {
       },
       server,
     );
-    await user.click(screen.getByRole('button', { name: P.add.origin }));
+    await chooseMenuItem(user, P.addMenu, P.add.origin);
     await user.type(screen.getByLabelText(P.name), 'Tarde');
     await useCoordinates(user, '42.65, 0.2');
     await user.click(screen.getByRole('button', { name: P.save }));
     expect(await screen.findByText(D.readOnlyClosed)).toBeTruthy();
     expect(screen.queryByRole('button', { name: P.save })).toBeNull();
-    expect(screen.queryByRole('button', { name: P.add.origin })).toBeNull();
+    expect(screen.queryByRole('button', { name: P.addMenu })).toBeNull();
     expect(screen.queryByRole('button', { name: D.editData })).toBeNull();
   });
 
   it('el error al escribir un punto se muestra en el formulario: fuera de cobertura', async () => {
     const { user } = await openDetail({ [`POST ${PATH}/points`]: () => apiError(422, 'OUTSIDE_COVERAGE') });
-    await user.click(screen.getByRole('button', { name: P.add.origin }));
+    await chooseMenuItem(user, P.addMenu, P.add.origin);
     await user.type(screen.getByLabelText(P.name), 'Lejos');
     await useCoordinates(user, '10, 10');
     await user.click(screen.getByRole('button', { name: P.save }));
@@ -483,7 +483,7 @@ describe('detalle de misión: importar puntos de un archivo (RF-405)', () => {
         }),
     });
     const reads = missionReads(calls());
-    await user.click(screen.getByRole('button', { name: I.cta }));
+    await chooseMenuItem(user, P.addMenu, I.cta);
     const dialog = await screen.findByRole('dialog', { name: I.title });
     await user.selectOptions(within(dialog).getByLabelText(I.kindLabel), 'rendezvous');
     await user.upload(within(dialog).getByLabelText(I.fileLabel), gpx());
@@ -497,7 +497,7 @@ describe('detalle de misión: importar puntos de un archivo (RF-405)', () => {
 
   it('sin archivo o con uno de más de 10 MB lo dice sin subir nada', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: I.cta }));
+    await chooseMenuItem(user, P.addMenu, I.cta);
     const dialog = await screen.findByRole('dialog', { name: I.title });
     await user.click(within(dialog).getByRole('button', { name: I.submit }));
     expect(within(dialog).getByText(I.noFile)).toBeTruthy();
@@ -509,7 +509,7 @@ describe('detalle de misión: importar puntos de un archivo (RF-405)', () => {
 
   it('un archivo sin puntos con nombre (INVALID_FILE_CONTENT) se dice dentro del diálogo y no cambia nada', async () => {
     const { user } = await openDetail({ 'POST /files': uploaded, [`POST ${PATH}/points/import`]: () => apiError(422, 'INVALID_FILE_CONTENT') });
-    await user.click(screen.getByRole('button', { name: I.cta }));
+    await chooseMenuItem(user, P.addMenu, I.cta);
     const dialog = await screen.findByRole('dialog', { name: I.title });
     await user.upload(within(dialog).getByLabelText(I.fileLabel), gpx());
     await user.click(within(dialog).getByRole('button', { name: I.submit }));
@@ -518,7 +518,7 @@ describe('detalle de misión: importar puntos de un archivo (RF-405)', () => {
 
   it('en una misión cerrada (MISSION_CLOSED) lo dice dentro del diálogo y relee la misión', async () => {
     const { user } = await openDetail({ 'POST /files': uploaded, [`POST ${PATH}/points/import`]: () => apiError(409, 'MISSION_CLOSED') });
-    await user.click(screen.getByRole('button', { name: I.cta }));
+    await chooseMenuItem(user, P.addMenu, I.cta);
     const dialog = await screen.findByRole('dialog', { name: I.title });
     await user.upload(within(dialog).getByLabelText(I.fileLabel), gpx());
     await user.click(within(dialog).getByRole('button', { name: I.submit }));
@@ -527,14 +527,14 @@ describe('detalle de misión: importar puntos de un archivo (RF-405)', () => {
 
   it('quien no puede escribir (misión cerrada o administrador) no ve el botón', async () => {
     await openDetail({}, detailServer(detail({ status: 'closed', actions: noActions })));
-    expect(screen.queryByRole('button', { name: I.cta })).toBeNull();
+    expect(screen.queryByRole('button', { name: P.addMenu })).toBeNull();
   });
 });
 
 describe('detalle de misión: editar datos (RF-205, Q-10)', () => {
   it('envía solo lo que cambió y expectedUpdatedAt, refresca y avisa', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: D.editData }));
+    await chooseMenuItem(user, es.common.more, D.editData);
     expect((screen.getByLabelText(es.createMission.name) as HTMLInputElement).value).toBe('Rescate en el Aneto');
     expect((screen.getByLabelText(es.createMission.coordinator) as HTMLSelectElement).value).toBe(COORDINATOR.id);
     await user.clear(screen.getByLabelText(es.createMission.name));
@@ -549,7 +549,7 @@ describe('detalle de misión: editar datos (RF-205, Q-10)', () => {
 
   it('cambiar el objetivo por coordenadas envía target; sin cambios no se llama', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: D.editData }));
+    await chooseMenuItem(user, es.common.more, D.editData);
     await user.click(screen.getByRole('button', { name: D.edit.save }));
     expect(await screen.findByText(D.edit.noChanges)).toBeTruthy();
     expect(sends(calls(), 'PATCH', PATH)).toHaveLength(0);
@@ -562,7 +562,7 @@ describe('detalle de misión: editar datos (RF-205, Q-10)', () => {
   it('STALE_RESOURCE: mensaje útil y «Recargar los datos» vuelve a leer la misión', async () => {
     const { user, calls, server } = await openDetail({ [`PATCH ${PATH}`]: () => apiError(409, 'STALE_RESOURCE', { currentUpdatedAt: '2026-10-31T09:30:00+00:00' }) });
     server.state.mission = detail({ name: 'Nombre de otra persona', updatedAt: '2026-10-31T09:30:00+00:00' }) as Mission;
-    await user.click(screen.getByRole('button', { name: D.editData }));
+    await chooseMenuItem(user, es.common.more, D.editData);
     await user.type(screen.getByLabelText(es.createMission.description), ' más');
     const reads = missionReads(calls());
     await user.click(screen.getByRole('button', { name: D.edit.save }));
@@ -575,7 +575,7 @@ describe('detalle de misión: editar datos (RF-205, Q-10)', () => {
 
   it('DUPLICATE_NAME se muestra en el campo del nombre', async () => {
     const { user } = await openDetail({ [`PATCH ${PATH}`]: () => apiError(409, 'DUPLICATE_NAME') });
-    await user.click(screen.getByRole('button', { name: D.editData }));
+    await chooseMenuItem(user, es.common.more, D.editData);
     await user.type(screen.getByLabelText(es.createMission.name), ' 2');
     await user.click(screen.getByRole('button', { name: D.edit.save }));
     expect(await screen.findByText(es.createMission.duplicateName)).toBeTruthy();
@@ -584,7 +584,7 @@ describe('detalle de misión: editar datos (RF-205, Q-10)', () => {
 
   it('el nombre fuera de 3–120 caracteres no se envía', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: D.editData }));
+    await chooseMenuItem(user, es.common.more, D.editData);
     await user.clear(screen.getByLabelText(es.createMission.name));
     await user.type(screen.getByLabelText(es.createMission.name), 'ab');
     await user.click(screen.getByRole('button', { name: D.edit.save }));
@@ -594,10 +594,10 @@ describe('detalle de misión: editar datos (RF-205, Q-10)', () => {
 
   it('cancelar vuelve a la cabecera sin guardar y devuelve el foco al botón', async () => {
     const { user, calls } = await openDetail();
-    await user.click(screen.getByRole('button', { name: D.editData }));
+    await chooseMenuItem(user, es.common.more, D.editData);
     await user.type(screen.getByLabelText(es.createMission.name), ' cambio');
     await user.click(screen.getByRole('button', { name: D.edit.cancel }));
-    expect(screen.getByRole('button', { name: D.editData })).toBeTruthy();
+    expect(screen.getByRole('button', { name: es.common.more })).toBeTruthy();
     expect(sends(calls(), 'PATCH', PATH)).toHaveLength(0);
     expect(document.activeElement?.id).toBe('mission-edit-button');
   });
@@ -607,8 +607,8 @@ describe('detalle de misión en francés', () => {
   it('los textos salen de packages/i18n', async () => {
     setup(PATH, detailServer().handlers, { language: 'fr' });
     expect(await screen.findByRole('heading', { level: 1, name: 'Rescate en el Aneto' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: fr.missionDetail.editData })).toBeTruthy();
-    expect(screen.getByRole('button', { name: fr.missionDetail.points.add.origin })).toBeTruthy();
+    expect(screen.getByRole('button', { name: fr.common.more })).toBeTruthy();
+    expect(screen.getByRole('button', { name: fr.missionDetail.points.addMenu })).toBeTruthy();
     expect(screen.getByText(fr.missions.status.planning)).toBeTruthy();
     expect(screen.getByRole('region', { name: fr.missionDetail.readiness.title })).toBeTruthy();
   });
@@ -744,7 +744,7 @@ describe('historial de la misión (RN-05)', () => {
     const region = await screen.findByRole('region', { name: fr.missionDetail.history.title });
     expect(await within(region).findByText(fr.missionDetail.history.actions.mission_created)).toBeTruthy();
     expect(screen.getByRole('button', { name: fr.missionDetail.lifecycle.activate })).toBeTruthy();
-    expect(screen.getByRole('button', { name: fr.missionDetail.lifecycle.duplicate })).toBeTruthy();
+    expect(screen.getByRole('button', { name: fr.common.more })).toBeTruthy();
   });
 });
 
@@ -951,7 +951,7 @@ describe('cerrar y reabrir (RF-202, RF-208 sin asistencia, RN-09)', () => {
     expect(sends(calls(), 'POST', `${PATH}/reopen`)).toHaveLength(2);
     expect(document.querySelector('.status-badge')?.textContent).toBe(T.status.active);
     expect(screen.queryByText(L.reopenDuplicateName)).toBeNull();
-    expect(screen.getByRole('button', { name: D.editData })).toBeTruthy();
+    expect(screen.getByRole('button', { name: es.common.more })).toBeTruthy();
     expect(screen.getByRole('button', { name: L.close })).toBeTruthy();
   });
 });
@@ -960,7 +960,7 @@ describe('duplicar (RF-203, D-H1-05)', () => {
   it('pide el nombre de la copia, con foco y texto seleccionado, y lleva al detalle de la copia en planificación', async () => {
     const server = lifecycleServer(detail({ actions: planningActions }));
     const { user, calls } = await openDetail({}, server);
-    await user.click(screen.getByRole('button', { name: L.duplicate }));
+    await chooseMenuItem(user, es.common.more, L.duplicate);
     const dialog = await screen.findByRole('dialog', { name: L.duplicateDialog.title });
     const name = within(dialog).getByLabelText(L.duplicateDialog.name) as HTMLInputElement;
     expect(document.activeElement).toBe(name);
@@ -983,7 +983,7 @@ describe('duplicar (RF-203, D-H1-05)', () => {
   it('DUPLICATE_NAME se muestra en el campo y el diálogo sigue abierto; un nombre corto no se envía', async () => {
     const server = lifecycleServer(detail({ actions: planningActions }));
     const { user, calls } = await openDetail({ [`POST ${PATH}/duplicate`]: () => apiError(409, 'DUPLICATE_NAME') }, server);
-    await user.click(screen.getByRole('button', { name: L.duplicate }));
+    await chooseMenuItem(user, es.common.more, L.duplicate);
     const dialog = await screen.findByRole('dialog');
     const name = within(dialog).getByLabelText(L.duplicateDialog.name);
     await user.clear(name);
@@ -1004,8 +1004,8 @@ describe('duplicar (RF-203, D-H1-05)', () => {
   it('cancelar con Escape no crea nada', async () => {
     const server = lifecycleServer(detail({ actions: planningActions }));
     const { user, calls } = await openDetail({}, server);
-    const button = screen.getByRole('button', { name: L.duplicate });
-    await user.click(button);
+    const button = screen.getByRole('button', { name: es.common.more });
+    await chooseMenuItem(user, es.common.more, L.duplicate);
     await screen.findByRole('dialog');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -1015,8 +1015,8 @@ describe('duplicar (RF-203, D-H1-05)', () => {
 
   it('una misión cerrada también se puede duplicar', async () => {
     const server = lifecycleServer(detail({ status: 'closed', actions: closedActions }));
-    await openDetail({}, server);
-    expect(screen.getByRole('button', { name: L.duplicate })).toBeTruthy();
+    const { user } = await openDetail({}, server);
+    expect(await menuItemNames(user, es.common.more)).toContain(L.duplicate);
   });
 });
 
@@ -1024,7 +1024,7 @@ describe('acciones del ciclo de vida según `actions`', () => {
   it('sin permisos (administrador) no hay ninguna acción del ciclo de vida', async () => {
     const server = lifecycleServer(detail({ actions: noActions }));
     await openDetail({}, server, { user: admin() });
-    for (const name of [L.activate, L.close, L.reopen, L.duplicate]) expect(screen.queryByRole('button', { name })).toBeNull();
+    for (const name of [L.activate, L.close, L.reopen, es.common.more]) expect(screen.queryByRole('button', { name })).toBeNull();
     expect(screen.queryByRole('group', { name: L.groupLabel })).toBeNull();
     // El administrador sí lee el historial.
     expect(await screen.findByRole('region', { name: H.title })).toBeTruthy();
@@ -1033,20 +1033,23 @@ describe('acciones del ciclo de vida según `actions`', () => {
   it('cada estado ofrece lo suyo: planificación activa y duplica; activa cierra y duplica; cerrada reabre y duplica', async () => {
     const planning = lifecycleServer(detail({ actions: planningActions }));
     const view = await openDetail({}, planning);
+    // Una sola acción principal a la vista; Duplicar (y Editar datos, si se puede) van en «Más».
     const labels = () =>
       within(screen.getByRole('group', { name: L.groupLabel }))
         .getAllByRole('button')
-        .map((button) => button.textContent);
-    expect(labels()).toEqual([L.activate, L.duplicate]);
+        .map((button) => button.getAttribute('aria-label') ?? button.textContent);
+    expect(labels()).toEqual([L.activate, es.common.more]);
+    expect(await menuItemNames(view.user, es.common.more)).toContain(L.duplicate);
     view.unmount();
 
     const active = lifecycleServer(detail({ status: 'active', actions: activeActions }));
     const second = await openDetail({}, active);
-    expect(labels()).toEqual([L.close, L.duplicate]);
+    expect(labels()).toEqual([L.close, es.common.more]);
     second.unmount();
 
     const closed = lifecycleServer(detail({ status: 'closed', actions: closedActions }));
-    await openDetail({}, closed);
-    expect(labels()).toEqual([L.reopen, L.duplicate]);
+    const third = await openDetail({}, closed);
+    expect(labels()).toEqual([L.reopen, es.common.more]);
+    expect(await menuItemNames(third.user, es.common.more)).toEqual([L.duplicate]);
   });
 });

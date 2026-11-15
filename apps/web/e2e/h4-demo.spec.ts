@@ -74,9 +74,7 @@ const section = (page: Page, name = R.title) => page.getByRole('region', { name,
 const rowOf = (page: Page, name: string) => section(page).getByRole('row', { name: new RegExp(escape(name)) });
 
 async function validateFromRow(page: Page, row: Row): Promise<void> {
-  await rowOf(page, row.name)
-    .getByRole('button', { name: fill(R.validate.actionFor, { name: row.name }) })
-    .click();
+  await chooseMenuItem(rowOf(page, row.name), fill(R.actionsFor, { name: row.name }), R.validate.action);
   const dialog = page.getByRole('dialog', { name: fill(D.validate.title, { number: 1 }) });
   await expect(dialog.getByText(D.validate.warning)).toBeVisible();
   await dialog.getByRole('checkbox').check();
@@ -98,7 +96,7 @@ test('the coordinator builds the mission: generates, is warned, adds from the li
   await expect(section(page).getByText(R.empty)).toBeVisible();
 
   // Generar desde la misión: las alternativas quedan en ella con su versión 1 fijada.
-  await page.locator('.detail-generate').getByRole('link', { name: G.cta }).click();
+  await chooseMenuItem(page, R.more, G.cta);
   await page.getByLabel(G.nameLabel).fill(nameOf(info, 'oeste'));
   await page.getByRole('button', { name: G.submit }).click();
   await expect(page.getByRole('region', { name: G.compareTitle })).toBeVisible({ timeout: 60_000 });
@@ -156,9 +154,7 @@ test('the coordinator builds the mission: generates, is warned, adds from the li
   await expect(rowOf(page, run.first.name)).toContainText(/\d,\d km/);
 
   // Marcar la segunda como no disponible: queda señalada en la misión.
-  await rowOf(page, run.second.name)
-    .getByRole('button', { name: fill(R.unavailable.markFor, { name: run.second.name }) })
-    .click();
+  await chooseMenuItem(rowOf(page, run.second.name), fill(R.actionsFor, { name: run.second.name }), R.unavailable.mark);
   await expect(section(page).getByText(fill(R.unavailable.marked, { name: run.second.name }))).toBeVisible();
   await expect(rowOf(page, run.second.name)).toContainText(R.badges.unavailable);
 
@@ -262,9 +258,7 @@ test('a newer validated version never changes the mission by itself: the rescuer
   await expect(card).not.toContainText(/Versión 2/);
 
   // El coordinador actualiza, con confirmación, y entonces el rescatista ve la nueva.
-  await rowOf(page, first.name)
-    .getByRole('button', { name: fill(R.update.actionFor, { name: first.name, number: 2 }) })
-    .click();
+  await chooseMenuItem(rowOf(page, first.name), fill(R.actionsFor, { name: first.name }), fill(R.update.action, { number: 2 }));
   await page.getByRole('button', { name: R.update.yes }).click();
   await expect(section(page).getByText(fill(R.update.done, { name: first.name, number: 2 }))).toBeVisible();
   await expect(rowOf(page, first.name)).toContainText('Versión 2 · Validada');

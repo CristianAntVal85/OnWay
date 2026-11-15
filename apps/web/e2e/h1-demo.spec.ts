@@ -6,7 +6,7 @@
 // de IGN se sustituyen por una imagen vacía. Cada ejecución crea sus propias misiones con nombre único y las deja CERRADAS (el
 // registro de auditoría es de solo añadir: no se pueden retirar, solo cerrar; `docker compose down -v` las borra con la pila).
 import type { Page } from '@playwright/test';
-import { ACCOUNTS, chooseMapLayer, fr, mapLayerButton } from './support/app';
+import { ACCOUNTS, chooseMapLayer, chooseMenuItem, fr, mapLayerButton, menuItemNames } from './support/app';
 import { DEVICE_AT, DEVICE_CELL, DEVICE_DOWN, clickMapCenter, es, expect, expectNoHorizontalOverflow, expectWithinViewportWidth, login, openSession, tabTo, test } from './support/demo';
 import { ORG_B, demo } from './support/stack';
 
@@ -134,7 +134,7 @@ test('adds a waypoint and a rendezvous point, and switches the three map layers 
   await expect(page.getByRole('heading', { level: 1, name: run.name })).toBeVisible();
 
   // Punto intermedio por coordenadas.
-  await page.getByRole('button', { name: es.missionDetail.points.add.waypoint }).click();
+  await chooseMenuItem(page, es.missionDetail.points.addMenu, es.missionDetail.points.add.waypoint);
   const waypointForm = page.getByRole('group', { name: es.missionDetail.points.addTitle.waypoint });
   await waypointForm.getByLabel(es.missionDetail.points.name).fill('Intermedio E2E');
   await byCoordinates(waypointForm, '42.664, 0.005');
@@ -142,7 +142,7 @@ test('adds a waypoint and a rendezvous point, and switches the three map layers 
   await expect(page.getByText(es.missionDetail.points.added.replace('{{name}}', 'Intermedio E2E'))).toBeVisible();
 
   // Punto de reunión por dirección en otro país (Gavarnie, Francia): hay que confirmar antes de usarlo (doc 02 §3.4).
-  await page.getByRole('button', { name: es.missionDetail.points.add.rendezvous }).click();
+  await chooseMenuItem(page, es.missionDetail.points.addMenu, es.missionDetail.points.add.rendezvous);
   const rendezvousForm = page.getByRole('group', { name: es.missionDetail.points.addTitle.rendezvous });
   await rendezvousForm.getByLabel(es.missionDetail.points.name).fill('Reunión E2E');
   await rendezvousForm.getByRole('radio', { name: es.point.byAddress }).check();
@@ -355,14 +355,14 @@ test('the coordinator closes the mission without an attendance dialog and reopen
   await expect(page.getByText(es.missionDetail.lifecycle.closed)).toBeVisible();
   // Cerrada es de solo lectura: ningún control de escritura, y se puede reabrir.
   await expect(page.getByText(es.missionDetail.readOnlyClosed)).toBeVisible();
-  await expect(page.getByRole('button', { name: es.missionDetail.editData })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: es.missionDetail.points.add.origin })).toHaveCount(0);
+  expect(await menuItemNames(page, es.common.more)).not.toContain(es.missionDetail.editData);
+  await expect(page.getByRole('button', { name: es.missionDetail.points.addMenu, exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole('button', { name: es.missionDetail.lifecycle.reopen, exact: true }).click();
   await expect(statusBadge(page, es.missions.status.active)).toBeVisible();
   await expect(page.getByText(es.missionDetail.lifecycle.reopened)).toBeVisible();
-  await expect(page.getByRole('button', { name: es.missionDetail.editData })).toBeVisible();
+  expect(await menuItemNames(page, es.common.more)).toContain(es.missionDetail.editData);
 });
 
 test('the history reflects every change in order, and the mission is left closed', async ({ page }) => {

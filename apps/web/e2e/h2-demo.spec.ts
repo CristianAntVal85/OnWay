@@ -304,7 +304,7 @@ test('points of a GPX are imported into a mission', async ({ page }, info) => {
   run.missionId = mission.id;
   await page.goto(`/missions/${mission.id}`);
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
-  await page.getByRole('button', { name: es.missionDetail.importPoints.cta }).click();
+  await chooseMenuItem(page, es.missionDetail.points.addMenu, es.missionDetail.importPoints.cta);
   const dialog = page.getByRole('dialog', { name: es.missionDetail.importPoints.title });
   await dialog.getByLabel(es.missionDetail.importPoints.kindLabel).selectOption('waypoint');
   await dialog.getByLabel(es.missionDetail.importPoints.fileLabel).setInputFiles(GPX('ejemplo-importar.gpx'));

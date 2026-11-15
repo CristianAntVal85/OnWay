@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tan
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { ApiError, type OperationOutput } from '@onway/contracts/client';
+import { Icon } from '../components/icon';
+import { Menu, type MenuItem } from '../components/menu';
 import { ErrorState, LoadingState } from '../components/states';
 import { ValidateDialog } from '../library/route-dialogs';
 import { errorMessage } from '../i18n/error-message';
@@ -36,6 +38,8 @@ interface Props {
   /** Los orígenes de la misión: el diálogo de añadir los ofrece a cada ruta y decide si se puede generar. */
   origins: readonly { id: string; name: string }[];
   routes: MissionRoutesQuery;
+  /** «Generar rutas» desde la misión (va en el menú de la sección): a dónde lleva y si se puede (hace falta un origen, RN-08). */
+  generate?: { to: string; enabled: boolean };
   selected: ReadonlySet<string>;
   onToggle: (id: string) => void;
 }
@@ -45,8 +49,16 @@ interface Props {
  * mapa y su perfil, los avisos de versión nueva (RF-518, nunca cambia sola) y de validación antigua (RF-519), y marcar no disponible (RF-508),
  * quitar y exportar. Nada de geometría aquí: el mapa y el perfil reciben lo que calcula el servidor.
  */
-export function MissionRoutesSection({ missionId, locale, canManage, origins, routes, selected, onToggle }: Props) {
+export function MissionRoutesSection({ missionId, locale, canManage, origins, routes, generate, selected, onToggle }: Props) {
   const { t } = useTranslation();
+  const api = useApi();
+  // Un archivo con las rutas de la misión (RF-603): lo escribe el servidor con la versión fijada de cada una.
+  const exportFile = useMutation({
+    mutationFn: async (format: 'gpx' | 'kml') => {
+      const blob = await api.exportMissionRoutes({ params: { missionId }, query: { format } });
+      saveBlob(blob, `${t('missionRoutes.export.fileName')}.${format}`);
+    },
+  });
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [message, setMessage] = useState('');
   const [adding, setAdding] = useState(false);
@@ -62,33 +74,56 @@ export function MissionRoutesSection({ missionId, locale, canManage, origins, ro
     document.getElementById(focusId)?.focus();
   };
 
+  const sectionItems: MenuItem[] = [
+    ...(generate ? [{ id: 'generate', label: t('generate.cta'), icon: 'route' as const, ...(generate.enabled ? { to: generate.to } : { disabled: true }) }] : []),
+    ...(rows.length > 0
+      ? (['gpx', 'kml'] as const).map((format) => ({
+          id: format,
+          label: t(`missionRoutes.export.${format}`),
+          icon: 'download' as const,
+          disabled: exportFile.isPending,
+          onSelect: () => exportFile.mutate(format),
+        }))
+      : []),
+  ];
+
   return (
-    <section className="mission-routes" aria-labelledby="mission-routes-title">
-      <h2 id="mission-routes-title" tabIndex={-1}>
-        {t('missionRoutes.title')}
-      </h2>
-      <p className="field-help">{t('missionRoutes.intro')}</p>
-      {canManage && (
-        <button id="add-route-open" type="button" className="button button-primary" onClick={() => setAdding(true)}>
-          {t('missionRoutes.add.open')}
-        </button>
-      )}
+    <section className="mission-routes section-card" aria-labelledby="mission-routes-title">
+      <header className="section-card-header">
+        <Icon name="route" className="section-card-icon" />
+        <h2 id="mission-routes-title" className="section-card-title" tabIndex={-1}>
+          {t('missionRoutes.title')}
+        </h2>
+        <div className="section-card-actions">
+          {canManage && (
+            <button id="add-route-open" type="button" className="button button-secondary" onClick={() => setAdding(true)}>
+              <Icon name="plus" />
+              <span>{t('missionRoutes.add.open')}</span>
+            </button>
+          )}
+          {sectionItems.length > 0 && <Menu label={t('missionRoutes.more')} icon="more" iconOnly align="end" items={sectionItems} />}
+        </div>
+      </header>
       <div role="status" className="saved-message">
         {message}
+        {exportFile.isPending ? t('missionRoutes.export.busy') : null}
       </div>
+      {exportFile.isError && (
+        <p className="field-error" role="alert">
+          {exportFile.error instanceof ApiError && exportFile.error.code === 'NOT_FOUND' ? t('missionRoutes.export.nothing') : errorMessage(t, exportFile.error)}
+        </p>
+      )}
 
       {routes.isPending && <LoadingState />}
       {routes.isError && <ErrorState error={routes.error} onRetry={() => void routes.refetch()} />}
       {routes.isSuccess && rows.length === 0 && (
         <div className="mission-routes-empty">
-          <p>{t('missionRoutes.empty')}</p>
-          <p className="field-help">{t('missionRoutes.emptyHelp')}</p>
+          <p className="form-note">{t('missionRoutes.empty')}</p>
           <Link to={PATHS.routes}>{t('missionRoutes.openLibrary')}</Link>
         </div>
       )}
       {routes.isSuccess && rows.length > 0 && (
         <>
-          <p className="field-help">{t('missionRoutes.selectHelp')}</p>
           <div className="table-scroll" role="region" aria-label={t('missionRoutes.tableCaption')} tabIndex={0}>
             <table className="results-table mission-routes-table">
               <caption className="visually-hidden">{t('missionRoutes.tableCaption')}</caption>
@@ -133,8 +168,6 @@ export function MissionRoutesSection({ missionId, locale, canManage, origins, ro
               </tbody>
             </table>
           </div>
-
-          <ExportBar missionId={missionId} />
 
           {rows.some((row) => selected.has(row.id)) && (
             <div className="mission-routes-profiles">
@@ -246,36 +279,34 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
               {t('missionRoutes.badges.stale')}
             </span>
           )}
+          {row.pinned.status === 'draft' && (
+            <span className="status-badge" data-version="draft">
+              {t('missionRoutes.notices.draft')}
+            </span>
+          )}
+          {newer && <span className="status-badge">{t('missionRoutes.notices.newer', { number: newer.number })}</span>}
         </span>
-        {row.pinned.status === 'draft' && <span className="mission-route-notice">{t('missionRoutes.notices.draft')}</span>}
-        {row.validationIsStale && <span className="mission-route-notice">{t('missionRoutes.notices.stale')}</span>}
-        {newer && <span className="mission-route-notice">{t('missionRoutes.notices.newer', { number: newer.number })}</span>}
 
         {canManage && confirming === null && (
-          <span className="point-row-actions">
-            {newer && (
-              <button type="button" className="button button-secondary" aria-label={t('missionRoutes.update.actionFor', { name: row.name, number: newer.number })} onClick={() => onConfirm('update')}>
-                {t('missionRoutes.update.action', { number: newer.number })}
-              </button>
-            )}
-            <button
-              type="button"
-              className="button button-secondary"
-              aria-label={t(unavailable ? 'missionRoutes.unavailable.reactivateFor' : 'missionRoutes.unavailable.markFor', { name: row.name })}
-              aria-disabled={pending}
-              onClick={() => !pending && availability.mutate(unavailable ? 'added' : 'unavailable')}
-            >
-              {t(unavailable ? 'missionRoutes.unavailable.reactivate' : 'missionRoutes.unavailable.mark')}
-            </button>
-            {row.pinned.status === 'draft' && (
-              <button type="button" className="button button-secondary" aria-label={t('missionRoutes.validate.actionFor', { name: row.name })} onClick={() => setValidating(true)}>
-                {t('missionRoutes.validate.action')}
-              </button>
-            )}
-            <button type="button" className="button button-secondary" aria-label={t('missionRoutes.remove.actionFor', { name: row.name })} onClick={() => onConfirm('remove')}>
-              {t('missionRoutes.remove.action')}
-            </button>
-          </span>
+          <Menu
+            className="mission-route-menu"
+            label={t('missionRoutes.actionsFor', { name: row.name })}
+            icon="more"
+            iconOnly
+            variant="plain"
+            disabled={pending}
+            items={[
+              ...(row.pinned.status === 'draft' ? [{ id: 'validate', label: t('missionRoutes.validate.action'), icon: 'check' as const, onSelect: () => setValidating(true) }] : []),
+              ...(newer ? [{ id: 'update', label: t('missionRoutes.update.action', { number: newer.number }), icon: 'upload' as const, onSelect: () => onConfirm('update') }] : []),
+              {
+                id: 'availability',
+                label: t(unavailable ? 'missionRoutes.unavailable.reactivate' : 'missionRoutes.unavailable.mark'),
+                icon: unavailable ? ('play' as const) : ('close' as const),
+                onSelect: () => availability.mutate(unavailable ? 'added' : 'unavailable'),
+              },
+              { id: 'remove', label: t('missionRoutes.remove.action'), icon: 'trash' as const, danger: true, onSelect: () => onConfirm('remove') },
+            ]}
+          />
         )}
         {canManage && confirming !== null && (
           <span
@@ -349,38 +380,5 @@ function RouteProfile({ missionId, row, locale }: { missionId: string; row: Miss
       {geometry.isError && <ErrorState error={geometry.error} onRetry={() => void geometry.refetch()} />}
       {geometry.isSuccess && <ElevationProfile profile={geometry.data.elevationProfile} versionNumber={geometry.data.versionNumber} locale={locale} />}
     </section>
-  );
-}
-
-/** Un archivo con las rutas de la misión (RF-603): lo escribe el servidor con la versión fijada de cada una. */
-function ExportBar({ missionId }: { missionId: string }) {
-  const { t } = useTranslation();
-  const api = useApi();
-  const exportFile = useMutation({
-    mutationFn: async (format: 'gpx' | 'kml') => {
-      const blob = await api.exportMissionRoutes({ params: { missionId }, query: { format } });
-      saveBlob(blob, `${t('missionRoutes.export.fileName')}.${format}`);
-    },
-  });
-  const busy = exportFile.isPending;
-  return (
-    <div className="mission-routes-export">
-      <h3>{t('missionRoutes.export.title')}</h3>
-      <p className="field-help">{t('missionRoutes.export.help')}</p>
-      <div className="point-row-actions">
-        <button type="button" className="button button-secondary" aria-disabled={busy} onClick={() => !busy && exportFile.mutate('gpx')}>
-          {t('missionRoutes.export.gpx')}
-        </button>
-        <button type="button" className="button button-secondary" aria-disabled={busy} onClick={() => !busy && exportFile.mutate('kml')}>
-          {t('missionRoutes.export.kml')}
-        </button>
-      </div>
-      <div role="status">{busy ? t('missionRoutes.export.busy') : null}</div>
-      {exportFile.isError && (
-        <p className="field-error" role="alert">
-          {exportFile.error instanceof ApiError && exportFile.error.code === 'NOT_FOUND' ? t('missionRoutes.export.nothing') : errorMessage(t, exportFile.error)}
-        </p>
-      )}
-    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { Link } from 'react-router';
 import { Icon, type IconName } from './icon';
 
@@ -31,6 +31,8 @@ interface MenuProps {
   align?: 'start' | 'end';
   disabled?: boolean;
   className?: string;
+  /** `id` del botón, para devolverle el foco desde fuera (al cerrar un formulario que abrió una de sus opciones). */
+  buttonId?: string;
 }
 
 type Focus = 'first' | 'last' | 'checked';
@@ -40,9 +42,9 @@ type Focus = 'first' | 'last' | 'checked';
  * Teclado: Enter, Espacio o flecha abajo abren en la primera opción (flecha arriba, en la última); las flechas recorren en círculo,
  * Inicio y Fin saltan a los extremos, Escape cierra y devuelve el foco al botón, Tab cierra y sigue. Se cierra al pulsar fuera.
  */
-export function Menu({ label, items, icon, iconOnly = false, variant = 'secondary', selection = false, align = 'start', disabled = false, className }: MenuProps) {
+export function Menu({ label, items, icon, iconOnly = false, variant = 'secondary', selection = false, align = 'start', disabled = false, className, buttonId }: MenuProps) {
   const [open, setOpen] = useState<Focus | null>(null);
-  const [side, setSide] = useState(align);
+  const [place, setPlace] = useState<CSSProperties>({});
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLUListElement>(null);
@@ -55,15 +57,22 @@ export function Menu({ label, items, icon, iconOnly = false, variant = 'secondar
     if (refocus) button.current?.focus();
   };
 
-  // Al abrir: la lista se alinea con el borde que tenga sitio y el foco entra en la opción que toca.
+  // Al abrir: la lista se coloca respecto a la ventana (así no la recorta una tabla o un panel con desplazamiento), alineada con el borde
+  // del botón que tenga sitio y hacia arriba si debajo no cabe; el foco entra en la opción que toca.
   useLayoutEffect(() => {
     if (!open) return;
     const box = list.current?.getBoundingClientRect();
     const anchor = button.current?.getBoundingClientRect();
     if (box && anchor && box.width > 0) {
+      const gap = 4;
       const fitsStart = anchor.left + box.width <= window.innerWidth;
       const fitsEnd = anchor.right - box.width >= 0;
-      setSide(align === 'start' ? (fitsStart || !fitsEnd ? 'start' : 'end') : fitsEnd || !fitsStart ? 'end' : 'start');
+      const start = align === 'start' ? fitsStart || !fitsEnd : !(fitsEnd || !fitsStart);
+      const below = anchor.bottom + gap + box.height <= window.innerHeight || anchor.top - gap - box.height < 0;
+      setPlace({
+        top: below ? anchor.bottom + gap : anchor.top - gap - box.height,
+        left: start ? Math.max(0, Math.min(anchor.left, window.innerWidth - box.width)) : Math.max(0, anchor.right - box.width),
+      });
     }
     const all = entries();
     const target = open === 'last' ? all.at(-1) : (open === 'checked' && all.find((entry) => entry.getAttribute('aria-checked') === 'true')) || all[0];
@@ -75,8 +84,18 @@ export function Menu({ label, items, icon, iconOnly = false, variant = 'secondar
     const onPointerDown = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) setOpen(null);
     };
+    // La lista va fija a la ventana: si la página se desplaza o cambia de tamaño dejaría de estar junto al botón, así que se cierra.
+    const onMove = (event: Event) => {
+      if (!(event.target instanceof Node) || !list.current?.contains(event.target)) setOpen(null);
+    };
     document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
+    window.addEventListener('scroll', onMove, true);
+    window.addEventListener('resize', onMove);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('scroll', onMove, true);
+      window.removeEventListener('resize', onMove);
+    };
   }, [open]);
 
   const onButtonKeyDown = (event: KeyboardEvent) => {
@@ -116,6 +135,7 @@ export function Menu({ label, items, icon, iconOnly = false, variant = 'secondar
     <div ref={root} className={className ? `menu ${className}` : 'menu'}>
       <button
         ref={button}
+        id={buttonId}
         type="button"
         className={`button button-${variant}${iconOnly ? ' button-icon' : ''}`}
         aria-haspopup="menu"
@@ -131,7 +151,7 @@ export function Menu({ label, items, icon, iconOnly = false, variant = 'secondar
         {!iconOnly && <Icon name="chevron-down" className="menu-caret" />}
       </button>
       {open && (
-        <ul ref={list} id={listId} className="menu-list" role="menu" aria-label={label} data-align={side} onKeyDown={onListKeyDown}>
+        <ul ref={list} id={listId} className="menu-list" role="menu" aria-label={label} style={place} onKeyDown={onListKeyDown}>
           {items.map((item) => {
             const content = (
               <>

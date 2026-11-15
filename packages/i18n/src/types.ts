@@ -392,7 +392,6 @@ export interface Messages {
     closedMeanwhile: string;
     readiness: {
       title: string;
-      hint: string;
       done: string;
       pending: string;
       targetDefined: string;
@@ -446,6 +445,7 @@ export interface Messages {
     };
     points: {
       title: string;
+      addMenu: string;
       kinds: { origin: string; waypoint: string; rendezvous: string };
       groups: { origin: string; waypoint: string; rendezvous: string };
       empty: { origin: string; waypoint: string; rendezvous: string };
@@ -459,9 +459,8 @@ export interface Messages {
       save: string;
       saving: string;
       cancel: string;
-      edit: string;
       editShort: string;
-      remove: string;
+      actions: string;
       removeShort: string;
       removeConfirm: string;
       removeYes: string;
@@ -690,12 +689,11 @@ export interface Messages {
   };
   missionRoutes: {
     title: string;
-    intro: string;
+    actionsFor: string;
+    more: string;
     empty: string;
-    emptyHelp: string;
     openLibrary: string;
     tableCaption: string;
-    selectHelp: string;
     select: string;
     versionValue: string;
     noOrigin: string;
@@ -717,11 +715,11 @@ export interface Messages {
       team: string;
     };
     badges: { unavailable: string; stale: string };
-    notices: { draft: string; stale: string; newer: string };
-    update: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
-    unavailable: { mark: string; markFor: string; marked: string; reactivate: string; reactivateFor: string; reactivated: string };
-    remove: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
-    export: { title: string; gpx: string; kml: string; help: string; busy: string; nothing: string; fileName: string };
+    notices: { draft: string; newer: string };
+    update: { action: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    unavailable: { mark: string; marked: string; reactivate: string; reactivated: string };
+    remove: { action: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    export: { gpx: string; kml: string; busy: string; nothing: string; fileName: string };
     profiles: { title: string; forRoute: string };
     add: {
       open: string;
@@ -749,7 +747,7 @@ export interface Messages {
       errors: { alreadyIn: string; alreadyInUnknown: string; archived: string; notFound: string };
       other: { title: string; generate: string; generateHint: string; generateNoOrigin: string; import: string; importHint: string };
     };
-    validate: { action: string; actionFor: string; done: string };
+    validate: { action: string; done: string };
   };
   generate: {
     title: string;
