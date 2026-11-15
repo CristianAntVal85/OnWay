@@ -8,8 +8,8 @@ Principios innegociables. Cualquier plan o código que los contradiga se corrige
 2. **Hitos pequeños y en orden** (doc 07). Se trabaja un hito por vez, con alcance por identificadores (RF, INV, operaciones `x-milestone`). No se adelanta trabajo de hitos posteriores sin aprobación explícita.
 3. **Contrato primero.** Todo cambio de API empieza en `packages/contracts`, y en el mismo cambio se regeneran el OpenAPI y el documento 06.
 4. **Una prueba por invariante** (INV-xx) tocada, contra base real. Nada se da por cumplido por revisión de código.
-5. **Un commit y un push por tarea**, con todo en verde, en la rama `hito/Hn-nombre`; `main` solo recibe hitos validados.
-6. **Terminado = definición de la sección 4 del doc 07.** Incluye la demostración del hito ejecutable y los documentos al día.
+5. **Un commit por tarea**, con la comprobación rápida en verde, en la rama `hito/Hn-nombre`. El push se hace al cerrar el hito o al abrir la pull request, más uno de respaldo al acabar cada sesión; `main` solo recibe cambios validados, por pull request.
+6. **Terminado = definición de la sección 4 del doc 07** para los hitos. Incluye la demostración del hito ejecutable y los documentos al día. Las vías directa y de cambio pequeño terminan con la comprobación rápida en verde.
 
 ## Seguridad y datos
 
@@ -30,3 +30,12 @@ Principios innegociables. Cualquier plan o código que los contradiga se corrige
 15. **Documentos y textos de interfaz en español; código, identificadores y commits en inglés.** Textos de interfaz solo por `packages/i18n` (es, fr). Comentarios solo cuando el motivo no es obvio.
 16. **Cada vista** tiene estados de carga, vacío y error, funciona en móvil y se maneja con teclado.
 17. **Cambiar una decisión** de los documentos implica editar el documento y anotarlo en su registro de cambios.
+
+## Proporción
+
+18. **La ceremonia es proporcional al cambio.** Hay cuatro vías (skill `sdd`): directa, cambio pequeño, spike e hito. Los principios 7 a 16 se aplican en todas; el plan, los subagentes, los revisores y los 12 criterios, solo en la vía de hito. Un cambio que toca contrato, base de datos, permisos, sesión, datos personales o un invariante va siempre por la vía de hito.
+
+---
+
+Cambios del 2026-11-14: puntos 5 y 6 (el push deja de ser por tarea; terminado según la vía) y punto 18 nuevo.
+Cambio del 2026-11-15: punto 5 (push de respaldo al acabar cada sesión).

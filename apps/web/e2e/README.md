@@ -1,0 +1,33 @@
+# E2E de OnWay (Playwright)
+
+Qué crea, qué deja y qué necesita cada demostración. Los comandos están en `CLAUDE.md` («Comandos»).
+
+## Correr en local sin tocar la pila de desarrollo
+
+Para correr el E2E en local sin tocar la pila de desarrollo, como proyecto aparte y en otro puerto: `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d` y, con las mismas variables y `E2E_BASE_URL=http://localhost:18080`, `pnpm --filter @onway/web e2e` (el apoyo `support/stack.ts` entra en la base por `docker compose exec` y por eso necesita `COMPOSE_PROJECT_NAME`).
+
+## Qué hace cada demostración
+
+El E2E necesita Chromium la primera vez (`pnpm --filter @onway/web exec playwright install chromium`) y casi deja la pila como estaba: crea y retira una organización B ficticia en la base de la pila para probar el aislamiento (la demostración lleva una sola organización).
+
+La demostración de H1 crea en cada ejecución cuatro misiones «E2E …» (dos por proyecto) y las deja **cerradas** (el registro de auditoría es de solo añadir, así que no se pueden borrar; `docker compose down -v` las borra con la pila); si una ejecución se interrumpe, la siguiente (o el cierre) cierra las que queden abiertas.
+
+La demostración de H3 genera rutas con el GraphHopper real sobre la red inventada y, al terminar, cierra las misiones «E2E …» y archiva sus rutas (la biblioteca queda como estaba); `h3-engine-down.spec.ts` para y arranca el motor, y corre al final.
+
+La demostración de H4 (`h4-demo.spec.ts`, el MVP) cierra sus misiones «E2E …» y archiva sus rutas al terminar, con el sello de su ejecución.
+
+La demostración de `H5-acceso` (`h5-acceso-demo.spec.ts`: alta con el código de invitación, aprobación por el administrador, regenerar el código, recuperar la contraseña con el enlace que sale del registro del `api`; en es y fr, la parte en francés solo con teclado) crea por ejecución y formato dos cuentas «E2E …» (`e2e-<d|m>-<sello>-ana|bea@example.org`): no se pueden borrar (la auditoría es de solo añadir), así que al terminar la primera queda **aprobada y desactivada** (cuenta y membresía, sin sesiones) y la segunda **rechazada** desde la bandeja; si una ejecución se interrumpe, `global-setup.ts` y `global-teardown.ts` (`retireE2eAccounts`) dejan así las que queden (las pendientes, rechazadas). Nunca toca `pendiente@example.org` ni las cuentas de la semilla, y deja el código de invitación **regenerado** (el de la pila cambia en cada ejecución; el E2E lo lee siempre de la pantalla de Administración).
+
+Como los límites de los endpoints públicos del `api` son en memoria y por IP, `global-setup.ts` **reinicia el servicio `api`** (`docker compose restart api` con el mismo `COMPOSE_FILE`/`COMPOSE_PROJECT_NAME` que el resto del apoyo) y espera a `/api/v1/health`: cada ejecución gasta como mucho 8 registros, 4 «olvidé mi contraseña» y 6 restablecimientos (límites 10 por 10 min, 5/h y 10/h).
+
+El móvil de esta demostración es el proyecto `mobile-access`, que espera al de escritorio: el código de invitación es de toda la organización y regenerarlo con los dos formatos a la vez rompería el registro del otro.
+
+La demostración de `UI-rediseno` (`ui-rediseno-demo.spec.ts`: tema oscuro por defecto, selector de Cuenta, anchos de 375 a 2560 px, alto del mapa de Crear misión y mapa de carreteras que sigue al tema) solo lee la semilla: no crea ni retira nada.
+
+La demostración de la issue #17 (`route-delete-demo.spec.ts`, escritorio y 375 px): crea rutas «E2E …», **elimina de verdad** las que archiva y deja una última archivada dentro de una misión «E2E …» cerrada (que no se puede eliminar, RN-14); la lista de archivadas se filtra por el sello de la ejecución con `q`.
+
+La demostración de la issue #18 (`weather-simple-demo.spec.ts`): la tarjeta del tiempo de Inicio (tres tramos del día, temperatura y viento, ≤ 423 px) y la vista `/weather`; solo lee la semilla.
+
+**`providers-stub` genera las fechas del pronóstico desde hoy** (plantilla de Caddy en `openmeteo-forecast.json`, fuera de Prettier): el servidor descarta las horas ya pasadas, así que fechas fijas dejarían el tiempo por horas vacío.
+
+Se apunta a otra dirección con `E2E_BASE_URL`.
