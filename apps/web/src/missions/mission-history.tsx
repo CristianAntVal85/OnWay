@@ -45,7 +45,7 @@ export function MissionHistory({ missionId, locale }: { missionId: string; local
       <h2 id="history-title">{t('missionDetail.history.title')}</h2>
       {history.isPending && <LoadingState />}
       {history.isError && !data && <ErrorState error={history.error} onRetry={() => void history.refetch()} />}
-      {data && data.items.length === 0 && <p className="field-help">{t('missionDetail.history.empty')}</p>}
+      {data && data.items.length === 0 && <p className="form-note">{t('missionDetail.history.empty')}</p>}
       {data && data.items.length > 0 && (
         <>
           <ol className="history-list" aria-busy={history.isFetching}>

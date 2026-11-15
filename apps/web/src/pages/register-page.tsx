@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '@onway/contracts/client';
 import { fieldErrorText } from '../access/field-error';
-import { LIMITS, REGISTER_FIELDS, registerProblems, serverProblems, type Problems, type RegisterField } from '../access/validation';
+import { REGISTER_FIELDS, registerProblems, serverProblems, type Problems, type RegisterField } from '../access/validation';
 import { AuthFrame } from '../components/auth-frame';
 import { TextField } from '../components/text-field';
 import { usePageTitle } from '../components/use-page-title';
@@ -144,7 +144,6 @@ function RegisterForm() {
           name="password"
           type="password"
           label={t('register.password')}
-          help={t('register.passwordHelp', { min: LIMITS.passwordMin })}
           inputRef={ref('password')}
           value={values.password}
           onChange={set('password')}
@@ -169,7 +168,6 @@ function RegisterForm() {
           name="inviteCode"
           type="text"
           label={t('register.inviteCode')}
-          help={t('register.inviteCodeHelp')}
           inputRef={ref('inviteCode')}
           value={values.inviteCode}
           onChange={set('inviteCode')}

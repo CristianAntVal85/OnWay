@@ -233,7 +233,7 @@ export function AddRouteDialog({ missionId, origins, inMission, onClose, onAdded
                 </nav>
               )}
               <p role="status">{t('missionRoutes.add.selected', { count: chosen.length, max: MAX_ADD })}</p>
-              <p className="field-help">{t('missionRoutes.add.limit', { max: MAX_ADD })}</p>
+              <p className="form-note">{t('missionRoutes.add.limit', { max: MAX_ADD })}</p>
             </section>
 
             <section aria-labelledby="add-other-title" className="add-route-other">
@@ -243,16 +243,14 @@ export function AddRouteDialog({ missionId, origins, inMission, onClose, onAdded
                   <Link className="button button-secondary" to={`${PATHS.generateRoutes}?mission=${missionId}`}>
                     {t('missionRoutes.add.other.generate')}
                   </Link>{' '}
-                  <span className="field-help">{t('missionRoutes.add.other.generateHint')}</span>
                 </p>
               ) : (
-                <p className="field-help">{t('missionRoutes.add.other.generateNoOrigin')}</p>
+                <p className="form-note">{t('missionRoutes.add.other.generateNoOrigin')}</p>
               )}
               <p>
                 <Link className="button button-secondary" to={`${PATHS.routeImport}?mission=${missionId}`}>
                   {t('missionRoutes.add.other.import')}
                 </Link>{' '}
-                <span className="field-help">{t('missionRoutes.add.other.importHint')}</span>
               </p>
             </section>
 
@@ -278,7 +276,6 @@ export function AddRouteDialog({ missionId, origins, inMission, onClose, onAdded
             <h3 ref={title} tabIndex={-1}>
               {t('missionRoutes.add.details.title')}
             </h3>
-            <p className="field-help">{t('missionRoutes.add.details.help')}</p>
             {readingVersions && <LoadingState label={t('missionRoutes.add.details.loadingVersions')} />}
             {versionsFailed && (
               <p className="field-error" role="alert">

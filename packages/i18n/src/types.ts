@@ -25,10 +25,8 @@ export interface Messages {
     email: string;
     displayName: string;
     password: string;
-    passwordHelp: string;
     passwordConfirm: string;
     inviteCode: string;
-    inviteCodeHelp: string;
     submit: string;
     submitting: string;
     haveAccount: string;
@@ -80,14 +78,18 @@ export interface Messages {
     account: string;
     menu: string;
     closeMenu: string;
+    themeToLight: string;
+    themeToDark: string;
   };
   state: { loading: string; offline: string; emptyTitle: string; emptyBody: string; errorTitle: string; retry: string };
+  common: { more: string; export: string };
   forbidden: { title: string; body: string; goHome: string };
   notFound: { title: string; body: string; goHome: string };
   later: { title: string; body: string };
   profile: { completeTitle: string; completeBody: string };
   home: {
     title: string;
+    stats: { active: string; volunteers: string; noRoute: string };
     organization: string;
     country: string;
     missionsTitle: string;
@@ -103,7 +105,6 @@ export interface Messages {
     title: string;
     basis: { device: string; mission: string; missionUnnamed: string };
     place: string;
-    altitudeNote: string;
     backToDevice: string;
     announceDevice: string;
     announceMission: string;
@@ -201,7 +202,7 @@ export interface Messages {
       fileName: string;
       fileNameAll: string;
     };
-    share: { title: string; help: string; coordinates: string; copy: string; copied: string; copyFailed: string; open: string };
+    share: { title: string; coordinates: string; copy: string; copied: string; copyFailed: string; open: string };
   };
   account: {
     title: string;
@@ -225,7 +226,6 @@ export interface Messages {
   admin: {
     signups: {
       title: string;
-      intro: string;
       tabsLabel: string;
       tabs: { pending: string; approved: string; rejected: string };
       status: { pending: string; approved: string; rejected: string };
@@ -264,7 +264,6 @@ export interface Messages {
     };
     inviteCode: {
       title: string;
-      intro: string;
       codeLabel: string;
       rotatedAt: string;
       copy: string;
@@ -283,7 +282,7 @@ export interface Messages {
   map: {
     label: string;
     loading: string;
-    layers: { label: string; satellite: string; topographic: string; roads: string };
+    layers: { current: string; label: string; satellite: string; topographic: string; roads: string };
     zoomIn: string;
     zoomOut: string;
     resetNorth: string;
@@ -299,14 +298,12 @@ export interface Messages {
     byMap: string;
     byCoordinates: string;
     byAddress: string;
-    mapHelp: string;
     mapPicking: string;
     pickOnMap: string;
     coordinates: string;
-    coordinatesHelp: string;
+    coordinatesPlaceholder: string;
     useCoordinates: string;
     address: string;
-    addressHelp: string;
     search: string;
     searching: string;
     candidates: string;
@@ -325,11 +322,9 @@ export interface Messages {
   };
   createMission: {
     title: string;
-    intro: string;
     required: string;
-    optional: string;
+    additional: string;
     name: string;
-    nameHint: string;
     nameInvalid: string;
     duplicateName: string;
     description: string;
@@ -339,7 +334,7 @@ export interface Messages {
     objective: string;
     objectiveRequired: string;
     origins: string;
-    originsHint: string;
+    originsEmpty: string;
     originsLimit: string;
     addOrigin: string;
     originTitle: string;
@@ -395,7 +390,6 @@ export interface Messages {
     closedMeanwhile: string;
     readiness: {
       title: string;
-      hint: string;
       done: string;
       pending: string;
       targetDefined: string;
@@ -449,6 +443,7 @@ export interface Messages {
     };
     points: {
       title: string;
+      addMenu: string;
       kinds: { origin: string; waypoint: string; rendezvous: string };
       groups: { origin: string; waypoint: string; rendezvous: string };
       empty: { origin: string; waypoint: string; rendezvous: string };
@@ -462,9 +457,8 @@ export interface Messages {
       save: string;
       saving: string;
       cancel: string;
-      edit: string;
       editShort: string;
-      remove: string;
+      actions: string;
       removeShort: string;
       removeConfirm: string;
       removeYes: string;
@@ -485,6 +479,7 @@ export interface Messages {
     title: string;
     importCta: string;
     drawCta: string;
+    newCta: string;
     searchLabel: string;
     searchSubmit: string;
     filters: {
@@ -526,7 +521,6 @@ export interface Messages {
       distance: string;
       ascent: string;
       maxElevation: string;
-      usedIn: string;
       usedInValue: string;
       notUsed: string;
       copy: string;
@@ -543,8 +537,6 @@ export interface Messages {
       clear: string;
       tooMany: string;
       validatedOnly: string;
-      hint: string;
-      hintDelete: string;
     };
     archive: { title: string; description: string; confirm: string; cancel: string; working: string; done: string; failed: string; inUse: string };
     delete: {
@@ -597,6 +589,7 @@ export interface Messages {
       number: string;
       shown: string;
       show: string;
+      showShort: string;
       validatedBy: string;
       createdBy: string;
       draft: string;
@@ -607,7 +600,6 @@ export interface Messages {
     };
     compare: {
       title: string;
-      intro: string;
       a: string;
       b: string;
       metric: string;
@@ -620,7 +612,7 @@ export interface Messages {
       stop: string;
     };
     relations: { derivedFrom: string; derivatives: string; usedIn: string; usedInRow: string; notUsed: string; noDerivatives: string };
-    actions: { validate: string; derive: string; archive: string; newVersion: string; exportGpx: string; exportKml: string; exporting: string; exportError: string; readOnly: string };
+    actions: { validate: string; duplicate: string; archive: string; edit: string; exportGpx: string; exportKml: string; exporting: string; exportError: string };
     validate: { title: string; description: string; warning: string; acknowledge: string; confirm: string; working: string; cancel: string; needsAcknowledge: string; immutable: string };
     derive: { title: string; description: string; nameLabel: string; nameRequired: string; confirm: string; working: string; cancel: string };
     archive: { title: string; description: string; confirm: string; working: string; cancel: string; inUse: string };
@@ -628,7 +620,6 @@ export interface Messages {
   routeImport: {
     title: string;
     fileLabel: string;
-    fileHelp: string;
     submit: string;
     uploading: string;
     previewing: string;
@@ -651,7 +642,6 @@ export interface Messages {
   routeEditor: {
     drawTitle: string;
     editTitle: string;
-    help: string;
     simplifiedNote: string;
     nameLabel: string;
     noteLabel: string;
@@ -671,6 +661,7 @@ export interface Messages {
     save: string;
     saveVersion: string;
     saveAsNew: string;
+    saveOptions: string;
     saving: string;
     deriveTitle: string;
     deriveDescription: string;
@@ -679,7 +670,6 @@ export interface Messages {
     markerLabel: string;
     changed: string;
     snapLabel: string;
-    snapHelp: string;
     snapPreview: string;
     snapComputing: string;
     snapResult: string;
@@ -697,12 +687,11 @@ export interface Messages {
   };
   missionRoutes: {
     title: string;
-    intro: string;
+    actionsFor: string;
+    more: string;
     empty: string;
-    emptyHelp: string;
     openLibrary: string;
     tableCaption: string;
-    selectHelp: string;
     select: string;
     versionValue: string;
     noOrigin: string;
@@ -724,11 +713,11 @@ export interface Messages {
       team: string;
     };
     badges: { unavailable: string; stale: string };
-    notices: { draft: string; stale: string; newer: string };
-    update: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
-    unavailable: { mark: string; markFor: string; marked: string; reactivate: string; reactivateFor: string; reactivated: string };
-    remove: { action: string; actionFor: string; confirm: string; yes: string; no: string; busy: string; done: string };
-    export: { title: string; gpx: string; kml: string; help: string; busy: string; nothing: string; fileName: string };
+    notices: { draft: string; newer: string };
+    update: { action: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    unavailable: { mark: string; marked: string; reactivate: string; reactivated: string };
+    remove: { action: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    export: { gpx: string; kml: string; busy: string; nothing: string; fileName: string };
     profiles: { title: string; forRoute: string };
     add: {
       open: string;
@@ -752,37 +741,35 @@ export interface Messages {
       submit: string;
       submitting: string;
       added: string;
-      details: { title: string; help: string; version: string; versionOption: string; origin: string; noOrigin: string; note: string; draftWarning: string; loadingVersions: string };
+      details: { title: string; version: string; versionOption: string; origin: string; noOrigin: string; note: string; draftWarning: string; loadingVersions: string };
       errors: { alreadyIn: string; alreadyInUnknown: string; archived: string; notFound: string };
-      other: { title: string; generate: string; generateHint: string; generateNoOrigin: string; import: string; importHint: string };
+      other: { title: string; generate: string; generateNoOrigin: string; import: string };
     };
-    validate: { action: string; actionFor: string; done: string };
+    validate: { action: string; done: string };
   };
   generate: {
     title: string;
     cta: string;
-    intro: string;
     back: string;
     fromLabel: string;
     toLabel: string;
     viaTitle: string;
+    optionsTitle: string;
+    viaEmpty: string;
     viaLabel: string;
     addVia: string;
     removeVia: string;
     alternativesLabel: string;
     nameLabel: string;
-    nameHelp: string;
     missionTitle: string;
     missionTarget: string;
     originLabel: string;
     noOrigin: string;
     addOrigin: string;
-    missionAdds: string;
     missionClosed: string;
     missionLoadFailed: string;
     pointMissing: string;
     zonesTitle: string;
-    zonesHelp: string;
     zonesEmpty: string;
     zoneScopeOrganization: string;
     zoneScopeMission: string;
@@ -791,7 +778,6 @@ export interface Messages {
     zoneDeleted: string;
     drawZone: string;
     drawing: string;
-    drawZoneHelp: string;
     zoneReasonLabel: string;
     zoneNeedThree: string;
     saveZone: string;

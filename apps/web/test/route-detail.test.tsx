@@ -2,7 +2,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
-import { admin, apiError, json, org, renderApp, sessionServer, sessionUser, type Call } from './support';
+import { admin, apiError, chooseMenuItem, json, menuItemNames, org, renderApp, sessionServer, sessionUser, type Call } from './support';
+
+const MORE = es.common.more;
+const EXPORT = es.common.export;
 import { profileShape, tableRows } from '../src/library/profile-path';
 import { difference } from '../src/library/compare';
 
@@ -138,20 +141,19 @@ describe('detalle de ruta: datos y estados', () => {
   });
 
   it('una ruta archivada es de solo lectura: sin validar ni versión nueva ni archivar, pero sí derivar y exportar', async () => {
-    setup({}, { data: detail({ status: 'archived' }) });
+    const { user } = setup({}, { data: detail({ status: 'archived' }) });
     expect(await screen.findByText(T.archivedNotice)).toBeTruthy();
     expect(screen.queryByRole('button', { name: T.actions.validate })).toBeNull();
-    expect(screen.queryByRole('link', { name: T.actions.newVersion })).toBeNull();
-    expect(screen.queryByRole('button', { name: T.actions.archive })).toBeNull();
-    expect(screen.getByRole('button', { name: T.actions.derive })).toBeTruthy();
-    expect(screen.getByRole('button', { name: T.actions.exportGpx })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: T.actions.edit })).toBeNull();
+    expect(await menuItemNames(user, MORE)).toEqual([T.actions.duplicate]);
+    expect(await menuItemNames(user, EXPORT)).toEqual([T.actions.exportGpx, T.actions.exportKml]);
     expect(await screen.findByTestId('line-archived')).toBeTruthy();
   });
 
   it('en francés los textos salen en francés', async () => {
-    setup({}, { language: 'fr' });
+    const { user } = setup({}, { language: 'fr' });
     expect(await screen.findByRole('heading', { level: 2, name: fr.routeDetail.versions.title })).toBeTruthy();
-    expect(screen.getByRole('button', { name: fr.routeDetail.actions.derive })).toBeTruthy();
+    expect(await menuItemNames(user, fr.common.more)).toEqual([fr.routeDetail.actions.duplicate, fr.routeDetail.actions.archive]);
   });
 });
 
@@ -264,9 +266,9 @@ describe('validar, derivar y archivar (coordinador)', () => {
     await user.click(within(dialog).getByRole('button', { name: T.validate.confirm }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(calls().find((c) => c.method === 'POST')!.body).toEqual({ acknowledged: true });
-    // La versión validada ya no ofrece «validar» (queda la nota de que se edita creando otra).
+    // La versión validada ya no ofrece «validar»; «Editar ruta» sigue ahí (guardar crea otra versión).
     await waitFor(() => expect(screen.queryByRole('button', { name: T.actions.validate })).toBeNull());
-    expect(screen.getByText(T.actions.readOnly)).toBeTruthy();
+    expect(screen.getByRole('link', { name: T.actions.edit })).toBeTruthy();
   });
 
   it('una versión validada no tiene «validar»; la acción para cambiarla crea otra versión (no «editar» sobre ella)', async () => {
@@ -274,7 +276,7 @@ describe('validar, derivar y archivar (coordinador)', () => {
     await screen.findByText('5,0 km');
     expect(screen.queryByRole('button', { name: T.actions.validate })).toBeNull();
     expect(screen.queryByRole('button', { name: /^Editar/ })).toBeNull();
-    expect(screen.getByRole('link', { name: T.actions.newVersion }).getAttribute('href')).toBe(`/routes/${ROUTE}/edit?base=${V1}`);
+    expect(screen.getByRole('link', { name: T.actions.edit }).getAttribute('href')).toBe(`/routes/${ROUTE}/edit?base=${V1}`);
   });
 
   it('derivar pide un nombre, envía la versión mostrada y lleva a la ruta nueva', async () => {
@@ -284,7 +286,7 @@ describe('validar, derivar y archivar (coordinador)', () => {
       [`GET /routes/${NEW}`]: () => json(200, detail({ id: NEW, name: 'Mi copia', derivedFrom: { routeId: ROUTE, routeName: 'Senda del Circo', versionNumber: 2 } })),
       [`GET /routes/${NEW}/versions/${V2}`]: () => json(200, versionDetail(version(V2, 2, 'draft'))),
     });
-    await user.click(await screen.findByRole('button', { name: T.actions.derive }));
+    await chooseMenuItem(user, MORE, T.actions.duplicate);
     const dialog = await screen.findByRole('dialog', { name: T.derive.title });
     const name = within(dialog).getByLabelText(T.derive.nameLabel);
     await user.clear(name);
@@ -307,7 +309,7 @@ describe('validar, derivar y archivar (coordinador)', () => {
           ],
         }),
     });
-    await user.click(await screen.findByRole('button', { name: T.actions.archive }));
+    await chooseMenuItem(user, MORE, T.actions.archive);
     const dialog = await screen.findByRole('dialog', { name: T.archive.title });
     await user.click(within(dialog).getByRole('button', { name: T.archive.confirm }));
     expect(await within(dialog).findByText('No se puede archivar: está en misiones que no están cerradas (Misión del Aneto, Misión del Posets).')).toBeTruthy();
@@ -323,7 +325,7 @@ describe('validar, derivar y archivar (coordinador)', () => {
       },
       [`GET /routes/${ROUTE}`]: () => json(200, detail(archived ? { status: 'archived' } : {})),
     });
-    await user.click(await screen.findByRole('button', { name: T.actions.archive }));
+    await chooseMenuItem(user, MORE, T.actions.archive);
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: T.archive.confirm }));
     expect(await screen.findByText(T.archivedNotice)).toBeTruthy();
   });
@@ -337,7 +339,7 @@ describe('validar, derivar y archivar (coordinador)', () => {
       names.push(this.download);
     };
     const { user, calls } = setup({ [`GET /routes/${ROUTE}/export`]: () => new Response('<kml/>', { status: 200, headers: { 'Content-Type': 'application/vnd.google-earth.kml+xml' } }) });
-    await user.click(await screen.findByRole('button', { name: T.actions.exportKml }));
+    await chooseMenuItem(user, EXPORT, T.actions.exportKml);
     await waitFor(() => expect(names).toEqual(['onway-route-v2.kml']));
     const request = calls().find((c) => c.path.endsWith('/export'))!;
     expect(request.query.get('versionId')).toBe(V2);
@@ -348,10 +350,11 @@ describe('validar, derivar y archivar (coordinador)', () => {
 
 describe('administrador', () => {
   it('lee y exporta, pero no ve validar, versión nueva, derivar ni archivar', async () => {
-    setup({}, { user: admin() });
+    const { user } = setup({}, { user: admin() });
     await screen.findByText('5,6 km');
-    expect(screen.getByRole('button', { name: T.actions.exportGpx })).toBeTruthy();
-    for (const name of [T.actions.validate, T.actions.derive, T.actions.archive]) expect(screen.queryByRole('button', { name })).toBeNull();
-    expect(screen.queryByRole('link', { name: T.actions.newVersion })).toBeNull();
+    expect(await menuItemNames(user, EXPORT)).toEqual([T.actions.exportGpx, T.actions.exportKml]);
+    expect(screen.queryByRole('button', { name: T.actions.validate })).toBeNull();
+    expect(screen.queryByRole('button', { name: MORE })).toBeNull();
+    expect(screen.queryByRole('link', { name: T.actions.edit })).toBeNull();
   });
 });

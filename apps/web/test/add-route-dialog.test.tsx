@@ -4,7 +4,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
-import { admin, apiError, json, renderApp, sessionServer, sessionUser, type Call } from './support';
+import { admin, apiError, chooseMenuItem, json, menuItemNames, renderApp, sessionServer, sessionUser, type Call } from './support';
+
+const ROW_MENU = (name: string) => es.missionRoutes.actionsFor.replace('{{name}}', name);
+const VALIDATE = es.missionRoutes.validate.action;
 import { MISSION_ID, PATH, allActions, libraryItem, libraryPage, mission, noActions, routeDetailOf, row, versionId } from './mission-fixtures';
 
 vi.mock('../src/map', () => ({ MAP_LAYERS: ['satellite', 'topographic', 'roads'], MapView: () => <div data-testid="map" /> }));
@@ -326,10 +329,10 @@ describe('validar desde la fila (RF-506, D-H4-08)', () => {
   const draftRow = () => row(1, 'Pradera a la Brecha', {}, { status: 'draft', validatedAt: null });
 
   it('una versión fijada en borrador ofrece «Validar»; una validada, no', async () => {
-    setup({ rows: [draftRow(), row(2, 'Senda del Circo')] });
+    const { user } = setup({ rows: [draftRow(), row(2, 'Senda del Circo')] });
     const table = await within(await section()).findByRole('table');
-    expect(within(within(table).getByRole('row', { name: /Pradera a la Brecha/ })).getByRole('button', { name: 'Validar «Pradera a la Brecha»' })).toBeTruthy();
-    expect(within(within(table).getByRole('row', { name: /Senda del Circo/ })).queryByRole('button', { name: /Validar/ })).toBeNull();
+    expect(await menuItemNames(user, ROW_MENU('Pradera a la Brecha'), table)).toContain(VALIDATE);
+    expect(await menuItemNames(user, ROW_MENU('Senda del Circo'), table)).not.toContain(VALIDATE);
   });
 
   it('pide confirmar el aviso; sin marcarlo no envía nada; al confirmar valida la versión fijada y la fila cambia sin recargar la página', async () => {
@@ -345,7 +348,7 @@ describe('validar desde la fila (RF-506, D-H4-08)', () => {
       },
     });
     const table = await within(await section()).findByRole('table');
-    await user.click(within(within(table).getByRole('row', { name: /Pradera a la Brecha/ })).getByRole('button', { name: /Validar/ }));
+    await chooseMenuItem(user, ROW_MENU('Pradera a la Brecha'), VALIDATE, table);
     const dialog = await screen.findByRole('dialog', { name: es.routeDetail.validate.title.replace('{{number}}', '1') });
     expect(within(dialog).getByText(es.routeDetail.validate.warning)).toBeTruthy();
     await user.click(within(dialog).getByRole('button', { name: es.routeDetail.validate.confirm }));
@@ -357,7 +360,7 @@ describe('validar desde la fila (RF-506, D-H4-08)', () => {
     expect(calls().find((c) => c.path.endsWith('/validate'))!.body).toEqual({ acknowledged: true });
     expect(await within(await section()).findByText('«Pradera a la Brecha» queda validada. Los rescatistas ya la ven si la misión está activa.')).toBeTruthy();
     await waitFor(() => expect(within(screen.getByRole('table')).getByText('Versión 1 · Validada')).toBeTruthy());
-    expect(within(screen.getByRole('table')).queryByRole('button', { name: /Validar/ })).toBeNull();
+    expect(await menuItemNames(user, ROW_MENU('Pradera a la Brecha'), screen.getByRole('table'))).not.toContain(VALIDATE);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
@@ -365,7 +368,7 @@ describe('validar desde la fila (RF-506, D-H4-08)', () => {
     const original = draftRow();
     const { user, calls } = setup({ rows: [original] });
     const table = await within(await section()).findByRole('table');
-    await user.click(within(table).getByRole('button', { name: /Validar/ }));
+    await chooseMenuItem(user, ROW_MENU(original.name), VALIDATE, table);
     await screen.findByRole('dialog');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();

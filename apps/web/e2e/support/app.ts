@@ -51,6 +51,36 @@ export async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   expect(scrollWidth, `scrollWidth ${scrollWidth} > clientWidth ${clientWidth} en ${page.url()}`).toBeLessThanOrEqual(clientWidth);
 }
 
+/** El botón de capas del mapa (UI-simplificacion, D-S6): su nombre dice la capa vigente. Sin `layer`, cualquiera. */
+export const mapLayerButton = (map: Locator, layer?: string): Locator =>
+  map.getByRole('button', { name: layer ? es.map.layers.current.replace('{{layer}}', layer) : new RegExp(`^${es.map.layers.label}`), exact: true });
+
+/** Abre el desplegable de capas del mapa, elige una y espera a que el botón la nombre. */
+export async function chooseMapLayer(map: Locator, layer: string): Promise<void> {
+  await mapLayerButton(map).click();
+  // La lista del menú se pinta al final del documento (no la recorta ni la tapa su contenedor): se busca en la página.
+  await map.page().getByRole('menuitemradio', { name: layer, exact: true }).click();
+  await expect(mapLayerButton(map, layer)).toBeVisible();
+}
+
+const pageOf = (scope: Page | Locator): Page => ('page' in scope && typeof scope.page === 'function' ? (scope as Locator).page() : (scope as Page));
+
+/** Abre un menú desplegable (UI-simplificacion, D-S4) por el nombre de su botón y pulsa una de sus opciones. */
+export async function chooseMenuItem(scope: Page | Locator, menu: string, item: string): Promise<void> {
+  await scope.getByRole('button', { name: menu, exact: true }).click();
+  await pageOf(scope).getByRole('menu', { name: menu, exact: true }).getByRole('menuitem', { name: item, exact: true }).click();
+}
+
+/** Los rótulos de las opciones de un menú: lo abre, los lee y lo cierra con Escape. */
+export async function menuItemNames(scope: Page | Locator, menu: string): Promise<string[]> {
+  await scope.getByRole('button', { name: menu, exact: true }).click();
+  const items = pageOf(scope).getByRole('menu', { name: menu, exact: true }).getByRole('menuitem');
+  await expect(items.first()).toBeVisible();
+  const names = (await items.allInnerTexts()).map((text) => text.trim());
+  await items.first().press('Escape');
+  return names;
+}
+
 export const heading = (page: Page, name: string): Locator => page.getByRole('heading', { level: 1, name });
 
 // PNG transparente de 1×1: las teselas de IGN se sustituyen por él para que estas pruebas no salgan a Internet (D-H1-15).

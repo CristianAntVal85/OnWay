@@ -347,8 +347,8 @@ describe('theme-boot.js (D-U5): antes de pintar, tolerante y con la misma clave 
   });
 
   it('fija data-theme y theme-color con lo guardado', () => {
-    expect(boot({ localStorage: storageWith('light'), matchMedia: media(false) })).toEqual({ theme: 'light', color: '#17262b' });
-    expect(boot({ localStorage: storageWith('dark'), matchMedia: media(true) })).toEqual({ theme: 'dark', color: '#161b22' });
+    expect(boot({ localStorage: storageWith('light'), matchMedia: media(false) })).toEqual({ theme: 'light', color: '#151e2a' });
+    expect(boot({ localStorage: storageWith('dark'), matchMedia: media(true) })).toEqual({ theme: 'dark', color: '#151e2a' });
   });
 
   it('los dos colores de theme-color son los de la cabecera de tokens.css (y el de index.html, el del oscuro)', () => {

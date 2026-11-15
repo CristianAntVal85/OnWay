@@ -9,7 +9,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { ACCOUNTS, fr } from './support/app';
+import { ACCOUNTS, chooseMenuItem, fr, menuItemNames } from './support/app';
 import { es, expect, expectNoHorizontalOverflow, login, openSession, tabTo, test } from './support/demo';
 import { ROOT } from './support/stack';
 
@@ -128,7 +128,7 @@ test('importing a GPX with false altitudes previews the server’s metrics and s
   run.routeId = '';
   await login(page, ACCOUNTS.coordinator);
   await page.goto('/routes');
-  await page.getByRole('link', { name: R.importCta }).first().click();
+  await chooseMenuItem(page, R.newCta, R.importCta);
   await expect(page.getByRole('heading', { level: 1, name: es.routeImport.title })).toBeVisible();
 
   // Un archivo de más de 10 MB se rechaza sin subirlo.
@@ -168,7 +168,7 @@ test('editing creates version 2, comparing shows both, and validating version 2 
   await login(page, ACCOUNTS.coordinator);
   await page.goto(`/routes/${run.routeId}`);
   const distanceBefore = await page.locator('dt', { hasText: D.metrics.distance }).first().locator('xpath=following-sibling::dd[1]').innerText();
-  await page.getByRole('link', { name: D.actions.newVersion }).click();
+  await page.getByRole('link', { name: D.actions.edit, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: new RegExp(`^Nueva versión de`) })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
@@ -222,7 +222,7 @@ test('editing creates version 2, comparing shows both, and validating version 2 
   await page.getByRole('button', { name: D.compare.stop }).click();
 
   // Validar la versión 2: el aviso se acepta con la casilla.
-  await page.getByRole('button', { name: D.actions.validate }).click();
+  await page.getByRole('button', { name: D.actions.validate, exact: true }).click();
   const dialog = page.getByRole('dialog', { name: D.validate.title.replace('{{number}}', '2') });
   await expect(dialog.getByText(D.validate.warning)).toBeVisible();
   await dialog.getByRole('button', { name: D.validate.confirm }).click();
@@ -231,14 +231,14 @@ test('editing creates version 2, comparing shows both, and validating version 2 
   await dialog.getByRole('button', { name: D.validate.confirm }).click();
   await expect(dialog).toBeHidden();
   await expect(page.locator('.version-row').first()).toContainText(D.versions.validated);
-  await expect(page.getByRole('button', { name: D.actions.validate })).toHaveCount(0);
-  await expect(page.getByText(D.actions.readOnly)).toBeVisible();
+  await expect(page.getByRole('button', { name: D.actions.validate, exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: D.actions.edit, exact: true })).toBeVisible();
 });
 
 test('deriving makes a copy that remembers where it comes from, and several routes export in one file', async ({ page }, info) => {
   await login(page, ACCOUNTS.coordinator);
   await page.goto(`/routes/${run.routeId}`);
-  await page.getByRole('button', { name: D.actions.derive }).click();
+  await chooseMenuItem(page, es.common.more, D.actions.duplicate);
   const dialog = page.getByRole('dialog', { name: D.derive.title });
   const copyName = nameOf(info, 'copia');
   await dialog.getByLabel(D.derive.nameLabel).fill(copyName);
@@ -253,7 +253,7 @@ test('deriving makes a copy that remembers where it comes from, and several rout
   await expect(page.locator('.route-card')).toHaveCount(2);
   for (const link of await page.locator('.route-card-check').all()) await link.check();
   await expect(page.getByText(R.selection.count.replace('{{count}}', '2'))).toBeVisible();
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: R.selection.exportGpx }).click()]);
+  const [download] = await Promise.all([page.waitForEvent('download'), chooseMenuItem(page, es.common.export, R.selection.exportGpx)]);
   const text = await readFile((await download.path())!, 'utf8');
   expect(text.match(/<trk>/g)).toHaveLength(2);
   expect(text).not.toMatch(/<author|<email|@/);
@@ -263,7 +263,7 @@ test('deriving makes a copy that remembers where it comes from, and several rout
 test('exporting a version and importing it again gives the same geometry', async ({ page }, info) => {
   await login(page, ACCOUNTS.coordinator);
   await page.goto(`/routes/${run.routeId}`);
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: D.actions.exportGpx }).click()]);
+  const [download] = await Promise.all([page.waitForEvent('download'), chooseMenuItem(page, es.common.export, D.actions.exportGpx)]);
   run.exported = (await download.path())!;
 
   await page.goto('/routes/import');
@@ -289,13 +289,12 @@ test('exporting a version and importing it again gives the same geometry', async
 test('a route is archived and then it is read-only', async ({ page }) => {
   await login(page, ACCOUNTS.coordinator);
   await page.goto(`/routes/${run.reimportId}`);
-  await page.getByRole('button', { name: D.actions.archive }).click();
+  await chooseMenuItem(page, es.common.more, D.actions.archive);
   const dialog = page.getByRole('dialog', { name: D.archive.title });
   await dialog.getByRole('button', { name: D.archive.confirm }).click();
   await expect(page.getByText(D.archivedNotice)).toBeVisible();
-  await expect(page.getByRole('button', { name: D.actions.archive })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: D.actions.newVersion })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: D.actions.derive })).toBeVisible();
+  await expect(page.getByRole('link', { name: D.actions.edit, exact: true })).toHaveCount(0);
+  expect(await menuItemNames(page, es.common.more)).toEqual([D.actions.duplicate]);
 });
 
 test('points of a GPX are imported into a mission', async ({ page }, info) => {
@@ -305,7 +304,7 @@ test('points of a GPX are imported into a mission', async ({ page }, info) => {
   run.missionId = mission.id;
   await page.goto(`/missions/${mission.id}`);
   await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
-  await page.getByRole('button', { name: es.missionDetail.importPoints.cta }).click();
+  await chooseMenuItem(page, es.missionDetail.points.addMenu, es.missionDetail.importPoints.cta);
   const dialog = page.getByRole('dialog', { name: es.missionDetail.importPoints.title });
   await dialog.getByLabel(es.missionDetail.importPoints.kindLabel).selectOption('waypoint');
   await dialog.getByLabel(es.missionDetail.importPoints.fileLabel).setInputFiles(GPX('ejemplo-importar.gpx'));
@@ -323,13 +322,12 @@ test('the administrator reads the library without write buttons and the rescuer 
   await admin.goto('/routes');
   await expect(admin.getByRole('heading', { level: 1, name: R.title })).toBeVisible();
   await expect(admin.getByRole('link', { name: 'Senda del Circo (ficticia)', exact: true })).toBeVisible();
-  await expect(admin.getByRole('link', { name: R.importCta })).toHaveCount(0);
-  await expect(admin.getByRole('link', { name: R.drawCta })).toHaveCount(0);
+  await expect(admin.getByRole('button', { name: R.newCta, exact: true })).toHaveCount(0);
   await admin.getByRole('link', { name: 'Senda del Circo (ficticia)', exact: true }).click();
   await expect(admin.getByRole('heading', { level: 1, name: 'Senda del Circo (ficticia)' })).toBeVisible();
-  await expect(admin.getByRole('button', { name: D.actions.exportGpx })).toBeVisible();
-  for (const name of [D.actions.validate, D.actions.derive, D.actions.archive]) await expect(admin.getByRole('button', { name })).toHaveCount(0);
-  await expect(admin.getByRole('link', { name: D.actions.newVersion })).toHaveCount(0);
+  expect(await menuItemNames(admin, es.common.export)).toEqual([D.actions.exportGpx, D.actions.exportKml]);
+  for (const name of [D.actions.validate, es.common.more]) await expect(admin.getByRole('button', { name, exact: true })).toHaveCount(0);
+  await expect(admin.getByRole('link', { name: D.actions.edit, exact: true })).toHaveCount(0);
   await admin.goto('/routes/import');
   await expect(admin.getByText(es.forbidden.title)).toBeVisible();
 
@@ -380,7 +378,7 @@ test('the library works with the keyboard only and in French', async ({ page }) 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/, SLOW_NAVIGATION);
   await expect(page.getByRole('heading', { level: 1, name: 'Senda del Circo (ficticia)' })).toBeVisible(SLOW_NAVIGATION);
   await expect(page.getByRole('heading', { level: 2, name: fr.routeDetail.versions.title })).toBeVisible(SLOW_NAVIGATION);
-  await expect(page.getByRole('button', { name: fr.routeDetail.actions.exportGpx })).toBeVisible();
+  await expect(page.getByRole('button', { name: fr.common.export, exact: true })).toBeVisible();
   // El perfil de elevación tiene su tabla equivalente, alcanzable con el teclado.
   const summary = page.getByText(fr.routeDetail.profile.showTable);
   await tabTo(page, summary, 140);

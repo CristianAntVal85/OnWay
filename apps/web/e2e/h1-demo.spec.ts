@@ -6,7 +6,7 @@
 // de IGN se sustituyen por una imagen vacía. Cada ejecución crea sus propias misiones con nombre único y las deja CERRADAS (el
 // registro de auditoría es de solo añadir: no se pueden retirar, solo cerrar; `docker compose down -v` las borra con la pila).
 import type { Page } from '@playwright/test';
-import { ACCOUNTS, fr } from './support/app';
+import { ACCOUNTS, chooseMapLayer, chooseMenuItem, fr, mapLayerButton, menuItemNames } from './support/app';
 import { DEVICE_AT, DEVICE_CELL, DEVICE_DOWN, clickMapCenter, es, expect, expectNoHorizontalOverflow, expectWithinViewportWidth, login, openSession, tabTo, test } from './support/demo';
 import { ORG_B, demo } from './support/stack';
 
@@ -73,7 +73,7 @@ test('the coordinator creates a mission by clicking the target and adds three or
   await expect(page.getByLabel(es.createMission.coordinator)).toHaveValue(/.+/); // por defecto, quien crea
 
   // El objetivo: se pincha en el mapa (el punto espera el clic desde el principio).
-  const objective = page.getByRole('group', { name: es.createMission.objective });
+  const objective = page.getByRole('region', { name: es.createMission.objective, exact: true });
   await clickMapCenter(page.getByRole('region', { name: es.createMission.mapRegion }));
   const picked = objective.getByText(/^Punto elegido: /);
   await expect(picked).toBeVisible();
@@ -134,7 +134,7 @@ test('adds a waypoint and a rendezvous point, and switches the three map layers 
   await expect(page.getByRole('heading', { level: 1, name: run.name })).toBeVisible();
 
   // Punto intermedio por coordenadas.
-  await page.getByRole('button', { name: es.missionDetail.points.add.waypoint }).click();
+  await chooseMenuItem(page, es.missionDetail.points.addMenu, es.missionDetail.points.add.waypoint);
   const waypointForm = page.getByRole('group', { name: es.missionDetail.points.addTitle.waypoint });
   await waypointForm.getByLabel(es.missionDetail.points.name).fill('Intermedio E2E');
   await byCoordinates(waypointForm, '42.664, 0.005');
@@ -142,7 +142,7 @@ test('adds a waypoint and a rendezvous point, and switches the three map layers 
   await expect(page.getByText(es.missionDetail.points.added.replace('{{name}}', 'Intermedio E2E'))).toBeVisible();
 
   // Punto de reunión por dirección en otro país (Gavarnie, Francia): hay que confirmar antes de usarlo (doc 02 §3.4).
-  await page.getByRole('button', { name: es.missionDetail.points.add.rendezvous }).click();
+  await chooseMenuItem(page, es.missionDetail.points.addMenu, es.missionDetail.points.add.rendezvous);
   const rendezvousForm = page.getByRole('group', { name: es.missionDetail.points.addTitle.rendezvous });
   await rendezvousForm.getByLabel(es.missionDetail.points.name).fill('Reunión E2E');
   await rendezvousForm.getByRole('radio', { name: es.point.byAddress }).check();
@@ -165,29 +165,28 @@ test('adds a waypoint and a rendezvous point, and switches the three map layers 
   // Las tres capas: cada una cita lo suyo, a la vista (también a 375 px) y sin plegar.
   const map = mapRegion(page);
   await map.scrollIntoViewIfNeeded();
-  const layers = map.getByRole('group', { name: es.map.layers.label });
   const attribution = map.getByRole('list', { name: es.map.attribution.label });
-  const layer = (name: string) => layers.getByRole('button', { name, exact: true });
 
-  await expect(layer(es.map.layers.topographic)).toHaveAttribute('aria-pressed', 'true'); // capa inicial
+  await expect(mapLayerButton(map, es.map.layers.topographic)).toBeVisible(); // capa inicial
   await expect(attribution).toContainText(es.map.attribution.ignEs);
   await expect(attribution).toContainText(es.map.attribution.ignFr);
   await expectWithinViewportWidth(page, attribution);
 
-  await layer(es.map.layers.satellite).click();
-  await expect(layer(es.map.layers.satellite)).toHaveAttribute('aria-pressed', 'true');
-  await expect(layer(es.map.layers.topographic)).toHaveAttribute('aria-pressed', 'false');
+  await chooseMapLayer(map, es.map.layers.satellite);
+  await mapLayerButton(map).click();
+  await expect(page.getByRole('menuitemradio', { name: es.map.layers.satellite, exact: true })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('menuitemradio', { name: es.map.layers.topographic, exact: true })).toHaveAttribute('aria-checked', 'false');
+  await page.keyboard.press('Escape');
   await expect(attribution).toContainText(es.map.attribution.ignEsSatellite);
   await expect(attribution).toContainText(es.map.attribution.ignFr);
   await expectWithinViewportWidth(page, attribution);
 
-  await layer(es.map.layers.roads).click();
-  await expect(layer(es.map.layers.roads)).toHaveAttribute('aria-pressed', 'true');
+  await chooseMapLayer(map, es.map.layers.roads);
   await expect(attribution).toContainText(es.map.attribution.osm);
   await expect(attribution).not.toContainText(es.map.attribution.ignFr);
   await expectWithinViewportWidth(page, attribution);
 
-  await layer(es.map.layers.satellite).click();
+  await chooseMapLayer(map, es.map.layers.satellite);
   await expect(attribution).toContainText(es.map.attribution.ignEsSatellite);
   // La vigilancia de red alcanza a las teselas: se pidieron a IGN (respondidas por la imagen vacía) y a nadie más.
   await expect.poll(() => network.ignRequests).toBeGreaterThan(0);
@@ -356,14 +355,14 @@ test('the coordinator closes the mission without an attendance dialog and reopen
   await expect(page.getByText(es.missionDetail.lifecycle.closed)).toBeVisible();
   // Cerrada es de solo lectura: ningún control de escritura, y se puede reabrir.
   await expect(page.getByText(es.missionDetail.readOnlyClosed)).toBeVisible();
-  await expect(page.getByRole('button', { name: es.missionDetail.editData })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: es.missionDetail.points.add.origin })).toHaveCount(0);
+  expect(await menuItemNames(page, es.common.more)).not.toContain(es.missionDetail.editData);
+  await expect(page.getByRole('button', { name: es.missionDetail.points.addMenu, exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole('button', { name: es.missionDetail.lifecycle.reopen, exact: true }).click();
   await expect(statusBadge(page, es.missions.status.active)).toBeVisible();
   await expect(page.getByText(es.missionDetail.lifecycle.reopened)).toBeVisible();
-  await expect(page.getByRole('button', { name: es.missionDetail.editData })).toBeVisible();
+  expect(await menuItemNames(page, es.common.more)).toContain(es.missionDetail.editData);
 });
 
 test('the history reflects every change in order, and the mission is left closed', async ({ page }) => {
@@ -438,7 +437,7 @@ test('the whole journey works with the keyboard only and in French: create, acti
   await tabTo(page, page.getByLabel(fr.createMission.name));
   await page.keyboard.type(frName);
   // Objetivo: grupo de opciones con las flechas (Mapa -> Coordenadas), texto, Intro.
-  const objective = page.getByRole('group', { name: fr.createMission.objective });
+  const objective = page.getByRole('region', { name: fr.createMission.objective, exact: true });
   await tabTo(page, objective.getByRole('radio', { name: fr.point.byMap }));
   await key('ArrowRight');
   await expect(objective.getByRole('radio', { name: fr.point.byCoordinates })).toBeChecked();

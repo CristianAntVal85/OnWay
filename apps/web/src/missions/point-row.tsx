@@ -1,3 +1,4 @@
+import { Menu } from '../components/menu';
 import { useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -56,14 +57,18 @@ export function PointRow({ missionId, point, locale, canEdit, confirming, onEdit
         </p>
       </div>
       {canEdit && !confirming && (
-        <div className="point-row-actions">
-          <button id={`point-edit-${point.id}`} type="button" className="button button-secondary" aria-label={t('missionDetail.points.edit', { name: point.name })} onClick={onEdit}>
-            {t('missionDetail.points.editShort')}
-          </button>
-          <button type="button" className="button button-secondary" aria-label={t('missionDetail.points.remove', { name: point.name })} onClick={onAskRemove}>
-            {t('missionDetail.points.removeShort')}
-          </button>
-        </div>
+        <Menu
+          buttonId={`point-edit-${point.id}`}
+          label={t('missionDetail.points.actions', { name: point.name })}
+          icon="more"
+          iconOnly
+          variant="plain"
+          align="end"
+          items={[
+            { id: 'edit', label: t('missionDetail.points.editShort'), icon: 'edit', onSelect: onEdit },
+            { id: 'remove', label: t('missionDetail.points.removeShort'), icon: 'trash', danger: true, onSelect: onAskRemove },
+          ]}
+        />
       )}
       {canEdit && confirming && (
         <div className="point-row-confirm" role="group" aria-label={t('missionDetail.points.removeConfirm', { name: point.name })}>

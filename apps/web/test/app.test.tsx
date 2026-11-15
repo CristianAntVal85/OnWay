@@ -204,6 +204,31 @@ describe('marco y barra por rol (RF-702)', () => {
     expect(current.map((l) => l.textContent)).toEqual([es.nav.routes]);
   });
 
+  it('cada enlace de la barra lleva su icono decorativo y conserva su nombre (UI-simplificacion T3)', async () => {
+    const { api } = sessionServer({ user: sessionUser() });
+    renderApp({ fetch: api.fetch });
+    await screen.findByRole('heading', { level: 1, name: es.home.title });
+    const nav = within(screen.getByRole('navigation', { name: es.nav.label }));
+    for (const link of nav.getAllByRole('link')) {
+      expect(link.querySelector('svg[aria-hidden="true"]'), link.textContent ?? '').not.toBeNull();
+    }
+    // Cuenta se ve como icono en pantalla ancha, pero sigue siendo un enlace con nombre.
+    expect(nav.getByRole('link', { name: es.nav.account }).getAttribute('href')).toBe('/account');
+  });
+
+  it('el botón de tema de la cabecera alterna oscuro y claro, dice a cuál pasa y lo recuerda (D-S11)', async () => {
+    const { api } = sessionServer({ user: sessionUser() });
+    const { user } = renderApp({ fetch: api.fetch });
+    await screen.findByRole('heading', { level: 1, name: es.home.title });
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    await user.click(screen.getByRole('button', { name: es.nav.themeToLight }));
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+    expect(window.localStorage.getItem('onway.theme')).toBe('light');
+    await user.click(screen.getByRole('button', { name: es.nav.themeToDark }));
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+    expect(screen.getByRole('button', { name: es.nav.themeToLight })).toBeTruthy();
+  });
+
   it('las secciones futuras dicen que llegan en un hito posterior', async () => {
     const { api } = sessionServer({ user: sessionUser() });
     renderApp({ route: '/teams', fetch: api.fetch });

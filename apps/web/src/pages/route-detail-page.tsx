@@ -3,6 +3,10 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
+import { Icon } from '../components/icon';
+import { Menu, type MenuItem } from '../components/menu';
+import { PageHeader } from '../components/page-header';
+import { SectionCard } from '../components/section-card';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { ComparePanel } from '../library/compare-panel';
@@ -101,7 +105,9 @@ export function RouteDetailPage() {
   if (route.isError) {
     return (
       <>
-        <BackLink />
+        <p>
+          <Link to={PATHS.routes}>{t('routeDetail.back')}</Link>
+        </p>
         <ErrorState error={route.error} onRetry={() => void route.refetch()} />
       </>
     );
@@ -114,12 +120,62 @@ export function RouteDetailPage() {
   const stale = !archived && staleDays !== null && maxAge !== undefined && staleDays > maxAge;
   const metrics = version.data?.metrics;
 
+  const moreItems: MenuItem[] = [
+    { id: 'duplicate', label: t('routeDetail.actions.duplicate'), icon: 'copy', onSelect: () => setDialog('derive') },
+    ...(archived ? [] : [{ id: 'archive', label: t('routeDetail.actions.archive'), icon: 'archive' as const, danger: true, onSelect: () => setDialog('archive') }]),
+  ];
+
   return (
     <>
-      <BackLink />
-      <div className="page-heading">
-        <h1>{data.name}</h1>
-      </div>
+      <PageHeader
+        icon="route"
+        title={data.name}
+        back={{ to: PATHS.routes, label: t('routeDetail.back') }}
+        badges={
+          shown && (
+            <>
+              <span className="status-badge">{t('routeDetail.versions.number', { number: shown.number })}</span>
+              <span className="status-badge" data-version={shown.status}>
+                {t(`routeDetail.versions.${shown.status}`)}
+              </span>
+            </>
+          )
+        }
+        actions={
+          <>
+            {canWrite && shown && !archived && shown.status === 'draft' && (
+              <button type="button" className="button button-primary" onClick={() => setDialog('validate')}>
+                <Icon name="check" />
+                <span>{t('routeDetail.actions.validate')}</span>
+              </button>
+            )}
+            {canWrite && shown && !archived && (
+              <Link className="button button-secondary" to={`${routePath(routeId)}/edit?base=${shown.id}`}>
+                <Icon name="edit" />
+                <span>{t('routeDetail.actions.edit')}</span>
+              </Link>
+            )}
+            <Menu
+              label={t('common.export')}
+              icon="download"
+              align="end"
+              disabled={!shown || exportFile.isPending}
+              items={(['gpx', 'kml'] as const).map((format) => ({
+                id: format,
+                label: t(format === 'gpx' ? 'routeDetail.actions.exportGpx' : 'routeDetail.actions.exportKml'),
+                onSelect: () => exportFile.mutate(format),
+              }))}
+            />
+            {canWrite && shown && <Menu label={t('common.more')} icon="more" iconOnly align="end" items={moreItems} />}
+          </>
+        }
+      />
+      {exportFile.isPending && <p role="status">{t('routeDetail.actions.exporting')}</p>}
+      {exportFile.isError && (
+        <p className="notice" role="alert">
+          {errorMessage(t, exportFile.error) || t('routeDetail.actions.exportError')}
+        </p>
+      )}
       {archived && (
         <p className="notice" role="status">
           {t('routeDetail.archivedNotice')}
@@ -131,7 +187,7 @@ export function RouteDetailPage() {
         </p>
       )}
       {data.derivedFrom && (
-        <p>
+        <p className="route-origin">
           <Link to={routePath(data.derivedFrom.routeId)}>{t('routeDetail.relations.derivedFrom', { name: data.derivedFrom.routeName, number: data.derivedFrom.versionNumber })}</Link>
         </p>
       )}
@@ -154,44 +210,6 @@ export function RouteDetailPage() {
         </div>
 
         <div className="route-info">
-          <section aria-labelledby="route-actions-title" className="route-actions">
-            <h2 id="route-actions-title" className="visually-hidden">
-              {shown ? t('routeDetail.versions.number', { number: shown.number }) : ''}
-            </h2>
-            <div className="selection-buttons">
-              {(['gpx', 'kml'] as const).map((format) => (
-                <button key={format} type="button" className="button button-secondary" disabled={!shown || exportFile.isPending} onClick={() => exportFile.mutate(format)}>
-                  {t(format === 'gpx' ? 'routeDetail.actions.exportGpx' : 'routeDetail.actions.exportKml')}
-                </button>
-              ))}
-              {canWrite && shown && (
-                <>
-                  {!archived && shown.status === 'draft' && (
-                    <button type="button" className="button button-primary" onClick={() => setDialog('validate')}>
-                      {t('routeDetail.actions.validate')}
-                    </button>
-                  )}
-                  {!archived && (
-                    <Link className="button button-secondary" to={`${routePath(routeId)}/edit?base=${shown.id}`}>
-                      {t('routeDetail.actions.newVersion')}
-                    </Link>
-                  )}
-                  <button type="button" className="button button-secondary" onClick={() => setDialog('derive')}>
-                    {t('routeDetail.actions.derive')}
-                  </button>
-                  {!archived && (
-                    <button type="button" className="button button-secondary" onClick={() => setDialog('archive')}>
-                      {t('routeDetail.actions.archive')}
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-            {exportFile.isPending && <p role="status">{t('routeDetail.actions.exporting')}</p>}
-            {exportFile.isError && <p role="alert">{errorMessage(t, exportFile.error) || t('routeDetail.actions.exportError')}</p>}
-            {canWrite && shown?.status === 'validated' && !archived && <p className="selection-hint">{t('routeDetail.actions.readOnly')}</p>}
-          </section>
-
           {comparing && compareA && compareB ? (
             <ComparePanel
               versions={versions}
@@ -204,8 +222,7 @@ export function RouteDetailPage() {
             />
           ) : (
             <>
-              <section aria-labelledby="metrics-title">
-                <h2 id="metrics-title">{t('routeDetail.metrics.title')}</h2>
+              <SectionCard icon="info" title={t('routeDetail.metrics.title')}>
                 {version.isPending && <LoadingState />}
                 {version.isError && <ErrorState error={version.error} onRetry={() => void version.refetch()} />}
                 {metrics && version.data && (
@@ -247,12 +264,22 @@ export function RouteDetailPage() {
                     <ElevationProfile profile={version.data.elevationProfile} versionNumber={version.data.number} locale={locale} />
                   </>
                 )}
-              </section>
+              </SectionCard>
             </>
           )}
 
-          <section aria-labelledby="versions-title">
-            <h2 id="versions-title">{t('routeDetail.versions.title')}</h2>
+          <SectionCard
+            icon="clock"
+            title={t('routeDetail.versions.title')}
+            actions={
+              versions.length > 1 &&
+              !comparing && (
+                <button type="button" className="button button-secondary" onClick={() => update({ a: versions[1]!.id, b: versions[0]!.id })}>
+                  {t('routeDetail.compare.start')}
+                </button>
+              )
+            }
+          >
             <ol className="version-list">
               {versions.map((v) => (
                 <li key={v.id} className="version-row" data-shown={!comparing && v.id === shown?.id ? 'true' : undefined}>
@@ -271,26 +298,20 @@ export function RouteDetailPage() {
                   )}
                   <p className="version-meta">{v.note ?? t('routeDetail.versions.noNote')}</p>
                   {!comparing && v.id !== shown?.id && (
-                    <button type="button" className="button button-secondary" aria-label={t('routeDetail.versions.show', { number: v.number })} onClick={() => update({ v: v.id })}>
-                      {t('routeDetail.versions.show', { number: v.number })}
+                    <button type="button" className="button button-secondary version-show" aria-label={t('routeDetail.versions.show', { number: v.number })} onClick={() => update({ v: v.id })}>
+                      {t('routeDetail.versions.showShort')}
                     </button>
                   )}
                 </li>
               ))}
             </ol>
-            {versions.length > 1 && !comparing && (
-              <button type="button" className="button button-secondary" onClick={() => update({ a: versions[1]!.id, b: versions[0]!.id })}>
-                {t('routeDetail.compare.start')}
-              </button>
-            )}
-          </section>
+          </SectionCard>
 
-          <section aria-labelledby="relations-title">
-            <h2 id="relations-title">{t('routeDetail.relations.usedIn')}</h2>
+          <SectionCard icon="flag" title={t('routeDetail.relations.usedIn')}>
             {data.usedIn.length === 0 ? (
-              <p>{t('routeDetail.relations.notUsed')}</p>
+              <p className="form-note">{t('routeDetail.relations.notUsed')}</p>
             ) : (
-              <ul>
+              <ul className="plain-list">
                 {data.usedIn.map((use) => (
                   <li key={use.missionId}>
                     <Link to={missionPath(use.missionId)}>{use.missionName}</Link>{' '}
@@ -299,11 +320,13 @@ export function RouteDetailPage() {
                 ))}
               </ul>
             )}
-            <h2>{t('routeDetail.relations.derivatives')}</h2>
+          </SectionCard>
+
+          <SectionCard icon="copy" title={t('routeDetail.relations.derivatives')}>
             {data.derivatives.length === 0 ? (
-              <p>{t('routeDetail.relations.noDerivatives')}</p>
+              <p className="form-note">{t('routeDetail.relations.noDerivatives')}</p>
             ) : (
-              <ul>
+              <ul className="plain-list">
                 {data.derivatives.map((copy) => (
                   <li key={copy.id}>
                     <Link to={routePath(copy.id)}>{copy.name}</Link>
@@ -311,7 +334,7 @@ export function RouteDetailPage() {
                 ))}
               </ul>
             )}
-          </section>
+          </SectionCard>
         </div>
       </div>
 
@@ -319,14 +342,5 @@ export function RouteDetailPage() {
       {dialog === 'derive' && shown && <DeriveDialog routeId={routeId} versionId={shown.id} versionNumber={shown.number} defaultName={`${data.name} (2)`} onClose={() => setDialog(null)} />}
       {dialog === 'archive' && <ArchiveDialog routeId={routeId} onClose={() => setDialog(null)} />}
     </>
-  );
-}
-
-function BackLink() {
-  const { t } = useTranslation();
-  return (
-    <p>
-      <Link to={PATHS.routes}>{t('routeDetail.back')}</Link>
-    </p>
   );
 }

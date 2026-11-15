@@ -1,4 +1,4 @@
-// Contraste de los dos temas (plan UI-rediseno §5, D-U3, D-U10, D-U11, D-U13): lee `src/theme/tokens.css`
+// Contraste de los dos temas (plan UI-rediseno §5, D-U10, D-U11, D-U13; paleta de UI-simplificacion, D-S2): lee `src/theme/tokens.css`
 // y recalcula cada par con la fórmula de WCAG 2.x. Esta prueba manda: si un token baja de su umbral, falla.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -85,6 +85,8 @@ const COMMON: Pair[] = [
   ...pair('--on-attention', ['--attention'], TEXT),
   ...pair('--accent', ['--bg', '--surface'], COMPONENT), // botón principal contra el fondo y los paneles
   ...pair('--accent-hover', ['--bg', '--surface'], COMPONENT),
+  ...pair('--accent-vivid', ['--bg', '--surface'], COMPONENT), // D-S2: iconos y subrayado de la sección activa
+  ...pair('--accent-vivid', ['--header-bg'], COMPONENT),
   // T3: lo que pinta el resto de la hoja
   ...pair('--accent-text', ['--warn-soft'], TEXT), // enlaces rojos dentro de un aviso o una fila seleccionada
   ...pair('--text-muted', ['--bg'], TEXT), // insignias neutras (cerrada, archivada, no disponible)
@@ -107,6 +109,7 @@ const DARK_PAIRS: Pair[] = [
   ...pair('--text', SURFACES, TEXT),
   ...pair('--text-muted', SURFACES, TEXT),
   ...pair('--accent', ['--surface-raised'], COMPONENT),
+  ...pair('--accent-vivid', ['--surface-raised'], COMPONENT),
   ...pair('--accent-text', ['--surface-raised'], TEXT),
   ...pair('--border-strong', ['--surface-raised'], COMPONENT),
   ...pair('--focus', ['--surface-raised'], COMPONENT),
@@ -168,6 +171,7 @@ describe('estructura de tokens.css', () => {
       '--accent-hover',
       '--on-accent',
       '--accent-text',
+      '--accent-vivid',
       '--focus',
       '--focus-inner',
       '--success',
@@ -222,7 +226,7 @@ describe('estructura de tokens.css', () => {
     }
   });
 
-  it('la prueba detecta una bajada de contraste: --on-accent gris sobre el rojo no llega a 4,5:1', () => {
+  it('la prueba detecta una bajada de contraste: --on-accent gris sobre el acento no llega a 4,5:1', () => {
     expect(ratio('#bbbbbb', resolve(DARK, '--accent'))).toBeLessThan(TEXT);
     expect(ratio(resolve(DARK, '--on-accent'), resolve(DARK, '--accent'))).toBeGreaterThanOrEqual(TEXT);
   });

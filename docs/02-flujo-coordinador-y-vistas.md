@@ -256,7 +256,7 @@ En la primera entrega, **Guardar como nueva ruta** también existe al editar una
 - "Deriva de": enlace a la ruta de origen, si existe.
 - "Derivadas": rutas creadas a partir de esta.
 - "Usada en": misiones (activas, en planificación, cerradas) y qué versión fija cada una.
-- Acciones: editar (crea versión nueva), derivar, validar, archivar, exportar.
+- Acciones (una fila, UI-simplificacion): **Validar** (acción principal, solo con la versión en borrador), **Editar ruta** (el editor guarda como versión nueva o, desde su desplegable, como ruta nueva), **Exportar ▾** (GPX, KML) y **Más ⋯** (Duplicar ruta —derivar sin editar, RF-517— y Archivar ruta). Una ruta archivada solo ofrece Exportar y Duplicar.
 - Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14). El detalle no elimina: para borrar una ruta se quita de sus misiones, se archiva y se elimina desde la lista de archivadas.
 
 ### 3.7 Voluntarios y participantes (dentro de la misión)
@@ -679,6 +679,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.5 (2026-11-15)**
+- `UI-simplificacion`: una sola acción principal por vista y el resto en menús con nombre fijo («Exportar ▾», «Más ⋯», «⋯» por fila). §3.6 con la fila de acciones del detalle de ruta («Derivar» pasa a «Duplicar ruta» dentro de «Más»). Inicio como centro de operaciones (cifras que ya da `listMissions`), Crear misión en secciones con icono y sin textos de ayuda, detalle de misión con «Añadir punto ▾» y «⋯» en cada ruta y punto. Capas del mapa en un desplegable con icono.
 
 **1.4 (2026-11-13)**
 - Issue #18: §3.2 con la tarjeta del tiempo simple (tres iconos por tramo, temperatura y viento) y la luz y luna fuera de Inicio; nueva §3.2.1 «Tiempo en detalle».

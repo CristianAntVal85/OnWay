@@ -85,7 +85,6 @@ describe('forced-colors: lo que solo se distingue por fondo no se pierde', () =>
     expect(discovered).toEqual(
       expect.arrayContaining([
         '.segment input:checked + span',
-        ".map-layer-button[aria-pressed='true']",
         ".tab[aria-selected='true']",
         ".mission-pick[aria-pressed='true']",
         ".status-badge[data-status='active']",

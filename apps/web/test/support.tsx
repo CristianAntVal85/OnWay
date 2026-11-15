@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router';
 import { createApiClient } from '@onway/contracts/client';
@@ -118,4 +118,30 @@ export function renderApp(options: { route?: string; fetch: typeof fetch; langua
     </AppProviders>,
   );
   return { user, i18n, queryClient, ...view };
+}
+
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Abre un menú desplegable (UI-simplificacion) por el nombre de su botón, dentro de `scope` si se da, y devuelve su lista. */
+export async function openMenu(user: User, name: string | RegExp, scope?: HTMLElement): Promise<HTMLElement> {
+  const root = scope ? within(scope) : screen;
+  const button = await root.findByRole('button', { name });
+  if (button.getAttribute('aria-expanded') !== 'true') await user.click(button);
+  return document.getElementById(button.getAttribute('aria-controls')!)!;
+}
+
+/** Abre el menú y pulsa una de sus opciones. */
+export async function chooseMenuItem(user: User, menu: string | RegExp, item: string | RegExp, scope?: HTMLElement): Promise<void> {
+  const list = await openMenu(user, menu, scope);
+  await user.click(within(list).getByRole('menuitem', { name: item }));
+}
+
+/** Los rótulos de las opciones de un menú (lo abre, los lee y lo cierra). */
+export async function menuItemNames(user: User, menu: string | RegExp, scope?: HTMLElement): Promise<string[]> {
+  const list = await openMenu(user, menu, scope);
+  const names = within(list)
+    .getAllByRole('menuitem')
+    .map((item) => item.textContent ?? '');
+  await user.keyboard('{Escape}');
+  return names;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MemberRole } from '@onway/contracts';
 import { es } from '@onway/i18n';
+import { ICON_NAMES } from '../src/components/icon';
 import { NAV_ITEMS, PATHS, missionPath, ROUTE_ROLES, canAccess, landingPath, navItemsFor, postLoginPath, routeIdForPath, type RouteId } from '../src/nav/navigation';
 
 const ROLES = MemberRole.options;
@@ -29,6 +30,10 @@ describe('barra de navegación por rol (RF-702, D-H0-20)', () => {
     for (const role of ROLES) expect(labels(role)).toContain('account');
     expect(ROLES.filter((role) => labels(role).includes('admin'))).toEqual(['admin']);
     expect(ROLES.filter((role) => labels(role).includes('profile'))).toEqual(['rescuer']);
+  });
+
+  it('cada enlace lleva un icono del juego común', () => {
+    for (const item of NAV_ITEMS) expect(ICON_NAMES, item.id).toContain(item.icon);
   });
 
   it('cada enlace usa una etiqueta que existe en packages/i18n', () => {

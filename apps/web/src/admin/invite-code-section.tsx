@@ -52,7 +52,6 @@ export function InviteCodeSection() {
   return (
     <section className="admin-section" aria-labelledby="invite-title">
       <h2 id="invite-title">{t('admin.inviteCode.title')}</h2>
-      <p className="field-help admin-intro">{t('admin.inviteCode.intro')}</p>
 
       {invite.isPending && <LoadingState />}
       {invite.isError && <ErrorState error={invite.error} onRetry={() => void invite.refetch()} />}
@@ -62,7 +61,7 @@ export function InviteCodeSection() {
           <p className="invite-code-line">
             <code translate="no">{current.code}</code>
           </p>
-          <p className="field-help">{t('admin.inviteCode.rotatedAt', { date: formatDateTime(current.rotatedAt, locale) })}</p>
+          <p className="form-note">{t('admin.inviteCode.rotatedAt', { date: formatDateTime(current.rotatedAt, locale) })}</p>
           <div className="point-row-actions">
             <button type="button" className="button button-secondary" onClick={() => void copy(current.code)}>
               {t('admin.inviteCode.copy')}

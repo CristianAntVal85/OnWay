@@ -2,7 +2,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { es } from '@onway/i18n';
-import { admin, apiError, json, renderApp, sessionServer, sessionUser, type Call } from './support';
+import { admin, apiError, chooseMenuItem, json, renderApp, sessionServer, sessionUser, type Call } from './support';
 
 interface Editor {
   vertices: readonly (readonly [number, number])[];
@@ -187,7 +187,7 @@ describe('editar una versión (RF-516)', () => {
   it('«Guardar como nueva ruta» pide un nombre y llama a derivar con la versión de partida y los vértices', async () => {
     const { user, calls } = setup(editRoute, { [`POST /routes/${ROUTE}/derive`]: () => json(201, created), [`GET /routes/${NEW}`]: () => json(200, detail({ id: NEW })) });
     await waitFor(() => expect(map.editor?.vertices.length).toBeGreaterThan(2));
-    await user.click(await screen.findByRole('button', { name: T.saveAsNew }));
+    await chooseMenuItem(user, T.saveOptions, T.saveAsNew);
     const dialog = await screen.findByRole('dialog', { name: T.deriveTitle });
     const name = within(dialog).getByLabelText(T.nameLabel);
     await user.clear(name);
@@ -207,7 +207,7 @@ describe('editar una versión (RF-516)', () => {
     setup(editRoute, { [`GET /routes/${ROUTE}`]: () => json(200, detail({ status: 'archived' })) });
     expect(await screen.findByText(es.routeDetail.archivedNotice)).toBeTruthy();
     expect(screen.queryByRole('button', { name: T.saveVersion })).toBeNull();
-    expect(screen.queryByRole('button', { name: T.saveAsNew })).toBeNull();
+    expect(screen.queryByRole('button', { name: T.saveOptions })).toBeNull();
   });
 
   it('un error del servidor al guardar se dice y no se pierde lo editado', async () => {

@@ -3,7 +3,7 @@
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
-import { admin, apiError, json, renderApp, rescuer, sessionServer, sessionUser, type Call } from './support';
+import { admin, apiError, chooseMenuItem, json, menuItemNames, renderApp, rescuer, sessionServer, sessionUser, type Call } from './support';
 
 interface FakeMapProps {
   routes?: readonly { id: string; name: string; tone: string }[];
@@ -77,10 +77,10 @@ describe('biblioteca de rutas: estados', () => {
     expect(within(card).getByText('6,2 km')).toBeTruthy();
     expect(within(card).getByText('640 m')).toBeTruthy();
     expect(within(card).getByText('2140 m')).toBeTruthy();
-    expect(within(card).getByText(T.card.notUsed)).toBeTruthy();
+    expect(card.textContent).toContain(T.card.notUsed);
     const draft = screen.getByRole('link', { name: 'Con borrador' }).closest('li')!;
     expect(within(draft).getByText(`${T.card.draft} · ${T.card.version.replace('{{number}}', '2')}`)).toBeTruthy();
-    expect(within(draft).getByText('2 misiones')).toBeTruthy();
+    expect(draft.textContent).toContain('Misiones: 2');
     expect(within(draft).getByText(T.card.copy)).toBeTruthy();
     expect(lastList(calls()).query.get('status')).toBe('active');
     expect(lastList(calls()).query.get('sort')).toBe('updated_desc');
@@ -98,10 +98,9 @@ describe('biblioteca de rutas: estados', () => {
   });
 
   it('vacío: biblioteca sin rutas, con las acciones de importar y dibujar para el coordinador', async () => {
-    setup({ 'GET /routes': () => json(200, page([])) });
+    const { user } = setup({ 'GET /routes': () => json(200, page([])) });
     expect(await screen.findByText(T.empty.library)).toBeTruthy();
-    expect(screen.getAllByRole('link', { name: T.importCta }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('link', { name: T.drawCta }).length).toBeGreaterThan(0);
+    expect(await menuItemNames(user, T.newCta)).toEqual([es.generate.cta, T.importCta, T.drawCta]);
   });
 
   it('error: dice qué ha pasado y deja reintentar', async () => {
@@ -264,7 +263,7 @@ describe('selección: conserva entre páginas, exporta y archiva', () => {
     const { user, calls } = setup({ ...pages, 'GET /routes/export': () => new Response('<gpx/>', { status: 200, headers: { 'Content-Type': 'application/gpx+xml' } }) });
     await user.click(await screen.findByRole('checkbox', { name: T.card.select.replace('{{name}}', 'Ruta 1') }));
     await user.click(screen.getByRole('checkbox', { name: T.selection.validatedOnly }));
-    await user.click(screen.getByRole('button', { name: T.selection.exportKml }));
+    await chooseMenuItem(user, es.common.export, T.selection.exportKml);
     await waitFor(() => expect(clicked).toEqual(['onway-routes.kml']));
     const request = calls().find((c) => c.path === '/routes/export')!;
     expect(request.query.get('ids')).toBe(ID(1));
@@ -323,7 +322,6 @@ describe('eliminar rutas archivadas (issue #17, RN-14, INV-04)', () => {
     const { user, container } = setup({ 'GET /routes': () => json(200, page([archived(1), archived(2)])) }, { route: '/routes?status=archived' });
     await screen.findByRole('link', { name: 'Ruta 1' });
     expect(deleteButtons()).toHaveLength(0);
-    expect(screen.getByText(T.selection.hintDelete)).toBeTruthy();
     await select(user, 1);
     expect(deleteButtons()).toHaveLength(1);
     expect(container.querySelectorAll('.btn-eliminar-ruta')).toHaveLength(1);
@@ -427,13 +425,13 @@ describe('eliminar rutas archivadas (issue #17, RN-14, INV-04)', () => {
     await user.selectOptions(screen.getByLabelText(T.filters.status), 'active');
     await waitFor(() => expect(lastList(calls()).query.get('status')).toBe('active'));
     expect(screen.queryByText(/no se puede eliminar: Misión del Aneto/)).toBeNull();
-    expect(screen.getByText(T.selection.hint)).toBeTruthy();
+    expect(deleteButtons()).toHaveLength(0);
   });
 
   it('el administrador no ve el botón de eliminar', async () => {
     const { user } = setup({ 'GET /routes': () => json(200, page([archived(1)])) }, { user: admin(), route: '/routes?status=archived' });
     await select(user, 1);
-    expect(screen.getByRole('button', { name: T.selection.exportGpx })).toBeTruthy();
+    expect(screen.getByRole('button', { name: es.common.export })).toBeTruthy();
     expect(deleteButtons()).toHaveLength(0);
   });
 
@@ -452,10 +450,9 @@ describe('roles', () => {
   it('el administrador ve la biblioteca y puede exportar, pero no ve importar, dibujar ni archivar', async () => {
     const { user } = setup({ 'GET /routes': () => json(200, page([item(1)])) }, { user: admin() });
     await user.click(await screen.findByRole('checkbox', { name: T.card.select.replace('{{name}}', 'Ruta 1') }));
-    expect(screen.getByRole('button', { name: T.selection.exportGpx })).toBeTruthy();
+    expect(screen.getByRole('button', { name: es.common.export })).toBeTruthy();
     expect(screen.queryByRole('button', { name: T.selection.archive })).toBeNull();
-    expect(screen.queryByRole('link', { name: T.importCta })).toBeNull();
-    expect(screen.queryByRole('link', { name: T.drawCta })).toBeNull();
+    expect(screen.queryByRole('button', { name: T.newCta })).toBeNull();
   });
 
   it('el rescatista no tiene acceso: no pide la biblioteca', async () => {

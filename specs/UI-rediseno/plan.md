@@ -12,7 +12,7 @@ Estado: **aprobado por el usuario el 2026-11-05** (P1 resuelta con D-U13) · Ori
 |---|---|
 | D-U1 | **Tema oscuro por defecto y claro de alto contraste** disponible, con `prefers-color-scheme` y un selector en la vista Cuenta recordado en el navegador. Dos conjuntos de tokens (`:root` / `[data-theme]`) |
 | D-U2 | El mapa base de **carreteras sigue al tema** (`namedFlavor('dark')` y sprites `v4/dark` de `@protomaps/basemaps`). Satélite y topográfico (IGN) **no** se tematizan. Atribuciones siempre visibles |
-| D-U3 | **Acento: el rojo de rescate** (`--blaze`) como color de acción sobre el fondo oscuro; el resto se inspira en GitHub Dark (superficies `#0d1117`/`#161b22`, bordes sutiles, texto `#e6edf3`), pero el acento no es azul. **AA obligatorio** en todos los pares (4,5:1 texto, 3:1 componentes) |
+| D-U3 | **Acento: el rojo de rescate** (`--blaze`) como color de acción sobre el fondo oscuro; el resto se inspira en GitHub Dark (superficies `#0d1117`/`#161b22`, bordes sutiles, texto `#e6edf3`), pero el acento no es azul. **AA obligatorio** en todos los pares (4,5:1 texto, 3:1 componentes). *Sustituida el 2026-11-15 por D-S2 de `specs/UI-simplificacion/plan.md` (azul pizarra y naranja del boceto); el AA sigue siendo obligatorio* |
 | D-U13 | (2026-11-05, resuelve P1) **Sin elección guardada se ve el oscuro.** El selector de Cuenta ofrece «Oscuro», «Claro (alto contraste)» y «Como el sistema»; solo esta última sigue a `prefers-color-scheme` |
 
 **Pregunta que era del usuario:** P1 (§10), resuelta con D-U13.

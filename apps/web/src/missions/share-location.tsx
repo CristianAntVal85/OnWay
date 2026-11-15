@@ -27,7 +27,6 @@ export function ShareLocation({ target }: { target: { lat: number; lon: number }
   return (
     <section className="share-location" aria-labelledby="share-title">
       <h2 id="share-title">{t('myMissions.share.title')}</h2>
-      <p className="field-help">{t('myMissions.share.help')}</p>
       <p className="share-coordinates">
         <span className="visually-hidden">{t('myMissions.share.coordinates')}: </span>
         <code>{value}</code>

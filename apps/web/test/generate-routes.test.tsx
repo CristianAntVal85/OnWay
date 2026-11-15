@@ -215,7 +215,7 @@ describe('generar desde una misión (RN-08, INV-14)', () => {
       [`GET /jobs/${JOB}`]: () => json(200, done),
     });
     expect(await screen.findByRole('heading', { level: 1, name: es.generate.missionTitle.replace('{{name}}', 'Rescate en el Aneto') })).toBeTruthy();
-    expect(screen.getByText(T.missionAdds)).toBeTruthy();
+    expect(screen.getByText(T.missionTarget)).toBeTruthy();
     expect(screen.getByRole('combobox', { name: T.originLabel })).toHaveProperty('value', ORIGIN);
     await user.click(screen.getByRole('button', { name: T.submit }));
     await waitFor(() => expect(posts(calls(), '/routes/generate')).toHaveLength(1));

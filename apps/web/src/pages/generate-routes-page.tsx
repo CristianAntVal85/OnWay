@@ -3,6 +3,9 @@ import { useMemo, useReducer, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router';
 import type { OperationOutput } from '@onway/contracts/client';
+import { Icon } from '../components/icon';
+import { PageHeader } from '../components/page-header';
+import { SectionCard } from '../components/section-card';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { useElevationLookup } from '../hooks/use-elevation-lookup';
@@ -202,13 +205,11 @@ export function GenerateRoutesPage() {
 
   return (
     <>
-      <p>
-        <Link to={missionMode ? missionPath(missionId) : PATHS.routes}>{t('generate.back')}</Link>
-      </p>
-      <div className="page-heading">
-        <h1>{missionMode && mission.data ? t('generate.missionTitle', { name: mission.data.name }) : t('generate.title')}</h1>
-      </div>
-      <p>{t('generate.intro')}</p>
+      <PageHeader
+        icon="route"
+        title={missionMode && mission.data ? t('generate.missionTitle', { name: mission.data.name }) : t('generate.title')}
+        back={{ to: missionMode ? missionPath(missionId) : PATHS.routes, label: t('generate.back') }}
+      />
 
       <div className="editor-layout page-wide">
         <div className="route-map">
@@ -254,8 +255,7 @@ export function GenerateRoutesPage() {
           <form onSubmit={submit} noValidate aria-busy={running || undefined}>
             <fieldset disabled={formLocked} className="plain-fieldset">
               {missionMode ? (
-                <>
-                  <p>{t('generate.missionTarget')}</p>
+                <SectionCard icon="pin" title={t('generate.fromLabel')}>
                   {origins.length > 0 && (
                     <div className="field">
                       <label htmlFor="generate-origin">{t('generate.originLabel')}</label>
@@ -268,12 +268,11 @@ export function GenerateRoutesPage() {
                       </select>
                     </div>
                   )}
-                  <p className="field-help">{t('generate.missionAdds')}</p>
-                </>
+                  <p className="form-note">{t('generate.missionTarget')}</p>
+                </SectionCard>
               ) : (
                 <>
-                  <div className="field">
-                    <span className="field-label">{t('generate.fromLabel')}</span>
+                  <SectionCard icon="pin" title={t('generate.fromLabel')}>
                     <PointInput
                       id="generate-from"
                       value={from}
@@ -284,9 +283,8 @@ export function GenerateRoutesPage() {
                       elevationLookup={elevationLookup}
                       error={missing(from) ? t('generate.pointMissing') : null}
                     />
-                  </div>
-                  <div className="field">
-                    <span className="field-label">{t('generate.toLabel')}</span>
+                  </SectionCard>
+                  <SectionCard icon="target" title={t('generate.toLabel')}>
                     <PointInput
                       id="generate-to"
                       value={to}
@@ -297,15 +295,34 @@ export function GenerateRoutesPage() {
                       elevationLookup={elevationLookup}
                       error={missing(to) ? t('generate.pointMissing') : null}
                     />
-                  </div>
+                  </SectionCard>
                 </>
               )}
 
-              <section aria-labelledby="generate-via-title">
-                <h2 id="generate-via-title">{t('generate.viaTitle')}</h2>
+              <SectionCard
+                icon="more"
+                title={t('generate.viaTitle')}
+                actions={
+                  vias.length < MAX_VIA && (
+                    <button
+                      type="button"
+                      className="button button-secondary"
+                      onClick={() => {
+                        const key = `via-${Date.now()}-${vias.length}`;
+                        setVias((previous) => [...previous, { key, point: null }]);
+                        setPicking(key);
+                      }}
+                    >
+                      <Icon name="plus" />
+                      <span>{t('generate.addVia')}</span>
+                    </button>
+                  )
+                }
+              >
+                {vias.length === 0 && <p className="form-note">{t('generate.viaEmpty')}</p>}
                 {vias.map((via, index) => (
-                  <div className="field" key={via.key}>
-                    <span className="field-label">{t('generate.viaLabel', { n: index + 1 })}</span>
+                  <div className="point-group" key={via.key}>
+                    <p className="point-group-title">{t('generate.viaLabel', { n: index + 1 })}</p>
                     <PointInput
                       id={`generate-${via.key}`}
                       value={via.point}
@@ -315,51 +332,57 @@ export function GenerateRoutesPage() {
                       organizationCountry={organization.data?.country}
                       elevationLookup={elevationLookup}
                     />
-                    <button type="button" className="button button-secondary" onClick={() => setVias((previous) => previous.filter((item) => item.key !== via.key))}>
-                      {t('generate.removeVia', { n: index + 1 })}
+                    <button type="button" className="button button-plain origin-remove" onClick={() => setVias((previous) => previous.filter((item) => item.key !== via.key))}>
+                      <Icon name="trash" />
+                      <span>{t('generate.removeVia', { n: index + 1 })}</span>
                     </button>
                   </div>
                 ))}
-                {vias.length < MAX_VIA && (
+              </SectionCard>
+
+              <SectionCard icon="filter" title={t('generate.optionsTitle')}>
+                <div className="field-pair">
+                  <div className="field">
+                    <label htmlFor="generate-alternatives">{t('generate.alternativesLabel')}</label>
+                    <select id="generate-alternatives" value={alternatives} onChange={(event) => setAlternatives(Number(event.target.value))}>
+                      {[1, 2, 3, 4].map((count) => (
+                        <option key={count} value={count}>
+                          {count}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label htmlFor="generate-name">{t('generate.nameLabel')}</label>
+                    <input id="generate-name" type="text" maxLength={100} value={prefix} onChange={(event) => setPrefix(event.target.value)} />
+                  </div>
+                </div>
+              </SectionCard>
+            </fieldset>
+
+            <SectionCard
+              icon="shield"
+              title={t('generate.zonesTitle')}
+              actions={
+                !drawing && (
                   <button
                     type="button"
                     className="button button-secondary"
+                    disabled={formLocked || closed}
                     onClick={() => {
-                      const key = `via-${Date.now()}-${vias.length}`;
-                      setVias((previous) => [...previous, { key, point: null }]);
-                      setPicking(key);
+                      setDrawing(true);
+                      setZoneNote(null);
                     }}
                   >
-                    {t('generate.addVia')}
+                    <Icon name="pencil" />
+                    <span>{t('generate.drawZone')}</span>
                   </button>
-                )}
-              </section>
-
-              <div className="field">
-                <label htmlFor="generate-alternatives">{t('generate.alternativesLabel')}</label>
-                <select id="generate-alternatives" value={alternatives} onChange={(event) => setAlternatives(Number(event.target.value))}>
-                  {[1, 2, 3, 4].map((count) => (
-                    <option key={count} value={count}>
-                      {count}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="generate-name">{t('generate.nameLabel')}</label>
-                <input id="generate-name" type="text" maxLength={100} value={prefix} onChange={(event) => setPrefix(event.target.value)} aria-describedby="generate-name-help" />
-                <p id="generate-name-help" className="field-help">
-                  {t('generate.nameHelp')}
-                </p>
-              </div>
-            </fieldset>
-
-            <section aria-labelledby="generate-zones-title">
-              <h2 id="generate-zones-title">{t('generate.zonesTitle')}</h2>
-              <p className="field-help">{t('generate.zonesHelp')}</p>
+                )
+              }
+            >
               {zones.isPending && <LoadingState />}
               {zones.isError && <ErrorState error={zones.error} onRetry={() => void zones.refetch()} />}
-              {zones.isSuccess && zones.data.items.length === 0 && <p className="field-help">{t('generate.zonesEmpty')}</p>}
+              {zones.isSuccess && zones.data.items.length === 0 && <p className="form-note">{t('generate.zonesEmpty')}</p>}
               {zones.isSuccess && zones.data.items.length > 0 && (
                 <ul className="zone-list">
                   {zones.data.items.map((item) => {
@@ -399,21 +422,8 @@ export function GenerateRoutesPage() {
                 </p>
               )}
 
-              {!drawing ? (
-                <button
-                  type="button"
-                  className="button button-secondary"
-                  disabled={formLocked || closed}
-                  onClick={() => {
-                    setDrawing(true);
-                    setZoneNote(null);
-                  }}
-                >
-                  {t('generate.drawZone')}
-                </button>
-              ) : (
+              {drawing && (
                 <div className="zone-editor">
-                  <p>{t('generate.drawZoneHelp')}</p>
                   <div className="field">
                     <label htmlFor="generate-zone-reason">{t('generate.zoneReasonLabel')}</label>
                     <input id="generate-zone-reason" type="text" maxLength={300} value={zoneReason} onChange={(event) => setZoneReason(event.target.value)} />
@@ -431,7 +441,7 @@ export function GenerateRoutesPage() {
                       invalid: t('routeEditor.invalidCoordinates'),
                     }}
                   />
-                  {zone.vertices.length < 3 && <p className="field-help">{t('generate.zoneNeedThree')}</p>}
+                  {zone.vertices.length < 3 && <p className="form-note">{t('generate.zoneNeedThree')}</p>}
                   {saveZone.error && (
                     <p className="field-error" role="alert">
                       {errorMessage(t, saveZone.error)}
@@ -457,14 +467,14 @@ export function GenerateRoutesPage() {
                   </div>
                 </div>
               )}
-            </section>
+            </SectionCard>
 
             {start.error && (
               <p className="field-error" role="alert">
                 {errorMessage(t, start.error)}
               </p>
             )}
-            <div className="editor-toolbar">
+            <div className="form-submit">
               <button type="submit" className="button button-primary" disabled={running || formLocked || closed || noOrigin || drawing}>
                 {start.isPending ? t('generate.submitting') : t('generate.submit')}
               </button>
@@ -480,7 +490,7 @@ export function GenerateRoutesPage() {
           <h2 id="generate-results-title" tabIndex={-1}>
             {t('generate.resultsTitle')}
           </h2>
-          <p className="field-help">{t('generate.resultsHelp')}</p>
+          <p className="form-note">{t('generate.resultsHelp')}</p>
           {routeIds.length === 0 && <p>{t('generate.resultsEmpty')}</p>}
           {results.some((result) => result.isPending) && <LoadingState />}
           {results.some((result) => result.isError) && <ErrorState error={results.find((result) => result.isError)?.error} />}

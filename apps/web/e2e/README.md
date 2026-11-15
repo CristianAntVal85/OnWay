@@ -26,6 +26,8 @@ La demostración de `UI-rediseno` (`ui-rediseno-demo.spec.ts`: tema oscuro por d
 
 La demostración de la issue #17 (`route-delete-demo.spec.ts`, escritorio y 375 px): crea rutas «E2E …», **elimina de verdad** las que archiva y deja una última archivada dentro de una misión «E2E …» cerrada (que no se puede eliminar, RN-14); la lista de archivadas se filtra por el sello de la ejecución con `q`.
 
+La demostración de `UI-simplificacion` (`ui-simplificacion-demo.spec.ts`, escritorio y 375 px): capa del mapa desde su icono, Crear misión sin textos de ayuda, detalle de ruta con «Exportar ▾» (descarga un GPX) y «Más ⋯», detalle de una misión con «⋯» por ruta y como mucho una acción principal por vista; solo lee la semilla.
+
 La demostración de la issue #18 (`weather-simple-demo.spec.ts`): la tarjeta del tiempo de Inicio (tres tramos del día, temperatura y viento, ≤ 423 px) y la vista `/weather`; solo lee la semilla.
 
 **`providers-stub` genera las fechas del pronóstico desde hoy** (plantilla de Caddy en `openmeteo-forecast.json`, fuera de Prettier): el servidor descarta las horas ya pasadas, así que fechas fijas dejarían el tiempo por horas vacío.

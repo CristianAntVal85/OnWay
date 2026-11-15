@@ -81,7 +81,7 @@ export function DecideDialog({ action, people, onClose, onDecided, onStale }: Pr
               />
               <span>
                 <strong>{t(ROLE_LABEL[option])}</strong>
-                <span className="field-help">{t(`admin.signups.approveDialog.${option}Help`)}</span>
+                <span className="form-note">{t(`admin.signups.approveDialog.${option}Help`)}</span>
               </span>
             </label>
           ))}

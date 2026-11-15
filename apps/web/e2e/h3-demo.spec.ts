@@ -7,7 +7,7 @@
 // se prueba aparte (h3-engine-down.spec.ts): el resto de la aplicación sigue.
 // Cada ejecución crea misiones y rutas «E2E …»: las misiones acaban cerradas y las rutas archivadas (RN-14); la zona que dibuja se borra.
 import type { Page } from '@playwright/test';
-import { ACCOUNTS, fr } from './support/app';
+import { ACCOUNTS, chooseMenuItem, fr } from './support/app';
 import { archiveLeftoverE2eRoutes, closeLeftoverE2eMissions } from './support/stack';
 import { clickMapCenter, es, expect, expectNoHorizontalOverflow, login, tabTo, test } from './support/demo';
 
@@ -73,10 +73,10 @@ test('the coordinator generates alternatives from a mission with an origin on ea
   ]);
   await page.goto(`/missions/${run.mission}`);
   // La misión ofrece generar desde ella (hay origen), y desde la biblioteca también.
-  await page.getByRole('link', { name: G.cta }).click();
+  await chooseMenuItem(page, es.missionRoutes.more, G.cta);
   await expect(page).toHaveURL(new RegExp(`/routes/generate\\?mission=${run.mission}`));
   await expect(page.getByRole('heading', { level: 1, name: /Desde la misión/ })).toBeVisible();
-  await expect(page.getByText(G.missionAdds)).toBeVisible();
+  await expect(page.getByText(G.missionTarget)).toBeVisible();
   const origin = page.getByRole('combobox', { name: G.originLabel });
   await expect(origin.locator('option')).toHaveCount(2);
 
@@ -254,10 +254,10 @@ test('without an origin the mission cannot generate, and says why', async ({ pag
   await login(page, ACCOUNTS.coordinator);
   const missionId = await createMission(page, nameOf(info, 'sin origen'), []);
   await page.goto(`/missions/${missionId}`);
-  const section = page.locator('.detail-generate');
-  await expect(section.getByRole('button', { name: G.cta })).toBeDisabled();
-  await expect(section.getByText(new RegExp(G.noOrigin))).toBeVisible();
-  await expect(section.getByRole('link', { name: G.addOrigin })).toBeVisible();
+  // RN-08: sin origen, «Generar rutas» está en el menú de la sección pero desactivada; la lista de preparación dice qué falta.
+  await page.getByRole('button', { name: es.missionRoutes.more, exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: G.cta, exact: true })).toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Escape');
   // Y si se llega a la página de generar con esa misión, tampoco deja.
   await page.goto(`/routes/generate?mission=${missionId}`);
   await expect(page.getByText(new RegExp(G.noOrigin)).first()).toBeVisible();

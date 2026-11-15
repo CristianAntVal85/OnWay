@@ -21,7 +21,7 @@ export function LightCard({ sun, moon, locale }: { sun: Environment['sun']; moon
   return (
     <section className="env-card" aria-labelledby={titleId}>
       <h3 id={titleId}>{t('environment.light.title')}</h3>
-      <p className="field-help">{t('environment.light.forDay', { date: longDay(sun.date, locale) })}</p>
+      <p className="form-note">{t('environment.light.forDay', { date: longDay(sun.date, locale) })}</p>
       <h4>{t('environment.light.sun')}</h4>
       <dl className="facts-grid">
         <div>

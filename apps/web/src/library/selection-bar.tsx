@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '@onway/contracts/client';
 import { Dialog } from '../components/dialog';
+import { Menu } from '../components/menu';
 import { errorMessage } from '../i18n/error-message';
 import { useApi } from '../session/api-context';
 import { saveBlob } from './download';
@@ -102,7 +103,6 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
 
   return (
     <div className="selection-area">
-      {count === 0 && report === null && <p className="selection-hint">{t(canDelete ? 'routes.selection.hintDelete' : 'routes.selection.hint')}</p>}
       {count > 0 && (
         <div className="selection-bar" role="group" aria-label={t('routes.selection.count', { count })}>
           <p className="selection-count" role="status">
@@ -113,11 +113,16 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
             <span>{t('routes.selection.validatedOnly')}</span>
           </label>
           <div className="selection-buttons">
-            {(['gpx', 'kml'] as const).map((format) => (
-              <button key={format} type="button" className="button button-secondary" disabled={tooMany || exportFile.isPending} onClick={() => exportFile.mutate(format)}>
-                {t(format === 'gpx' ? 'routes.selection.exportGpx' : 'routes.selection.exportKml')}
-              </button>
-            ))}
+            <Menu
+              label={t('common.export')}
+              icon="download"
+              disabled={tooMany || exportFile.isPending}
+              items={(['gpx', 'kml'] as const).map((format) => ({
+                id: format,
+                label: t(format === 'gpx' ? 'routes.selection.exportGpx' : 'routes.selection.exportKml'),
+                onSelect: () => exportFile.mutate(format),
+              }))}
+            />
             {canArchive && (
               <button type="button" className="button button-secondary" onClick={() => setConfirming(true)}>
                 {t('routes.selection.archive')}
@@ -128,7 +133,7 @@ export function SelectionBar({ selected, canArchive, canDelete, onClear, onArchi
                 {t('routes.selection.delete')}
               </button>
             )}
-            <button type="button" className="button button-secondary" onClick={onClear}>
+            <button type="button" className="button button-plain" onClick={onClear}>
               {t('routes.selection.clear')}
             </button>
           </div>

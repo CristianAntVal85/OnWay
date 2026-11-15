@@ -3,6 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { ApiError, type OperationInput } from '@onway/contracts/client';
+import { Icon } from '../components/icon';
+import { PageHeader } from '../components/page-header';
+import { SectionCard } from '../components/section-card';
 import { EmptyState, ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { useElevationLookup } from '../hooks/use-elevation-lookup';
@@ -146,14 +149,16 @@ export function CreateMissionPage() {
     <div className="page-wide">
       <div className="split-layout">
         <div className="split-form">
-          <h1>{t('createMission.title')}</h1>
-          <p className="lead">{t('createMission.intro')}</p>
+          <PageHeader icon="pin" title={t('createMission.title')} />
           <form ref={form} onSubmit={onSubmit} noValidate>
-            <section className="form-section" aria-labelledby="create-required">
-              <h2 id="create-required">{t('createMission.required')}</h2>
-
+            <SectionCard icon="document" title={t('createMission.required')}>
               <div className="field">
-                <label htmlFor="mission-name">{t('createMission.name')}</label>
+                <div className="field-label">
+                  <label htmlFor="mission-name">{t('createMission.name')}</label>
+                  <span className="field-required" aria-hidden="true">
+                    *
+                  </span>
+                </div>
                 <input
                   id="mission-name"
                   ref={nameField}
@@ -161,17 +166,15 @@ export function CreateMissionPage() {
                   value={name}
                   autoComplete="off"
                   maxLength={NAME_MAX + 40}
+                  aria-required="true"
                   aria-invalid={nameError !== null}
-                  aria-describedby={nameError ? 'mission-name-hint mission-name-error' : 'mission-name-hint'}
+                  aria-describedby={nameError ? 'mission-name-error' : undefined}
                   onChange={(event) => {
                     setName(event.target.value);
                     if (duplicateName) create.reset();
                   }}
                   onBlur={() => setNameTouched(true)}
                 />
-                <p id="mission-name-hint" className="field-help">
-                  {t('createMission.nameHint')}
-                </p>
                 {nameError && (
                   <p id="mission-name-error" className="field-error" role="alert">
                     {nameError}
@@ -180,12 +183,23 @@ export function CreateMissionPage() {
               </div>
 
               <div className="field">
-                <label htmlFor="mission-coordinator">{t('createMission.coordinator')}</label>
+                <div className="field-label">
+                  <label htmlFor="mission-coordinator">{t('createMission.coordinator')}</label>
+                  <span className="field-required" aria-hidden="true">
+                    *
+                  </span>
+                </div>
                 {coordinators.isPending && <LoadingState />}
                 {coordinators.isError && <ErrorState error={coordinators.error} onRetry={() => void coordinators.refetch()} />}
                 {coordinatorList && coordinatorList.length === 0 && <EmptyState title={t('createMission.coordinator')}>{t('createMission.coordinatorsEmpty')}</EmptyState>}
                 {coordinatorList && coordinatorList.length > 0 && (
-                  <select id="mission-coordinator" value={coordinatorId} onChange={(event) => setCoordinatorId(event.target.value)} aria-invalid={showErrors && coordinatorId === ''}>
+                  <select
+                    id="mission-coordinator"
+                    aria-required="true"
+                    value={coordinatorId}
+                    onChange={(event) => setCoordinatorId(event.target.value)}
+                    aria-invalid={showErrors && coordinatorId === ''}
+                  >
                     <option value="" disabled>
                       {t('createMission.coordinator')}
                     </option>
@@ -197,9 +211,10 @@ export function CreateMissionPage() {
                   </select>
                 )}
               </div>
+            </SectionCard>
 
-              <fieldset className="point-group" data-missing={showErrors && !target ? 'true' : undefined}>
-                <legend>{t('createMission.objective')}</legend>
+            <SectionCard icon="target" title={t('createMission.objective')}>
+              <div data-missing={showErrors && !target ? 'true' : undefined}>
                 <PointInput
                   id="target"
                   value={target}
@@ -210,19 +225,26 @@ export function CreateMissionPage() {
                   elevationLookup={elevationLookup}
                   error={showErrors && !target ? t('createMission.objectiveRequired') : null}
                 />
-              </fieldset>
-            </section>
+              </div>
+            </SectionCard>
 
-            <section className="form-section" aria-labelledby="create-optional">
-              <h2 id="create-optional">{t('createMission.optional')}</h2>
-
+            <SectionCard icon="info" title={t('createMission.additional')}>
               <div className="field">
                 <label htmlFor="mission-description">{t('createMission.description')}</label>
                 <textarea id="mission-description" rows={3} maxLength={4000} value={description} onChange={(event) => setDescription(event.target.value)} />
               </div>
+            </SectionCard>
 
-              <h3 id="create-origins">{t('createMission.origins')}</h3>
-              <p className="field-help">{t('createMission.originsHint')}</p>
+            <SectionCard
+              icon="pin"
+              title={t('createMission.origins')}
+              actions={
+                <button type="button" className="button button-secondary" aria-disabled={origins.length >= MAX_ORIGINS} onClick={() => origins.length < MAX_ORIGINS && addOrigin()}>
+                  <Icon name="plus" />
+                  <span>{t('createMission.addOrigin')}</span>
+                </button>
+              }
+            >
               {origins.map((origin, index) => (
                 <fieldset key={origin.key} className="point-group origin-group">
                   <legend>{t('createMission.originTitle', { number: index + 1 })}</legend>
@@ -263,28 +285,27 @@ export function CreateMissionPage() {
                       error={showErrors && !origin.point ? t('createMission.originPointRequired') : null}
                     />
                   </div>
-                  <button type="button" className="button button-secondary" onClick={() => removeOrigin(origin.key)}>
-                    {t('createMission.removeOrigin', { number: index + 1 })}
+                  <button type="button" className="button button-plain origin-remove" onClick={() => removeOrigin(origin.key)}>
+                    <Icon name="trash" />
+                    <span>{t('createMission.removeOrigin', { number: index + 1 })}</span>
                   </button>
                 </fieldset>
               ))}
-              {origins.length >= MAX_ORIGINS && <p className="field-help">{t('createMission.originsLimit')}</p>}
-              <button type="button" className="button button-secondary" aria-disabled={origins.length >= MAX_ORIGINS} onClick={() => origins.length < MAX_ORIGINS && addOrigin()}>
-                {t('createMission.addOrigin')}
-              </button>
-            </section>
+              {origins.length === 0 && <p className="form-note">{t('createMission.originsEmpty')}</p>}
+              {origins.length >= MAX_ORIGINS && <p className="form-note">{t('createMission.originsLimit')}</p>}
+            </SectionCard>
 
             <div className="action-bar">
               <div role="alert" className="action-bar-alert">
                 {alertText && <p>{alertText}</p>}
                 {!alertText && showErrors && !valid && <p>{t('createMission.formErrors')}</p>}
               </div>
-              {!valid && (
-                <p id="create-incomplete" className="action-bar-hint">
-                  {t('createMission.incomplete')}
-                </p>
-              )}
               <div className="action-bar-buttons">
+                {!valid && (
+                  <p id="create-incomplete" className="action-bar-hint">
+                    {t('createMission.incomplete')}
+                  </p>
+                )}
                 <button type="button" className="button button-secondary" onClick={() => navigate(PATHS.missions)}>
                   {t('createMission.cancel')}
                 </button>

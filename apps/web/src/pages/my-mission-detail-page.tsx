@@ -142,7 +142,7 @@ function MissionView({ mission }: { mission: Mission }) {
               <section key={kind} className="point-list" aria-labelledby={`points-${kind}`}>
                 <h3 id={`points-${kind}`}>{t(`missionDetail.points.groups.${kind}`)}</h3>
                 {list.length === 0 ? (
-                  <p className="field-help">{t(`missionDetail.points.empty.${kind}`)}</p>
+                  <p className="form-note">{t(`missionDetail.points.empty.${kind}`)}</p>
                 ) : (
                   <ul>
                     {list.map((point) => (

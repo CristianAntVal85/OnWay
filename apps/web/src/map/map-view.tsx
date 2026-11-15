@@ -5,6 +5,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { Protocol } from 'pmtiles';
 import MapGL, { Layer, Marker, NavigationControl, Source, type MapLayerMouseEvent, type MapRef, type ViewStateChangeEvent } from 'react-map-gl/maplibre';
+import { Menu } from '../components/menu.js';
 import { useTheme } from '../theme/theme-context.js';
 import { Attribution } from './attribution.js';
 import { SATELLITE_PROTOCOL, TOPOGRAPHIC_PROTOCOL, satelliteTile, topographicTile } from './ign-mix.js';
@@ -194,17 +195,18 @@ export default function MapView({
 
   return (
     <section className={['map-view', className].filter(Boolean).join(' ')} aria-label={label ?? t('map.label')} data-picking={picking || undefined}>
-      <div className="map-toolbar">
-        <div className="map-layers" role="group" aria-label={t('map.layers.label')}>
-          {MAP_LAYERS.map((id) => (
-            <button key={id} type="button" className="map-layer-button" aria-pressed={layer === id} onClick={() => setLayer(id)}>
-              {t(`map.layers.${id}`)}
-            </button>
-          ))}
-        </div>
-        {picking && <p className="map-picking">{t('point.mapPicking')}</p>}
-      </div>
       <div className="map-canvas">
+        <div className="map-overlay">
+          <Menu
+            className="map-layers"
+            label={t('map.layers.current', { layer: t(`map.layers.${layer}`) })}
+            icon="layers"
+            iconOnly
+            selection
+            items={MAP_LAYERS.map((id) => ({ id, label: t(`map.layers.${id}`), checked: layer === id, onSelect: () => setLayer(id) }))}
+          />
+          {picking && <p className="map-picking">{t('point.mapPicking')}</p>}
+        </div>
         <MapGL
           ref={mapRef}
           mapLib={maplibre}

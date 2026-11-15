@@ -49,7 +49,7 @@ export function RouteCard({ item, selected, highlighted, onToggle, onHighlight, 
           <Link to={routePath(item.id)}>{item.name}</Link>
         </h2>
       </div>
-      <p className="route-badges">
+      <p className="route-badges route-card-badges">
         <span className="status-badge" data-version={latest.status}>
           {t(`routes.card.${latest.status}`)} · {t('routes.card.version', { number: latest.number })}
         </span>
@@ -65,9 +65,9 @@ export function RouteCard({ item, selected, highlighted, onToggle, onHighlight, 
         )}
         {item.derivedFromRouteId && <span className="status-badge">{t('routes.card.copy')}</span>}
       </p>
-      <dl className="facts-grid">
+      <dl className="route-figures">
         <div>
-          <dt>{t('routes.card.distance')}</dt>
+          <dt className="visually-hidden">{t('routes.card.distance')}</dt>
           <dd>{t('units.km', { value: formatKm(latest.metrics.distanceM, locale) })}</dd>
         </div>
         <div>
@@ -78,15 +78,12 @@ export function RouteCard({ item, selected, highlighted, onToggle, onHighlight, 
           <dt>{t('routes.card.maxElevation')}</dt>
           <dd>{t('units.m', { value: formatMeters(latest.metrics.maxElevationM, locale) })}</dd>
         </div>
-        <div>
-          <dt>{t('routes.card.usedIn')}</dt>
-          <dd>{item.usedInMissions > 0 ? t('routes.card.usedInValue', { count: item.usedInMissions }) : t('routes.card.notUsed')}</dd>
-        </div>
-        <div className="facts-wide">
-          <dt>{t('routes.filters.versionValidated')}</dt>
-          <dd>{validated ? t('routes.card.validatedOn', { date: formatDate(validated.validatedAt, locale), number: validated.number }) : t('routes.card.neverValidated')}</dd>
-        </div>
       </dl>
+      <p className="route-card-meta">
+        {item.usedInMissions > 0 ? t('routes.card.usedInValue', { count: item.usedInMissions }) : t('routes.card.notUsed')}
+        {' · '}
+        {validated ? t('routes.card.validatedOn', { date: formatDate(validated.validatedAt, locale), number: validated.number }) : t('routes.card.neverValidated')}
+      </p>
     </li>
   );
 }

@@ -42,3 +42,9 @@ Contratos 90 (81 + 9 del cliente generado), i18n 8, geo 127, api unitarias 202, 
 
 ## Decisiones de organización
 - **Backlog tras el MVP:** `docs/backlog-post-mvp.md` (B-01 equipos visibles para el rescatista, B-02 alias de personas, B-03 y B-04 de `H5-acceso`, B-05 motor caído lento). SDD **ligero**: por hito, `specs/Hn-nombre/plan.md` + `tasks.md` (`AGENTS.md`, skill `sdd`). Git: rama `hito/Hn-nombre` desde `main`, un commit y un push por tarea con todo en verde, `main` solo recibe hitos validados. CI en `.github/workflows/ci.yml`: `verify`, `api`, `audit`, `stack`, `routing` y `e2e` (6 trabajos).
+
+## UI-simplificacion (2026-11-15)
+- Petición del usuario: interfaz con demasiados botones, inputs caóticos y textos de ayuda abrumadores; boceto en `docs/boteto-interface/`. Plan y tareas en `specs/UI-simplificacion/` (D-S1 a D-S11).
+- «Crear una versión nueva a partir de esta» y «Derivar» se sustituyen por «Editar ruta» (el editor decide si es versión o ruta nueva) y «Duplicar ruta» dentro de «Más» (RF-517 se mantiene).
+- Menú propio (`src/components/menu.tsx`) con el patrón de menú de WAI-ARIA, colocado respecto a la ventana; iconos SVG propios; sin dependencias nuevas.
+- La paleta del boceto (D-S2) sustituye al rojo de rescate de `UI-rediseno` (D-U3); controles de 40 px con puntero fino y 48 px con táctil (D-S8).

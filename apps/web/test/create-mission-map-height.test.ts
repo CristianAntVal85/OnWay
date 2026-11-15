@@ -80,12 +80,6 @@ describe('alto del mapa de Crear misión (T7)', () => {
     }
   });
 
-  it('la barra inferior fija deja sitio al foco: `scroll-padding-bottom` cubre su alto máximo medido (136 px)', () => {
-    const [padding] = blocks('html:has(.action-bar)').flatMap((b) => declarations(b.body, 'scroll-padding-bottom'));
-    expect(padding).toMatch(/^\d+(\.\d+)?rem$/);
-    expect(parseFloat(padding!) * REM).toBeGreaterThanOrEqual(136);
-  });
-
   it('sin `!important`', () => {
     expect(css).not.toMatch(/!important/);
   });

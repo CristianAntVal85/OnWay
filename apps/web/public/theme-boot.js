@@ -8,7 +8,7 @@
     var theme = stored === 'system' ? (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : stored;
     document.documentElement.setAttribute('data-theme', theme);
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', theme === 'light' ? '#17262b' : '#161b22');
+    if (meta) meta.setAttribute('content', '#151e2a'); // la cabecera es la misma en los dos temas (--header-bg)
   } catch {
     // Almacenamiento o matchMedia no disponibles: se queda el tema por defecto.
   }

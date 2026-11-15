@@ -8,10 +8,10 @@
 */
 
 :root {
-  --font-sign: 'Bahnschrift', 'DIN Alternate', 'DIN 1451 Std', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sign: var(--font-body); /* UI-simplificacion: una sola familia; los títulos se distinguen por tamaño y peso */
 
-  --tap: 3rem; /* objetivo táctil mínimo: 48 px */
+  --tap: var(--control-h); /* alto de control y objetivo mínimo: 40 px con puntero fino y 48 px con táctil (D-S8, theme/tokens.css) */
   --gutter: 1rem;
   --measure: 38rem;
 }
@@ -33,7 +33,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
-  font-size: 1.0625rem;
+  font-size: var(--text-md);
   line-height: 1.5;
 }
 
@@ -47,11 +47,11 @@ h2 {
 }
 
 h1 {
-  font-size: clamp(1.9rem, 6vw, 2.75rem);
+  font-size: clamp(1.5rem, 5vw, var(--text-2xl));
 }
 
 h2 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
 }
 
 p {
@@ -64,7 +64,7 @@ a {
 }
 
 .lead {
-  font-size: 1.1875rem;
+  color: var(--text-muted);
 }
 
 /* ---------- foco: anillo doble (--focus fuera, --focus-inner pegado), visible en los dos temas ---------- */
@@ -138,12 +138,12 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--tap);
-  padding: 0.5rem 1.5rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
-  font: 700 1.0625rem/1.2 var(--font-sign);
-  letter-spacing: 0.01em;
+  gap: var(--space-2);
+  min-height: var(--control-h);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font: 600 var(--text-md) / 1.2 var(--font-body);
   text-decoration: none;
   cursor: pointer;
 }
@@ -185,23 +185,29 @@ a {
 }
 
 .field {
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--space-4);
 }
 
 .field label {
   display: block;
-  margin-bottom: 0.375rem;
-  font-weight: 700;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.field ::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
 }
 
 .field input {
   display: block;
   width: 100%;
-  min-height: 3.25rem;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
-  background: var(--surface);
+  min-height: var(--control-h);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg);
   color: var(--text);
   font: inherit;
 }
@@ -212,9 +218,10 @@ a {
 }
 
 .field-error {
-  margin: 0.375rem 0 0;
+  margin: var(--space-1) 0 0;
   color: var(--accent-text);
-  font-weight: 700;
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .form-alert:not(:empty) {
@@ -233,7 +240,7 @@ a {
 .notice {
   margin-bottom: 1.25rem;
   padding: 0.75rem 1rem;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   border-inline-start-width: 8px;
   border-inline-start-color: var(--attention);
   background: var(--warn-soft);
@@ -265,8 +272,9 @@ a {
 
 .segmented {
   display: inline-flex;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 
@@ -276,7 +284,7 @@ a {
 }
 
 .segment + .segment {
-  border-inline-start: 2px solid var(--border-strong);
+  border-inline-start: 1px solid var(--border-strong);
 }
 
 .segment input {
@@ -290,14 +298,17 @@ a {
 .segment span {
   display: flex;
   align-items: center;
-  min-height: calc(var(--tap) - 4px);
-  padding: 0 1.25rem;
-  font-weight: 700;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: calc(var(--control-h) - 2px);
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .segment input:checked + span {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .segment input:focus-visible + span {
@@ -321,7 +332,7 @@ a {
 
 .theme-switch .segment + .segment {
   border-inline-start: 0;
-  border-block-start: 2px solid var(--border-strong);
+  border-block-start: 1px solid var(--border-strong);
 }
 
 @media (min-width: 40rem) {
@@ -332,7 +343,7 @@ a {
 
   .theme-switch .segment + .segment {
     border-block-start: 0;
-    border-inline-start: 2px solid var(--border-strong);
+    border-inline-start: 1px solid var(--border-strong);
   }
 }
 
@@ -340,11 +351,25 @@ a {
 
 .state {
   max-width: var(--measure);
-  margin: 1.5rem 0;
-  padding: 1rem 1.25rem;
-  border: 2px solid var(--border);
-  border-radius: 4px;
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
+}
+
+.state h2,
+.state h3 {
+  font-size: var(--text-lg);
+}
+
+/* Dentro de una tarjeta el estado no repite el marco: ocupa el ancho y solo se separa con una línea discontinua. */
+.section-card .state,
+.env-section-simple .state {
+  max-width: none;
+  margin: 0;
+  border-style: dashed;
+  background: transparent;
 }
 
 .state h2 {
@@ -407,8 +432,8 @@ a {
   max-width: var(--measure);
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -522,7 +547,7 @@ a.button-link {
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  min-height: var(--tap);
+  min-height: 3.5rem; /* el alto de la primera fila de la cabecera */
   color: inherit;
   text-decoration: none;
 }
@@ -534,7 +559,14 @@ a.button-link {
   letter-spacing: -0.01em;
 }
 
+/* Cabecera (UI-simplificacion T3): marca, organización, navegación con icono y, a la derecha, el cambio de tema.
+   En pantalla estrecha la navegación es un menú desplegable bajo la barra; el alto de la barra no cambia entre páginas. */
 .app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0 var(--space-2);
+  padding-inline: var(--gutter);
   background: var(--header-bg);
   color: var(--header-text);
   border-bottom: 1px solid var(--border);
@@ -542,10 +574,10 @@ a.button-link {
 
 .app-header-bar {
   display: flex;
+  flex: 1;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 1rem;
-  padding: 0.25rem var(--gutter) 0.5rem;
+  gap: 0 var(--space-3);
 }
 
 .menu-button {
@@ -556,21 +588,50 @@ a.button-link {
 .org-name {
   order: 3;
   flex-basis: 100%;
-  margin: 0;
+  margin: 0 0 var(--space-2);
   color: var(--header-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   line-height: 1.25;
 }
 
-.menu-button {
-  min-height: var(--tap);
-  padding: 0 1rem;
-  border: 2px solid var(--header-text);
-  border-radius: 4px;
+.menu-button,
+.header-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-h);
+  min-inline-size: var(--control-h);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--header-text);
-  font: 700 1rem/1 var(--font-sign);
+  font: 600 var(--text-md) / 1 var(--font-body);
   cursor: pointer;
+}
+
+.header-button {
+  padding: 0;
+  border-color: transparent;
+}
+
+/* centrado en la primera fila de la barra (3,5rem), aunque la organización ocupe una segunda en el móvil */
+.theme-toggle {
+  margin-block: calc((3.5rem - var(--control-h)) / 2);
+}
+
+.menu-button:hover,
+.header-button:hover {
+  background: var(--header-hover);
+}
+
+/* en el móvil la navegación abierta ocupa su fila, debajo de la barra y del botón de tema */
+.main-nav {
+  order: 3;
+  flex: none;
+  inline-size: calc(100% + 2 * var(--gutter));
+  margin-inline: calc(-1 * var(--gutter));
 }
 
 .main-nav ul {
@@ -589,35 +650,30 @@ a.button-link {
 .main-nav a {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  min-height: 3.25rem;
+  gap: var(--space-3);
+  min-block-size: 3rem;
   padding: 0 var(--gutter);
-  color: var(--header-text);
-  font: 700 1.125rem/1.2 var(--font-sign);
+  border-inline-start: 3px solid transparent;
+  color: var(--header-muted);
+  font: 600 var(--text-md) / 1.2 var(--font-body);
   text-decoration: none;
 }
 
-/* marca de «estás aquí»: siempre ocupa su sitio para que el texto no baile */
-.main-nav a::before {
-  content: '';
-  width: 0.5rem;
-  height: 0.9rem;
-  border: 1.5px solid transparent;
-  border-radius: 2px;
-}
-
+/* «estás aquí»: texto pleno, icono y franja del color de acento (no solo color: también `aria-current` y el peso) */
 .main-nav a[aria-current='page'] {
+  border-inline-start-color: var(--accent-vivid);
   background: var(--header-hover);
+  color: var(--header-text);
+  font-weight: 700;
 }
 
-.main-nav a[aria-current='page']::before {
-  border-color: var(--header-bg);
-  background: linear-gradient(to bottom, var(--mark-white) 0 50%, var(--mark-red) 50% 100%);
-  box-shadow: 0 0 0 1.5px var(--mark-white);
+.main-nav a[aria-current='page'] .icon {
+  color: var(--accent-vivid);
 }
 
 .main-nav a:hover {
   background: var(--header-hover);
+  color: var(--header-text);
 }
 
 .main-nav[data-open='false'] {
@@ -658,35 +714,43 @@ a.button-link {
     justify-self: center;
     padding: 3rem 2rem;
   }
+}
 
+/* La barra horizontal entra a partir de 64rem: por debajo no caben las entradas con su texto y se queda el menú desplegable. */
+@media (min-width: 64rem) {
   .menu-button {
     display: none;
   }
 
   .app-header {
-    display: flex;
+    flex-wrap: nowrap;
     align-items: center;
-    flex-wrap: wrap;
-    padding-inline: 0;
+    gap: var(--space-4);
+  }
+
+  .app-header-bar {
+    flex: none;
+    flex-wrap: nowrap;
   }
 
   .org-name {
     order: 0;
     flex: none;
     flex-basis: auto;
+    display: none;
     max-width: 14rem;
-  }
-
-  .app-header-bar {
-    flex-wrap: nowrap;
-    padding-block: 0.25rem;
+    margin: 0;
+    padding-inline-start: var(--space-3);
+    border-inline-start: 1px solid var(--border);
   }
 
   .main-nav,
   .main-nav[data-open='false'] {
     display: block;
+    order: 0;
     flex: 1;
-    padding-inline-end: var(--gutter);
+    inline-size: auto;
+    margin-inline: 0;
   }
 
   .main-nav ul {
@@ -700,14 +764,35 @@ a.button-link {
     border-top: 0;
   }
 
+  /* subrayado de la sección activa: la franja pasa del borde lateral al inferior y el enlace llena el alto de la barra */
   .main-nav a {
-    min-height: var(--tap);
-    padding: 0 0.875rem;
-    font-size: 1.0625rem;
+    gap: var(--space-2);
+    min-block-size: 3.5rem;
+    padding: 0 var(--space-3);
+    border-inline-start: 0;
+    border-block: 3px solid transparent;
   }
 
-  .app-header-bar {
-    padding-inline: var(--gutter) 0;
+  .main-nav a[aria-current='page'] {
+    border-block-end-color: var(--accent-vivid);
+    background: transparent;
+  }
+
+  /* Cuenta va al final como icono; su nombre sigue en el enlace para lectores de pantalla y como texto emergente no hace falta */
+  .main-nav li[data-item='account'] .nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* El nombre de la organización solo cuando sobra sitio: así la barra no salta a dos filas. */
+@media (min-width: 80rem) {
+  .org-name {
+    display: block;
   }
 }
 
@@ -729,11 +814,11 @@ a.button-link {
 .field textarea {
   display: block;
   width: 100%;
-  min-height: 3.25rem;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
-  background: var(--surface);
+  min-height: var(--control-h);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg);
   color: var(--text);
   font: inherit;
 }
@@ -744,16 +829,17 @@ a.button-link {
   background: var(--danger-soft);
 }
 
-.field-help {
-  margin: 0.375rem 0 0;
+/* Nota breve de un formulario (un límite, un estado): una línea apagada, nunca una explicación larga (D-S3). */
+.form-note {
+  margin: 0;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
 }
 
 .field-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .field-row input {
@@ -786,61 +872,42 @@ a.button-link {
   min-width: 0;
 }
 
-.form-section {
-  margin-bottom: 2rem;
-}
-
-.form-section h3 {
-  margin: 1.5rem 0 0.25rem;
-  font-family: var(--font-sign);
-  font-size: 1.15rem;
-}
-
+/* Un punto con nombre dentro de una sección (cada origen de Crear misión): sin caja, separado por una línea. */
 .point-group {
   min-inline-size: 0;
-  margin: 0 0 1.25rem;
-  padding: 0.75rem 1rem 1rem;
-  border: 2px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-4) 0 0;
+  border: 0;
+  border-block-start: 1px solid var(--border);
 }
 
-.point-group legend {
-  padding: 0 0.375rem;
-  font-weight: 700;
+.point-group > legend {
+  float: inline-start;
+  inline-size: 100%;
+  margin-block-end: var(--space-3);
+  padding: 0;
+  font-weight: 600;
+}
+
+.point-group > legend + * {
+  clear: both;
+}
+
+.origin-remove {
+  margin-block-start: var(--space-2);
+  color: var(--text-muted);
 }
 
 .method-switch {
-  margin: 0 0 1rem;
-  padding: 0;
-  border: 0;
-  min-inline-size: 0;
-}
-
-.method-switch legend {
-  margin-bottom: 0.375rem;
-  padding: 0;
-  font-weight: 700;
-}
-
-.method-switch .segmented {
-  display: flex;
-  width: 100%;
-}
-
-.method-switch .segment {
-  flex: 1 1 auto;
-}
-
-.method-switch .segment span {
-  flex: 1;
-  justify-content: center;
-  padding: 0 0.5rem;
-  font-size: 1rem;
+  margin-block-end: var(--space-3);
 }
 
 .method-body {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
+}
+
+.method-body .field {
+  margin-bottom: 0;
 }
 
 .candidates {
@@ -890,13 +957,24 @@ a.button-link {
 }
 
 .point-summary {
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  font-size: var(--text-sm);
 }
 
 .point-summary p {
-  margin: 0 0 0.25rem;
+  margin: 0;
+}
+
+.point-summary .button-link {
+  margin-inline-start: auto;
+  padding-block: var(--space-1);
+  font-size: var(--text-sm);
 }
 
 .point-summary-position {
@@ -914,29 +992,21 @@ a.button-link {
   font-weight: 700;
 }
 
-/* la barra inferior fija y el mapa pegado no deben tapar lo que el foco o un desplazamiento lleva a la vista */
-html:has(.action-bar) {
-  scroll-padding-bottom: 11rem;
-}
-
-/* barra inferior fija: Cancelar y Crear misión siempre a la vista */
+/* Barra de acciones al final del formulario (D-S10): en el flujo, así no tapa ningún campo; la principal a la derecha y más ancha. */
 .action-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 3;
-  margin-inline: calc(var(--gutter) * -1);
-  padding: 0.75rem var(--gutter);
-  border-top: 2px solid var(--border-strong);
-  background: var(--surface-raised);
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-top: 1px solid var(--border);
 }
 
 .action-bar-alert:not(:empty) {
-  margin-bottom: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--accent-text);
-  border-inline-start-width: 8px;
+  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--accent-text);
+  border-inline-start-width: 4px;
+  border-radius: var(--radius-md);
   background: var(--danger-soft);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .action-bar-alert p,
@@ -945,21 +1015,21 @@ html:has(.action-bar) {
 }
 
 .action-bar-hint {
-  margin-bottom: 0.5rem;
+  flex: 1 1 100%;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
 }
 
 .action-bar-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
 }
 
 .action-bar-buttons .button-primary {
   flex: 1 1 12rem;
-  min-height: 3.5rem;
-  font-size: 1.2rem;
 }
 
 /* en el móvil el mapa va arriba, entero (con sus atribuciones a la vista), y el formulario debajo */
@@ -1005,7 +1075,8 @@ html:has(.action-bar) {
 .map-view {
   display: flex;
   flex-direction: column;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 
@@ -1021,44 +1092,37 @@ html:has(.action-bar) {
   font-weight: 700;
 }
 
-.map-toolbar {
+/* Sobre el mapa, arriba a la izquierda: el botón de capas (D-S6) y, al elegir un punto, la indicación. */
+.map-overlay {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
+  z-index: 2;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.5rem;
-  border-bottom: 2px solid var(--border-strong);
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-inline-size: calc(100% - 4rem);
+  pointer-events: none;
 }
 
-.map-layers {
-  display: inline-flex;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+.map-overlay > * {
+  pointer-events: auto;
 }
 
-.map-layer-button {
-  min-height: 2.75rem;
-  padding: 0 0.875rem;
-  border: 0;
-  background: var(--surface);
-  color: var(--text);
-  font: 700 1rem/1 var(--font-sign);
-  cursor: pointer;
-}
-
-.map-layer-button + .map-layer-button {
-  border-inline-start: 2px solid var(--border-strong);
-}
-
-.map-layer-button[aria-pressed='true'] {
-  background: var(--text);
-  color: var(--bg);
+.map-layers > .button {
+  background: var(--surface-raised);
+  box-shadow: 0 1px 4px var(--backdrop);
 }
 
 .map-picking {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .map-canvas {
@@ -1070,20 +1134,21 @@ html:has(.action-bar) {
 
 .map-notice {
   margin: 0;
-  padding: 0.375rem 0.5rem;
-  border-top: 2px solid var(--border-strong);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
   background: var(--warn-soft);
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .map-readout {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  border-top: 2px solid var(--border-strong);
-  font-size: 0.9rem;
+  gap: var(--space-2);
+  min-height: 2.25rem;
+  padding: var(--space-1) var(--space-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-sm);
 }
 
 .map-readout-position {
@@ -1107,17 +1172,18 @@ html:has(.action-bar) {
 }
 
 .map-readout-format select {
-  min-height: 2.25rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  min-height: 1.75rem;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   background: var(--surface);
-  color: var(--text);
+  color: var(--text-muted);
   font: inherit;
 }
 
 .map-attribution {
   margin: 0;
-  padding: 0.25rem 0.5rem;
+  padding: var(--space-1) var(--space-3);
   border-top: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 0.75rem;
@@ -1219,7 +1285,7 @@ html:has(.action-bar) {
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 2px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
 }
 
 .tab {
@@ -1269,8 +1335,8 @@ html:has(.action-bar) {
 
 .mission-card {
   padding: 0.875rem 1rem 1rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -1291,13 +1357,15 @@ html:has(.action-bar) {
 
 .status-badge {
   display: inline-block;
-  padding: 0.125rem 0.625rem;
-  border: 2px solid var(--border-strong);
+  padding: 0.0625rem var(--space-2);
+  border: 1px solid var(--border-strong);
   border-radius: 999px;
   background: var(--surface);
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.5;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
 .status-badge[data-status='active'] {
@@ -1450,10 +1518,10 @@ html:has(.action-bar) {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.25rem 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--border);
-  border-radius: 4px;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 
@@ -1463,7 +1531,7 @@ html:has(.action-bar) {
 
 .readiness-state {
   min-width: 5.5rem;
-  font-size: 0.9rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -1476,7 +1544,7 @@ html:has(.action-bar) {
   color: var(--accent-text);
 }
 
-.readiness-item .field-help {
+.readiness-item .form-note {
   margin: 0;
 }
 
@@ -1485,13 +1553,16 @@ html:has(.action-bar) {
 }
 
 .point-list {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-4);
 }
 
 .point-list h3 {
-  margin: 0 0 0.5rem;
-  font-family: var(--font-sign);
-  font-size: 1.15rem;
+  margin: 0 0 var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .point-list ul {
@@ -1507,12 +1578,12 @@ html:has(.action-bar) {
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 0.5rem 1rem;
-  padding: 0.625rem 0.75rem;
-  border: 2px solid var(--border);
-  border-inline-start-width: 8px;
-  border-radius: 4px;
-  background: var(--surface);
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-inline-start-width: 4px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
 }
 
 .point-row[data-kind='origin'] {
@@ -1608,7 +1679,7 @@ html:has(.action-bar) {
   gap: 0.75rem;
 }
 
-.detail-head .lifecycle-actions .button {
+.detail-head .lifecycle-actions > .button {
   flex: 1 1 11rem;
 }
 
@@ -1735,8 +1806,46 @@ h4 {
   align-items: start;
 }
 
-.home-organization {
-  margin-bottom: 1.5rem;
+/* Franja de resumen de Inicio: organización a la izquierda y cifras a la derecha, en casillas iguales. */
+.home-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+}
+
+.stat-row {
+  display: flex;
+  flex: 1 1 18rem;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.stat {
+  flex: 1 1 8rem;
+  min-inline-size: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.stat dt {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.stat dd {
+  margin: var(--space-1) 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.stat-figure dd {
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
 .home-environment,
@@ -1748,9 +1857,38 @@ h4 {
   margin-bottom: 1.5rem;
 }
 
+.env-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-h);
+  margin: 0;
+  font: 600 var(--text-lg) / 1.2 var(--font-body);
+  letter-spacing: 0;
+}
+
+.env-title .icon {
+  color: var(--text-muted);
+}
+
+/* Variante simple (Inicio y cabeceras de misión): la sección es la tarjeta y la del tiempo va dentro sin marco propio. */
+.env-section-simple {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.env-section-simple .env-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .env-basis {
-  margin-bottom: 0.25rem;
-  font-size: 1.1rem;
+  margin-bottom: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 .env-place {
@@ -1767,8 +1905,8 @@ h4 {
 .env-card {
   min-width: 0;
   padding: 0.875rem 1rem 1rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -1865,7 +2003,6 @@ h4 {
 
 .env-nolocation h3 {
   margin-bottom: 0.5rem;
-  font-size: 1.35rem;
 }
 
 .env-nolocation .button {
@@ -1898,6 +2035,44 @@ h4 {
 
 .mission-pick {
   margin-top: 0.75rem;
+}
+
+/* Tarjeta de misión compacta (Inicio y Mis misiones): datos a la izquierda y el botón del tiempo a la derecha. */
+.mission-card-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  background: var(--surface-raised);
+}
+
+.mission-card-compact .mission-card-body {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+.mission-card-compact h3 {
+  display: block;
+  margin: 0 0 var(--space-1);
+  font: 600 var(--text-md) / 1.3 var(--font-body);
+}
+
+.mission-card-compact .mission-card-line {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.mission-card-compact .mission-pick {
+  margin: 0;
+}
+
+.home-missions {
+  margin: 0;
+}
+
+.home-see-all {
+  margin: var(--space-3) 0 0;
 }
 
 .mission-pick[aria-pressed='true'] {
@@ -1948,12 +2123,6 @@ h4 {
 
 /* ---------- biblioteca de rutas (H2-T7) ---------- */
 
-.page-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
 .check-row {
   display: flex;
   align-items: center;
@@ -1973,9 +2142,8 @@ h4 {
 
 .library {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-4);
   grid-template-columns: minmax(0, 1fr);
-  padding-top: 1rem;
 }
 
 /* Pantalla estrecha: dos pestañas, Lista y Mapa, con la misma selección. */
@@ -2014,19 +2182,33 @@ h4 {
   color: var(--text-muted);
 }
 
+.search-field {
+  margin-block-end: var(--space-2);
+}
+
+.search-field .field-row {
+  flex-wrap: nowrap;
+}
+
 .library-filter-details {
-  margin: 0 0 1rem;
-  padding: 0.5rem 0.75rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  margin: 0 0 var(--space-3);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 
+.library-filter-details[open] {
+  padding-block-end: var(--space-3);
+}
+
 .library-filter-details summary {
-  min-height: var(--tap);
+  min-height: var(--control-h);
   display: flex;
   align-items: center;
-  font-weight: 700;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
   cursor: pointer;
 }
 
@@ -2042,29 +2224,33 @@ h4 {
 }
 
 .selection-hint {
-  margin: 0 0 0.5rem;
+  margin: 0 0 var(--space-2);
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
 }
 
 .selection-bar,
 .selection-report {
-  margin-bottom: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
-  background: var(--warn-soft);
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.selection-bar {
+  border-inline-start: 3px solid var(--accent-vivid);
 }
 
 .selection-count {
   margin: 0;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .selection-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .selection-report p {
@@ -2080,18 +2266,56 @@ h4 {
 
 .route-list {
   display: grid;
-  gap: 0.75rem;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .route-card {
-  padding: 0.75rem 1rem 1rem;
-  border: 2px solid var(--border-strong);
-  border-inline-start-width: 8px;
-  border-radius: 4px;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-inline-start-width: 4px;
+  border-radius: var(--radius-md);
   background: var(--surface);
+}
+
+/* Las cifras de la ruta en una sola línea: valor destacado y rótulo pequeño al lado. */
+.route-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.route-figures div {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: baseline;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.route-card-badges {
+  margin-inline-start: calc(var(--tap) - var(--space-2));
+}
+
+.route-figures dt {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.route-figures dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.route-card-meta {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
 }
 
 .route-card[data-highlighted] {
@@ -2139,9 +2363,14 @@ h4 {
   cursor: pointer;
 }
 
+.route-card-head {
+  align-items: center;
+}
+
 .route-card-head h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--text-md);
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
@@ -2152,8 +2381,8 @@ h4 {
 .route-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.375rem;
-  margin: 0.5rem 0 0.75rem;
+  gap: var(--space-1);
+  margin: var(--space-1) 0 var(--space-2);
 }
 
 .status-badge[data-version='validated'] {
@@ -2294,13 +2523,26 @@ h4 {
 
 .route-info {
   display: grid;
-  gap: 1.25rem;
+  gap: var(--space-4);
   align-content: start;
   min-width: 0;
 }
 
-.route-info h2 {
-  margin: 0 0 0.5rem;
+.route-info .section-card {
+  margin: 0;
+}
+
+.route-origin {
+  margin: calc(var(--space-3) * -1) 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.plain-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .notice-warning {
@@ -2310,7 +2552,7 @@ h4 {
 
 .dialog-warning {
   padding: 0.5rem 0.75rem;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   background: var(--warn-soft);
   font-weight: 700;
 }
@@ -2323,7 +2565,7 @@ h4 {
   display: block;
   width: 100%;
   height: auto;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   background: var(--surface);
 }
 
@@ -2372,8 +2614,8 @@ h4 {
 .profile-table td,
 .compare-table th,
 .compare-table td {
-  padding: 0.375rem 0.5rem;
-  border: 1px solid var(--border-strong);
+  padding: var(--space-2);
+  border-block-end: 1px solid var(--border);
   text-align: start;
 }
 
@@ -2406,30 +2648,46 @@ h4 {
 
 .version-list {
   display: grid;
-  gap: 0.75rem;
-  margin: 0 0 0.75rem;
+  gap: var(--space-2);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
+/* Fila de versión: datos a la izquierda y «Ver» a la derecha; la que está en el mapa lleva una franja de acento. */
 .version-row {
-  padding: 0.625rem 0.875rem;
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
-  background: var(--surface);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
 }
 
 .version-row[data-shown='true'] {
-  background: var(--warn-soft);
+  border-inline-start: 3px solid var(--accent-vivid);
 }
 
 .version-row p {
-  margin: 0 0 0.25rem;
+  grid-column: 1;
+  margin: 0;
+}
+
+.version-row .route-badges {
+  margin: 0 0 var(--space-1);
+  align-items: center;
+}
+
+.version-show {
+  grid-column: 2;
+  grid-row: 1 / span 4;
 }
 
 .version-meta {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
 
@@ -2559,7 +2817,7 @@ h4 {
 .vertex-scroll {
   max-height: 18rem;
   overflow: auto;
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
 }
 
 /* La tabla se desplaza dentro de su caja (`overflow: auto`) y un anillo por fuera quedaría recortado: aquí el anillo doble va por dentro. */
@@ -2674,9 +2932,6 @@ h4 {
 .results-table tr[data-highlighted] {
   background: var(--warn-soft);
 }
-.detail-generate {
-  margin: 1rem 0;
-}
 
 /* Dibujar uniendo los puntos por los caminos (H3-T9). */
 .snap-panel {
@@ -2781,7 +3036,6 @@ h4 {
   font-weight: 700;
 }
 
-.mission-routes-export,
 .mission-routes-profiles {
   margin-top: 1.25rem;
 }
@@ -2917,7 +3171,7 @@ h4 {
 
 .my-route-card {
   padding: 0.875rem var(--gutter);
-  border: 2px solid var(--border-strong);
+  border: 1px solid var(--border);
   background: var(--surface);
 }
 
@@ -2967,10 +3221,6 @@ h4 {
   margin: 0 0 0.375rem;
 }
 
-.admin-intro {
-  margin: 0 0 1rem;
-}
-
 .signups-panel {
   padding-top: 1rem;
 }
@@ -2996,8 +3246,8 @@ h4 {
   align-items: stretch;
   gap: 0.5rem;
   min-height: var(--tap);
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -3113,15 +3363,15 @@ label.signup-info {
   accent-color: var(--text);
 }
 
-.role-option .field-help {
+.role-option .form-note {
   display: block;
   margin-top: 0.125rem;
 }
 
 .invite-code {
   padding: 0.875rem var(--gutter);
-  border: 2px solid var(--border-strong);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -3159,7 +3409,6 @@ label.signup-info {
 @media (forced-colors: active) {
   /* pulsado y seleccionado */
   .segment input:checked + span,
-  .map-layer-button[aria-pressed='true'],
   .tab[aria-selected='true'],
   .mission-pick[aria-pressed='true'] {
     forced-color-adjust: none; /* sin esto Chrome pinta tras el texto un fondo `Canvas` y el texto `HighlightText` no se ve */
@@ -3474,5 +3723,319 @@ label.signup-info {
   .wx-icon .wx-stroke,
   .wx-icon .wx-wind {
     fill: none;
+  }
+}
+
+/* ---------- componentes comunes (UI-simplificacion T2): icono, menú, sección, cabecera de página y segmentado ---------- */
+
+.icon {
+  flex: none;
+  inline-size: var(--icon);
+  block-size: var(--icon);
+}
+
+/* Botón de solo icono: cuadrado, del alto de control */
+.button-icon {
+  inline-size: var(--control-h);
+  padding: 0;
+}
+
+.button-plain {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text);
+}
+
+.button-plain:hover {
+  background: var(--surface-raised);
+}
+
+.field-label {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.field-required {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.menu-caret {
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+.menu-list {
+  position: fixed;
+  z-index: 30;
+  min-inline-size: 12rem;
+  max-inline-size: min(20rem, calc(100vw - 2 * var(--gutter)));
+  margin: 0;
+  padding: var(--space-1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: 0 8px 24px var(--backdrop);
+  list-style: none;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: var(--control-h);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: 500 var(--text-md) / 1.2 var(--font-body);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--bg);
+}
+
+.menu-item[data-danger='true'] {
+  color: var(--accent-text);
+}
+
+.menu-item[aria-disabled='true'] {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* En un menú de elección, la marca ocupa siempre su sitio y solo se ve en la opción vigente */
+.menu-check {
+  visibility: hidden;
+}
+
+.menu-item[aria-checked='true'] .menu-check {
+  visibility: visible;
+  color: var(--accent-vivid);
+}
+
+.menu-item[aria-checked='true'] {
+  font-weight: 700;
+}
+
+.section-card {
+  margin-block-end: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.section-card-plain {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.section-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--control-h);
+  margin-block-end: var(--space-3);
+}
+
+.section-card-icon {
+  color: var(--text-muted);
+}
+
+.section-card-title {
+  flex: 1;
+  margin: 0;
+  font: 600 var(--text-lg) / 1.2 var(--font-body);
+  letter-spacing: 0;
+}
+
+.section-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.page-header {
+  margin-block-end: var(--space-5);
+}
+
+.page-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-block-end: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.page-back:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.page-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.page-header-icon {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  color: var(--accent-vivid);
+}
+
+.page-header-text {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+.page-header-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.page-header h1 {
+  margin: 0;
+  font: 700 var(--text-2xl) / 1.15 var(--font-body);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.page-header-subtitle {
+  margin: var(--space-1) 0 0;
+  color: var(--text-muted);
+}
+
+.page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.segmented-group {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.segmented-group legend {
+  margin-block-end: var(--space-2);
+  padding: 0;
+  font-weight: 600;
+}
+
+.segmented[data-block='true'] {
+  display: flex;
+}
+
+.segmented[data-block='true'] .segment {
+  flex: 1;
+}
+
+.segmented[data-block='true'] .segment span {
+  flex: 1;
+}
+
+/* El último elemento de una tarjeta no añade hueco bajo el contenido */
+.section-card > :last-child,
+.section-card > :last-child > .field:last-child {
+  margin-block-end: 0;
+}
+
+/* Dos campos cortos en una fila (opciones de Generar rutas); en pantallas estrechas, uno debajo del otro */
+.field-pair {
+  display: grid;
+  gap: 0 var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.point-group-title {
+  margin: 0 0 var(--space-3);
+  font-weight: 600;
+}
+
+/* Acción principal al final de un formulario, a todo el ancho (D-S10) */
+.form-submit {
+  display: flex;
+  margin-block: var(--space-4);
+}
+
+.form-submit .button {
+  flex: 1;
+}
+
+.editor-panel .section-card {
+  margin-block-end: var(--space-4);
+}
+
+/* Detalle de misión (T9): el menú «⋯» de cada ruta junto a su nombre, y la columna de la ruta fija al desplazar la tabla de lado
+   (las cifras se comparan desplazando; el nombre y sus acciones no se pierden). */
+.mission-route-main {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  background: var(--surface);
+}
+
+.mission-route-main > :not(.mission-route-menu) {
+  grid-column: 1;
+}
+
+.mission-route-menu {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.mission-route-main .mission-route-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mission-routes.section-card,
+.detail-points.section-card {
+  margin: 0;
+}
+
+/* Los grupos de campos no imponen su ancho mínimo (un fieldset lo hace por defecto) y, a 375 px, el segmentado deja solo el texto. */
+.plain-fieldset {
+  min-inline-size: 0;
+}
+
+.segmented[data-block='true'] .segment {
+  min-inline-size: 0;
+}
+
+.segmented .segment .icon {
+  display: none;
+}
+
+@media (min-width: 30rem) {
+  .segmented .segment .icon {
+    display: inline;
   }
 }

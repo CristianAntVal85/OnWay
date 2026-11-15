@@ -1,3 +1,4 @@
+import { SectionCard } from '../components/section-card';
 import { useTranslation } from 'react-i18next';
 import type { OperationOutput } from '@onway/contracts/client';
 import { METRIC_KEYS, difference, type MetricKey } from './compare';
@@ -50,9 +51,16 @@ export function ComparePanel({ versions, a, b, onChange, onStop, detailA, detail
     </option>
   );
   return (
-    <section className="compare-panel" aria-labelledby="compare-title">
-      <h2 id="compare-title">{t('routeDetail.compare.title')}</h2>
-      <p>{t('routeDetail.compare.intro')}</p>
+    <SectionCard
+      className="compare-panel"
+      icon="layers"
+      title={t('routeDetail.compare.title')}
+      actions={
+        <button type="button" className="button button-secondary" onClick={onStop}>
+          {t('routeDetail.compare.stop')}
+        </button>
+      }
+    >
       <div className="compare-selects">
         <div className="field">
           <label htmlFor="compare-a">{t('routeDetail.compare.a')}</label>
@@ -91,9 +99,6 @@ export function ComparePanel({ versions, a, b, onChange, onStop, detailA, detail
           </table>
         </div>
       )}
-      <button type="button" className="button button-secondary" onClick={onStop}>
-        {t('routeDetail.compare.stop')}
-      </button>
-    </section>
+    </SectionCard>
   );
 }

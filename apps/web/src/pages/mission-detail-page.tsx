@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams } from 'react-router';
 import { ApiError, type OperationOutput } from '@onway/contracts/client';
 import { formatCoordinate } from '@onway/geo';
+import { Icon } from '../components/icon';
+import { Menu } from '../components/menu';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { useElevationLookup } from '../hooks/use-elevation-lookup';
@@ -247,13 +249,9 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
                 <h2>{t('missionDetail.fields.description')}</h2>
                 <p>{mission.description ?? t('missionDetail.fields.noDescription')}</p>
               </div>
-              {canEdit && (
-                <button id="mission-edit-button" type="button" className="button button-secondary" onClick={() => open({ type: 'mission' }, asPicked(mission.target), false)}>
-                  {t('missionDetail.editData')}
-                </button>
-              )}
               <LifecycleActions
                 mission={mission}
+                {...(canEdit ? { onEdit: () => open({ type: 'mission' }, asPicked(mission.target), false) } : {})}
                 onSettled={({ message }) => {
                   setEditor(null);
                   setDraft(null);
@@ -274,7 +272,6 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
 
         <section className="detail-readiness" aria-labelledby="readiness-title">
           <h2 id="readiness-title">{t('missionDetail.readiness.title')}</h2>
-          <p className="field-help">{t('missionDetail.readiness.hint')}</p>
           <ul className="readiness-list">
             <ReadinessItem done={mission.readiness.targetDefined} label={t('missionDetail.readiness.targetDefined')} />
             <ReadinessItem
@@ -300,42 +297,34 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
             canManage={mission.actions.manageRoutes}
             origins={pointsByKind.origin.map((point) => ({ id: point.id, name: point.name }))}
             routes={routes}
+            {...(canEdit ? { generate: { to: `${PATHS.generateRoutes}?mission=${mission.id}`, enabled: pointsByKind.origin.length > 0 } } : {})}
             selected={selectedRoutes}
             onToggle={togglePicked}
           />
-          {canEdit && (
-            <section className="detail-generate" aria-labelledby="generate-title">
-              <h2 id="generate-title" tabIndex={-1}>
-                {t('generate.title')}
-              </h2>
-              {pointsByKind.origin.length === 0 ? (
-                <>
-                  {/* RN-08, INV-14: sin origen no se genera; se explica por qué y se lleva a donde se arregla (doc 02 §8). */}
-                  <button type="button" className="button button-secondary" disabled aria-describedby="generate-hint">
-                    {t('generate.cta')}
-                  </button>
-                  <p id="generate-hint" className="field-help">
-                    {t('generate.noOrigin')} <a href="#points-title">{t('generate.addOrigin')}</a>
-                  </p>
-                </>
-              ) : (
-                <Link className="button button-secondary" to={`${PATHS.generateRoutes}?mission=${mission.id}`}>
-                  {t('generate.cta')}
-                </Link>
-              )}
-            </section>
-          )}
         </div>
 
-        <section className="detail-points" aria-labelledby="points-title">
-          <h2 id="points-title" tabIndex={-1}>
-            {t('missionDetail.points.title')}
-          </h2>
-          {canEdit && (
-            <button type="button" className="button button-secondary" onClick={() => setImporting(true)}>
-              {t('missionDetail.importPoints.cta')}
-            </button>
-          )}
+        <section className="detail-points section-card" aria-labelledby="points-title">
+          <header className="section-card-header">
+            <Icon name="pin" className="section-card-icon" />
+            <h2 id="points-title" className="section-card-title" tabIndex={-1}>
+              {t('missionDetail.points.title')}
+            </h2>
+            {canEdit && (
+              <div className="section-card-actions">
+                <Menu
+                  buttonId="points-add"
+                  label={t('missionDetail.points.addMenu')}
+                  icon="plus"
+                  align="end"
+                  disabled={active?.type === 'add'}
+                  items={[
+                    ...KINDS.map((kind) => ({ id: kind, label: t(`missionDetail.points.add.${kind}`), onSelect: () => open({ type: 'add', kind }, null, true) })),
+                    { id: 'import', label: t('missionDetail.importPoints.cta'), icon: 'upload' as const, onSelect: () => setImporting(true) },
+                  ]}
+                />
+              </div>
+            )}
+          </header>
           <div role="status" className="saved-message">
             {saved?.area === 'points' ? saved.text : null}
           </div>
@@ -347,7 +336,7 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
                 <h3 id={`points-${kind}`} tabIndex={-1}>
                   {t(`missionDetail.points.groups.${kind}`)}
                 </h3>
-                {list.length === 0 && !adding && <p className="field-help">{t(`missionDetail.points.empty.${kind}`)}</p>}
+                {list.length === 0 && !adding && <p className="form-note">{t(`missionDetail.points.empty.${kind}`)}</p>}
                 {list.length > 0 && (
                   <ul>
                     {list.map((point) =>
@@ -409,13 +398,8 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
                       close(`points-${kind}`);
                       setSaved({ area: 'points', text: t('missionDetail.points.added', { name }) });
                     }}
-                    onCancel={() => close(`points-add-${kind}`)}
+                    onCancel={() => close('points-add')}
                   />
-                )}
-                {canEdit && !adding && (
-                  <button id={`points-add-${kind}`} type="button" className="button button-secondary" onClick={() => open({ type: 'add', kind }, null, true)}>
-                    {t(`missionDetail.points.add.${kind}`)}
-                  </button>
                 )}
               </section>
             );
@@ -452,7 +436,7 @@ function ReadinessItem({ done, label, hint, action }: { done: boolean; label: st
     <li className="readiness-item" data-done={done}>
       <span className="readiness-state">{done ? t('missionDetail.readiness.done') : t('missionDetail.readiness.pending')}</span>
       <span className="readiness-label">{label}</span>
-      {!done && hint && <span className="field-help">{hint}</span>}
+      {!done && hint && <span className="form-note">{hint}</span>}
       {!done && action}
     </li>
   );
