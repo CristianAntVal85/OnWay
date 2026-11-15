@@ -148,7 +148,6 @@ export function ImportRoutePage() {
                   id="import-file"
                   type="file"
                   accept=".gpx,.kml,application/gpx+xml,application/vnd.google-earth.kml+xml,text/xml"
-                  aria-describedby="import-file-help"
                   aria-invalid={fileError !== null || prepare.isError || undefined}
                   onChange={(event) => {
                     setFile(event.target.files?.[0] ?? null);
@@ -156,9 +155,6 @@ export function ImportRoutePage() {
                     prepare.reset();
                   }}
                 />
-                <p id="import-file-help" className="field-help">
-                  {t('routeImport.fileHelp')}
-                </p>
                 {fileError && (
                   <p className="field-error" role="alert">
                     {fileError}
@@ -181,7 +177,7 @@ export function ImportRoutePage() {
             <form onSubmit={submitSave} noValidate>
               <section aria-labelledby="preview-title">
                 <h2 id="preview-title">{t('routeImport.previewTitle')}</h2>
-                <p>{t('routeImport.previewNothingSaved')}</p>
+                <p className="form-note">{t('routeImport.previewNothingSaved')}</p>
                 {prepared.preview.trackName && <p>{t('routeImport.trackName', { name: prepared.preview.trackName })}</p>}
                 <dl className="facts-grid">
                   <div>
@@ -229,7 +225,7 @@ export function ImportRoutePage() {
               </div>
               {missionId && mission.data && (
                 <>
-                  <p className="field-help">{t('routeImport.mission.notice', { name: mission.data.name })}</p>
+                  <p className="form-note">{t('routeImport.mission.notice', { name: mission.data.name })}</p>
                   <div className="field">
                     <label htmlFor="import-origin">{t('routeImport.mission.origin')}</label>
                     <select id="import-origin" value={originPointId} onChange={(event) => setOriginPointId(event.target.value)}>
@@ -259,7 +255,7 @@ export function ImportRoutePage() {
                 <button type="button" className="button button-secondary" disabled={save.isPending} onClick={reset}>
                   {t('routeImport.changeFile')}
                 </button>
-                <Link className="button button-secondary" to={missionId ? missionPath(missionId) : PATHS.routes}>
+                <Link className="button button-plain" to={missionId ? missionPath(missionId) : PATHS.routes}>
                   {t('routeImport.cancel')}
                 </Link>
               </div>

@@ -76,7 +76,7 @@ test('the coordinator generates alternatives from a mission with an origin on ea
   await page.getByRole('link', { name: G.cta }).click();
   await expect(page).toHaveURL(new RegExp(`/routes/generate\\?mission=${run.mission}`));
   await expect(page.getByRole('heading', { level: 1, name: /Desde la misión/ })).toBeVisible();
-  await expect(page.getByText(G.missionAdds)).toBeVisible();
+  await expect(page.getByText(G.missionTarget)).toBeVisible();
   const origin = page.getByRole('combobox', { name: G.originLabel });
   await expect(origin.locator('option')).toHaveCount(2);
 

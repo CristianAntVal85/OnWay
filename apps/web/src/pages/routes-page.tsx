@@ -1,7 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
+import { Menu } from '../components/menu';
+import { PageHeader } from '../components/page-header';
 import { EmptyState, ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { useDeviceLocation } from '../environment/device-location';
@@ -114,26 +115,28 @@ export function RoutesPage() {
   };
 
   const filtered = activeFilterCount(filters) > 0;
-  const writeActions = canWrite ? (
-    <div className="page-actions">
-      <Link className="button button-primary" to={PATHS.generateRoutes}>
-        {t('generate.cta')}
-      </Link>
-      <Link className="button button-secondary" to={PATHS.routeImport}>
-        {t('routes.importCta')}
-      </Link>
-      <Link className="button button-secondary" to={PATHS.createRoute}>
-        {t('routes.drawCta')}
-      </Link>
-    </div>
-  ) : null;
 
   return (
     <>
-      <div className="page-heading">
-        <h1>{t('routes.title')}</h1>
-        {writeActions}
-      </div>
+      <PageHeader
+        icon="route"
+        title={t('routes.title')}
+        actions={
+          canWrite && (
+            <Menu
+              label={t('routes.newCta')}
+              icon="plus"
+              variant="primary"
+              align="end"
+              items={[
+                { id: 'generate', label: t('generate.cta'), icon: 'route', to: PATHS.generateRoutes },
+                { id: 'import', label: t('routes.importCta'), icon: 'upload', to: PATHS.routeImport },
+                { id: 'draw', label: t('routes.drawCta'), icon: 'pencil', to: PATHS.createRoute },
+              ]}
+            />
+          )
+        }
+      />
 
       <ViewTabs view={view} onSelect={setView} />
 
@@ -191,9 +194,7 @@ export function RoutesPage() {
                   >
                     {t('routes.clearFilters')}
                   </button>
-                ) : (
-                  writeActions
-                )
+                ) : undefined
               }
             >
               {zone ? t('routes.empty.zone') : filtered ? t('routes.empty.filtered') : t('routes.empty.library')}

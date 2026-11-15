@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '../components/icon';
 import { SORTS, VALIDATED_DAYS, activeFilterCount, type LibraryFilters } from './library-state';
 
 interface Props {
@@ -26,18 +27,30 @@ export function LibraryFilterPanel({ filters, draft, onDraft, onSubmit, update, 
   return (
     <div className="library-filters">
       <form className="search-bar" role="search" onSubmit={onSubmit}>
-        <div className="field">
-          <label htmlFor="routes-search">{t('routes.searchLabel')}</label>
+        <div className="field search-field">
+          <label htmlFor="routes-search" className="visually-hidden">
+            {t('routes.searchLabel')}
+          </label>
           <div className="field-row">
-            <input id="routes-search" type="search" autoComplete="off" spellCheck={false} maxLength={120} value={draft} onChange={(event) => onDraft(event.target.value)} />
-            <button type="submit" className="button button-secondary">
-              {t('routes.searchSubmit')}
+            <input
+              id="routes-search"
+              type="search"
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={120}
+              placeholder={t('routes.searchLabel')}
+              value={draft}
+              onChange={(event) => onDraft(event.target.value)}
+            />
+            <button type="submit" className="button button-secondary button-icon" aria-label={t('routes.searchSubmit')}>
+              <Icon name="search" />
             </button>
           </div>
         </div>
       </form>
       <details className="library-filter-details" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
         <summary>
+          <Icon name="filter" />
           {t('routes.filters.title')}
           {active > 0 ? ` (${active})` : ''}
         </summary>

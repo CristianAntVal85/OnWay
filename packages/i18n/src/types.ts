@@ -482,6 +482,7 @@ export interface Messages {
     title: string;
     importCta: string;
     drawCta: string;
+    newCta: string;
     searchLabel: string;
     searchSubmit: string;
     filters: {
@@ -523,7 +524,6 @@ export interface Messages {
       distance: string;
       ascent: string;
       maxElevation: string;
-      usedIn: string;
       usedInValue: string;
       notUsed: string;
       copy: string;
@@ -540,8 +540,6 @@ export interface Messages {
       clear: string;
       tooMany: string;
       validatedOnly: string;
-      hint: string;
-      hintDelete: string;
     };
     archive: { title: string; description: string; confirm: string; cancel: string; working: string; done: string; failed: string; inUse: string };
     delete: {
@@ -625,7 +623,6 @@ export interface Messages {
   routeImport: {
     title: string;
     fileLabel: string;
-    fileHelp: string;
     submit: string;
     uploading: string;
     previewing: string;
@@ -757,28 +754,26 @@ export interface Messages {
   generate: {
     title: string;
     cta: string;
-    intro: string;
     back: string;
     fromLabel: string;
     toLabel: string;
     viaTitle: string;
+    optionsTitle: string;
+    viaEmpty: string;
     viaLabel: string;
     addVia: string;
     removeVia: string;
     alternativesLabel: string;
     nameLabel: string;
-    nameHelp: string;
     missionTitle: string;
     missionTarget: string;
     originLabel: string;
     noOrigin: string;
     addOrigin: string;
-    missionAdds: string;
     missionClosed: string;
     missionLoadFailed: string;
     pointMissing: string;
     zonesTitle: string;
-    zonesHelp: string;
     zonesEmpty: string;
     zoneScopeOrganization: string;
     zoneScopeMission: string;
@@ -787,7 +782,6 @@ export interface Messages {
     zoneDeleted: string;
     drawZone: string;
     drawing: string;
-    drawZoneHelp: string;
     zoneReasonLabel: string;
     zoneNeedThree: string;
     saveZone: string;

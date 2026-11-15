@@ -128,7 +128,7 @@ test('importing a GPX with false altitudes previews the server’s metrics and s
   run.routeId = '';
   await login(page, ACCOUNTS.coordinator);
   await page.goto('/routes');
-  await page.getByRole('link', { name: R.importCta }).first().click();
+  await chooseMenuItem(page, R.newCta, R.importCta);
   await expect(page.getByRole('heading', { level: 1, name: es.routeImport.title })).toBeVisible();
 
   // Un archivo de más de 10 MB se rechaza sin subirlo.
@@ -253,7 +253,7 @@ test('deriving makes a copy that remembers where it comes from, and several rout
   await expect(page.locator('.route-card')).toHaveCount(2);
   for (const link of await page.locator('.route-card-check').all()) await link.check();
   await expect(page.getByText(R.selection.count.replace('{{count}}', '2'))).toBeVisible();
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: R.selection.exportGpx }).click()]);
+  const [download] = await Promise.all([page.waitForEvent('download'), chooseMenuItem(page, es.common.export, R.selection.exportGpx)]);
   const text = await readFile((await download.path())!, 'utf8');
   expect(text.match(/<trk>/g)).toHaveLength(2);
   expect(text).not.toMatch(/<author|<email|@/);
@@ -322,8 +322,7 @@ test('the administrator reads the library without write buttons and the rescuer 
   await admin.goto('/routes');
   await expect(admin.getByRole('heading', { level: 1, name: R.title })).toBeVisible();
   await expect(admin.getByRole('link', { name: 'Senda del Circo (ficticia)', exact: true })).toBeVisible();
-  await expect(admin.getByRole('link', { name: R.importCta })).toHaveCount(0);
-  await expect(admin.getByRole('link', { name: R.drawCta })).toHaveCount(0);
+  await expect(admin.getByRole('button', { name: R.newCta, exact: true })).toHaveCount(0);
   await admin.getByRole('link', { name: 'Senda del Circo (ficticia)', exact: true }).click();
   await expect(admin.getByRole('heading', { level: 1, name: 'Senda del Circo (ficticia)' })).toBeVisible();
   expect(await menuItemNames(admin, es.common.export)).toEqual([D.actions.exportGpx, D.actions.exportKml]);
