@@ -2,7 +2,7 @@
 
 Plan: `specs/UI-simplificacion/plan.md`. Comprobación rápida de todas: `pnpm check @onway/web @onway/i18n`. Con cambios de maquetación, una mirada a 375 px.
 
-- [ ] **T1. Tokens: paleta del boceto y escalas.** D-S2, D-S8, D-S9
+- [x] **T1. Tokens: paleta del boceto y escalas.** D-S2, D-S8, D-S9
 - Archivos: `apps/web/src/theme/tokens.css`, `apps/web/test/theme-contrast.test.ts`, `apps/web/src/styles.css` (solo sección «botones y formularios»: alto de control con `--control-h`), `specs/UI-rediseno/plan.md` (nota en D-U3).
 - Comprobación: `pnpm check @onway/web`.
 - Hecho cuando: los dos temas usan la paleta nueva, la prueba de contraste pasa con todos sus pares, existen `--space-*`, `--radius-*`, `--text-*`, `--control-h` (40 px; 48 px con `pointer: coarse`) e `--icon`, y botones, campos y selectores miden lo mismo de alto.

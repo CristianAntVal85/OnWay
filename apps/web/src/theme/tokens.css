@@ -1,5 +1,5 @@
 /*
-  OnWay · tokens de tema (UI-rediseno, plan §5)
+  OnWay · tokens de tema (UI-rediseno, plan §5; paleta y escalas de UI-simplificacion, D-S2 y D-S9)
   Dos conjuntos con los mismos nombres: oscuro (por defecto, D-U13) y claro de alto contraste (D-U10).
   Sin atributo `data-theme` en <html> se ve el oscuro; `theme-boot.js` fija `dark` o `light` antes del primer pintado.
   La prueba `test/theme-contrast.test.ts` lee este archivo y recalcula cada par con la fórmula de WCAG 2.x:
@@ -12,23 +12,57 @@
   --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
 }
 
+/* Escalas comunes (UI-simplificacion, D-S9): una sola fuente para espacios, radios, tamaños de texto, alto de control e iconos. */
+:root {
+  --space-1: 0.25rem; /* 4 px */
+  --space-2: 0.5rem; /* 8 px */
+  --space-3: 0.75rem; /* 12 px */
+  --space-4: 1rem; /* 16 px */
+  --space-5: 1.5rem; /* 24 px */
+  --space-6: 2rem; /* 32 px */
+  --space-7: 3rem; /* 48 px */
+  --space-8: 4rem; /* 64 px */
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.875rem;
+
+  --control-h: 2.5rem; /* D-S8: 40 px con puntero fino */
+  --icon: 1.25rem; /* 20 px */
+}
+
+/* D-S8: con puntero táctil (móvil, guantes) los controles vuelven a los 48 px del doc 04 §3 */
+@media (pointer: coarse) {
+  :root {
+    --control-h: 3rem;
+  }
+}
+
 :root,
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: #0d1117;
-  --surface: #161b22; /* paneles, campos */
-  --surface-raised: #21262d; /* diálogos, barra inferior, elemento actual */
-  --border: #30363d; /* deco */
-  --border-strong: #6e7681; /* campos, botones secundarios, grupos de capas: 4,1:1 sobre --bg */
+  --bg: #0d131c;
+  --surface: #151e2a; /* paneles, campos */
+  --surface-raised: #1b2635; /* diálogos, barra inferior, elemento actual */
+  --border: #303d4d; /* deco */
+  --border-strong: #7386a0; /* campos, botones secundarios, grupos de capas: 4,1:1 sobre --bg */
 
-  --text: #e6edf3;
-  --text-muted: #9198a1;
+  --text: #f1f5f9;
+  --text-muted: #a5b4c7;
 
-  --accent: #d9381e; /* acción principal: el rojo de rescate (D-U3) */
+  --accent: #c9421e; /* fondo de la acción principal: el naranja más cercano al del boceto que da 4,5:1 con blanco (D-S2) */
   --accent-hover: var(--accent); /* D-U11: sin cambio de fondo; el rótulo se subraya */
-  --on-accent: #ffffff; /* 4,6:1 sobre --accent: justo, la prueba lo vigila */
-  --accent-text: #ff7b72; /* enlaces rojos y errores */
+  --on-accent: #ffffff; /* justo por encima de 4,5:1 sobre --accent: la prueba lo vigila */
+  --accent-vivid: #f15a32; /* el naranja del boceto: iconos, subrayado de la sección activa y acentos sin texto (3:1) */
+  --accent-text: #ff8f6b; /* enlaces y errores */
 
   --map-ctrl-icon-filter: invert(1); /* iconos oscuros de los controles de MapLibre → claros sobre `--surface-raised` */
 
@@ -37,10 +71,10 @@
 
   --success: #3fb950;
   --warn: #d29922;
-  --info: #58a6ff;
+  --info: #28c7be;
   --success-soft: #0f2a1a;
   --warn-soft: #33270a;
-  --danger-soft: #3d1714;
+  --danger-soft: #3a1a12;
   --violet: #bc8cff; /* fuera de sendero en la barra de tipos de vía */
 
   --backdrop: #010409b8; /* velo detrás de un diálogo (72 %) */
@@ -84,34 +118,35 @@
 [data-theme='light'] {
   color-scheme: light;
 
-  --bg: #eef1f0;
+  --bg: #eef2f6;
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --border: #a9b8ba; /* deco */
-  --border-strong: #17262b;
+  --border: #a9b6c6; /* deco */
+  --border-strong: #0d131c;
 
-  --text: #17262b; /* ≥ 7:1 (AAA, D-U10) */
-  --text-muted: #3a4a50; /* ≥ 7:1 */
+  --text: #0d131c; /* ≥ 7:1 (AAA, D-U10) */
+  --text-muted: #3a4656; /* ≥ 7:1 */
 
-  --accent: #c4271b;
-  --accent-hover: #9d1d13;
+  --accent: #c2410c;
+  --accent-hover: #9a3412;
   --on-accent: #ffffff;
-  --accent-text: #9d1d13;
+  --accent-text: #9a3412;
+  --accent-vivid: #d9480f;
 
   --map-ctrl-icon-filter: none;
 
-  --focus: #17262b; /* anillo exterior: la tinta; el interior, el amarillo */
+  --focus: #0d131c; /* anillo exterior: la tinta; el interior, el amarillo */
   --focus-inner: var(--attention);
 
   --success: #1f6b3a;
   --warn: #8a5a00;
-  --info: #0b5cad;
+  --info: #0f6b66;
   --success-soft: #e3f3e8;
   --warn-soft: #fff3c4;
-  --danger-soft: #fbe9e7;
+  --danger-soft: #fce9e2;
   --violet: #7b2d8e;
 
-  --backdrop: #17262bb8;
+  --backdrop: #0d131cb8;
 
   --wx-sun: #b25e00;
   --wx-moon: #4f55c2;
@@ -119,10 +154,10 @@
   --wx-rain: #0b5cad;
   --wx-snow: #12708f;
   --wx-wind: #0b7565;
-  --wx-heat: #c4271b;
+  --wx-heat: #c2410c;
 
-  --header-bg: #17262b;
-  --header-text: #eef1f0;
-  --header-muted: #cfdadb;
-  --header-hover: #2b4047;
+  --header-bg: #151e2a;
+  --header-text: #eef2f6;
+  --header-muted: #c3cedb;
+  --header-hover: #263345;
 }

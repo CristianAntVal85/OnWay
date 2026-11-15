@@ -474,11 +474,11 @@ test('Account in French at 375 px works with the keyboard only: Light, reload, s
   await expect(themeRadio(page, fr.account.themeLight)).toBeChecked();
   await expectTheme(page, 'light', 'compte, clair');
   await expectNoHorizontalOverflow(page);
-  // Las tres opciones caben en el ancho y miden 48 px de alto como mínimo.
+  // Las tres opciones caben en el ancho y miden el alto de control como mínimo (40 px con puntero fino, D-S8 de UI-simplificacion).
   for (const label of [fr.account.themeDark, fr.account.themeLight, fr.account.themeSystem]) {
     const box = await page.getByLabel(label, { exact: true }).locator('xpath=ancestor::label').boundingBox();
     expect(box, label).not.toBeNull();
-    expect(box!.height, `${label}: alto`).toBeGreaterThanOrEqual(47.5);
+    expect(box!.height, `${label}: alto`).toBeGreaterThanOrEqual(39.5);
     expect(box!.x, `${label}: dentro de la pantalla`).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width, `${label}: dentro de la pantalla`).toBeLessThanOrEqual(375.5);
   }
