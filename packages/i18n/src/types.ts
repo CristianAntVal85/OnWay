@@ -78,6 +78,8 @@ export interface Messages {
     account: string;
     menu: string;
     closeMenu: string;
+    themeToLight: string;
+    themeToDark: string;
   };
   state: { loading: string; offline: string; emptyTitle: string; emptyBody: string; errorTitle: string; retry: string };
   common: { more: string; export: string };

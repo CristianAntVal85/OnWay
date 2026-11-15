@@ -12,7 +12,7 @@ Plan: `specs/UI-simplificacion/plan.md`. Comprobación rápida de todas: `pnpm c
 - Comprobación: `pnpm check @onway/web @onway/i18n`.
 - Hecho cuando: `menu.test.tsx` cubre abrir con clic, Enter y flecha abajo, moverse con flechas, Inicio y Fin, activar, Escape con vuelta del foco al botón, cierre al pulsar fuera y `menuitemradio` con `aria-checked`; `TextField` no admite ayuda y marca los obligatorios con asterisco y `aria-required`.
 
-- [ ] **T3. Cabecera y navegación.** D-S11
+- [x] **T3. Cabecera y navegación.** D-S11
 - Archivos: `apps/web/src/components/shell.tsx`, `apps/web/src/nav/navigation.ts`, `apps/web/src/components/theme-switch.tsx`, `apps/web/src/styles.css` (sección «marco con sesión»), `apps/web/test/navigation.test.ts`, `apps/web/test/app.test.tsx`, `apps/web/test/theme.test.tsx`, `packages/i18n/src/es.ts` y `fr.ts`.
 - Comprobación: `pnpm check @onway/web @onway/i18n`.
 - Hecho cuando: cada entrada lleva icono y la activa un subrayado de acento; hay un botón de tema (alterna oscuro y claro, con `aria-label`) y el acceso a Cuenta como icono; a 375 px el menú desplegable sigue funcionando con teclado y la cabecera no cambia de alto entre páginas.

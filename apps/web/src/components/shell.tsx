@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { landingPath, navItemsFor } from '../nav/navigation';
 import { useCurrentUser } from '../session/session';
 import { Blaze } from './blaze';
+import { Icon } from './icon';
+import { ThemeToggle } from './theme-switch';
 import { MAIN_ID } from './skip-link';
 
 const NAV_ID = 'primary-nav';
@@ -46,20 +48,23 @@ export function Shell() {
           </Link>
           {user.organization && <p className="org-name">{user.organization.name}</p>}
           <button ref={menuButton} type="button" className="menu-button" aria-expanded={open} aria-controls={NAV_ID} onClick={() => setOpen((value) => !value)}>
-            {open ? t('nav.closeMenu') : t('nav.menu')}
+            <Icon name={open ? 'close' : 'menu'} />
+            <span>{open ? t('nav.closeMenu') : t('nav.menu')}</span>
           </button>
         </div>
         <nav id={NAV_ID} className="main-nav" aria-label={t('nav.label')} data-open={open}>
           <ul>
             {items.map((item) => (
-              <li key={item.id}>
+              <li key={item.id} data-item={item.id}>
                 <NavLink to={item.path} end>
-                  {t(item.labelKey)}
+                  <Icon name={item.icon} />
+                  <span className="nav-label">{t(item.labelKey)}</span>
                 </NavLink>
               </li>
             ))}
           </ul>
         </nav>
+        <ThemeToggle />
       </header>
       <main id={MAIN_ID} tabIndex={-1} ref={main} className="content">
         <Outlet />

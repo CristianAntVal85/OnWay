@@ -80,6 +80,8 @@ export const es: Messages = {
     account: 'Cuenta',
     menu: 'Menú',
     closeMenu: 'Cerrar menú',
+    themeToLight: 'Cambiar a tema claro',
+    themeToDark: 'Cambiar a tema oscuro',
   },
   state: {
     loading: 'Cargando…',

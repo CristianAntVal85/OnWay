@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { THEME_PREFERENCES, type ThemePreference } from '../theme/theme';
 import { useTheme } from '../theme/theme-context';
+import { Icon } from './icon';
 
 const LABEL_KEYS = {
   dark: 'account.themeDark',
@@ -26,5 +27,20 @@ export function ThemeSwitch() {
         ))}
       </div>
     </fieldset>
+  );
+}
+
+/**
+ * Cambio rápido de tema en la cabecera (UI-simplificacion, D-S11): alterna oscuro y claro con un clic. El rótulo dice a qué tema se pasa.
+ * «Como el sistema» sigue en Cuenta; si era la preferencia, el botón la sustituye por el tema contrario al que se ve.
+ */
+export function ThemeToggle() {
+  const { t } = useTranslation();
+  const { resolved, setPreference } = useTheme();
+  const next = resolved === 'dark' ? 'light' : 'dark';
+  return (
+    <button type="button" className="header-button theme-toggle" aria-label={t(next === 'light' ? 'nav.themeToLight' : 'nav.themeToDark')} onClick={() => setPreference(next)}>
+      <Icon name={resolved === 'dark' ? 'moon' : 'sun'} />
+    </button>
   );
 }
