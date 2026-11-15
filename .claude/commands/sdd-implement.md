@@ -1,12 +1,13 @@
 ---
-description: SDD · Implementa UNA tarea, pruebas primero (uso - /sdd-implement H0-cimientos T3)
+description: SDD · Implementa tareas de un plan aprobado (uso - /sdd-implement H5-perfil T3, o sin tarea para seguir en orden)
+model: claude-sonnet-5-5
 ---
-Implementa SOLO la tarea $2 de `specs/$1/tasks.md`, siguiendo `specs/$1/plan.md`, `CLAUDE.md`, `docs/constitution.md` y la skill sdd.
+Implementa las tareas de `specs/$1/tasks.md` siguiendo `specs/$1/plan.md`, `CLAUDE.md`, `docs/constitution.md` y la skill sdd. Si indico una tarea ($2), solo esa; si no, continúa en orden desde la primera pendiente.
 
-1. Escribe primero las pruebas (una por cada INV-xx tocado, contra base real). Contrato primero si cambia el API.
-2. Implementa.
-3. Ejecuta las verificaciones de `CLAUDE.md` para lo tocado; con cambios de interfaz, revisa también en móvil.
-4. Muéstrame el resultado, marca $2 como hecha e indica qué cubre.
-5. Cierre (skill sdd): commit `<tipo>(Hn): $2 <resumen>` y push a la rama `hito/Hn-nombre`, solo si todo está en verde.
+Por cada tarea:
+1. Pruebas primero: una por cada INV-xx tocado, contra base real. Contrato primero si cambia el API.
+2. Implementa lo mínimo que cumple el «Hecho cuando».
+3. Ejecuta la línea «Comprobación» de la tarea (comprobación rápida, sección 3 de la skill: `pnpm check <paquetes>`). Si falla, corrige; no hay commit en rojo.
+4. Marca la tarea y haz el commit (sección 4 de la skill). Sin push.
 
-Después PÁRATE. No empieces la siguiente tarea.
+Sigue con la siguiente sin pedirme permiso. Para solo si el plan es incorrecto o imposible, si falta una decisión mía o si necesitas que haga algo a mano. Al terminar o al parar, haz el push de respaldo de la rama (sección 4 de la skill) y resume: tareas hechas e identificadores que cubren, verificaciones y decisiones que el plan no cubría.

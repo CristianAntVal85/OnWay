@@ -7,6 +7,7 @@
     "node": ">=24.7"
   },
   "scripts": {
+    "check": "bash scripts/check.sh",
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
