@@ -763,7 +763,7 @@ export const es: Messages = {
   routeDetail: {
     back: 'Volver a Rutas',
     mapLabel: 'Mapa de la ruta',
-    archivedNotice: 'Esta ruta está archivada: es de solo lectura. Puedes consultarla, exportarla o crear una copia con «Derivar».',
+    archivedNotice: 'Ruta archivada: solo lectura.',
     staleNotice: 'La última validación es de hace {{days}} días y supera los {{max}} que fija tu organización. Revisa la ruta antes de usarla.',
     metrics: {
       title: 'Datos de la versión',
@@ -790,6 +790,7 @@ export const es: Messages = {
       number: 'Versión {{number}}',
       shown: 'En el mapa',
       show: 'Ver la versión {{number}}',
+      showShort: 'Ver',
       validatedBy: 'Validada por {{name}} el {{date}}',
       createdBy: 'Creada por {{name}} el {{date}}',
       draft: 'Borrador',
@@ -800,7 +801,6 @@ export const es: Messages = {
     },
     compare: {
       title: 'Comparar versiones',
-      intro: 'Elige dos versiones: el mapa las pinta con colores distintos y la tabla muestra la diferencia.',
       a: 'Versión A (línea azul continua)',
       b: 'Versión B (línea morada discontinua)',
       metric: 'Dato',
@@ -809,7 +809,7 @@ export const es: Messages = {
       legendA: 'Versión A',
       legendB: 'Versión B',
       versionOption: 'Versión {{number}} · {{status}}',
-      start: 'Comparar',
+      start: 'Comparar versiones',
       stop: 'Dejar de comparar',
     },
     relations: {
@@ -821,15 +821,14 @@ export const es: Messages = {
       noDerivatives: 'Ninguna copia.',
     },
     actions: {
-      validate: 'Validar esta versión',
-      derive: 'Derivar',
+      validate: 'Validar',
+      duplicate: 'Duplicar ruta',
       archive: 'Archivar ruta',
-      newVersion: 'Crear una versión nueva a partir de esta',
-      exportGpx: 'Exportar GPX',
-      exportKml: 'Exportar KML',
+      edit: 'Editar ruta',
+      exportGpx: 'GPX',
+      exportKml: 'KML',
       exporting: 'Preparando el archivo…',
       exportError: 'No se ha podido preparar el archivo.',
-      readOnly: 'Una versión validada no se modifica: para cambiarla se crea una versión nueva.',
     },
     validate: {
       title: 'Validar la versión {{number}}',
@@ -843,9 +842,9 @@ export const es: Messages = {
       immutable: 'Esa versión ya estaba validada.',
     },
     derive: {
-      title: 'Derivar una ruta nueva',
-      description: 'Se crea una ruta nueva con una copia de la versión {{number}}. La ruta original no cambia.',
-      nameLabel: 'Nombre de la ruta nueva',
+      title: 'Duplicar ruta',
+      description: 'Copia de la versión {{number}} como ruta nueva. La original no cambia.',
+      nameLabel: 'Nombre de la copia',
       nameRequired: 'Escribe un nombre.',
       confirm: 'Crear copia',
       working: 'Creando…',
@@ -898,7 +897,6 @@ export const es: Messages = {
   routeEditor: {
     drawTitle: 'Dibujar una ruta',
     editTitle: 'Nueva versión de «{{name}}»',
-    help: 'Toca el mapa para marcar los vértices de la ruta. Arrastra un vértice para moverlo y toca un tramo para añadir un punto. También puedes escribir las coordenadas de cada vértice en la lista.',
     simplifiedNote: 'Se edita una versión simplificada (como mucho {{max}} vértices). El servidor vuelve a medir la ruta al guardarla.',
     nameLabel: 'Nombre de la ruta',
     noteLabel: 'Nota (opcional)',
@@ -918,6 +916,7 @@ export const es: Messages = {
     save: 'Guardar ruta',
     saveVersion: 'Guardar como versión nueva',
     saveAsNew: 'Guardar como nueva ruta',
+    saveOptions: 'Más formas de guardar',
     saving: 'Guardando…',
     deriveTitle: 'Guardar como nueva ruta',
     deriveDescription: 'Se crea una ruta nueva con este trazado. La ruta original no cambia.',
@@ -926,8 +925,6 @@ export const es: Messages = {
     markerLabel: 'Vértice {{n}} de {{total}}',
     changed: 'Sin cambios todavía.',
     snapLabel: 'Unir los puntos siguiendo los caminos',
-    snapHelp:
-      'Los puntos son puntos de paso: el servidor los une por carreteras, pistas y senderos, de dos a {{max}} puntos. Si lo desmarcas, se guardan unidos en línea recta y la ruta queda sin clasificar.',
     snapPreview: 'Calcular la ruta por los caminos',
     snapComputing: 'Calculando…',
     snapResult: 'Ruta por los caminos: {{distance}} · subida {{ascent}} · bajada {{descent}}',

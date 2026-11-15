@@ -763,7 +763,7 @@ export const fr: Messages = {
   routeDetail: {
     back: 'Retour aux itinéraires',
     mapLabel: 'Carte de l’itinéraire',
-    archivedNotice: 'Cet itinéraire est archivé : il est en lecture seule. Vous pouvez le consulter, l’exporter ou en créer une copie avec « Dériver ».',
+    archivedNotice: 'Itinéraire archivé : lecture seule.',
     staleNotice: 'La dernière validation date de {{days}} jours et dépasse les {{max}} fixés par votre organisation. Vérifiez l’itinéraire avant de l’utiliser.',
     metrics: {
       title: 'Données de la version',
@@ -790,6 +790,7 @@ export const fr: Messages = {
       number: 'Version {{number}}',
       shown: 'Sur la carte',
       show: 'Voir la version {{number}}',
+      showShort: 'Voir',
       validatedBy: 'Validée par {{name}} le {{date}}',
       createdBy: 'Créée par {{name}} le {{date}}',
       draft: 'Brouillon',
@@ -800,7 +801,6 @@ export const fr: Messages = {
     },
     compare: {
       title: 'Comparer des versions',
-      intro: 'Choisissez deux versions : la carte les dessine de couleurs différentes et le tableau montre la différence.',
       a: 'Version A (ligne bleue continue)',
       b: 'Version B (ligne violette discontinue)',
       metric: 'Donnée',
@@ -809,7 +809,7 @@ export const fr: Messages = {
       legendA: 'Version A',
       legendB: 'Version B',
       versionOption: 'Version {{number}} · {{status}}',
-      start: 'Comparer',
+      start: 'Comparer les versions',
       stop: 'Arrêter la comparaison',
     },
     relations: {
@@ -821,15 +821,14 @@ export const fr: Messages = {
       noDerivatives: 'Aucune copie.',
     },
     actions: {
-      validate: 'Valider cette version',
-      derive: 'Dériver',
+      validate: 'Valider',
+      duplicate: 'Dupliquer l’itinéraire',
       archive: 'Archiver l’itinéraire',
-      newVersion: 'Créer une nouvelle version à partir de celle-ci',
-      exportGpx: 'Exporter en GPX',
-      exportKml: 'Exporter en KML',
+      edit: 'Modifier l’itinéraire',
+      exportGpx: 'GPX',
+      exportKml: 'KML',
       exporting: 'Préparation du fichier…',
       exportError: 'Le fichier n’a pas pu être préparé.',
-      readOnly: 'Une version validée ne se modifie pas : pour la changer, on crée une nouvelle version.',
     },
     validate: {
       title: 'Valider la version {{number}}',
@@ -843,9 +842,9 @@ export const fr: Messages = {
       immutable: 'Cette version était déjà validée.',
     },
     derive: {
-      title: 'Dériver un nouvel itinéraire',
-      description: 'Un nouvel itinéraire est créé avec une copie de la version {{number}}. L’itinéraire d’origine ne change pas.',
-      nameLabel: 'Nom du nouvel itinéraire',
+      title: 'Dupliquer l’itinéraire',
+      description: 'Copie de la version {{number}} comme nouvel itinéraire. L’original ne change pas.',
+      nameLabel: 'Nom de la copie',
       nameRequired: 'Saisissez un nom.',
       confirm: 'Créer la copie',
       working: 'Création…',
@@ -898,7 +897,6 @@ export const fr: Messages = {
   routeEditor: {
     drawTitle: 'Dessiner un itinéraire',
     editTitle: 'Nouvelle version de « {{name}} »',
-    help: 'Touchez la carte pour poser les sommets de l’itinéraire. Faites glisser un sommet pour le déplacer et touchez un tronçon pour ajouter un point. Vous pouvez aussi saisir les coordonnées de chaque sommet dans la liste.',
     simplifiedNote: 'Vous modifiez une version simplifiée ({{max}} sommets au plus). Le serveur mesure de nouveau l’itinéraire à l’enregistrement.',
     nameLabel: 'Nom de l’itinéraire',
     noteLabel: 'Note (facultative)',
@@ -918,6 +916,7 @@ export const fr: Messages = {
     save: 'Enregistrer l’itinéraire',
     saveVersion: 'Enregistrer comme nouvelle version',
     saveAsNew: 'Enregistrer comme nouvel itinéraire',
+    saveOptions: 'Autres façons d’enregistrer',
     saving: 'Enregistrement…',
     deriveTitle: 'Enregistrer comme nouvel itinéraire',
     deriveDescription: 'Un nouvel itinéraire est créé avec ce tracé. L’itinéraire d’origine ne change pas.',
@@ -926,8 +925,6 @@ export const fr: Messages = {
     markerLabel: 'Sommet {{n}} sur {{total}}',
     changed: 'Aucun changement pour l’instant.',
     snapLabel: 'Relier les points en suivant les chemins',
-    snapHelp:
-      'Les points sont des points de passage : le serveur les relie par routes, pistes et sentiers, de deux à {{max}} points. Si vous décochez, ils sont enregistrés reliés en ligne droite et l’itinéraire reste non classé.',
     snapPreview: 'Calculer l’itinéraire par les chemins',
     snapComputing: 'Calcul en cours…',
     snapResult: 'Itinéraire par les chemins : {{distance}} · montée {{ascent}} · descente {{descent}}',

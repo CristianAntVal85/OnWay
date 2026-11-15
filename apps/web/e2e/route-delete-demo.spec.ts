@@ -4,7 +4,7 @@
 // desaparecen de la lista y de la API; una ruta archivada que sigue en una misión cerrada no se elimina y el informe lo explica. En francés y solo con teclado.
 // Las rutas se crean y se eliminan de verdad (no dejan residuo); solo queda la misión «E2E …» cerrada con su ruta archivada, que es lo que la pila ya acumula.
 import type { Page } from '@playwright/test';
-import { ACCOUNTS, fr } from './support/app';
+import { ACCOUNTS, fr, menuItemNames } from './support/app';
 import { archiveLeftoverE2eRoutes, closeLeftoverE2eMissions } from './support/stack';
 import { es, expect, expectNoHorizontalOverflow, login, tabTo, test } from './support/demo';
 
@@ -69,7 +69,7 @@ test('there is no delete button in the active list or in the detail of a route',
   await expectNoHorizontalOverflow(page);
 
   await page.goto(`/routes/${run.a}`);
-  await expect(page.getByRole('button', { name: D.actions.archive })).toBeVisible();
+  expect(await menuItemNames(page, es.common.more)).toContain(D.actions.archive);
   await expect(page.getByRole('button', { name: /eliminar/i })).toHaveCount(0);
   await expect(page.locator('.btn-eliminar-ruta')).toHaveCount(0);
 });

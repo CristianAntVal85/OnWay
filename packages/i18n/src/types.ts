@@ -594,6 +594,7 @@ export interface Messages {
       number: string;
       shown: string;
       show: string;
+      showShort: string;
       validatedBy: string;
       createdBy: string;
       draft: string;
@@ -604,7 +605,6 @@ export interface Messages {
     };
     compare: {
       title: string;
-      intro: string;
       a: string;
       b: string;
       metric: string;
@@ -617,7 +617,7 @@ export interface Messages {
       stop: string;
     };
     relations: { derivedFrom: string; derivatives: string; usedIn: string; usedInRow: string; notUsed: string; noDerivatives: string };
-    actions: { validate: string; derive: string; archive: string; newVersion: string; exportGpx: string; exportKml: string; exporting: string; exportError: string; readOnly: string };
+    actions: { validate: string; duplicate: string; archive: string; edit: string; exportGpx: string; exportKml: string; exporting: string; exportError: string };
     validate: { title: string; description: string; warning: string; acknowledge: string; confirm: string; working: string; cancel: string; needsAcknowledge: string; immutable: string };
     derive: { title: string; description: string; nameLabel: string; nameRequired: string; confirm: string; working: string; cancel: string };
     archive: { title: string; description: string; confirm: string; working: string; cancel: string; inUse: string };
@@ -648,7 +648,6 @@ export interface Messages {
   routeEditor: {
     drawTitle: string;
     editTitle: string;
-    help: string;
     simplifiedNote: string;
     nameLabel: string;
     noteLabel: string;
@@ -668,6 +667,7 @@ export interface Messages {
     save: string;
     saveVersion: string;
     saveAsNew: string;
+    saveOptions: string;
     saving: string;
     deriveTitle: string;
     deriveDescription: string;
@@ -676,7 +676,6 @@ export interface Messages {
     markerLabel: string;
     changed: string;
     snapLabel: string;
-    snapHelp: string;
     snapPreview: string;
     snapComputing: string;
     snapResult: string;

@@ -32,7 +32,7 @@ Plan: `specs/UI-simplificacion/plan.md`. Comprobación rápida de todas: `pnpm c
 - Comprobación: `pnpm check @onway/web @onway/i18n` y `pnpm --filter @onway/web exec playwright test -c e2e h1-demo.spec.ts`.
 - Hecho cuando: el formulario tiene las cuatro secciones del plan §5 con cabecera de icono; no queda ningún `.field-help` ni párrafo de introducción; las reglas de validación son las mismas y sus mensajes salen como error; la barra de acciones no cubre ningún campo a 1440 × 900 ni a 375 px.
 
-- [ ] **T7. Detalle de ruta y editor: una fila de acciones.** D-S1, D-S4, RF-517
+- [x] **T7. Detalle de ruta y editor: una fila de acciones.** D-S1, D-S4, RF-517
 - Archivos: `apps/web/src/pages/route-detail-page.tsx` (líneas 156-193 y sección de versiones), `apps/web/src/library/route-dialogs.tsx`, `apps/web/src/library/compare-panel.tsx`, `apps/web/src/pages/route-editor-page.tsx`, `apps/web/src/styles.css` (secciones «detalle de ruta» y «editar y dibujar rutas»), `apps/web/test/route-detail.test.tsx`, `apps/web/test/route-editor.test.tsx`, `apps/web/e2e/h2-demo.spec.ts`, `packages/i18n/src/es.ts` y `fr.ts` (`routeDetail.actions.*`, `routeDetail.archivedNotice`, `routeDetail.derive.*`).
 - Comprobación: `pnpm check @onway/web @onway/i18n` y `pnpm --filter @onway/web exec playwright test -c e2e h2-demo.spec.ts`.
 - Hecho cuando: el detalle muestra «Validar» (solo en borrador), «Editar ruta», «Exportar ▾» y «Más ⋯» (Duplicar ruta, Archivar ruta) en una fila; una ruta archivada solo ofrece Exportar y Duplicar; el editor guarda con un botón principal y su desplegable; no queda el rótulo «Crear una versión nueva a partir de esta» ni «Derivar».

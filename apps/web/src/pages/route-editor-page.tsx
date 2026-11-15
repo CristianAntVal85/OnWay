@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { formatKm } from '../library/format';
 import { RoadMix } from '../library/road-mix';
 import { Dialog } from '../components/dialog';
+import { Menu } from '../components/menu';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { errorMessage } from '../i18n/error-message';
@@ -179,7 +180,6 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
         </div>
 
         <form className="editor-panel" onSubmit={submit} noValidate>
-          <p>{t('routeEditor.help')}</p>
           {simplified && <p className="notice">{t('routeEditor.simplifiedNote', { max: MAX_EDIT_VERTICES })}</p>}
 
           {!editing && (
@@ -215,7 +215,6 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
               <label className="check">
                 <input type="checkbox" checked={snap} onChange={(event) => setSnap(event.target.checked)} /> {t('routeEditor.snapLabel')}
               </label>
-              <p className="field-help">{t('routeEditor.snapHelp', { max: MAX_SNAP_POINTS })}</p>
               {snap && (
                 <>
                   <button type="button" className="button button-secondary" disabled={!enough || tooManyToSnap || preview.isPending} onClick={() => preview.mutate()}>
@@ -327,21 +326,26 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
             </section>
           )}
 
-          {!enough && <p className="field-help">{t('routeEditor.needTwo')}</p>}
+          {!enough && <p className="form-note">{t('routeEditor.needTwo')}</p>}
           {failure && (
             <p className="field-error" role="alert">
               {errorMessage(t, failure)}
             </p>
           )}
           {!archived && (
-            <div className="editor-toolbar">
+            <div className="editor-toolbar editor-save">
               <button type="submit" className="button button-primary" disabled={!enough || pending}>
                 {pending ? t('routeEditor.saving') : editing ? t('routeEditor.saveVersion') : t('routeEditor.save')}
               </button>
               {editing && (
-                <button type="button" className="button button-secondary" disabled={!enough || pending} onClick={() => setAsNew(true)}>
-                  {t('routeEditor.saveAsNew')}
-                </button>
+                <Menu
+                  label={t('routeEditor.saveOptions')}
+                  icon="chevron-down"
+                  iconOnly
+                  align="end"
+                  disabled={!enough || pending}
+                  items={[{ id: 'as-new', label: t('routeEditor.saveAsNew'), icon: 'copy', onSelect: () => setAsNew(true) }]}
+                />
               )}
             </div>
           )}

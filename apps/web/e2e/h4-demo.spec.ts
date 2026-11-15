@@ -11,7 +11,7 @@
 // Cada ejecución crea misiones y rutas «E2E …» con su sello: las misiones acaban cerradas y las rutas archivadas (RN-14).
 import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
-import { ACCOUNTS, fr } from './support/app';
+import { ACCOUNTS, chooseMenuItem, fr } from './support/app';
 import { ORG_B, archiveLeftoverE2eRoutes, closeLeftoverE2eMissions } from './support/stack';
 import { es, expect, expectNoHorizontalOverflow, login, openSession, tabTo, test } from './support/demo';
 
@@ -280,7 +280,7 @@ test('a route in an open mission is not archived, another organization gets 404 
 
   // INV-07: la ruta está en una misión abierta, así que no se archiva (y el mensaje dice en cuál).
   await page.goto(`/routes/${first.routeId}`);
-  await page.getByRole('button', { name: D.actions.archive }).click();
+  await chooseMenuItem(page, es.common.more, D.actions.archive);
   const archive = page.getByRole('dialog', { name: D.archive.title });
   await archive.getByRole('button', { name: D.archive.confirm }).click();
   await expect(archive.getByRole('alert')).toContainText(new RegExp(escape(nameOf(info, 'misión'))));
