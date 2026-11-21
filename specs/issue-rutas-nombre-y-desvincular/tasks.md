@@ -64,7 +64,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Commit: `feat(issue-route-names): T6 unlink a route from its missions from the route detail and name the action clearly`.
   - *Hecho así:* «Usada en» pasa a `src/library/used-in-list.tsx` (`UsedInList`), con la confirmación en la fila (`point-row-confirm`, como la tabla de la misión) y el aviso en una región `status`; regla `.used-in-item` en `styles.css`. El mensaje de `ROUTE_IN_USE` al archivar en lote desde la biblioteca también dice dónde quitarla. La prueba de `removeMissionRoute` con la misión cerrada ya existía (`mission-routes-writes.test.ts`, «add, update and remove answer MISSION_CLOSED»).
 
-- [ ] **T7. Demostración E2E y demostraciones afectadas.** Demostración del plan §7.
+- [x] **T7. Demostración E2E y demostraciones afectadas.** Demostración del plan §7.
   - `rutas-nombre-demo.spec.ts` (escritorio y móvil; francés solo con teclado):
     1. generar desde una misión con el nombre propuesto del origen; vacío no deja generar;
     2. salen «<origen> 1» y «<origen> 2»;
@@ -78,6 +78,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Comprobación: `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d` y, con las mismas variables, `E2E_BASE_URL=http://localhost:18080 CI=1 pnpm --filter @onway/web e2e`.
   - Hecho cuando: el E2E entero en verde contra la pila `onway-e2e`.
   - Commit: `test(issue-route-names): T7 add the route name and unlink demonstration`.
+  - *Hecho así:* `rutas-nombre-demo.spec.ts` con 5 pruebas por formato (escritorio y `mobile`), la de francés solo con teclado. `h3-engine-down.spec.ts` rellena el nombre. `ui-simplificacion-demo.spec.ts` (en T5) ya espera «Cambiar nombre» en «Más ⋯». E2E entero 138 de 138 con `CI=1` contra `onway-e2e` (4,1 min). Ojo: lanzar Playwright directamente, sin el script `e2e`, usa el `@onway/i18n` compilado anterior: hay que compilarlo antes.
 
 - [ ] **T8. Cierre.** Criterios del doc 07 §4.
   - Archivos: `docs/07-plan-de-implementacion.md` (fila «Tal como se construyó»), `docs/estado.md` (≤ 30 líneas), `docs/historial.md`, `CLAUDE.md` (recuentos y la demostración nueva en la lista del E2E), `specs/issue-rutas-nombre-y-desvincular/tasks.md` (marcas y desviaciones).
