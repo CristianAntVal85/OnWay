@@ -28,6 +28,8 @@ La demostración de la issue #17 (`route-delete-demo.spec.ts`, escritorio y 375 
 
 La demostración del nombre de las rutas y desvincular (`rutas-nombre-demo.spec.ts`, escritorio y 375 px, con el motor real sobre la red inventada): crea una misión «E2E …» con un origen, genera rutas con el nombre propuesto (las llama como el origen), renombra dos, quita una de la misión desde «Usada en», la archiva y **la elimina de verdad**, y cierra la misión. Deja la misión cerrada con el resto de sus rutas, archivadas al final por `archiveLeftoverE2eRoutes`. `h3-engine-down.spec.ts` rellena ahora el nombre antes de generar (es obligatorio).
 
+La demostración de pintar ruta y continuar a mano (`pintar-ruta-demo.spec.ts`, escritorio y 375 px, con el motor real sobre la red inventada): crea una misión «E2E …» con un origen, pinta desde ella una ruta del origen al objetivo (queda en la misión), genera rutas y continúa una a mano desde su fila (deja su versión 2 en borrador, sin fijar en la misión) y cierra la misión. Deja la misión cerrada con sus rutas, archivadas al final por `archiveLeftoverE2eRoutes`. `h3-demo.spec.ts` marca ahora la casilla de unir por los caminos, que viene desmarcada.
+
 La demostración de `UI-simplificacion` (`ui-simplificacion-demo.spec.ts`, escritorio y 375 px): capa del mapa desde su icono, Crear misión sin textos de ayuda, detalle de ruta con «Exportar ▾» (descarga un GPX) y «Más ⋯», detalle de una misión con «⋯» por ruta y como mucho una acción principal por vista; solo lee la semilla.
 
 La demostración de la issue #18 (`weather-simple-demo.spec.ts`): la tarjeta del tiempo de Inicio (tres tramos del día, temperatura y viento, ≤ 423 px) y la vista `/weather`; solo lee la semilla.

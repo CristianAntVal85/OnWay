@@ -116,7 +116,7 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
   - Hecho cuando: las pruebas están en verde, sin geometría en componentes (la proyección viene de `@onway/geo`) y la vista funciona a 375 px.
   - Commit: `feat(issue-draw-route): T7 continue a generated route by hand from its detail and from the mission`.
 
-- [ ] **T8. Demostración E2E.** Plan §7.
+- [x] **T8. Demostración E2E.** Plan §7.
   - Archivos:
     - `apps/web/e2e/pintar-ruta-demo.spec.ts` (nuevo): pintar desde la misión; generar y continuar a mano desde la fila; francés con teclado; 375 px;
     - `apps/web/e2e/playwright.config.ts` (el proyecto móvil la incluye);
