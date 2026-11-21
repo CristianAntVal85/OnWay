@@ -133,6 +133,7 @@ export class RouteWrites {
     const route = await this.lockRoute(viewer.orgId, routeId);
     if (route.status === 'archived') throw new DomainError('INVALID_STATE_TRANSITION', 'An archived route is read-only');
     const base = await this.versionNumber(viewer.orgId, routeId, body.baseVersionId);
+    if (!body.geometry) throw notYet('continueFrom', 'the next task of issue-pintar-ruta');
     const measured = await this.measurement.measure(body.geometry.coordinates);
 
     const number = await this.nextNumber(routeId);

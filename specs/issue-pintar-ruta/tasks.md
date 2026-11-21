@@ -26,7 +26,7 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
   - Hecho cuando: las pruebas están en verde y la regla de dependencias de `packages/geo` (`test/dependency-rule.test.ts`) sigue en verde.
   - Commit: `feat(issue-draw-route): T2 project a point on a route and cut it in packages/geo`.
 
-- [ ] **T3. Contrato: `createRouteVersion` con `continueFrom`.** Regla 7; D-P4 y D-P8.
+- [x] **T3. Contrato: `createRouteVersion` con `continueFrom`.** Regla 7; D-P4 y D-P8.
   - Pruebas primero (`packages/contracts/test/behavior.test.ts`):
     - con `geometry` sola, válido (como hoy);
     - con `continueFrom` solo, válido;

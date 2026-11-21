@@ -242,7 +242,7 @@ const RAW = [
     params: p.version, response: { status: 200, schema: R.RouteVersionDetail }, delivery: 1 },
   { id: 'createRouteVersion', method: 'POST', path: '/routes/{routeId}/versions', tag: 'Rutas', summary: 'Editar: crea una versión nueva en Borrador', roles: MISSION_WRITERS,
     params: p.route, body: R.CreateVersionRequest, response: { status: 201, schema: R.CreatedRoute }, errors: ['MISSION_CLOSED', 'OUTSIDE_COVERAGE', 'INVALID_STATE_TRANSITION'], delivery: 1, audited: true,
-    notes: 'Una ruta archivada es de solo lectura (INVALID_STATE_TRANSITION). calculationJobId llega en H9: hasta entonces, si viene, responde VALIDATION_FAILED.' },
+    notes: 'Una ruta archivada es de solo lectura (INVALID_STATE_TRANSITION). calculationJobId llega en H9: hasta entonces, si viene, responde VALIDATION_FAILED. Con `continueFrom` (en lugar de `geometry`) el servidor conserva la versión base desde el inicio hasta el punto de corte, llevado al vértice más cercano (a más de 200 m de la ruta o en su inicio, VALIDATION_FAILED), con sus tipos de vía, y une en línea recta los puntos a mano, que cuentan como sin camino (offtrail).' },
   { id: 'deriveRoute', method: 'POST', path: '/routes/{routeId}/derive', tag: 'Rutas', summary: 'Guardar como nueva ruta derivada', roles: MISSION_WRITERS,
     params: p.route, body: R.DeriveRouteRequest, response: { status: 201, schema: R.CreatedRoute }, errors: ['OUTSIDE_COVERAGE'], delivery: 1, audited: true,
     notes: 'Se puede derivar de una ruta archivada. addToMission (H4) y calculationJobId (H9): hasta entonces, si vienen, responde VALIDATION_FAILED.' },

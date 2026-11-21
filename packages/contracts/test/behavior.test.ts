@@ -208,6 +208,28 @@ test('crear ruta: importar necesita archivo; dibujar necesita trazado; no se ace
   });
 });
 
+test('versión nueva: o el trazado entero o continuar a mano desde un corte, nunca los dos (issue-pintar-ruta, D-P4)', () => {
+  const geometry = {
+    type: 'LineString',
+    coordinates: [
+      [0, 0],
+      [1, 1],
+    ],
+  };
+  const cutPoint = { lat: 42.6, lon: 0.6 };
+  const points = (n: number) => Array.from({ length: n }, (_, i) => ({ lat: 42.6 + i / 1000, lon: 0.61 }));
+  ok(C.CreateVersionRequest, { baseVersionId: U(1), geometry });
+  ok(C.CreateVersionRequest, { baseVersionId: U(1), continueFrom: { cutPoint, points: points(1) } });
+  ok(C.CreateVersionRequest, { baseVersionId: U(1), continueFrom: { cutPoint, points: points(200) }, note: 'Por el sendero del barranco' });
+  bad(C.CreateVersionRequest, { baseVersionId: U(1) });
+  bad(C.CreateVersionRequest, { baseVersionId: U(1), geometry, continueFrom: { cutPoint, points: points(1) } });
+  bad(C.CreateVersionRequest, { baseVersionId: U(1), continueFrom: { cutPoint, points: [] } });
+  bad(C.CreateVersionRequest, { baseVersionId: U(1), continueFrom: { cutPoint, points: points(201) } });
+  bad(C.CreateVersionRequest, { baseVersionId: U(1), continueFrom: { cutPoint, points: points(1) }, calculationJobId: U(2) });
+  bad(C.CreateVersionRequest, { baseVersionId: U(1), continueFrom: { cutPoint, points: points(1), elevation: 1200 } });
+  bad(C.CreateVersionRequest, { baseVersionId: U(1), continueFrom: { points: points(1) } });
+});
+
 test('validar exige confirmar el aviso (RF-506)', () => {
   ok(C.ValidateVersionRequest, { acknowledged: true });
   bad(C.ValidateVersionRequest, { acknowledged: false });
