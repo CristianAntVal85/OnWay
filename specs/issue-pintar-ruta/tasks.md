@@ -126,7 +126,7 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
   - Hecho cuando: la demostración está en verde en escritorio y en móvil.
   - Commit: `test(issue-draw-route): T8 add the draw and continue by hand demonstration`.
 
-- [ ] **T9. Verificación completa y cierre.**
+- [x] **T9. Verificación completa y cierre.**
   - Archivos: `docs/07-plan-de-implementacion.md` («Tal como se construyó»), `docs/estado.md`, `docs/historial.md` y este `tasks.md`.
   - Comprobación:
     - `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build`, `pnpm test`;
@@ -134,3 +134,12 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
     - el E2E entero con `CI=1` en `onway-e2e`.
   - Hecho cuando: todo está en verde, con las desviaciones anotadas.
   - Commit: `docs(issue-draw-route): T9 record the build and close the change`.
+  - *Hecho así:* todo en verde el 2026-11-21: `lint`, `format:check`, `typecheck`, `build`; contratos 95, geo 158, i18n 8, api 202, web 933; `test:db` 49, `test:api` 516, `run-postgis.sh` 194; E2E 146 de 146 con `CI=1`. La primera pasada del E2E falló en `ui-simplificacion-demo` porque esperaba el «Más ⋯» del detalle sin «Continuar a mano»; se ajustó la expectativa.
+
+## Desviaciones
+
+- **T3:** hasta T4, la API respondía `VALIDATION_FAILED` a `continueFrom` (guarda provisional, quitada en T4).
+- **T4:** `RouteMeasurement.measure` admite cualquier tipo de vía (`RoadStretch`), no solo los del motor, para poder marcar el tramo a mano como `offtrail`.
+- **T5:** la comprobación a 375 px se hizo con la demostración en el proyecto `mobile` (sin desbordes), no a mano con `pnpm dev`.
+- **T7:** la vista previa del corte vive en `apps/web/src/map/cut.ts`, porque la regla de lint no deja a las páginas importar geometría de `@onway/geo` (la lista permitida no se amplía). La lista de coordenadas pasa a `apps/web/src/library/vertex-list.tsx`, compartida por dibujar, editar y continuar.
+- **T8:** `ui-simplificacion-demo.spec.ts` espera ahora «Continuar a mano» en «Más ⋯» del detalle.

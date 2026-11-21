@@ -9,8 +9,11 @@ Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya n
 - Sin pull requests abiertas. Ramas ya fusionadas borradas el 2026-11-21.
 - El CI de GitHub Actions no arranca por la facturación de la cuenta: la verificación completa se hace en local.
 
+- Pintar ruta y continuar a mano (`specs/issue-pintar-ruta/`): T1 a T9 hechas en `hito/issue-pintar-ruta`, sin revisores todavía.
+
 ## Siguiente paso
-- El resto de H5 (perfil, habilidades, equipos, usuarios, `changePassword`, `updateMe`) con `/sdd-plan`.
+- Validar `hito/issue-pintar-ruta` (`reviewer`, `reviewer-ui`, `reviewer-security`, `reviewer-db`) y abrir su pull request.
+- Después: el resto de H5 (perfil, habilidades, equipos, usuarios, `changePassword`, `updateMe`) con `/sdd-plan`.
 
 ## Pendiente del usuario
 - Ver el pintado real del mapa de carreteras en oscuro y en claro con la pila `onway` reconstruida.

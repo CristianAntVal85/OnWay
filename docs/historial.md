@@ -44,6 +44,11 @@ Contratos 90 (81 + 9 del cliente generado), i18n 8, geo 127, api unitarias 202, 
 ## Decisiones de organización
 - **Backlog tras el MVP:** `docs/backlog-post-mvp.md` (B-01 equipos visibles para el rescatista, B-02 alias de personas, B-03 y B-04 de `H5-acceso`, B-05 motor caído lento). SDD **ligero**: por hito, `specs/Hn-nombre/plan.md` + `tasks.md` (`AGENTS.md`, skill `sdd`). Git: rama `hito/Hn-nombre` desde `main`, un commit y un push por tarea con todo en verde, `main` solo recibe hitos validados. CI en `.github/workflows/ci.yml`: `verify`, `api`, `audit`, `stack`, `routing` y `e2e` (6 trabajos).
 
+## Pintar ruta y continuar a mano (2026-11-21)
+- Petición del usuario: la red de caminos no tiene todos los senderos reales y la ruta generada a veces da un rodeo o se queda corta. Decisiones: el tramo a mano en línea recta, el resultado como versión nueva de la ruta generada y antes que el resto de H5. Plan y tareas en `specs/issue-pintar-ruta/` (D-P1 a D-P8).
+- Interruptor «Pintar ruta» en el editor; la casilla de unir por los caminos viene desmarcada; pintar desde la misión (del origen al objetivo, se añade a la misión); «Continuar a mano» (`createRouteVersion` con `continueFrom`: el servidor conserva la versión guardada hasta el corte, con sus tipos de vía, y el tramo a mano cuenta como «Sin camino»). La versión nueva no se fija sola en la misión. Sin operaciones nuevas ni cambios en la base de datos.
+- Verificado el 2026-11-21: `lint`, `format:check`, `typecheck`, `build`, `test` (contratos 95, geo 158, i18n 8, api 202, web 933), `test:db` 49, `test:api` 516, `run-postgis.sh` 194, E2E 146 de 146 con `CI=1` en `onway-e2e`.
+
 ## UI-simplificacion (2026-11-15)
 - Petición del usuario: interfaz con demasiados botones, inputs caóticos y textos de ayuda abrumadores; boceto en `docs/boteto-interface/`. Plan y tareas en `specs/UI-simplificacion/` (D-S1 a D-S11).
 - «Crear una versión nueva a partir de esta» y «Derivar» se sustituyen por «Editar ruta» (el editor decide si es versión o ruta nueva) y «Duplicar ruta» dentro de «Más» (RF-517 se mantiene).
