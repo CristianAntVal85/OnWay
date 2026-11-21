@@ -2788,6 +2788,18 @@ h4 {
   height: auto;
 }
 
+.editor-map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* «Pintar ruta» activado: lleno, como un interruptor encendido; el estado lo dice `aria-pressed`. */
+.paint-toggle[aria-pressed='true'] {
+  background: var(--text);
+  color: var(--bg);
+}
+
 .editor-panel {
   display: grid;
   gap: 0.75rem;
@@ -3429,7 +3441,8 @@ label.signup-info {
   /* pulsado y seleccionado */
   .segment input:checked + span,
   .tab[aria-selected='true'],
-  .mission-pick[aria-pressed='true'] {
+  .mission-pick[aria-pressed='true'],
+  .paint-toggle[aria-pressed='true'] {
     forced-color-adjust: none; /* sin esto Chrome pinta tras el texto un fondo `Canvas` y el texto `HighlightText` no se ve */
     background: Highlight;
     color: HighlightText;

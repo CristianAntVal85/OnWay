@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { formatKm } from '../library/format';
 import { RoadMix } from '../library/road-mix';
 import { Dialog } from '../components/dialog';
+import { Icon } from '../components/icon';
 import { Menu } from '../components/menu';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
@@ -51,8 +52,11 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
   const [simplified, setSimplified] = useState(false);
   const [coordinateError, setCoordinateError] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  // Al dibujar, los puntos se unen siguiendo los caminos (H3); al editar una versión, los vértices se guardan tal cual.
-  const [snap, setSnap] = useState(true);
+  // Al dibujar, los puntos se unen en línea recta salvo que se pida unirlos por los caminos (H3): dibujar a mano se usa cuando el
+  // camino no está en la red (D-P2). Al editar una versión, los vértices se guardan tal cual.
+  const [snap, setSnap] = useState(false);
+  // «Pintar ruta» (D-P1): activado, cada toque en el mapa añade un punto al final; desactivado, el mapa solo se mueve.
+  const [paint, setPaint] = useState(!editing);
 
   // La versión de partida entra una sola vez, simplificada si es muy larga.
   const [loaded, setLoaded] = useState<string | null>(null);
@@ -157,12 +161,13 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
       )}
       <div className="editor-layout page-wide">
         <div className="route-map">
+          {!archived && <PaintToggle pressed={paint} onToggle={() => setPaint((value) => !value)} />}
           <MapView
             className="editor-map-view"
             label={t('routeEditor.mapLabel')}
             routes={mapLine}
             fitRoutesKey={editing ? (loaded ?? undefined) : undefined}
-            onPick={archived ? undefined : (point) => dispatch({ type: 'append', point: [Number(point.lon.toFixed(7)), Number(point.lat.toFixed(7))] })}
+            onPick={archived || !paint ? undefined : (point) => dispatch({ type: 'append', point: [Number(point.lon.toFixed(7)), Number(point.lat.toFixed(7))] })}
             editor={
               archived
                 ? undefined
@@ -362,6 +367,19 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
         />
       )}
     </>
+  );
+}
+
+/** El interruptor «Pintar ruta» (D-P1), encima del mapa para que se vea sin desplazarse también a 375 px. */
+export function PaintToggle({ pressed, onToggle }: { pressed: boolean; onToggle: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="editor-map-toolbar">
+      <button type="button" className="button button-secondary paint-toggle" aria-pressed={pressed} onClick={onToggle}>
+        <Icon name="pencil" />
+        <span>{t('routeEditor.paint')}</span>
+      </button>
+    </div>
   );
 }
 

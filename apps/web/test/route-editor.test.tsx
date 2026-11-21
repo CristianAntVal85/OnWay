@@ -1,7 +1,7 @@
 // Dibujar y editar a mano (H2-T9, RF-505, RF-510, RF-516; INV-15): solo se envían vértices; deshacer; alternativa de teclado con coordenadas.
 import { act, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { es } from '@onway/i18n';
+import { es, fr } from '@onway/i18n';
 import { admin, apiError, chooseMenuItem, json, renderApp, sessionServer, sessionUser, type Call } from './support';
 
 interface Editor {
@@ -63,7 +63,7 @@ const detail = (overrides: Record<string, unknown> = {}) => ({
 const bigLine = Array.from({ length: 600 }, (_, i) => [0.6 + i * 0.0002, 42.6 + Math.sin(i / 20) * 0.004, 1500 + i]);
 
 type Handlers = Record<string, (call: Call) => Response | Promise<Response>>;
-function setup(route: string, extra: Handlers = {}, user = sessionUser()) {
+function setup(route: string, extra: Handlers = {}, user = sessionUser(), language: 'es' | 'fr' = 'es') {
   const server = sessionServer(
     { user },
     {
@@ -81,7 +81,7 @@ function setup(route: string, extra: Handlers = {}, user = sessionUser()) {
       ...extra,
     },
   );
-  const view = renderApp({ route, fetch: server.api.fetch });
+  const view = renderApp({ route, fetch: server.api.fetch, language });
   return { ...server, ...view, calls: () => server.api.calls };
 }
 const pick = (lat: number, lon: number) => act(() => map.onPick!({ lat, lon }));
@@ -108,7 +108,7 @@ describe('dibujar una ruta', () => {
     expect(body).toEqual({
       source: 'drawn',
       name: 'A mano',
-      snapToPaths: true,
+      snapToPaths: false,
       geometry: {
         type: 'LineString',
         coordinates: [
@@ -159,6 +159,61 @@ describe('dibujar una ruta', () => {
   it('el administrador no puede dibujar', async () => {
     setup('/routes/draw', {}, admin());
     expect(await screen.findByText(es.forbidden.title)).toBeTruthy();
+  });
+});
+
+describe('«Pintar ruta» (D-P1)', () => {
+  const paint = () => screen.getByRole('button', { name: T.paint });
+
+  it('al dibujar empieza activado y cada toque añade un punto; desactivado, tocar el mapa no añade nada', async () => {
+    const { user } = setup('/routes/draw');
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    expect(paint().getAttribute('aria-pressed')).toBe('true');
+    pick(42.6, 0.65);
+    expect(await screen.findByText(/Vértices: 1/)).toBeTruthy();
+    await user.click(paint());
+    expect(paint().getAttribute('aria-pressed')).toBe('false');
+    expect(map.onPick).toBeUndefined();
+    await user.click(paint());
+    pick(42.61, 0.66);
+    expect(await screen.findByText(/Vértices: 2/)).toBeTruthy();
+  });
+
+  it('desactivado, mover, insertar, deshacer y la lista de coordenadas siguen funcionando', async () => {
+    const { user } = setup('/routes/draw');
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    pick(42.6, 0.65);
+    pick(42.62, 0.67);
+    await user.click(paint());
+    act(() => map.editor!.onInsert(1, { lat: 42.61, lon: 0.66 }));
+    expect(await screen.findByText(/Vértices: 3/)).toBeTruthy();
+    act(() => map.editor!.onMove(0, { lat: 42.5, lon: 0.5 }));
+    await user.click(screen.getByRole('button', { name: T.undo }));
+    expect((screen.getByLabelText(T.latLabel.replace('{{n}}', '1')) as HTMLInputElement).value).toBe('42.6');
+    await user.click(screen.getByRole('button', { name: T.removeVertex.replace('{{n}}', '1') }));
+    expect(await screen.findByText(/Vértices: 2/)).toBeTruthy();
+  });
+
+  it('al editar una versión empieza desactivado', async () => {
+    setup(`/routes/${ROUTE}/edit?base=${V1}`);
+    await waitFor(() => expect(map.editor?.vertices.length).toBeGreaterThan(2));
+    expect(paint().getAttribute('aria-pressed')).toBe('false');
+    expect(map.onPick).toBeUndefined();
+  });
+
+  it('con teclado: se alcanza y se cambia con Espacio y con Enter', async () => {
+    const { user } = setup('/routes/draw');
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    paint().focus();
+    await user.keyboard(' ');
+    expect(paint().getAttribute('aria-pressed')).toBe('false');
+    await user.keyboard('{Enter}');
+    expect(paint().getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('en francés se llama «Tracer l’itinéraire»', async () => {
+    setup('/routes/draw', {}, sessionUser({ locale: 'fr' }), 'fr');
+    expect(await screen.findByRole('button', { name: fr.routeEditor.paint })).toBeTruthy();
   });
 });
 
@@ -243,12 +298,18 @@ describe('dibujar uniendo los puntos por los caminos (H3-T9, RF-503)', () => {
     [`GET /routes/${NEW}`]: () => json(200, detail({ id: NEW })),
   });
   const snaps = (calls: Call[]) => calls.filter((c) => c.path === '/routes/snap');
+  // Desmarcada de serie (D-P2): estas pruebas la marcan antes de nada.
+  const drawBySnapping = async (user: { click: (element: Element) => Promise<void> }) => {
+    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    await user.click(screen.getByRole('checkbox', { name: T.snapLabel }));
+  };
 
-  it('está activada de serie; calcula la ruta por los caminos con los puntos en orden y enseña métricas y composición del servidor', async () => {
+  it('viene desmarcada (D-P2); marcada, calcula la ruta por los caminos con los puntos en orden y enseña métricas y composición del servidor', async () => {
     const { user, calls } = setup('/routes/draw', snapHandlers());
     await screen.findByRole('heading', { level: 1, name: T.drawTitle });
     const checkbox = screen.getByRole('checkbox', { name: T.snapLabel }) as HTMLInputElement;
-    expect(checkbox.checked).toBe(true);
+    expect(checkbox.checked).toBe(false);
+    await user.click(checkbox);
     const calculate = screen.getByRole('button', { name: T.snapPreview }) as HTMLButtonElement;
     expect(calculate.disabled).toBe(true);
     pick(42.6, 0.65);
@@ -268,7 +329,7 @@ describe('dibujar uniendo los puntos por los caminos (H3-T9, RF-503)', () => {
 
   it('si se cambian los puntos, la vista previa se retira para no enseñar una ruta que ya no corresponde', async () => {
     const { user } = setup('/routes/draw', snapHandlers());
-    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    await drawBySnapping(user);
     pick(42.6, 0.65);
     pick(42.61, 0.66);
     await user.click(screen.getByRole('button', { name: T.snapPreview }));
@@ -280,7 +341,7 @@ describe('dibujar uniendo los puntos por los caminos (H3-T9, RF-503)', () => {
 
   it('guarda los puntos de control con snapToPaths: el servidor es quien los une y los mide', async () => {
     const { user, calls } = setup('/routes/draw', snapHandlers());
-    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    await drawBySnapping(user);
     pick(42.6, 0.65);
     pick(42.61, 0.66);
     await user.type(screen.getByLabelText(T.nameLabel), 'Por caminos');
@@ -295,10 +356,9 @@ describe('dibujar uniendo los puntos por los caminos (H3-T9, RF-503)', () => {
     expect(hasKey(body, 'roadMix')).toBe(false);
   });
 
-  it('sin la opción, guarda la línea recta y no ofrece calcular por los caminos', async () => {
+  it('sin la opción (como viene), guarda la línea recta y no ofrece calcular por los caminos', async () => {
     const { user, calls } = setup('/routes/draw', snapHandlers());
     await screen.findByRole('heading', { level: 1, name: T.drawTitle });
-    await user.click(screen.getByRole('checkbox', { name: T.snapLabel }));
     expect(screen.queryByRole('button', { name: T.snapPreview })).toBeNull();
     pick(42.6, 0.65);
     pick(42.61, 0.66);
@@ -311,7 +371,7 @@ describe('dibujar uniendo los puntos por los caminos (H3-T9, RF-503)', () => {
 
   it('con más de 50 puntos avisa, no deja calcular ni guardar, y desmarcar la opción lo permite', async () => {
     const { user } = setup('/routes/draw', snapHandlers());
-    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    await drawBySnapping(user);
     for (let i = 0; i < 51; i++) pick(42.6 + i * 0.001, 0.65);
     expect(await screen.findByText(T.snapTooMany.replace('{{max}}', '50'))).toBeTruthy();
     expect((screen.getByRole('button', { name: T.snapPreview }) as HTMLButtonElement).disabled).toBe(true);
@@ -331,7 +391,7 @@ describe('dibujar uniendo los puntos por los caminos (H3-T9, RF-503)', () => {
       '/routes/draw',
       snapHandlers(() => apiError(status, code)),
     );
-    await screen.findByRole('heading', { level: 1, name: T.drawTitle });
+    await drawBySnapping(user);
     pick(42.6, 0.65);
     pick(42.61, 0.66);
     await user.click(screen.getByRole('button', { name: T.snapPreview }));

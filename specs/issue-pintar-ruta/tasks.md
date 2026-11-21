@@ -60,7 +60,7 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
   - Hecho cuando: todo lo anterior está en verde.
   - Commit: `feat(issue-draw-route): T4 continue a route version by hand from a cut point`.
 
-- [ ] **T5. Web: interruptor «Pintar ruta» y casilla desmarcada.** RF-505; D-P1 y D-P2.
+- [x] **T5. Web: interruptor «Pintar ruta» y casilla desmarcada.** RF-505; D-P1 y D-P2.
   - Pruebas primero (`apps/web/test/route-editor.test.tsx`):
     - al dibujar, el interruptor empieza pulsado (`aria-pressed=true`) y un toque en el mapa añade un punto; desactivado, un toque no añade nada;
     - al editar, empieza sin pulsar;

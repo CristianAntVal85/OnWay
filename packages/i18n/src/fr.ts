@@ -907,6 +907,7 @@ export const fr: Messages = {
     },
   },
   routeEditor: {
+    paint: 'Tracer l’itinéraire',
     drawTitle: 'Dessiner un itinéraire',
     editTitle: 'Nouvelle version de « {{name}} »',
     simplifiedNote: 'Vous modifiez une version simplifiée ({{max}} sommets au plus). Le serveur mesure de nouveau l’itinéraire à l’enregistrement.',

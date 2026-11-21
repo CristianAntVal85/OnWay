@@ -656,6 +656,7 @@ export interface Messages {
     mission: { notice: string; origin: string; noOrigin: string; closed: string; back: string; added: string; loading: string };
   };
   routeEditor: {
+    paint: string;
     drawTitle: string;
     editTitle: string;
     simplifiedNote: string;

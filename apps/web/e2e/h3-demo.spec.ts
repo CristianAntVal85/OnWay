@@ -210,7 +210,10 @@ test('a hand-drawn route sticks to the paths and keeps its composition', async (
   await page.goto('/routes/draw');
   const E = es.routeEditor;
   await expect(page.getByRole('heading', { level: 1, name: E.drawTitle })).toBeVisible();
-  await expect(page.getByRole('checkbox', { name: E.snapLabel })).toBeChecked();
+  // Desmarcada de serie (issue-pintar-ruta, D-P2): para pegarse a los caminos hay que marcarla.
+  const snap = page.getByRole('checkbox', { name: E.snapLabel });
+  await expect(snap).not.toBeChecked();
+  await snap.check();
   const calculate = page.getByRole('button', { name: E.snapPreview });
   await expect(calculate).toBeDisabled();
   const map = page.getByRole('region', { name: E.mapLabel });

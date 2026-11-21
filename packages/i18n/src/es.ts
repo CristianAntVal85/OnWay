@@ -907,6 +907,7 @@ export const es: Messages = {
     },
   },
   routeEditor: {
+    paint: 'Pintar ruta',
     drawTitle: 'Dibujar una ruta',
     editTitle: 'Nueva versión de «{{name}}»',
     simplifiedNote: 'Se edita una versión simplificada (como mucho {{max}} vértices). El servidor vuelve a medir la ruta al guardarla.',
