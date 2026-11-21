@@ -39,6 +39,7 @@ export function RouteDetailPage() {
   const { routeId = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const [dialog, setDialog] = useState<Dialogs>(null);
+  const [renamed, setRenamed] = useState<string | null>(null);
   const canWrite = user.role === 'coordinator';
 
   const route = useQuery({ queryKey: ['route', routeId], queryFn: ({ signal }) => api.getRoute({ params: { routeId } }, { signal }) });
@@ -331,7 +332,10 @@ export function RouteDetailPage() {
 
       {dialog === 'validate' && shown && <ValidateDialog routeId={routeId} versionId={shown.id} versionNumber={shown.number} onClose={() => setDialog(null)} />}
       {dialog === 'derive' && shown && <DeriveDialog routeId={routeId} versionId={shown.id} versionNumber={shown.number} defaultName={`${data.name} (2)`} onClose={() => setDialog(null)} />}
-      {dialog === 'rename' && <RenameDialog routeId={routeId} currentName={data.name} onClose={() => setDialog(null)} />}
+      {dialog === 'rename' && <RenameDialog routeId={routeId} currentName={data.name} onClose={() => setDialog(null)} onRenamed={(name) => setRenamed(t('routeDetail.rename.done', { name }))} />}
+      <p className="visually-hidden" role="status">
+        {renamed}
+      </p>
       {dialog === 'archive' && <ArchiveDialog routeId={routeId} onClose={() => setDialog(null)} />}
     </>
   );

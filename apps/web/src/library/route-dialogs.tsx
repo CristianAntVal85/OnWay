@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@onway/contracts/client';
 import { Dialog } from '../components/dialog';
+import { TextField } from '../components/text-field';
 import { errorMessage } from '../i18n/error-message';
 import { routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
@@ -150,6 +151,7 @@ export function RenameDialog({ routeId, currentName, onClose, onRenamed }: Commo
   const queryClient = useQueryClient();
   const [name, setName] = useState(currentName);
   const [missing, setMissing] = useState(false);
+  const field = useRef<HTMLInputElement>(null);
   const rename = useMutation({
     mutationFn: (value: string) => api.updateRoute({ params: { routeId }, body: { name: value } }),
     onSuccess: async (detail) => {
@@ -165,6 +167,7 @@ export function RenameDialog({ routeId, currentName, onClose, onRenamed }: Commo
     const value = name.trim();
     if (!value) {
       setMissing(true);
+      field.current?.focus();
       return;
     }
     rename.mutate(value);
@@ -172,28 +175,21 @@ export function RenameDialog({ routeId, currentName, onClose, onRenamed }: Commo
   return (
     <Dialog title={t('routeDetail.rename.title')} description={t('routeDetail.rename.description')} onClose={() => !rename.isPending && onClose()}>
       <form onSubmit={submit} noValidate>
-        <div className="field">
-          <label htmlFor="rename-name">{t('routeDetail.rename.nameLabel')}</label>
-          <input
-            id="rename-name"
-            data-autofocus
-            type="text"
-            maxLength={160}
-            required
-            value={name}
-            aria-invalid={missing || undefined}
-            aria-describedby={missing ? 'rename-name-error' : undefined}
-            onChange={(event) => {
-              setName(event.target.value);
-              setMissing(false);
-            }}
-          />
-          {missing && (
-            <p id="rename-name-error" className="field-error" role="alert">
-              {t('routeDetail.rename.nameRequired')}
-            </p>
-          )}
-        </div>
+        <TextField
+          id="rename-name"
+          inputRef={field}
+          label={t('routeDetail.rename.nameLabel')}
+          data-autofocus
+          type="text"
+          maxLength={160}
+          required
+          value={name}
+          error={missing ? t('routeDetail.rename.nameRequired') : null}
+          onChange={(event) => {
+            setName(event.target.value);
+            setMissing(false);
+          }}
+        />
         {rename.isError && <p role="alert">{errorMessage(t, rename.error)}</p>}
         <div className="dialog-actions">
           <button type="submit" className="button button-primary" disabled={rename.isPending}>

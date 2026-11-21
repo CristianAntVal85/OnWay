@@ -318,6 +318,9 @@ describe('validar, derivar y archivar (coordinador)', () => {
     await user.type(name, '   ');
     await user.click(within(dialog).getByRole('button', { name: T.rename.confirm }));
     expect(within(dialog).getByText(T.rename.nameRequired)).toBeTruthy();
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(name);
+    expect(name.getAttribute('aria-required')).toBe('true');
     expect(calls().filter((c) => c.method === 'PATCH')).toHaveLength(0);
     await user.clear(name);
     await user.type(name, ' Collado Norte ');
@@ -325,6 +328,8 @@ describe('validar, derivar y archivar (coordinador)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Collado Norte' })).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(calls().find((c) => c.method === 'PATCH')!.body).toEqual({ name: 'Collado Norte' });
+    // El cambio se anuncia: el título cambia, pero un lector de pantalla no lo sabría
+    expect(screen.getAllByRole('status').map((node) => node.textContent)).toContain(T.rename.done.replace('{{name}}', 'Collado Norte'));
   });
 
   it('cambiar nombre: un error del servidor se dice y el diálogo sigue abierto', async () => {
@@ -415,11 +420,21 @@ describe('quitar de la misión desde «Usada en» (RF-512, D-N6, D-N7)', () => {
     expect(document.activeElement).toBe(within(group).getByRole('button', { name: T.relations.removeNo }));
     await user.click(within(group).getByRole('button', { name: T.relations.removeNo }));
     expect(calls().filter((c) => c.method === 'DELETE')).toHaveLength(0);
+    // Al cancelar, el foco vuelve al botón que abrió la confirmación (no cae al cuerpo de la página)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: removeFor('Simulacro Aneto') }));
     await user.click(screen.getByRole('button', { name: removeFor('Simulacro Aneto') }));
     await user.click(screen.getByRole('button', { name: T.relations.removeYes }));
     expect(calls().find((c) => c.method === 'DELETE')).toMatchObject({ path: '/missions/m-open/routes/mr-open' });
     expect(await screen.findByText(T.relations.removeDone.replace('{{mission}}', 'Simulacro Aneto'))).toBeTruthy();
     expect(await screen.findByText(T.relations.notUsed)).toBeTruthy();
+    // La fila ya no existe: el foco pasa al bloque «Usada en», que contiene el resultado
+    expect(document.activeElement).toBe(screen.getByText(T.relations.notUsed).closest('.used-in'));
+  });
+
+  it('el nombre accesible del botón empieza por su texto visible (WCAG 2.5.3)', async () => {
+    setup({}, { data: detail({ usedIn: [open] }) });
+    const button = await screen.findByRole('button', { name: removeFor('Simulacro Aneto') });
+    expect(removeFor('Simulacro Aneto').startsWith(button.textContent ?? '')).toBe(true);
   });
 
   it('si la misión se cerró mientras tanto, lo dice', async () => {

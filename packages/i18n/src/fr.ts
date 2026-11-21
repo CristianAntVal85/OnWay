@@ -815,7 +815,7 @@ export const fr: Messages = {
       noDerivatives: 'Aucune copie.',
       readOnly: 'lecture seule',
       remove: 'Retirer de la mission',
-      removeFor: 'Retirer l’itinéraire de « {{mission}} »',
+      removeFor: 'Retirer de la mission « {{mission}} »',
       removeConfirm: 'Retirer l’itinéraire de « {{mission}} » ? Il reste dans la bibliothèque.',
       removeYes: 'Oui, retirer',
       removeNo: 'Ne pas retirer',
