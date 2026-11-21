@@ -30,8 +30,9 @@ html {
 body {
   margin: 0;
   min-width: 20rem;
-  /* Topografía de fondo, fuera de los contenedores (una por tema, en public/); `--bg` queda debajo mientras carga. */
-  background: var(--bg) url('/topografia-oscuro.webp') center / cover fixed no-repeat;
+  /* Topografía de fondo, fuera de los contenedores (una por tema, en public/); `--bg` queda debajo mientras carga.
+     A su tamaño real (1148 × 756) y en mosaico: `cover` la estiraba en pantallas grandes y las curvas de nivel se pixelaban. */
+  background: var(--bg) url('/topografia-oscuro.webp') center top / 1148px 756px fixed repeat;
   color: var(--text);
   font-family: var(--font-body);
   font-size: var(--text-md);
