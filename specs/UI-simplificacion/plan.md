@@ -59,6 +59,7 @@ Estado: **aprobado por el usuario el 2026-11-15** (D-S1 a D-S3 como se recomenda
 - `src/components/shell.tsx`, `src/nav/navigation.ts`: icono por entrada, subrayado activo, tema y cuenta como iconos a la derecha.
 - `src/map/map-view.tsx`, `src/map/readout.tsx`: D-S6.
 - Páginas y secciones: las de la tabla de tareas.
+- `public/topografia-oscuro.webp` y `topografia-claro.webp` (añadido el 2026-11-21, fuera del plan inicial): fondo del `body` por tema, a tamaño real y en mosaico; `test/no-external-resources.test.ts` admite `url('/x.webp')` local.
 - `src/styles.css`: se reescriben las secciones «botones y formularios», «marco con sesión», «páginas con mapa», «mapa» y las de cada vista tocada, sobre las escalas. Se borra el CSS que quede sin uso.
 - Pruebas unitarias existentes de cada vista (`test/*.test.tsx`) y E2E (`e2e/*.spec.ts`): se ajustan a los menús. Nueva: `test/menu.test.tsx` y `e2e/ui-simplificacion-demo.spec.ts`.
 
