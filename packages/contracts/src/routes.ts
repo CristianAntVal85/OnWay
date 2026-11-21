@@ -152,13 +152,33 @@ export const CreateRouteRequest = z.discriminatedUnion('source', [
 /** Respuesta común al crear una ruta o una versión. */
 export const CreatedRoute = z.strictObject({ routeId: Id, versionId: Id, versionNumber: z.number().int(), missionRouteId: Id.nullable() });
 
-export const CreateVersionRequest = z.strictObject({
-  baseVersionId: Id,
-  geometry: LineStringInput,
-  note: z.string().trim().max(1000).optional(),
-  /** Si el trazado viene de una adaptación (RF-515), se indica el trabajo para registrar la procedencia 'adapted'. */
-  calculationJobId: Id.optional(),
+/**
+ * Continuar a mano (RF-505, issue-pintar-ruta): se conserva la versión base desde el inicio hasta `cutPoint` (el servidor lo lleva al
+ * vértice más cercano de la versión guardada) y desde ahí se unen en línea recta `points`, que cuentan como sin camino (`offtrail`).
+ */
+export const ContinueFrom = z.strictObject({
+  cutPoint: LatLon,
+  points: z.array(LatLon).min(1).max(200),
 });
+
+/** Versión nueva: o el trazado entero (`geometry`) o continuar a mano la versión base (`continueFrom`), exactamente uno de los dos. */
+export const CreateVersionRequest = z
+  .strictObject({
+    baseVersionId: Id,
+    geometry: LineStringInput.optional(),
+    continueFrom: ContinueFrom.optional(),
+    note: z.string().trim().max(1000).optional(),
+    /** Si el trazado viene de una adaptación (RF-515), se indica el trabajo para registrar la procedencia 'adapted'. */
+    calculationJobId: Id.optional(),
+  })
+  .superRefine((body, ctx) => {
+    if ((body.geometry === undefined) === (body.continueFrom === undefined)) {
+      ctx.addIssue({ code: 'custom', path: ['geometry'], message: 'Indica el trazado (geometry) o cómo continuar a mano (continueFrom), uno de los dos' });
+    }
+    if (body.continueFrom !== undefined && body.calculationJobId !== undefined) {
+      ctx.addIssue({ code: 'custom', path: ['calculationJobId'], message: 'Continuar a mano no viene de un cálculo' });
+    }
+  });
 
 /** Guardar como nueva ruta derivada (RF-517). Sin `geometry` se copia la versión de origen tal cual. */
 export const DeriveRouteRequest = z.strictObject({

@@ -27,7 +27,7 @@ export default defineConfig({
     // Móvil de 375 px de ancho (iPhone SE/mini); Chromium con pantalla táctil.
     {
       name: 'mobile',
-      testMatch: /(mobile|h1-demo|h2-demo|h3-demo|h4-demo|route-delete-demo|weather-simple-demo|ui-simplificacion-demo|rutas-nombre-demo)\.spec\.ts/,
+      testMatch: /(mobile|h1-demo|h2-demo|h3-demo|h4-demo|route-delete-demo|weather-simple-demo|ui-simplificacion-demo|rutas-nombre-demo|pintar-ruta-demo)\.spec\.ts/,
       use: { ...devices['Pixel 5'], viewport: { width: 375, height: 812 } },
     },
     // La demostración de H5-acceso en 375 px. Regenera el código de invitación, que es de TODA la organización: no puede correr a la vez que el

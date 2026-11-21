@@ -12,7 +12,7 @@ import { ElevationProfile } from '../library/elevation-profile';
 import { saveBlob } from '../library/download';
 import { formatKm } from '../library/format';
 import { RoadMix } from '../library/road-mix';
-import { PATHS } from '../nav/navigation';
+import { PATHS, routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { missionChangedMeanwhile, writeFailureMessage } from './errors';
 import { formatDate } from './format';
@@ -40,6 +40,8 @@ interface Props {
   routes: MissionRoutesQuery;
   /** «Generar rutas» desde la misión (va en el menú de la sección): a dónde lleva y si se puede (hace falta un origen, RN-08). */
   generate?: { to: string; enabled: boolean };
+  /** «Pintar ruta» desde la misión (D-P3): el editor con `?mission=`, del origen al objetivo; como generar, hace falta un origen. */
+  draw?: { to: string; enabled: boolean };
   selected: ReadonlySet<string>;
   onToggle: (id: string) => void;
 }
@@ -49,7 +51,7 @@ interface Props {
  * mapa y su perfil, los avisos de versión nueva (RF-518, nunca cambia sola) y de validación antigua (RF-519), y marcar no disponible (RF-508),
  * quitar y exportar. Nada de geometría aquí: el mapa y el perfil reciben lo que calcula el servidor.
  */
-export function MissionRoutesSection({ missionId, locale, canManage, origins, routes, generate, selected, onToggle }: Props) {
+export function MissionRoutesSection({ missionId, locale, canManage, origins, routes, generate, draw, selected, onToggle }: Props) {
   const { t } = useTranslation();
   const api = useApi();
   // Un archivo con las rutas de la misión (RF-603): lo escribe el servidor con la versión fijada de cada una.
@@ -76,6 +78,7 @@ export function MissionRoutesSection({ missionId, locale, canManage, origins, ro
 
   const sectionItems: MenuItem[] = [
     ...(generate ? [{ id: 'generate', label: t('generate.cta'), icon: 'route' as const, ...(generate.enabled ? { to: generate.to } : { disabled: true }) }] : []),
+    ...(draw ? [{ id: 'draw', label: t('routeEditor.paint'), icon: 'pencil' as const, ...(draw.enabled ? { to: draw.to } : { disabled: true }) }] : []),
     ...(rows.length > 0
       ? (['gpx', 'kml'] as const).map((format) => ({
           id: format,
@@ -306,6 +309,12 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
                 onSelect: () => availability.mutate(unavailable ? 'added' : 'unavailable'),
               },
               { id: 'rename', label: t('missionRoutes.rename.action'), icon: 'pencil' as const, onSelect: () => setRenaming(true) },
+              {
+                id: 'continue',
+                label: t('missionRoutes.continue.action'),
+                icon: 'route' as const,
+                to: `${routePath(row.routeId)}/continue?base=${row.pinned.versionId}&mission=${missionId}`,
+              },
               { id: 'remove', label: t('missionRoutes.remove.action'), icon: 'trash' as const, danger: true, onSelect: () => onConfirm('remove') },
             ]}
           />

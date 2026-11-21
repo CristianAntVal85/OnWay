@@ -92,13 +92,17 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
   const [importing, setImporting] = useState(false);
   // Aviso de lo último guardado, junto a lo que se ha tocado (cabecera o puntos); las regiones `status` existen siempre para que se anuncie.
   // Si se llega desde «Duplicar», la copia lo anuncia (la navegación lleva el nombre del original).
-  const arrival = useLocation().state as { duplicatedFrom?: string; routeAdded?: string } | null;
+  const arrival = useLocation().state as { duplicatedFrom?: string; routeAdded?: string; routeDrawn?: string; versionDraft?: { name: string; number: number } } | null;
   const [saved, setSaved] = useState<{ area: 'head' | 'points'; text: string } | null>(
     arrival?.duplicatedFrom
       ? { area: 'head', text: t('missionDetail.lifecycle.duplicated', { name: arrival.duplicatedFrom }) }
       : arrival?.routeAdded
         ? { area: 'head', text: t('routeImport.mission.added', { name: arrival.routeAdded }) }
-        : null,
+        : arrival?.routeDrawn
+          ? { area: 'head', text: t('routeEditor.mission.added', { name: arrival.routeDrawn }) }
+          : arrival?.versionDraft
+            ? { area: 'head', text: t('routeContinue.savedDraft', arrival.versionDraft) }
+            : null,
   );
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -297,7 +301,12 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
             canManage={mission.actions.manageRoutes}
             origins={pointsByKind.origin.map((point) => ({ id: point.id, name: point.name }))}
             routes={routes}
-            {...(canEdit ? { generate: { to: `${PATHS.generateRoutes}?mission=${mission.id}`, enabled: pointsByKind.origin.length > 0 } } : {})}
+            {...(canEdit
+              ? {
+                  generate: { to: `${PATHS.generateRoutes}?mission=${mission.id}`, enabled: pointsByKind.origin.length > 0 },
+                  draw: { to: `${PATHS.createRoute}?mission=${mission.id}`, enabled: pointsByKind.origin.length > 0 },
+                }
+              : {})}
             selected={selectedRoutes}
             onToggle={togglePicked}
           />
