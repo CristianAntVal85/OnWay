@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.6 (borrador) · Fecha: 2026-11-21 · Depende de: documento 01 (v1.7)
+Versión: 1.7 (borrador) · Fecha: 2026-11-21 · Depende de: documento 01 (v1.8)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -190,7 +190,7 @@ Cada elemento pendiente enlaza a la acción que lo resuelve.
 | Mapa | Objetivo, orígenes, puntos intermedios, puntos de reunión, rutas añadidas | Cambiar capa (satélite, topográfica, carreteras), mostrar u ocultar rutas |
 | Voluntarios y participantes | Lista de rescatistas ofrecidos y aceptados (ver 3.7) | Aceptar, rechazar, quitar, añadir, asignar equipos |
 | Puntos | Orígenes, intermedios obligatorios, puntos de reunión | Añadir, editar, borrar, importar desde GPX o KML |
-| Rutas de la misión | Tabla comparativa y rutas en el mapa: versión fijada, estado de validación, origen, equipo asignado, métricas, disponibilidad | **Añadir ruta**, cambiar versión, marcar no disponible, **quitar de la misión** y cambiar el nombre de la ruta (en el «⋯» de cada fila, en planificación o activa), exportar |
+| Rutas de la misión | Tabla comparativa y rutas en el mapa: versión fijada, estado de validación, origen, equipo asignado, métricas, disponibilidad | **Añadir ruta**, **Generar rutas** y **Pintar ruta** (en «Más ⋯» de la sección, con la misión abierta y con origen), cambiar versión, marcar no disponible, **quitar de la misión**, cambiar el nombre de la ruta y **Continuar a mano** (en el «⋯» de cada fila, en planificación o activa), exportar |
 | Historial | Registro de cambios (RN-05) | Solo lectura |
 
 **Rutas de la misión, tal como se construyó (H4).** La tabla comparativa lleva, de la versión **fijada**, distancia, subida, bajada, altitud mínima y máxima, pendiente máxima, composición, fecha de validación, origen y equipo (solo se muestra; el selector llega con los equipos en H5), con su propio desplazamiento horizontal enfocable en pantallas estrechas. Cada fila reúne en su primera celda el nombre, las marcas (*No disponible*, *Validación antigua*, borrador), los avisos y las acciones. Marcar varias rutas las resalta en el mapa y saca el perfil de cada una. Con la misión cerrada o para el administrador no hay ningún control que escriba; ver el mapa y exportar siguen. **Añadir ruta** abre un diálogo (4.3) y **Validar** está en la fila de una versión fijada en borrador (4.4).
@@ -232,8 +232,15 @@ Boceto 9. Vista nueva (RF-512). Es el fondo permanente de rutas de la organizaci
 5. Errores: archivo inválido, vacío o demasiado grande. No se guarda nada.
 
 *C) Dibujar a mano* *(propuesto, Should)*
-1. El coordinador marca puntos sobre el mapa (2 a 50 si quiere que se unan) y, con la casilla **«Unir los puntos siguiendo los caminos»** (activada de serie), pulsa **Calcular la ruta por los caminos**: el servidor los une en orden por la red y devuelve la línea, las métricas y la composición como vista previa (nada se guarda; si se mueve un punto, la vista previa se retira).
+1. El coordinador marca puntos sobre el mapa con el interruptor **Pintar ruta** (activado al entrar; desactivado, tocar el mapa no añade puntos y el mapa se mueve como siempre; con teclado, la lista de coordenadas). Los puntos se unen en línea recta. Si marca la casilla **«Unir los puntos siguiendo los caminos»** (desmarcada de serie: dibujar a mano se usa cuando el camino no está en la red; 2 a 50 puntos), pulsa **Calcular la ruta por los caminos**: el servidor los une en orden por la red y devuelve la línea, las métricas y la composición como vista previa (nada se guarda; si se mueve un punto, la vista previa se retira).
 2. Se guarda como *Borrador*, marcada como modificada manualmente. Con la casilla desmarcada se guarda en línea recta y queda «sin clasificar». La edición posterior de vértices sigue siendo en línea recta.
+3. **Desde una misión** (`?mission=`, «Más ⋯ → Pintar ruta» de la sección de rutas): el primer punto es el origen elegido (selector si hay varios), el objetivo se ve en el mapa y **Terminar en el objetivo** lo añade como último punto. El nombre es obligatorio y se propone el del origen. Al guardar, la ruta se añade a la misión con su versión 1 fijada y se vuelve a la misión.
+
+*D) Continuar a mano* (RF-505)
+1. Desde el detalle de la ruta («Más ⋯ → Continuar a mano») o desde el «⋯» de su fila en la misión. Se ve la versión de partida.
+2. **Hasta dónde vale:** tocar la ruta elige el punto de corte (el vértice más cercano; a más de 200 m de la ruta no vale); el campo **Conservar los primeros N km** hace lo mismo con teclado. La parte conservada se ve con el color de la ruta y el resto, atenuado.
+3. **Tramo a mano:** con **Pintar ruta**, cada toque añade un punto después del corte, unido en línea recta; deshacer, borrar y lista de coordenadas como al dibujar. Desde una misión, **Terminar en el objetivo**.
+4. Guardar crea la **versión siguiente** en *Borrador* (la de partida no cambia). El servidor toma la parte conservada de la versión guardada, con sus tipos de vía, cuenta el tramo a mano como «sin camino» y mide el conjunto. La versión nueva **no se fija sola** en la misión: al volver, un aviso dice que hay que validarla para fijarla (RF-518).
 
 **Buscar rutas por punto** (RF-514, **segunda entrega**)
 1. El coordinador indica un punto (por defecto, el objetivo de la misión en la que está trabajando) o hace clic en el mapa.
@@ -256,7 +263,7 @@ En la primera entrega, **Guardar como nueva ruta** también existe al editar una
 - "Deriva de": enlace a la ruta de origen, si existe.
 - "Derivadas": rutas creadas a partir de esta.
 - "Usada en": misiones (activas, en planificación, cerradas) y qué versión fija cada una. En las misiones en planificación o activas, quien escribe tiene **Quitar de la misión** (confirmación en la fila); las cerradas dicen «solo lectura» y no tienen botón (RN-09). Si archivar falla porque la ruta está en una misión, el mensaje dice en cuáles y que se quita desde aquí.
-- Acciones (una fila, UI-simplificacion): **Validar** (acción principal, solo con la versión en borrador), **Editar ruta** (el editor guarda como versión nueva o, desde su desplegable, como ruta nueva), **Exportar ▾** (GPX, KML) y **Más ⋯** (Cambiar nombre, Duplicar ruta —derivar sin editar, RF-517— y Archivar ruta). Una ruta archivada solo ofrece Exportar y Duplicar. **Cambiar nombre** no crea versión (el nombre es de la ruta): lo ven igual las misiones que la usan, también el rescatista, y la auditoría guarda el nombre anterior.
+- Acciones (una fila, UI-simplificacion): **Validar** (acción principal, solo con la versión en borrador), **Editar ruta** (el editor guarda como versión nueva o, desde su desplegable, como ruta nueva), **Exportar ▾** (GPX, KML) y **Más ⋯** (Cambiar nombre, Continuar a mano, Duplicar ruta —derivar sin editar, RF-517— y Archivar ruta). Una ruta archivada solo ofrece Exportar y Duplicar. **Cambiar nombre** no crea versión (el nombre es de la ruta): lo ven igual las misiones que la usan, también el rescatista, y la auditoría guarda el nombre anterior.
 - Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14). El detalle no elimina: para borrar una ruta se quita de sus misiones, se archiva y se elimina desde la lista de archivadas.
 
 ### 3.7 Voluntarios y participantes (dentro de la misión)
@@ -440,6 +447,8 @@ Boceto 11. Desde *Rutas de la misión*, **Añadir ruta** abre un diálogo con tr
 Una versión en *Borrador* puede añadirse a la misión, pero el rescatista no la ve hasta que se valide.
 
 *Tal como se construyó (H4).* El diálogo **Añadir ruta** tiene dos pasos. Primero se elige de la biblioteca (búsqueda por nombre, filtro por la última versión, páginas de 10, hasta 20 a la vez aunque cambie la búsqueda); las rutas que la misión ya tiene salen marcadas y no se pueden elegir (INV-13). Después, por cada ruta, la **versión que fija la misión** (la última validada por defecto; si es un borrador se avisa de que el rescatista no la verá), el origen de la misión y una nota. Los otros dos caminos son enlaces del mismo diálogo: **Generar** (solo si la misión tiene origen, RN-08) e **Importar**, que llevan `?mission=`; importar pasa `addToMission` al guardar y vuelve a la misión avisando. Cada error tiene su mensaje: ya está en la misión (con su nombre), ruta archivada (derivar una copia), misión cerrada, algo que ya no existe. El lote es atómico: si falla una, no se añade ninguna. La adaptación de una ruta cercana (camino C) sigue siendo de la segunda entrega.
+
+*Pintar ruta (issue-pintar-ruta).* El camino B gana **Pintar**: el editor de §3.6 C con `?mission=`, desde el origen elegido hasta el objetivo, que pasa `addToMission` al guardar y vuelve a la misión avisando. Una misión cerrada no lo ofrece.
 
 ### 4.4 Comparar y validar rutas
 
@@ -679,6 +688,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.7 (2026-11-21)**
+- Pintar ruta y continuar a mano (`specs/issue-pintar-ruta/`): §3.6 C con el interruptor «Pintar ruta», la casilla de unir por los caminos desmarcada de serie y el dibujo desde la misión; §3.6 D nueva «Continuar a mano»; «Más ⋯» del detalle de ruta y §3.5 con las acciones nuevas; §4.3 B, dibujar construido.
 
 **1.6 (2026-11-21)**
 - Nombre de las rutas y desvincular: §3.6 A paso 3 (nombre obligatorio, propuesto con el del punto de inicio), detalle de ruta («Cambiar nombre» en «Más ⋯»; «Quitar de la misión» en «Usada en» para misiones en planificación o activas) y §3.5 (el «⋯» de cada ruta de la misión dice «Quitar de la misión» y trae «Cambiar nombre»).

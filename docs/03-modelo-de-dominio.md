@@ -1,6 +1,6 @@
 # OnWay — Documento 03: Modelo de dominio y flujos clave
 
-Versión: 0.10 (borrador) · Fecha: 2026-11-21 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
+Versión: 0.11 (borrador) · Fecha: 2026-11-21 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
 
 Este documento traduce los requisitos y las vistas en un modelo conceptual: qué cosas existen en el sistema, cómo se relacionan, qué reglas deben cumplirse siempre y cómo fluyen los datos en los procesos clave. No fija tecnologías ni tablas: la arquitectura está en el documento 04 y el modelo de datos será el documento 05. Los IDs RF, RN, D y Q remiten al documento 01.
 
@@ -481,7 +481,7 @@ Cada hecho relevante se registra y, además, se emite como evento interno. Hoy s
 | Coordinador responsable cambiado | Coordinador |
 | Punto añadido, editado o eliminado | Coordinador |
 | Ruta creada, derivada, renombrada (con el nombre anterior y el nuevo) o archivada | Coordinador |
-| Versión de ruta creada | Coordinador o sistema (cálculo) |
+| Versión de ruta creada (si se continuó a mano, con los metros conservados de la versión de partida) | Coordinador o sistema (cálculo) |
 | Versión de ruta validada | Coordinador |
 | Ruta añadida a una misión, quitada, versión actualizada, marcada no disponible | Coordinador |
 | Trabajo de cálculo completado o fallido | Sistema |
@@ -579,6 +579,9 @@ La arquitectura y el stack están en el documento 04, el modelo de datos en el 0
 Consultadas el 29 de octubre de 2026. Las condiciones y precios de terceros pueden cambiar. Hay que confirmarlas directamente con cada proveedor antes de publicar la demo.
 
 ## 19. Registro de cambios
+
+**0.11 (2026-11-21)**
+- Pintar ruta y continuar a mano: la auditoría de una versión continuada a mano anota que lo es y los metros conservados (§16). Continuar crea la versión siguiente; la de partida no cambia (INV-04).
 
 **0.10 (2026-11-21)**
 - Nombre de las rutas y desvincular: la auditoría anota el cambio de nombre de una ruta (§16). El nombre es de la ruta, no de la versión, así que renombrar no toca INV-04. §8.3 punto 9 dice desde dónde se quita una ruta de la misión.

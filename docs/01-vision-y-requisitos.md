@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.7 (borrador) · Fecha: 2026-11-21 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.8 (borrador) · Fecha: 2026-11-21 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -236,13 +236,15 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 **RF-502 (Must) Métricas de cada versión**: distancia total, desnivel positivo, desnivel negativo, altitud mínima y máxima, pendiente máxima, perfil de elevación.
 - No se muestra tiempo estimado (D-03).
 
-**RF-503 (Should) Composición de la ruta**: porcentaje del recorrido por carretera, pista, sendero o tramo sin camino. Una ruta generada, o dibujada con la casilla «unir los puntos siguiendo los caminos» (H3), lleva la composición que mide el servidor sobre los tramos del motor. Una ruta importada, dibujada en línea recta o editada a mano se muestra como **«sin clasificar»**.
+**RF-503 (Should) Composición de la ruta**: porcentaje del recorrido por carretera, pista, sendero o tramo sin camino. Una ruta generada, o dibujada con la casilla «unir los puntos siguiendo los caminos» (H3), lleva la composición que mide el servidor sobre los tramos del motor. Una ruta importada, dibujada en línea recta o editada a mano se muestra como **«sin clasificar»**. Una versión **continuada a mano** (RF-505) conserva la composición de la parte que viene de la versión de partida y cuenta el tramo a mano como **«sin camino»**.
 
 **RF-504 (Must) Comparar rutas** en el mapa y en una tabla de métricas, tanto en la misión como en los resultados de búsqueda.
 
 **RF-505 (Must) Edición manual de una ruta** por el coordinador: arrastrar el trazado, añadir puntos de paso, recalcular el tramo afectado.
 - Guardar crea una **versión nueva** en *Borrador* (RF-516). Nunca modifica la anterior.
 - La versión queda marcada como *modificada manualmente*.
+- **Pintar ruta:** un interruptor del editor. Activado, cada toque en el mapa añade un punto al final; desactivado, el mapa se mueve sin añadir nada. Al dibujar, los puntos se unen en línea recta salvo que se marque «unir los puntos siguiendo los caminos».
+- **Continuar a mano:** sobre una versión (típicamente generada), el coordinador elige hasta dónde vale (un punto de corte sobre la ruta) y pinta desde ahí puntos que se unen en línea recta. Se guarda como versión nueva de la misma ruta; el servidor toma la parte conservada de la versión guardada y mide el conjunto. Sirve cuando el sendero real no está en la red de caminos.
 
 **RF-506 (Must) Validación humana.** El coordinador valida una versión de ruta. Los rescatistas solo ven versiones validadas.
 - Toda ruta muestra un aviso de que es una propuesta y no sustituye el criterio del equipo.
@@ -277,7 +279,7 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 - Hay tres caminos en un mismo diálogo: elegir de la biblioteca, generar una nueva e importar un archivo.
 - Se puede asignar a un origen de la misión y a un equipo.
 - Se puede añadir una versión en *Borrador*, pero el rescatista no la ve hasta que se valide.
-- Desde la misión también se puede crear una ruta nueva (RF-501, RF-510) y se añade al terminar.
+- Desde la misión también se puede crear una ruta nueva generándola, importándola o **pintándola** (RF-501, RF-510, RF-505), desde el origen elegido hasta el objetivo, y se añade al terminar.
 
 **RF-514 (Should, segunda entrega) Buscar rutas existentes por punto.** Dado un punto (con las tres formas de entrada; por defecto, el objetivo de la misión), la app devuelve:
 - Primero las rutas que pasan a menos de un radio configurable del punto.
@@ -553,6 +555,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.8 (2026-11-21)**
+- Pintar ruta y continuar a mano (`specs/issue-pintar-ruta/`): RF-505 añade el interruptor «Pintar ruta» y «Continuar a mano» (versión nueva que conserva la ruta hasta un corte y sigue en línea recta); RF-503 cuenta el tramo a mano como «sin camino»; RF-513 permite pintar desde la misión.
 
 **1.7 (2026-11-21)**
 - Nombre de las rutas y desvincular (`specs/issue-rutas-nombre-y-desvincular/`): RF-501 pide nombre obligatorio al generar, propuesto con el del punto de inicio (desaparece «Ruta generada N»). RF-512 permite cambiar el nombre de una ruta activa y quitarla de sus misiones en planificación o activas desde «Usada en».

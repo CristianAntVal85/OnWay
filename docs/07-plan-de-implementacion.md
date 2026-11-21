@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.14 · **Estado:** borrador para revisión · **Fecha:** 21 de noviembre de 2026
+**Versión:** 0.15 · **Estado:** borrador para revisión · **Fecha:** 21 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -213,6 +213,18 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 | **Fuera** | Renombrar rutas archivadas, quitar de una misión cerrada, renombrar o quitar en lote, nombres únicos, renombrar automáticamente las «Ruta generada N» que ya existen (se renombran a mano), cambios en la base de datos |
 | **Tal como se construyó** | Ocho tareas. **T1** documentos 01, 02, 03 y 07. **T2** `namePrefix` obligatorio en el contrato; el worker lee los parámetros guardados con el nombre opcional y usa «Ruta» para los trabajos encolados antes (con aviso en el registro); la web propone el nombre del origen elegido (o la dirección, desde la biblioteca) y lo sigue hasta que se escribe; `TextField` obligatorio, **sin la línea de ejemplo** prevista (D-S3 de `UI-simplificacion`: sin textos de ayuda). **T3** contrato `updateRoute` y `usedIn[].missionRouteId`; doc 06 1.11. **T4** `RouteWrites.rename` (`FOR UPDATE`, `INVALID_STATE_TRANSITION` si está archivada, `route_renamed` con `from`/`to`, nada con el mismo nombre); AC-02 con 60 montadas. **T5** `RenameDialog` en «Más ⋯» del detalle y en el «⋯» de la fila. **T6** `UsedInList` con «Quitar de la misión» y confirmación en la fila; los mensajes de `ROUTE_IN_USE` al archivar dicen dónde quitarla; la fila de la misión dice «Quitar de la misión». **T7** `rutas-nombre-demo.spec.ts` (5 pruebas por formato; francés con teclado) y `h3-engine-down` con nombre. **T8** verificación completa en verde el 2026-11-21 (E2E 138 de 138). Pendiente: revisores y pull request, después de `UI-simplificacion` |
 
+### Issue · Pintar ruta y continuar a mano (fuera de la hoja de ruta) · M
+
+> **No es un hito nuevo de v1 ni revierte ninguna regla.** Petición del usuario del 2026-11-21: la red de caminos no tiene todos los senderos reales, así que a veces la ruta generada da un rodeo o se queda corta. Se pide pintar la ruta punto a punto y empalmar a mano el final de una ruta generada. Decisiones del usuario: el tramo a mano en línea recta, el resultado como versión nueva y antes que el resto de H5. Plan y tareas en `specs/issue-pintar-ruta/` (rama `hito/issue-pintar-ruta`, desde `main`, nueve tareas).
+
+| | |
+|---|---|
+| **Demostración** | `pintar-ruta-demo.spec.ts`, en escritorio y a 375 px (francés solo con teclado): desde una misión, **Pintar ruta** empieza en el origen, el interruptor activado añade puntos y desactivado no, **Terminar en el objetivo** y guardar la añaden a la misión; se genera una ruta desde la misión y, desde su fila, **Continuar a mano**: corte con «Conservar los primeros N km», puntos a mano y objetivo → versión 2 en borrador con «Sin camino» en la composición y la versión 1 intacta |
+| **Alcance** | RF-503 (composición del tramo a mano), RF-505 (Pintar ruta, Continuar a mano), RF-513 (pintar desde la misión), RF-516; INV-01, INV-04, INV-11, INV-16. Decisiones D-P1 a D-P8 del plan |
+| **Operaciones (0 nuevas, 1 cambia)** | `createRouteVersion`: el cuerpo admite `continueFrom { cutPoint, points }` en lugar de `geometry` (exactamente uno de los dos). Siguen 98 en el registro y 60 montadas |
+| **Salida** | Contratos con `continueFrom`; `test:api` con la versión continuada (parte conservada con sus tipos de vía, tramo a mano `offtrail`, versión de partida intacta, auditoría, roles, aislamiento, archivada, corte lejos); web con el interruptor, el dibujo desde la misión y «Continuar a mano»; E2E entero en verde |
+| **Fuera** | Unir el tramo a mano por los caminos; pegar a mano un tramo en medio de la ruta o cortar por el principio; fijar sola la versión nueva en la misión; dibujar a mano alzada; RF-515 «Adaptar» (H9); cambiar la composición de las rutas dibujadas enteras en línea recta; cambios en la base de datos |
+
 ### H6 · Voluntariado, cierre con asistencia, historial y privacidad · M
 
 **Objetivo:** el ciclo completo de una misión con personas.
@@ -316,6 +328,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.15 | 2026-11-21 | Cambio de alcance (pintar ruta y continuar a mano): subsección nueva en la sección 3, tras la del nombre de las rutas. Interruptor «Pintar ruta» en el editor, dibujar desde la misión y «Continuar a mano» (`createRouteVersion` con `continueFrom`). Sin operaciones nuevas ni cambios en la base de datos |
 | 0.14 | 2026-11-21 | Cambio de alcance (nombre de las rutas y desvincular): subsección nueva en la sección 3, tras `UI-simplificacion`. Nombre obligatorio al generar, propuesto con el del punto de inicio; `updateRoute` para renombrar; quitar de la misión desde «Usada en» del detalle de la ruta. Sin cambios en la base de datos ni en las reglas |
 | 0.13 | 2026-11-13 | Cambio de alcance (issue #18): tarjeta del tiempo simple con vista de detalle. Nueva subsección «Issue #18» en la sección 3, tras la «Issue #17»: tres iconos por tramo del día, temperatura y viento; sin contrato ni operaciones nuevas |
 | 0.12 | 2026-11-13 | Cambio de alcance (issue #17): eliminar rutas archivadas y sin misión. Nueva subsección «Issue #17» en la sección 3, tras `UI-rediseno`, con el protocolo quitar → archivar → eliminar, la operación `deleteRoute` (97 en el registro, 59 montadas), la migración 0013 y lo construido en T1 a T5. Revierte la regla «las rutas no se borran» (constitución, `CLAUDE.md`, RN-14, INV-04, INV-07) |
