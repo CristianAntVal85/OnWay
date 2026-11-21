@@ -276,6 +276,21 @@ export class RouteWrites {
   }
 
   /**
+   * Changes the name of an active route (RF-512, D-N4). The name belongs to the route, not to its versions: no version is created or
+   * touched (RN-12, INV-04), and the missions that use it show the new name. The same name again is answered without an audit line (D-N5).
+   */
+  async rename(principal: Principal, routeId: string, name: string): Promise<OperationOutput<'updateRoute'>> {
+    const viewer = viewerOf(principal);
+    const route = await this.lockRoute(viewer.orgId, routeId);
+    if (route.status === 'archived') throw new DomainError('INVALID_STATE_TRANSITION', 'An archived route keeps its name');
+    if (route.name !== name) {
+      await this.tx.execute(sql`UPDATE routes SET name = ${name} WHERE id = ${routeId}`);
+      await this.audit.recordRoute({ orgId: viewer.orgId, routeId, action: 'route_renamed', actorUserId: viewer.userId, detail: { from: route.name, to: name } });
+    }
+    return readRouteDetail(this.tx, viewer.orgId, routeId);
+  }
+
+  /**
    * Deletes for good an ARCHIVED route that no mission has, closed ones included (issue #17, RN-14, D-I1 and D-I6). Looked at first, because
    * a statement the database refuses aborts the transaction (INV-04 and INV-07 are the second defence). In this order: the routes that
    * derive from it lose the link (D-I4), its versions go (segments with them), then the route; the original files nobody else uses are

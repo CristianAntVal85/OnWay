@@ -14,7 +14,7 @@ export interface MissionAuditEntry {
 }
 
 /** What happened to a route (doc 06 §10, D-H2-07). */
-export type RouteAuditAction = 'route_created' | 'route_version_created' | 'route_derived' | 'route_version_validated' | 'route_archived' | 'route_deleted';
+export type RouteAuditAction = 'route_created' | 'route_version_created' | 'route_derived' | 'route_version_validated' | 'route_archived' | 'route_deleted' | 'route_renamed';
 
 export interface RouteAuditEntry {
   orgId: string;

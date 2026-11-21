@@ -28,7 +28,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Hecho cuando: contratos con 98 operaciones; doc 06 regenerado con `updateRoute`; `test:api` de lecturas y AC-02 en verde.
   - Commit: `feat(issue-route-names): T3 add the updateRoute contract and the mission route id to usedIn`.
 
-- [ ] **T4. API de `updateRoute`.** INV-01, INV-04, INV-16, regla 2; D-N4, D-N5.
+- [x] **T4. API de `updateRoute`.** INV-01, INV-04, INV-16, regla 2; D-N4, D-N5.
   - Pruebas primero (`apps/api/test/api/routes-writes.test.ts`, `describe('updateRoute')`):
     - renombra, devuelve el detalle y las versiones no cambian (geometría, métricas y estado idénticos: INV-04);
     - una fila `route_renamed` con `from` y `to` (INV-16), y ninguna con el mismo nombre;
