@@ -232,13 +232,10 @@ describe('getRoute and getRouteVersion (RF-502, RF-504, RN-14)', () => {
     const { id: missionId, name: missionName } = MissionDetail.parse(
       await (await call(a.coordinator, 'POST', '/missions', { name: uniq('M'), target: { source: 'map', lat: 42.6, lon: 0.65 } })).json(),
     );
-    await fixtures.query(`INSERT INTO mission_routes (organization_id, mission_id, route_id, pinned_version_id, added_by) VALUES ($1, $2, $3, $4, $5)`, [
-      a.orgId,
-      missionId,
-      original.routeId,
-      original.versionId,
-      a.coordinator.userId,
-    ]);
+    const [{ id: missionRouteId }] = (await fixtures.query<{ id: string }>(
+      `INSERT INTO mission_routes (organization_id, mission_id, route_id, pinned_version_id, added_by) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [a.orgId, missionId, original.routeId, original.versionId, a.coordinator.userId],
+    )) as [{ id: string }];
 
     const response = await call(a.coordinator, 'GET', `/routes/${original.routeId}`);
     expect(response.status).toBe(200);
@@ -259,7 +256,8 @@ describe('getRoute and getRouteVersion (RF-502, RF-504, RN-14)', () => {
     expect(detail.versions[1]).toMatchObject({ provenance: 'drawn', validatedBy: { id: a.coordinator.userId } });
     expect(detail.versions[1]!.roadMix).toEqual([{ roadType: 'unknown', distanceM: detail.versions[1]!.metrics.distanceM }]);
     expect(detail.derivatives.map((d) => d.id)).toEqual([copy.routeId]);
-    expect(detail.usedIn).toEqual([{ missionId, missionName, missionStatus: 'planning', pinnedVersionNumber: 1 }]);
+    // `missionRouteId` is the row of the route in that mission: the one `removeMissionRoute` takes.
+    expect(detail.usedIn).toEqual([{ missionId, missionRouteId, missionName, missionStatus: 'planning', pinnedVersionNumber: 1 }]);
     expect(detail.derivedFrom).toBeNull();
 
     const copyDetail = RouteDetail.parse(await (await call(a.coordinator, 'GET', `/routes/${copy.routeId}`)).json());

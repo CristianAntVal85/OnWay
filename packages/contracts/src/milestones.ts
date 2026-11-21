@@ -41,6 +41,7 @@ export const MILESTONE_OF: Record<string, Milestone> = {
   getRoute: 'H2',
   archiveRoute: 'H2',
   deleteRoute: 'H2',
+  updateRoute: 'H2',
   getRouteVersion: 'H2',
   createRouteVersion: 'H2',
   deriveRoute: 'H2',

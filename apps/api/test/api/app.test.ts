@@ -73,6 +73,9 @@ const BUILT = [
 const ACCESS_OPERATIONS = ['register', 'forgotPassword', 'resetPassword', 'listSignupRequests', 'decideSignupRequests', 'getInviteCode', 'rotateInviteCode'];
 const ACCESS_BUILT: string[] = ['register', 'forgotPassword', 'resetPassword', 'listSignupRequests', 'decideSignupRequests', 'getInviteCode', 'rotateInviteCode']; // T3 to T5
 
+/** In the registry, but mounted by a later task of the route names change (`updateRoute`, T4). */
+const NOT_BUILT_YET: string[] = ['updateRoute'];
+
 const MOUNTED_IDS = [...BUILT, ...ACCESS_BUILT];
 const routeOf = (e: { method: string; path: string }) => `${e.method} /api/v1${nestPath(e.path)}`;
 
@@ -105,7 +108,7 @@ async function expectError(response: Response, code: keyof typeof ERROR_HTTP) {
 
 describe('routes come from the registry (AC-02, rule 7)', () => {
   it('mounts the 43 operations of H0 to H3, the 9 of H4 and the access ones built so far, and all of them are in the registry', () => {
-    const before = ENDPOINTS.filter((e) => ['H0', 'H1', 'H2', 'H3'].includes(e.milestone)).map((e) => e.id);
+    const before = ENDPOINTS.filter((e) => ['H0', 'H1', 'H2', 'H3'].includes(e.milestone) && !NOT_BUILT_YET.includes(e.id)).map((e) => e.id);
     expect(before).toHaveLength(43);
     const ofH4 = ENDPOINTS.filter((e) => e.milestone === 'H4').map((e) => e.id);
     expect(ofH4).toHaveLength(9);

@@ -125,7 +125,7 @@ describe('detalle de ruta: datos y estados', () => {
         data: detail({
           derivedFrom: { routeId: 'aaaa', routeName: 'Pradera', versionNumber: 3 },
           derivatives: [{ id: 'bbbb', name: 'Copia del Circo' }],
-          usedIn: [{ missionId: 'cccc', missionName: 'Simulacro Aneto', missionStatus: 'active', pinnedVersionNumber: 1 }],
+          usedIn: [{ missionId: 'cccc', missionRouteId: 'dddd', missionName: 'Simulacro Aneto', missionStatus: 'active', pinnedVersionNumber: 1 }],
         }),
       },
     );

@@ -104,10 +104,10 @@ export async function readRouteDetail(tx: Tx, orgId: string, routeId: string): P
   }[];
   const usedIn = (
     await tx.execute(sql`
-      SELECT m.id AS mission_id, m.name AS mission_name, m.status::text AS mission_status, v.version_number AS pinned_version_number
+      SELECT m.id AS mission_id, mr.id AS mission_route_id, m.name AS mission_name, m.status::text AS mission_status, v.version_number AS pinned_version_number
         FROM mission_routes mr JOIN missions m ON m.id = mr.mission_id JOIN route_versions v ON v.id = mr.pinned_version_id
        WHERE mr.route_id = ${routeId} AND mr.organization_id = ${orgId} ORDER BY mr.added_at, mr.id`)
-  ).rows as { mission_id: string; mission_name: string; mission_status: 'planning' | 'active' | 'closed'; pinned_version_number: number }[];
+  ).rows as { mission_id: string; mission_route_id: string; mission_name: string; mission_status: 'planning' | 'active' | 'closed'; pinned_version_number: number }[];
 
   return {
     id: route.id,
@@ -116,7 +116,13 @@ export async function readRouteDetail(tx: Tx, orgId: string, routeId: string): P
     versions: versions.map(versionView),
     derivedFrom: route.derived_from,
     derivatives,
-    usedIn: usedIn.map((row) => ({ missionId: row.mission_id, missionName: row.mission_name, missionStatus: row.mission_status, pinnedVersionNumber: row.pinned_version_number })),
+    usedIn: usedIn.map((row) => ({
+      missionId: row.mission_id,
+      missionRouteId: row.mission_route_id,
+      missionName: row.mission_name,
+      missionStatus: row.mission_status,
+      pinnedVersionNumber: row.pinned_version_number,
+    })),
     createdAt: route.created_at,
     updatedAt: route.updated_at,
   };

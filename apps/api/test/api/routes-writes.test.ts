@@ -455,7 +455,7 @@ describe('archiveRoute (RN-14; INV-07)', () => {
     await fixtures.query(`UPDATE missions SET status = 'closed', closed_at = now() WHERE id = $1`, [missionId]);
     const archived = await call(a.coordinator, 'POST', `/routes/${created.routeId}/archive`);
     expect(archived.status).toBe(200);
-    expect(RouteDetail.parse(await archived.json()).usedIn).toEqual([{ missionId, missionName, missionStatus: 'closed', pinnedVersionNumber: 1 }]);
+    expect(RouteDetail.parse(await archived.json()).usedIn).toEqual([{ missionId, missionRouteId: expect.any(String), missionName, missionStatus: 'closed', pinnedVersionNumber: 1 }]);
   });
 });
 

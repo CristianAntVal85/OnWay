@@ -96,7 +96,8 @@ export const RouteDetail = z.strictObject({
   versions: z.array(RouteVersion), // de la más nueva a la más antigua
   derivedFrom: z.strictObject({ routeId: Id, routeName: z.string(), versionNumber: z.number().int() }).nullable(),
   derivatives: z.array(z.strictObject({ id: Id, name: z.string() })),
-  usedIn: z.array(z.strictObject({ missionId: Id, missionName: z.string(), missionStatus: MissionStatus, pinnedVersionNumber: z.number().int() })),
+  /** `missionRouteId` es la fila de la ruta en esa misión: con ella se quita desde el detalle (`removeMissionRoute`). */
+  usedIn: z.array(z.strictObject({ missionId: Id, missionRouteId: Id, missionName: z.string(), missionStatus: MissionStatus, pinnedVersionNumber: z.number().int() })),
   createdAt: Timestamp,
   updatedAt: Timestamp,
 });
@@ -119,6 +120,9 @@ export const RouteVersionDetail = RouteVersion.extend({
   segments: z.array(RouteSegment),
   elevationProfile: ElevationProfile,
 });
+
+/** Cambiar el nombre de una ruta (RF-512). El nombre es de la ruta, no de la versión: no crea versión (RN-12). Mismos límites que `routes.name`. */
+export const UpdateRouteRequest = z.strictObject({ name: z.string().trim().min(1).max(160) });
 
 // ---------- Crear rutas ----------
 const AddToMission = z.strictObject({ missionId: Id, originPointId: Id.optional(), teamId: Id.optional() });
