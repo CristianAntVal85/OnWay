@@ -26,6 +26,7 @@ export {
 } from './weather.js';
 export { groupIntervals, labelIntervals, type LabelledStretch, type Run } from './segments.js';
 export { distanceToLineM, resampleLine, sharedShare, squareRing } from './overlap.js';
+export { cumulativeM, cutAt, pointAtDistance, projectOnLine, type LineCut } from './cut.js';
 export { ELEVATION_THRESHOLD_M, MAX_PROFILE_POINTS, PROFILE_STEP_M, SLOPE_WINDOW_M, computeMetrics, type MeasuredRoute, type RouteMetrics } from './metrics.js';
 export {
   MAX_XML_CHARS,

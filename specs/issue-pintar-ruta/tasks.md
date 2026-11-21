@@ -15,7 +15,7 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
   - Hecho cuando: los documentos dicen lo del plan §8, cada uno con su entrada de registro, y `format:check` está limpio.
   - Commit: `docs(issue-draw-route): T1 draw routes by hand from the mission and continue a generated route by hand`.
 
-- [ ] **T2. Corte y proyección en `packages/geo`.** Regla 9; D-P7.
+- [x] **T2. Corte y proyección en `packages/geo`.** Regla 9; D-P7.
   - Pruebas primero (`packages/geo/test/cut.test.ts`):
     - `projectOnLine` da el vértice más cercano, su distancia acumulada y `offsetM` (sobre la línea es 0; a 100 m de lado son ~100 m);
     - `pointAtDistance` en 0, en la mitad, en el final y más allá (se limita al final);
