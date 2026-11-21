@@ -178,10 +178,20 @@ describe('generar desde la biblioteca (dos puntos)', () => {
     // El segundo punto pide su propio clic en el mapa.
     await user.click(screen.getAllByRole('button', { name: es.point.pickOnMap })[0]!);
     await pick(42.63, 0.65);
+    // Un punto picado en el mapa no tiene nombre que proponer: el campo empieza vacío y es obligatorio (D-N1).
+    expect(screen.getByLabelText(T.nameLabel)).toHaveProperty('value', '');
+    await user.type(screen.getByLabelText(T.nameLabel), 'Collado Norte');
     await user.click(screen.getByRole('button', { name: T.submit }));
 
     await waitFor(() => expect(posts(calls(), '/routes/generate')).toHaveLength(1));
-    expect(posts(calls(), '/routes/generate')[0]!.body).toEqual({ from: { lat: 42.6, lon: 0.62 }, to: { lat: 42.63, lon: 0.65 }, via: [], avoidZoneIds: [], alternatives: 3 });
+    expect(posts(calls(), '/routes/generate')[0]!.body).toEqual({
+      from: { lat: 42.6, lon: 0.62 },
+      to: { lat: 42.63, lon: 0.65 },
+      via: [],
+      avoidZoneIds: [],
+      alternatives: 3,
+      namePrefix: 'Collado Norte',
+    });
     expect(await screen.findByText(/40 %/)).toBeTruthy();
     expect(screen.getByRole('progressbar')).toBeTruthy();
 
@@ -206,6 +216,21 @@ describe('generar desde la biblioteca (dos puntos)', () => {
     expect((await screen.findAllByText(T.pointMissing)).length).toBeGreaterThan(0);
     expect(posts(calls(), '/routes/generate')).toHaveLength(0);
   });
+
+  it('sin nombre no genera: el campo es obligatorio y dice por qué (RF-501)', async () => {
+    const { calls, user } = setup('/routes/generate');
+    await ready();
+    await pick(42.6, 0.62);
+    await user.click(screen.getAllByRole('button', { name: es.point.pickOnMap })[0]!);
+    await pick(42.63, 0.65);
+    const field = screen.getByLabelText(T.nameLabel);
+    expect(field.getAttribute('aria-required')).toBe('true');
+    await user.type(field, '   ');
+    await user.click(screen.getByRole('button', { name: T.submit }));
+    expect(await screen.findByText(T.nameRequired)).toBeTruthy();
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(posts(calls(), '/routes/generate')).toHaveLength(0);
+  });
 });
 
 describe('generar desde una misión (RN-08, INV-14)', () => {
@@ -225,9 +250,32 @@ describe('generar desde una misión (RN-08, INV-14)', () => {
       via: [],
       avoidZoneIds: [],
       alternatives: 3,
+      namePrefix: 'Refugio de la Renclusa',
       addToMission: { missionId: MISSION, originPointId: ORIGIN },
     });
     expect(await screen.findByRole('table', { name: T.compareTitle })).toBeTruthy();
+  });
+
+  it('propone el nombre del origen elegido, lo cambia con el selector y respeta lo que escribe el coordinador (D-N1)', async () => {
+    const second = { id: '00000000-0000-4000-8000-0000000000aa', kind: 'origin', name: 'Collado Norte', note: null, lat: 42.61, lon: 0.6, elevationM: 2200, position: 1 };
+    const { calls, user } = setup(`/routes/generate?mission=${MISSION}`, {
+      [`GET /missions/${MISSION}`]: () => json(200, mission({ points: [mission().points[0], second] })),
+      'POST /routes/generate': () => json(202, { jobId: JOB }),
+      [`GET /jobs/${JOB}`]: () => json(200, done),
+    });
+    await ready();
+    const field = screen.getByLabelText(T.nameLabel);
+    expect(field).toHaveProperty('value', 'Refugio de la Renclusa');
+    await user.selectOptions(screen.getByRole('combobox', { name: T.originLabel }), second.id);
+    expect(field).toHaveProperty('value', 'Collado Norte');
+    await user.clear(field);
+    await user.type(field, 'Por la cresta');
+    await user.selectOptions(screen.getByRole('combobox', { name: T.originLabel }), ORIGIN);
+    expect(field).toHaveProperty('value', 'Por la cresta');
+    await user.clear(field);
+    await user.click(screen.getByRole('button', { name: T.submit }));
+    expect(await screen.findByText(T.nameRequired)).toBeTruthy();
+    expect(posts(calls(), '/routes/generate')).toHaveLength(0);
   });
 
   it('sin origen, no deja generar y explica por qué, con el enlace a la misión', async () => {

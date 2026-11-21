@@ -10,7 +10,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Hecho cuando: los cuatro documentos dicen lo del plan §8, cada uno con su entrada de registro de cambios; `format:check` limpio.
   - Commit: `docs(issue-route-names): T1 require route names, allow renaming and unlinking from the route`.
 
-- [ ] **T2. Nombre obligatorio al generar, de punta a punta.** RF-501; D-N1, D-N2; `generateRoutes`.
+- [x] **T2. Nombre obligatorio al generar, de punta a punta.** RF-501; D-N1, D-N2; `generateRoutes`.
   - Pruebas primero:
     - contratos: `GenerateRoutesRequest` sin `namePrefix` se rechaza;
     - API (`apps/api/test/api/generate-routes.test.ts`): sin nombre → 400 `VALIDATION_FAILED` y ningún trabajo; con «Collado Norte» y 2 alternativas → «Collado Norte 1» y «Collado Norte 2»; un trabajo guardado sin `namePrefix` (anterior al cambio) usa «Ruta» y no falla;
@@ -19,6 +19,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Comprobación: `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc` y luego `pnpm check @onway/contracts @onway/api @onway/web @onway/i18n` y `pnpm --filter @onway/api test:api generate-routes`.
   - Hecho cuando: todo lo anterior en verde y el formulario no se puede enviar sin nombre.
   - Commit: `feat(issue-route-names): T2 make the name of generated routes required and propose the origin name`.
+  - *Hecho así:* **sin la línea de ejemplo** bajo el campo: la D-S3 de `UI-simplificacion` quita los textos de ayuda; la regla sale como error («Escribe un nombre para las rutas.»). El campo es `TextField` con asterisco y `aria-required`. El worker lee los parámetros con `namePrefix` opcional (`StoredParams`) y usa «Ruta» con un aviso en el registro para los trabajos anteriores al cambio. El doc 06 se actualiza a mano con la fila de `gen/endpoints.md` (el OpenAPI no está versionado).
 
 - [ ] **T3. Contrato de `updateRoute` y `usedIn.missionRouteId`.** Regla 7; D-N3, D-N6.
   - Pruebas primero: `registry.test.ts` con 98 operaciones; `UpdateRouteRequest` rechaza vacío, solo espacios, 161 caracteres y campos de más; `RouteDetail.usedIn[]` exige `missionRouteId`; `routes-reads.test.ts` comprueba que `getRoute` lo devuelve y que es el id de `mission_routes`.

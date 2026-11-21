@@ -1,4 +1,4 @@
-import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { GenerateRoutesRequest, type OperationOutput } from '@onway/contracts';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
@@ -15,8 +15,13 @@ import { RouteWrites } from './route-writes.service.js';
 
 type Body = z.infer<typeof GenerateRoutesRequest>;
 
-/** The name the proposed routes get when the coordinator gives none; the position of the alternative is added. */
-export const DEFAULT_NAME_PREFIX = 'Ruta generada';
+/**
+ * The name is required since the change on route names (RF-501). A job queued before it may have none: it gets this one, with a
+ * warning, instead of failing. The position of the alternative is added.
+ */
+export const LEGACY_NAME_PREFIX = 'Ruta';
+/** What the worker reads back from `calculation_jobs.params`: the same request, with the name optional for those older jobs. */
+const StoredParams = GenerateRoutesRequest.partial({ namePrefix: true });
 
 /**
  * `generateRoutes` (RF-501, RN-08, INV-14). The request checks everything that can be checked at once — the mission and its origin,
@@ -27,6 +32,8 @@ export const DEFAULT_NAME_PREFIX = 'Ruta generada';
  */
 @Injectable()
 export class RouteGeneration implements OnModuleInit {
+  private readonly logger = new Logger(RouteGeneration.name);
+
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(CalculationJobs) private readonly jobs: CalculationJobs,
@@ -103,7 +110,7 @@ export class RouteGeneration implements OnModuleInit {
   // ---- The job (worker) ----
 
   async run({ job, orgId, userId, setProgress }: JobContext): Promise<Record<string, unknown>> {
-    const params = GenerateRoutesRequest.parse(job.params);
+    const params = StoredParams.parse(job.params);
     const inContext = <T>(fn: () => Promise<T>) => this.database.withContext({ orgId, userId, role: 'coordinator' }, fn);
 
     // A retry of a job that already saved its routes only reports them.
@@ -121,7 +128,8 @@ export class RouteGeneration implements OnModuleInit {
       await setProgress(50 + (40 * (index + 1)) / proposals.length);
     }
 
-    const prefix = params.namePrefix ?? DEFAULT_NAME_PREFIX;
+    const prefix = params.namePrefix ?? LEGACY_NAME_PREFIX;
+    if (params.namePrefix === undefined) this.logger.warn(`job ${job.id} has no namePrefix (queued before it was required): using "${LEGACY_NAME_PREFIX}"`);
     const routes = await inContext(async () => {
       const created = await this.writes.createGenerated({ orgId, userId, jobId: job.id, names: measured.map((_, index) => `${prefix} ${index + 1}`), measured });
       if (params.addToMission) await this.linkToMission(orgId, userId, params.addToMission, created);

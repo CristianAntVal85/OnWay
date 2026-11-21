@@ -189,7 +189,8 @@ export const GenerateRoutesRequest = z.strictObject({
   via: z.array(LatLon).max(10).default([]),
   avoidZoneIds: z.array(Id).max(20).default([]),
   alternatives: z.number().int().min(1).max(4).default(3),
-  namePrefix: z.string().trim().min(1).max(100).optional(),
+  /** Obligatorio (RF-501): cada alternativa se llama `<namePrefix> <n>`. La web propone el nombre del punto de inicio. */
+  namePrefix: z.string().trim().min(1).max(100),
   /** Si se genera desde una misión, las rutas resultantes se añaden a ella (§4.3-B). Exige que la misión tenga origen (RN-08). */
   addToMission: AddToMission.optional(),
 });

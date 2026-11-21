@@ -761,6 +761,7 @@ export interface Messages {
     removeVia: string;
     alternativesLabel: string;
     nameLabel: string;
+    nameRequired: string;
     missionTitle: string;
     missionTarget: string;
     originLabel: string;
