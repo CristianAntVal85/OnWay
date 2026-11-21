@@ -82,7 +82,7 @@ async function expectError(response: Response, code: ErrorCode) {
 const uniq = (label: string) => `${label} ${randomBytes(4).toString('hex')}`;
 const from = { lat: 42.6, lon: 0.65 };
 const to = { lat: 42.61, lon: 0.67 };
-const generate = (member: Member, body: Record<string, unknown> = {}) => call(member, 'POST', '/routes/generate', { from, to, ...body });
+const generate = (member: Member, body: Record<string, unknown> = {}) => call(member, 'POST', '/routes/generate', { from, to, namePrefix: 'Ruta de prueba', ...body });
 const count = async (table: string) => Number((await fixtures.query<{ n: string }>(`SELECT count(*) AS n FROM ${table}`))[0]!.n);
 async function missionOf(member: Member, withOrigin: boolean): Promise<{ id: string; originId: string | null }> {
   const response = await call(member, 'POST', '/missions', { name: uniq('Mission'), target: { source: 'map', lat: 42.61, lon: 0.67 } });
@@ -276,6 +276,33 @@ describe('when the job cannot be done', () => {
   });
 });
 
+describe('the name of the routes (RF-501)', () => {
+  it('without a name is 400 VALIDATION_FAILED: no job, no routes, nothing in the queue', async () => {
+    const before = [await count('calculation_jobs'), await count('routes')];
+    await expectError(await call(a.coordinator, 'POST', '/routes/generate', { from, to }), 'VALIDATION_FAILED');
+    expect([await count('calculation_jobs'), await count('routes')]).toEqual(before);
+    expect(queue.pending).toBe(0);
+  });
+
+  it('names every alternative after the name it was given, with its position', async () => {
+    const { job } = await run(a.coordinator, { alternatives: 2, namePrefix: '  Collado Norte ' });
+    const names = await Promise.all(routeIdsOf(job).map(async (routeId) => ((await (await call(a.coordinator, 'GET', `/routes/${routeId}`)).json()) as { name: string }).name));
+    expect(names).toEqual(['Collado Norte 1', 'Collado Norte 2']);
+  });
+
+  it('a job queued before the name was required still runs, and its routes are called «Ruta <n>»', async () => {
+    const response = await generate(a.coordinator, { alternatives: 1 });
+    expect(response.status).toBe(202);
+    const { jobId } = JobAccepted.parse(await response.json());
+    await fixtures.query(`UPDATE calculation_jobs SET params = params - 'namePrefix' WHERE id = $1`, [jobId]);
+    await queue.drain();
+    const job = Job.parse(await (await call(a.coordinator, 'GET', `/jobs/${jobId}`)).json());
+    expect(job.status).toBe('completed');
+    const [routeId] = routeIdsOf(job);
+    expect(((await (await call(a.coordinator, 'GET', `/routes/${routeId}`)).json()) as { name: string }).name).toBe('Ruta 1');
+  });
+});
+
 describe('a job that runs twice does not create anything twice (D-H3-06)', () => {
   it('returns the routes it already saved', async () => {
     const { jobId, job } = await run(a.coordinator, { alternatives: 2 });
@@ -349,6 +376,7 @@ describe('who can ask, and across organizations (INV-01)', () => {
 
   it('refuses a request the contract does not allow', async () => {
     await expectError(await generate(a.coordinator, { alternatives: 5 }), 'VALIDATION_FAILED');
+    await expectError(await generate(a.coordinator, { namePrefix: '   ' }), 'VALIDATION_FAILED');
     await expectError(await call(a.coordinator, 'POST', '/routes/generate', { to }), 'VALIDATION_FAILED');
     await expectError(await generate(a.coordinator, { via: Array.from({ length: 11 }, () => ({ lat: 42.605, lon: 0.66 })) }), 'VALIDATION_FAILED');
   });

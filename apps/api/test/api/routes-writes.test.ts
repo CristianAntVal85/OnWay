@@ -455,7 +455,89 @@ describe('archiveRoute (RN-14; INV-07)', () => {
     await fixtures.query(`UPDATE missions SET status = 'closed', closed_at = now() WHERE id = $1`, [missionId]);
     const archived = await call(a.coordinator, 'POST', `/routes/${created.routeId}/archive`);
     expect(archived.status).toBe(200);
-    expect(RouteDetail.parse(await archived.json()).usedIn).toEqual([{ missionId, missionName, missionStatus: 'closed', pinnedVersionNumber: 1 }]);
+    expect(RouteDetail.parse(await archived.json()).usedIn).toEqual([{ missionId, missionRouteId: expect.any(String), missionName, missionStatus: 'closed', pinnedVersionNumber: 1 }]);
+  });
+});
+
+describe('updateRoute (RF-512; INV-04, INV-16; D-N4, D-N5)', () => {
+  const rename = (member: Member, routeId: string, name: unknown) => call(member, 'PATCH', `/routes/${routeId}`, { name });
+  const nameOf = async (routeId: string) => (await fixtures.query<{ name: string }>(`SELECT name FROM routes WHERE id = $1`, [routeId]))[0]!.name;
+
+  it('changes the name, answers the detail and leaves every version exactly as it was (INV-04)', async () => {
+    const created = await createDrawn(a.coordinator);
+    expect((await call(a.coordinator, 'POST', `/routes/${created.routeId}/versions/${created.versionId}/validate`, { acknowledged: true })).status).toBe(200);
+    const before = await versionsOf(created.routeId);
+    const newName = uniq('Collado Norte');
+    const response = await rename(a.coordinator, created.routeId, `  ${newName} `);
+    expect(response.status).toBe(200);
+    const detail = RouteDetail.parse(await response.json());
+    expect(detail).toMatchObject({ id: created.routeId, name: newName, status: 'active' });
+    expect(detail.versions).toHaveLength(1);
+    expect(await nameOf(created.routeId)).toBe(newName);
+    expect(await versionsOf(created.routeId)).toEqual(before);
+  });
+
+  it('INV-16: one `route_renamed` line with the old and the new name; the same name again answers 200 and writes nothing', async () => {
+    const created = await createDrawn(a.coordinator);
+    const oldName = await nameOf(created.routeId);
+    const newName = uniq('Renamed');
+    expect((await rename(a.coordinator, created.routeId, newName)).status).toBe(200);
+    const renamed = (await auditOf(created.routeId)).filter((row) => row.action === 'route_renamed');
+    expect(renamed).toEqual([{ action: 'route_renamed', actor_user_id: a.coordinator.userId, organization_id: a.orgId, entity_type: 'route', detail: { from: oldName, to: newName } }]);
+    expect((await rename(a.coordinator, created.routeId, newName)).status).toBe(200);
+    expect((await auditOf(created.routeId)).filter((row) => row.action === 'route_renamed')).toHaveLength(1);
+  });
+
+  it('an archived route keeps its name: 409 INVALID_STATE_TRANSITION and nothing changes', async () => {
+    const created = await createDrawn(a.coordinator);
+    expect((await call(a.coordinator, 'POST', `/routes/${created.routeId}/archive`)).status).toBe(200);
+    const name = await nameOf(created.routeId);
+    await expectError(await rename(a.coordinator, created.routeId, uniq('Late')), 'INVALID_STATE_TRANSITION');
+    expect(await nameOf(created.routeId)).toBe(name);
+  });
+
+  it('a route in a closed mission can be renamed (D-N4): the name belongs to the library', async () => {
+    const created = await createDrawn(a.coordinator);
+    const { id: missionId } = MissionDetail.parse(await (await call(a.coordinator, 'POST', '/missions', { name: uniq('Closed'), target: { source: 'map', lat: 42.6, lon: 0.65 } })).json());
+    await fixtures.query(`INSERT INTO mission_routes (organization_id, mission_id, route_id, pinned_version_id, added_by) VALUES ($1, $2, $3, $4, $5)`, [
+      a.orgId,
+      missionId,
+      created.routeId,
+      created.versionId,
+      a.coordinator.userId,
+    ]);
+    await fixtures.query(`UPDATE missions SET status = 'active', activated_at = now() WHERE id = $1`, [missionId]);
+    await fixtures.query(`UPDATE missions SET status = 'closed', closed_at = now() WHERE id = $1`, [missionId]);
+    const newName = uniq('Old route');
+    expect((await rename(a.coordinator, created.routeId, newName)).status).toBe(200);
+    expect(await nameOf(created.routeId)).toBe(newName);
+  });
+
+  it('refuses an empty name, one of only spaces, one longer than 160 and unknown fields, and changes nothing', async () => {
+    const created = await createDrawn(a.coordinator);
+    const name = await nameOf(created.routeId);
+    for (const body of [{}, { name: '' }, { name: '   ' }, { name: 'x'.repeat(161) }, { name: 'Fine', status: 'archived' }]) {
+      await expectError(await call(a.coordinator, 'PATCH', `/routes/${created.routeId}`, body), 'VALIDATION_FAILED');
+    }
+    expect(await nameOf(created.routeId)).toBe(name);
+  });
+
+  it('the administrator and the rescuer get 403 (rule 2); the coordinator of B gets 404 (INV-01); nothing changes in A', async () => {
+    const created = await createDrawn(a.coordinator);
+    const [name, auditBefore] = [await nameOf(created.routeId), await auditOf(created.routeId)];
+    for (const member of [a.admin, a.rescuer]) await expectError(await rename(member, created.routeId, uniq('No')), 'FORBIDDEN');
+    await expectError(await rename(b.coordinator, created.routeId, uniq('Steal')), 'NOT_FOUND');
+    expect(await nameOf(created.routeId)).toBe(name);
+    expect(await auditOf(created.routeId)).toEqual(auditBefore);
+  });
+
+  it('renaming and archiving at the same time end in order, without a 500', async () => {
+    const created = await createDrawn(a.coordinator);
+    const [renamed, archived] = await Promise.all([rename(a.coordinator, created.routeId, uniq('Race')), call(a.secondCoordinator, 'POST', `/routes/${created.routeId}/archive`)]);
+    expect(archived.status).toBe(200);
+    // Whichever took the lock first: renamed and then archived, or archived and then refused.
+    expect([200, 409]).toContain(renamed.status);
+    expect((await routeRow(created.routeId)).status).toBe('archived');
   });
 });
 

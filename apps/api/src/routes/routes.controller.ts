@@ -10,6 +10,7 @@ import type {
   ListRoutesQuery,
   OperationOutput,
   SnapRequest,
+  UpdateRouteRequest,
   ValidateVersionRequest,
 } from '@onway/contracts';
 import type { Response } from 'express';
@@ -88,6 +89,11 @@ export class RoutesController {
   @Operation('archiveRoute')
   archive(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'archiveRoute'>> {
     return this.writes.archive(request.principal!, (input.params as RouteParams).routeId);
+  }
+
+  @Operation('updateRoute')
+  rename(@Input() input: OperationInput, @Req() request: OnwayRequest): Promise<OperationOutput<'updateRoute'>> {
+    return this.writes.rename(request.principal!, (input.params as RouteParams).routeId, (input.body as z.infer<typeof UpdateRouteRequest>).name);
   }
 
   @Operation('deleteRoute')

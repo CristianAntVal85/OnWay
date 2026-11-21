@@ -13,16 +13,17 @@ import { ComparePanel } from '../library/compare-panel';
 import { saveBlob } from '../library/download';
 import { ElevationProfile } from '../library/elevation-profile';
 import { RoadMix } from '../library/road-mix';
+import { UsedInList } from '../library/used-in-list';
 import { formatKm } from '../library/format';
-import { ArchiveDialog, DeriveDialog, ValidateDialog } from '../library/route-dialogs';
+import { ArchiveDialog, DeriveDialog, RenameDialog, ValidateDialog } from '../library/route-dialogs';
 import { MapView, type MapRoute } from '../map';
 import { errorMessage } from '../i18n/error-message';
 import { formatDate, formatMeters } from '../missions/format';
-import { PATHS, missionPath, routePath } from '../nav/navigation';
+import { PATHS, routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { useCurrentUser } from '../session/session';
 
-type Dialogs = 'validate' | 'derive' | 'archive' | null;
+type Dialogs = 'validate' | 'derive' | 'rename' | 'archive' | null;
 
 /**
  * Detalle de una ruta (boceto 10, RF-502, RF-504, RF-506, RF-511, RF-516, RF-517, RF-519): mapa de la versión elegida, datos, perfil
@@ -38,6 +39,7 @@ export function RouteDetailPage() {
   const { routeId = '' } = useParams();
   const [params, setParams] = useSearchParams();
   const [dialog, setDialog] = useState<Dialogs>(null);
+  const [renamed, setRenamed] = useState<string | null>(null);
   const canWrite = user.role === 'coordinator';
 
   const route = useQuery({ queryKey: ['route', routeId], queryFn: ({ signal }) => api.getRoute({ params: { routeId } }, { signal }) });
@@ -121,6 +123,7 @@ export function RouteDetailPage() {
   const metrics = version.data?.metrics;
 
   const moreItems: MenuItem[] = [
+    ...(archived ? [] : [{ id: 'rename', label: t('routeDetail.actions.rename'), icon: 'pencil' as const, onSelect: () => setDialog('rename') }]),
     { id: 'duplicate', label: t('routeDetail.actions.duplicate'), icon: 'copy', onSelect: () => setDialog('derive') },
     ...(archived ? [] : [{ id: 'archive', label: t('routeDetail.actions.archive'), icon: 'archive' as const, danger: true, onSelect: () => setDialog('archive') }]),
   ];
@@ -308,18 +311,7 @@ export function RouteDetailPage() {
           </SectionCard>
 
           <SectionCard icon="flag" title={t('routeDetail.relations.usedIn')}>
-            {data.usedIn.length === 0 ? (
-              <p className="form-note">{t('routeDetail.relations.notUsed')}</p>
-            ) : (
-              <ul className="plain-list">
-                {data.usedIn.map((use) => (
-                  <li key={use.missionId}>
-                    <Link to={missionPath(use.missionId)}>{use.missionName}</Link>{' '}
-                    {t('routeDetail.relations.usedInRow', { status: t(`missions.status.${use.missionStatus}`), number: use.pinnedVersionNumber })}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <UsedInList routeId={routeId} usedIn={data.usedIn} canWrite={canWrite} />
           </SectionCard>
 
           <SectionCard icon="copy" title={t('routeDetail.relations.derivatives')}>
@@ -340,6 +332,10 @@ export function RouteDetailPage() {
 
       {dialog === 'validate' && shown && <ValidateDialog routeId={routeId} versionId={shown.id} versionNumber={shown.number} onClose={() => setDialog(null)} />}
       {dialog === 'derive' && shown && <DeriveDialog routeId={routeId} versionId={shown.id} versionNumber={shown.number} defaultName={`${data.name} (2)`} onClose={() => setDialog(null)} />}
+      {dialog === 'rename' && <RenameDialog routeId={routeId} currentName={data.name} onClose={() => setDialog(null)} onRenamed={(name) => setRenamed(t('routeDetail.rename.done', { name }))} />}
+      <p className="visually-hidden" role="status">
+        {renamed}
+      </p>
       {dialog === 'archive' && <ArchiveDialog routeId={routeId} onClose={() => setDialog(null)} />}
     </>
   );

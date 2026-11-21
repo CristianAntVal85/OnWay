@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.10 · **Estado:** borrador para revisión · **Fecha:** 13 de noviembre de 2026
+**Versión:** 1.11 · **Estado:** borrador para revisión · **Fecha:** 21 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -106,11 +106,11 @@ Alternativa descartada: pedir equipo y datos en el registro. Alarga el formulari
 
 ## 6. Endpoints
 
-El registro tiene **97 operaciones**, cada una asignada a un **hito de construcción** (H0–H9, documento 07): 95 de primera entrega y 2 de segunda (`listNearRoutes` en H8 y `adaptRoute` en H9; el contrato existe y el servidor responde `501` hasta entonces). El hito aparece junto al nombre de cada operación y en el OpenAPI como `x-milestone`; una prueba exige que todas tengan hito y que ninguna dependa de otra de un hito posterior.
+El registro tiene **98 operaciones**, cada una asignada a un **hito de construcción** (H0–H9, documento 07): 96 de primera entrega y 2 de segunda (`listNearRoutes` en H8 y `adaptRoute` en H9; el contrato existe y el servidor responde `501` hasta entonces). El hito aparece junto al nombre de cada operación y en el OpenAPI como `x-milestone`; una prueba exige que todas tengan hito y que ninguna dependa de otra de un hito posterior.
 
 | Hito | H0 | H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Operaciones | 5 | 18 | 12 | 6 | 9 | 26 | 17 | 0 | 1 | 1 |
+| Operaciones | 5 | 18 | 15 | 6 | 9 | 26 | 17 | 0 | 1 | 1 |
 
 Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesión pero sin aprobar. En entrada, `campo?` es opcional. **Q-14 (resuelta, 2026-10-31: no):** las operaciones que escriben sobre misiones y rutas solo admiten *Coordinador* (constante `MISSION_WRITERS`); el administrador las lee. La base de datos lo repite en sus políticas de seguridad por filas y en INV-03 (migración 0011, doc. 05 §6.3), así que ya no basta cambiar la constante: habría que cambiar también la base.
 
@@ -238,11 +238,12 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | `createRoute` · **H2**<br>Crear ruta importada o dibujada (versión 1 en Borrador) *(auditado)* | `POST /routes` | Coordinador | cuerpo: source?, name?, fileId?, note?, addToMission?, geometry?, snapToPaths? | 201: routeId, versionId, versionNumber, missionRouteId | `INVALID_FILE_CONTENT` `MISSION_HAS_NO_ORIGIN` `MISSION_CLOSED` `OUTSIDE_COVERAGE` `NO_ROUTE_POSSIBLE` `ROUTING_UNAVAILABLE` |
 | `snapRoute` · **H3**<br>Unir puntos siguiendo caminos (vista previa, no guarda) | `POST /routes/snap` | Coordinador, Admin | cuerpo: points | 200: geometry, metrics, roadMix, offTrailShare | `NO_ROUTE_POSSIBLE` `OUTSIDE_COVERAGE` `ROUTING_UNAVAILABLE` |
 | `previewRouteImport` · **H2**<br>Vista previa de un GPX/KML subido (no guarda) | `POST /routes/import/preview` | Coordinador, Admin | cuerpo: fileId | 200: trackName, candidate, waypointCount, warnings | `INVALID_FILE_CONTENT` `OUTSIDE_COVERAGE` |
-| `generateRoutes` · **H3**<br>Generar alternativas en segundo plano *(auditado)* | `POST /routes/generate` | Coordinador | cuerpo: from, to, via?, avoidZoneIds?, alternatives?, namePrefix?, addToMission? | 202: jobId | `MISSION_HAS_NO_ORIGIN` `MISSION_CLOSED` `ROUTING_UNAVAILABLE` `NOT_FOUND` |
+| `generateRoutes` · **H3**<br>Generar alternativas en segundo plano *(auditado)* | `POST /routes/generate` | Coordinador | cuerpo: from, to, via?, avoidZoneIds?, alternatives?, namePrefix, addToMission? | 202: jobId | `MISSION_HAS_NO_ORIGIN` `MISSION_CLOSED` `ROUTING_UNAVAILABLE` `NOT_FOUND` |
 | `listNearRoutes` · **H8** (2.ª entrega)<br>Rutas que pasan cerca de un punto | `GET /routes/near` | Coordinador, Admin | consulta: lat, lon, radiusM?, limit? | 200: items | — |
 | `exportRoutes` · **H2**<br>Exportar varias rutas de la biblioteca en un solo GPX/KML | `GET /routes/export` | Coordinador, Admin | consulta: ids, format?, validatedOnly? | 200 archivo | — |
 | `getRoute` · **H2**<br>Detalle de ruta: versiones, derivadas, uso | `GET /routes/{routeId}` | Coordinador, Admin | ruta: routeId | 200: id, name, status, versions, derivedFrom, derivatives, usedIn, createdAt, updatedAt | — |
 | `archiveRoute` · **H2**<br>Archivar ruta (no si está en una misión no cerrada) *(auditado)* | `POST /routes/{routeId}/archive` | Coordinador | ruta: routeId | 200: id, name, status, versions, derivedFrom, derivatives, usedIn, createdAt, updatedAt | `ROUTE_IN_USE` `INVALID_STATE_TRANSITION` |
+| `updateRoute` · **H2**<br>Cambiar el nombre de una ruta *(auditado)* | `PATCH /routes/{routeId}` | Coordinador | ruta: routeId<br>cuerpo: name | 200: id, name, status, versions, derivedFrom, derivatives, usedIn, createdAt, updatedAt | `INVALID_STATE_TRANSITION` |
 | `deleteRoute` · **H2**<br>Eliminar definitivamente una ruta archivada y sin misión *(auditado)* | `DELETE /routes/{routeId}` | Coordinador | ruta: routeId | 204 | `ROUTE_IN_USE` `INVALID_STATE_TRANSITION` |
 | `getRouteVersion` · **H2**<br>Versión con trazado, tramos y perfil de elevación | `GET /routes/{routeId}/versions/{versionId}` | Coordinador, Admin | ruta: routeId, versionId | 200: id, number, status, provenance, manuallyModified, metrics, roadMix, note, createdBy, … | — |
 | `createRouteVersion` · **H2**<br>Editar: crea una versión nueva en Borrador *(auditado)* | `POST /routes/{routeId}/versions` | Coordinador | ruta: routeId<br>cuerpo: baseVersionId, geometry, note?, calculationJobId? | 201: routeId, versionId, versionNumber, missionRouteId | `MISSION_CLOSED` `OUTSIDE_COVERAGE` `INVALID_STATE_TRANSITION` |
@@ -861,6 +862,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.11 | 2026-11-21 | Nombre de las rutas y desvincular (`specs/issue-rutas-nombre-y-desvincular/`). Operación nueva `updateRoute` (`PATCH /routes/{routeId}`, cuerpo `{ name }`, 200 `RouteDetail`, coordinador, auditada, `INVALID_STATE_TRANSITION` con la ruta archivada, `x-milestone: H2`): cambia el nombre de la ruta sin crear versión (RN-12). `generateRoutes`: `namePrefix` pasa a **obligatorio** (antes, sin él, «Ruta generada N»). `getRoute`: cada elemento de `usedIn` lleva `missionRouteId`, para quitar la ruta de la misión desde el detalle con `removeMissionRoute`. 98 operaciones (H2 pasa a 15; la tabla de operaciones por hito de §6 seguía en 12 desde antes y se corrige); sin códigos de error nuevos |
 | 1.10 | 2026-11-13 | Issue #17 (T1). Operación nueva `deleteRoute` (`DELETE /routes/{routeId}`, 204, coordinador, auditada, `x-milestone: H2`): elimina definitivamente una ruta **archivada y sin misión** (`INVALID_STATE_TRANSITION` si no está archivada, `ROUTE_IN_USE` con las misiones si figura en alguna, también cerrada); sin códigos de error ni esquemas nuevos. 97 operaciones (H2 pasa a 14). AC-18 revisado: sigue sin `DELETE` de misiones y el único de rutas es `deleteRoute`. Nota de `archiveRoute` sin la frase «no existe DELETE de rutas». 90 pruebas del paquete |
 | 1.9 | 2026-11-05 | Cierre de `H5-acceso` (T10): documento al día con lo construido, sin cambios de esquema ni de errores respecto a 1.8. Nota «Tal como se construyó» de `register`, `forgotPassword` y `resetPassword` (qué cuentas reciben enlace, idioma del correo, `404` de las 19 operaciones de H5 aún sin montar), los límites reales por IP y operación en §1 (`register` 10 por 10 min, `forgotPassword` 5 por hora, `resetPassword` 10 por hora), el idioma del correo en §10.2 y la verificación del cambio en §11. Las 7 operaciones conservan `x-milestone: H5`. OpenAPI y tablas sin otras diferencias (96 operaciones; salvo `createRoute` y `getJob` a mano) |
 | 1.8 | 2026-11-05 | `H5-acceso` T5 (`listSignupRequests`, `decideSignupRequests`, `getInviteCode` y `rotateInviteCode` montadas: 58 operaciones con las 51 de H0 a H4 y las tres públicas de acceso; quedan 19 de H5 sin montar). Único cambio de contrato: `INVALID_STATE_TRANSITION` como error propio de `decideSignupRequests` (una solicitud de la selección ya decidida) y notas de las cuatro operaciones; sin cambios de esquema. Aclarado en §6 que la decisión es atómica y `skipped` va vacío, el orden de la bandeja y el formato del código de invitación. OpenAPI y tablas sin otras diferencias (96 operaciones) |

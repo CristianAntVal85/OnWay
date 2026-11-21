@@ -44,7 +44,7 @@ test('the coordinator works with fewer buttons: layers, export and more live in 
   await expect(page.getByRole('link', { name: es.routeDetail.actions.edit, exact: true })).toBeVisible();
   await expect(page.getByText('Derivar', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Crear una versión nueva a partir de esta')).toHaveCount(0);
-  expect(await menuItemNames(page, es.common.more)).toEqual([es.routeDetail.actions.duplicate, es.routeDetail.actions.archive]);
+  expect(await menuItemNames(page, es.common.more)).toEqual([es.routeDetail.actions.rename, es.routeDetail.actions.duplicate, es.routeDetail.actions.archive]);
   const [download] = await Promise.all([page.waitForEvent('download'), chooseMenuItem(page, es.common.export, es.routeDetail.actions.exportGpx)]);
   expect(download.suggestedFilename()).toMatch(/\.gpx$/);
   expect(await primaryActions(page).count()).toBeLessThanOrEqual(1);

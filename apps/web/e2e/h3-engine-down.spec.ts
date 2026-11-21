@@ -25,6 +25,8 @@ test('with the routing engine stopped, generating says so and missions and route
     await page.getByRole('radio', { name: es.point.byCoordinates }).nth(1).check();
     await page.getByRole('textbox', { name: es.point.coordinates, exact: true }).nth(1).fill('42.69, -0.02');
     await page.getByRole('textbox', { name: es.point.coordinates, exact: true }).nth(1).press('Enter');
+    // El nombre es obligatorio (RF-501): con el inicio por coordenadas no hay nada que proponer.
+    await page.getByLabel(G.nameLabel).fill('E2E motor parado');
     await page.getByRole('button', { name: G.submit }).click();
     await expect(page.getByRole('alert').filter({ hasText: es.errors.ROUTING_UNAVAILABLE })).toBeVisible({ timeout: ENGINE_DOWN_DETECTION_MS });
 

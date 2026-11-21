@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.6 (borrador) · Fecha: 2026-11-13 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.7 (borrador) · Fecha: 2026-11-21 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -230,6 +230,7 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 - Desde una misión, requiere objetivo y al menos un origen. Si falta el origen, la app lo indica e invita a añadirlo (RN-08).
 - Por cada pareja se generan al menos dos alternativas cuando el terreno lo permita (D-04).
 - Cada alternativa se guarda como una ruta de la biblioteca, en *Borrador*, versión 1.
+- El nombre es **obligatorio**. Se propone el del punto de inicio (desde una misión, el nombre del origen elegido; desde la biblioteca, la dirección si el inicio se eligió por dirección) y cada alternativa añade su número: «Collado Norte 1», «Collado Norte 2»…
 - Si no hay ruta posible por la red, la app lo indica con un mensaje claro, no devuelve un resultado vacío.
 
 **RF-502 (Must) Métricas de cada versión**: distancia total, desnivel positivo, desnivel negativo, altitud mínima y máxima, pendiente máxima, perfil de elevación.
@@ -267,7 +268,8 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 - Cada tarjeta: nombre, estado de la última versión, distancia, desnivel, altitud máxima, antigüedad de la validación y número de misiones donde se usa.
 - Filtros: estado de validación, distancia, desnivel, antigüedad de la validación y búsqueda por nombre o lugar. Orden y paginación.
 - Capas de mapa conmutables, botón de "mi posición" y, en la segunda entrega, dibujar una zona.
-- Detalle de cada ruta: mapa, métricas, historial de versiones, ruta de la que deriva y misiones donde se usa.
+- Detalle de cada ruta: mapa, métricas, historial de versiones, ruta de la que deriva y misiones donde se usa. Desde «Usada en» se quita la ruta de cada misión en planificación o activa; de una cerrada, no (RN-09).
+- El coordinador **cambia el nombre** de una ruta activa cuando quiera. El nombre es de la ruta, no de la versión: renombrar no crea versión (RN-12) y queda en la auditoría.
 - Una ruta usada en alguna misión no se puede eliminar, solo archivar (RN-14). Una ruta **archivada y sin misión** se elimina definitivamente desde la lista de archivadas, con confirmación y selección múltiple; para eliminar una activa hay que quitarla de sus misiones, archivarla y eliminarla (issue #17).
 - La biblioteca es visible solo para coordinadores (Q-17).
 
@@ -551,6 +553,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.7 (2026-11-21)**
+- Nombre de las rutas y desvincular (`specs/issue-rutas-nombre-y-desvincular/`): RF-501 pide nombre obligatorio al generar, propuesto con el del punto de inicio (desaparece «Ruta generada N»). RF-512 permite cambiar el nombre de una ruta activa y quitarla de sus misiones en planificación o activas desde «Usada en».
 
 **1.6 (2026-11-13)**
 - Issue #18: RF-704 y RF-705 reparten lo que se ve. Inicio y las cabeceras de misión enseñan tres iconos por tramo del día, la temperatura y el viento; el detalle (próximos días, por hora, rachas, nieve, nubosidad, isoterma, luz y luna) va a una vista propia. Sin requisitos nuevos ni datos nuevos del proveedor.

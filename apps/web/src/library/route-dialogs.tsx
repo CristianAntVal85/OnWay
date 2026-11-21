@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { ApiError } from '@onway/contracts/client';
 import { Dialog } from '../components/dialog';
+import { TextField } from '../components/text-field';
 import { errorMessage } from '../i18n/error-message';
 import { routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
@@ -133,6 +134,69 @@ export function DeriveDialog({ routeId, versionId, versionNumber, defaultName, o
           </button>
           <button type="button" className="button button-secondary" disabled={derive.isPending} onClick={onClose}>
             {t('routeDetail.derive.cancel')}
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+/**
+ * Cambiar el nombre de una ruta (RF-512, `updateRoute`). El nombre es de la ruta, no de la versión: no crea versión y lo ven igual las
+ * misiones que la usan. Al guardar se recargan el detalle, la biblioteca y las misiones.
+ */
+export function RenameDialog({ routeId, currentName, onClose, onRenamed }: Common & { currentName: string; onRenamed?: (name: string) => void }) {
+  const { t } = useTranslation();
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(currentName);
+  const [missing, setMissing] = useState(false);
+  const field = useRef<HTMLInputElement>(null);
+  const rename = useMutation({
+    mutationFn: (value: string) => api.updateRoute({ params: { routeId }, body: { name: value } }),
+    onSuccess: async (detail) => {
+      await queryClient.invalidateQueries({ queryKey: ['route', routeId] });
+      void queryClient.invalidateQueries({ queryKey: ['routes'] });
+      void queryClient.invalidateQueries({ queryKey: ['missions'] });
+      onClose();
+      onRenamed?.(detail.name);
+    },
+  });
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const value = name.trim();
+    if (!value) {
+      setMissing(true);
+      field.current?.focus();
+      return;
+    }
+    rename.mutate(value);
+  };
+  return (
+    <Dialog title={t('routeDetail.rename.title')} description={t('routeDetail.rename.description')} onClose={() => !rename.isPending && onClose()}>
+      <form onSubmit={submit} noValidate>
+        <TextField
+          id="rename-name"
+          inputRef={field}
+          label={t('routeDetail.rename.nameLabel')}
+          data-autofocus
+          type="text"
+          maxLength={160}
+          required
+          value={name}
+          error={missing ? t('routeDetail.rename.nameRequired') : null}
+          onChange={(event) => {
+            setName(event.target.value);
+            setMissing(false);
+          }}
+        />
+        {rename.isError && <p role="alert">{errorMessage(t, rename.error)}</p>}
+        <div className="dialog-actions">
+          <button type="submit" className="button button-primary" disabled={rename.isPending}>
+            {rename.isPending ? t('routeDetail.rename.working') : t('routeDetail.rename.confirm')}
+          </button>
+          <button type="button" className="button button-secondary" disabled={rename.isPending} onClick={onClose}>
+            {t('routeDetail.rename.cancel')}
           </button>
         </div>
       </form>

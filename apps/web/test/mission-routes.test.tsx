@@ -352,6 +352,41 @@ describe('quitar de la misión (RN-14)', () => {
   });
 });
 
+describe('cambiar el nombre desde la fila (RF-512)', () => {
+  it('el «⋯» trae «Cambiar nombre» y «Quitar de la misión»; guardar envía updateRoute, recarga la tabla y lo anuncia', async () => {
+    const original = row(1, 'Ruta generada 1');
+    const { user, calls, state } = setup([original], {
+      extra: {
+        [`PATCH /routes/${original.routeId}`]: () => {
+          state.rows = [{ ...original, name: 'Collado Norte 1' }];
+          return json(200, {
+            id: original.routeId,
+            name: 'Collado Norte 1',
+            status: 'active',
+            versions: [],
+            derivedFrom: null,
+            derivatives: [],
+            usedIn: [],
+            createdAt: '2026-11-21T09:00:00+00:00',
+            updatedAt: '2026-11-21T09:00:00+00:00',
+          });
+        },
+      },
+    });
+    const line = await rowOf('Ruta generada 1');
+    expect(await menuItemNames(user, ACTIONS('Ruta generada 1'), line)).toEqual(expect.arrayContaining([R.rename.action, R.remove.action]));
+    await rowAction(user, 'Ruta generada 1', R.rename.action);
+    const dialog = await screen.findByRole('dialog', { name: es.routeDetail.rename.title });
+    const name = within(dialog).getByLabelText(es.routeDetail.rename.nameLabel);
+    await user.clear(name);
+    await user.type(name, 'Collado Norte 1');
+    await user.click(within(dialog).getByRole('button', { name: es.routeDetail.rename.confirm }));
+    expect(calls().find((c) => c.method === 'PATCH')).toMatchObject({ path: `/routes/${original.routeId}`, body: { name: 'Collado Norte 1' } });
+    expect(await within(await region()).findByText('La ruta se llama ahora «Collado Norte 1».')).toBeTruthy();
+    expect(await within(await tableOf()).findByText('Collado Norte 1')).toBeTruthy();
+  });
+});
+
 describe('misión cerrada o sin permiso de escribir: solo lectura', () => {
   it.each([
     ['cerrada', { actions: noActions, status: 'closed' }],

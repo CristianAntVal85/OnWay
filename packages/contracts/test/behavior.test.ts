@@ -215,10 +215,19 @@ test('validar exige confirmar el aviso (RF-506)', () => {
 });
 
 test('generar: alternativas 1–4, valores por defecto y límites de puntos intermedios', () => {
-  const g = C.GenerateRoutesRequest.parse({ from: { lat: 42, lon: 0 }, to: { lat: 42.5, lon: 0.5 } });
+  const g = C.GenerateRoutesRequest.parse({ from: { lat: 42, lon: 0 }, to: { lat: 42.5, lon: 0.5 }, namePrefix: 'Collado Norte' });
   assert.deepEqual([g.alternatives, g.via, g.avoidZoneIds], [3, [], []]);
-  bad(C.GenerateRoutesRequest, { from: { lat: 42, lon: 0 }, to: { lat: 42.5, lon: 0.5 }, alternatives: 5 });
-  bad(C.GenerateRoutesRequest, { from: { lat: 42, lon: 0 }, to: { lat: 42.5, lon: 0.5 }, alternatives: 0 });
+  bad(C.GenerateRoutesRequest, { from: { lat: 42, lon: 0 }, to: { lat: 42.5, lon: 0.5 }, namePrefix: 'Collado Norte', alternatives: 5 });
+  bad(C.GenerateRoutesRequest, { from: { lat: 42, lon: 0 }, to: { lat: 42.5, lon: 0.5 }, namePrefix: 'Collado Norte', alternatives: 0 });
+});
+
+test('generar: el nombre es obligatorio, se recorta y tiene como mucho 100 caracteres (RF-501)', () => {
+  const points = { from: { lat: 42, lon: 0 }, to: { lat: 42.5, lon: 0.5 } };
+  assert.equal(C.GenerateRoutesRequest.parse({ ...points, namePrefix: '  Collado Norte ' }).namePrefix, 'Collado Norte');
+  bad(C.GenerateRoutesRequest, points);
+  bad(C.GenerateRoutesRequest, { ...points, namePrefix: '' });
+  bad(C.GenerateRoutesRequest, { ...points, namePrefix: '   ' });
+  bad(C.GenerateRoutesRequest, { ...points, namePrefix: 'x'.repeat(101) });
 });
 
 test('trabajo: el resultado depende del tipo', () => {

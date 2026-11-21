@@ -1,6 +1,6 @@
 # OnWay — Documento 03: Modelo de dominio y flujos clave
 
-Versión: 0.9 (borrador) · Fecha: 2026-11-13 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
+Versión: 0.10 (borrador) · Fecha: 2026-11-21 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
 
 Este documento traduce los requisitos y las vistas en un modelo conceptual: qué cosas existen en el sistema, cómo se relacionan, qué reglas deben cumplirse siempre y cómo fluyen los datos en los procesos clave. No fija tecnologías ni tablas: la arquitectura está en el documento 04 y el modelo de datos será el documento 05. Los IDs RF, RN, D y Q remiten al documento 01.
 
@@ -319,7 +319,7 @@ La **biblioteca con lista y mapa** (RF-512) usa la misma idea con un rectángulo
 6. Si una ruta se vuelve inviable, se marca *No disponible en esta misión* sin afectar a otras misiones.
 7. *Tal como se construyó (H4).* La **versión por defecto** es la última validada (si la ruta no tiene ninguna, la última, aunque sea un borrador). Una ruta **archivada** no se añade (`INVALID_STATE_TRANSITION`) y una ya presente da `ROUTE_ALREADY_IN_MISSION` (INV-13); el lote de hasta 20 es atómico. Cada cambio escribe una línea del historial de la misión en la misma transacción (`route_added`, `route_removed`, `route_version_changed`, `route_marked_unavailable`, `route_reactivated`, `route_updated`; las notas no se copian) (INV-16).
 8. Una ruta *No disponible* **no cuenta como validada** al activar la misión ni en la lista de preparación, aunque su versión fijada lo esté. El rescatista la sigue viendo, señalada (RF-508), pero no la descarga.
-9. Quitar una ruta de la misión no la borra (RN-14): vuelve a poder archivarse si ya no está en ninguna misión sin cerrar (INV-07).
+9. Quitar una ruta de la misión no la borra (RN-14): vuelve a poder archivarse si ya no está en ninguna misión sin cerrar (INV-07). Se quita desde la fila de la misión o desde «Usada en» del detalle de la ruta, solo con la misión en planificación o activa (INV-11).
 
 ### 8.6 Voluntariado con decisión en bloque
 
@@ -480,7 +480,7 @@ Cada hecho relevante se registra y, además, se emite como evento interno. Hoy s
 | Participación confirmada al cerrar (marcados sobre el total) | Coordinador |
 | Coordinador responsable cambiado | Coordinador |
 | Punto añadido, editado o eliminado | Coordinador |
-| Ruta creada, derivada o archivada | Coordinador |
+| Ruta creada, derivada, renombrada (con el nombre anterior y el nuevo) o archivada | Coordinador |
 | Versión de ruta creada | Coordinador o sistema (cálculo) |
 | Versión de ruta validada | Coordinador |
 | Ruta añadida a una misión, quitada, versión actualizada, marcada no disponible | Coordinador |
@@ -579,6 +579,9 @@ La arquitectura y el stack están en el documento 04, el modelo de datos en el 0
 Consultadas el 29 de octubre de 2026. Las condiciones y precios de terceros pueden cambiar. Hay que confirmarlas directamente con cada proveedor antes de publicar la demo.
 
 ## 19. Registro de cambios
+
+**0.10 (2026-11-21)**
+- Nombre de las rutas y desvincular: la auditoría anota el cambio de nombre de una ruta (§16). El nombre es de la ruta, no de la versión, así que renombrar no toca INV-04. §8.3 punto 9 dice desde dónde se quita una ruta de la misión.
 
 **0.9 (2026-11-13)**
 - Issue #17: ciclo de la ruta *Activa ⇄ Archivada → Eliminada*; INV-04 e INV-07 reformulados (una versión validada solo se borra con su ruta archivada y sin misión; una ruta en cualquier misión no se elimina).

@@ -7,6 +7,7 @@ import { Icon } from '../components/icon';
 import { PageHeader } from '../components/page-header';
 import { SectionCard } from '../components/section-card';
 import { ErrorState, LoadingState } from '../components/states';
+import { TextField } from '../components/text-field';
 import { usePageTitle } from '../components/use-page-title';
 import { useElevationLookup } from '../hooks/use-elevation-lookup';
 import { errorMessage } from '../i18n/error-message';
@@ -30,6 +31,7 @@ const FAILURE_KEYS = {
   INTERNAL: 'generate.failure.INTERNAL',
 } as const;
 const MAX_VIA = 10;
+const MAX_NAME = 100;
 const POLL_MS = 1500;
 const FROM = 'from';
 const TO = 'to';
@@ -68,7 +70,8 @@ export function GenerateRoutesPage() {
   const [vias, setVias] = useState<{ key: string; point: PickedPoint | null }[]>([]);
   const [picking, setPicking] = useState<string | null>(missionId ? null : FROM);
   const [alternatives, setAlternatives] = useState(3);
-  const [prefix, setPrefix] = useState('');
+  /** Lo que escribió el coordinador en el nombre; `null` mientras no lo toque, y entonces vale la propuesta (D-N1). */
+  const [typedName, setTypedName] = useState<string | null>(null);
   const [originId, setOriginId] = useState('');
   const [chosenZones, setChosenZones] = useState<ReadonlySet<string>>(new Set());
   const [attempted, setAttempted] = useState(false);
@@ -87,21 +90,24 @@ export function GenerateRoutesPage() {
   const closed = mission.data?.status === 'closed';
   const missionMode = missionId !== null;
   const noOrigin = missionMode && mission.isSuccess && origins.length === 0;
+  // El nombre propuesto es el del punto de inicio (RF-501): el origen elegido de la misión o, desde la biblioteca, la dirección elegida.
+  const proposedName = ((missionMode ? selectedOrigin?.name : from?.label) ?? '').slice(0, MAX_NAME);
+  const name = typedName ?? proposedName;
 
   const request = useMemo(() => {
     const target = missionMode ? mission.data?.target : to;
     const start = missionMode ? selectedOrigin : from;
-    if (!target || !start) return null;
+    if (!target || !start || !name.trim()) return null;
     return {
       from: { lat: start.lat, lon: start.lon },
       to: { lat: target.lat, lon: target.lon },
       via: vias.flatMap((via) => (via.point ? [{ lat: via.point.lat, lon: via.point.lon }] : [])),
       avoidZoneIds: [...chosenZones],
       alternatives,
-      ...(prefix.trim() ? { namePrefix: prefix.trim() } : {}),
+      namePrefix: name.trim(),
       ...(missionMode && selectedOriginId ? { addToMission: { missionId, originPointId: selectedOriginId } } : {}),
     };
-  }, [alternatives, chosenZones, from, mission.data, missionId, missionMode, prefix, selectedOrigin, selectedOriginId, to, vias]);
+  }, [alternatives, chosenZones, from, mission.data, missionId, missionMode, name, selectedOrigin, selectedOriginId, to, vias]);
 
   // ---- El cálculo ----
   const [jobId, setJobId] = useState<string | null>(null);
@@ -352,10 +358,15 @@ export function GenerateRoutesPage() {
                       ))}
                     </select>
                   </div>
-                  <div className="field">
-                    <label htmlFor="generate-name">{t('generate.nameLabel')}</label>
-                    <input id="generate-name" type="text" maxLength={100} value={prefix} onChange={(event) => setPrefix(event.target.value)} />
-                  </div>
+                  <TextField
+                    id="generate-name"
+                    label={t('generate.nameLabel')}
+                    required
+                    maxLength={MAX_NAME}
+                    value={name}
+                    onChange={(event) => setTypedName(event.target.value)}
+                    error={attempted && !name.trim() ? t('generate.nameRequired') : null}
+                  />
                 </div>
               </SectionCard>
             </fieldset>

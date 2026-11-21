@@ -125,7 +125,7 @@ describe('detalle de ruta: datos y estados', () => {
         data: detail({
           derivedFrom: { routeId: 'aaaa', routeName: 'Pradera', versionNumber: 3 },
           derivatives: [{ id: 'bbbb', name: 'Copia del Circo' }],
-          usedIn: [{ missionId: 'cccc', missionName: 'Simulacro Aneto', missionStatus: 'active', pinnedVersionNumber: 1 }],
+          usedIn: [{ missionId: 'cccc', missionRouteId: 'dddd', missionName: 'Simulacro Aneto', missionStatus: 'active', pinnedVersionNumber: 1 }],
         }),
       },
     );
@@ -153,7 +153,7 @@ describe('detalle de ruta: datos y estados', () => {
   it('en francés los textos salen en francés', async () => {
     const { user } = setup({}, { language: 'fr' });
     expect(await screen.findByRole('heading', { level: 2, name: fr.routeDetail.versions.title })).toBeTruthy();
-    expect(await menuItemNames(user, fr.common.more)).toEqual([fr.routeDetail.actions.duplicate, fr.routeDetail.actions.archive]);
+    expect(await menuItemNames(user, fr.common.more)).toEqual([fr.routeDetail.actions.rename, fr.routeDetail.actions.duplicate, fr.routeDetail.actions.archive]);
   });
 });
 
@@ -299,6 +299,48 @@ describe('validar, derivar y archivar (coordinador)', () => {
     expect(screen.getByRole('link', { name: 'Deriva de «Senda del Circo» (versión 2)' })).toBeTruthy();
   });
 
+  it('cambiar nombre está en «Más», pide un nombre, envía updateRoute y enseña el nombre nuevo (RF-512)', async () => {
+    let renamed = false;
+    const { user, calls } = setup({
+      [`PATCH /routes/${ROUTE}`]: () => {
+        renamed = true;
+        return json(200, detail({ name: 'Collado Norte' }));
+      },
+      [`GET /routes/${ROUTE}`]: () => json(200, detail(renamed ? { name: 'Collado Norte' } : {})),
+    });
+    expect(await menuItemNames(user, MORE)).toEqual([T.actions.rename, T.actions.duplicate, T.actions.archive]);
+    await chooseMenuItem(user, MORE, T.actions.rename);
+    const dialog = await screen.findByRole('dialog', { name: T.rename.title });
+    const name = within(dialog).getByLabelText(T.rename.nameLabel);
+    expect(name).toHaveProperty('value', 'Senda del Circo');
+    await waitFor(() => expect(document.activeElement).toBe(name));
+    await user.clear(name);
+    await user.type(name, '   ');
+    await user.click(within(dialog).getByRole('button', { name: T.rename.confirm }));
+    expect(within(dialog).getByText(T.rename.nameRequired)).toBeTruthy();
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(name);
+    expect(name.getAttribute('aria-required')).toBe('true');
+    expect(calls().filter((c) => c.method === 'PATCH')).toHaveLength(0);
+    await user.clear(name);
+    await user.type(name, ' Collado Norte ');
+    await user.click(within(dialog).getByRole('button', { name: T.rename.confirm }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Collado Norte' })).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(calls().find((c) => c.method === 'PATCH')!.body).toEqual({ name: 'Collado Norte' });
+    // El cambio se anuncia: el título cambia, pero un lector de pantalla no lo sabría
+    expect(screen.getAllByRole('status').map((node) => node.textContent)).toContain(T.rename.done.replace('{{name}}', 'Collado Norte'));
+  });
+
+  it('cambiar nombre: un error del servidor se dice y el diálogo sigue abierto', async () => {
+    const { user } = setup({ [`PATCH /routes/${ROUTE}`]: () => apiError(409, 'INVALID_STATE_TRANSITION') });
+    await chooseMenuItem(user, MORE, T.actions.rename);
+    const dialog = await screen.findByRole('dialog', { name: T.rename.title });
+    await user.click(within(dialog).getByRole('button', { name: T.rename.confirm }));
+    expect(await within(dialog).findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: T.rename.title })).toBeTruthy();
+  });
+
   it('archivar con ROUTE_IN_USE enseña las misiones y no cierra el diálogo', async () => {
     const { user } = setup({
       [`POST /routes/${ROUTE}/archive`]: () =>
@@ -312,7 +354,9 @@ describe('validar, derivar y archivar (coordinador)', () => {
     await chooseMenuItem(user, MORE, T.actions.archive);
     const dialog = await screen.findByRole('dialog', { name: T.archive.title });
     await user.click(within(dialog).getByRole('button', { name: T.archive.confirm }));
-    expect(await within(dialog).findByText('No se puede archivar: está en misiones que no están cerradas (Misión del Aneto, Misión del Posets).')).toBeTruthy();
+    expect(
+      await within(dialog).findByText('No se puede archivar: está en misiones que no están cerradas (Misión del Aneto, Misión del Posets). Quítala de ellas en «Usada en», en esta misma página.'),
+    ).toBeTruthy();
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
@@ -345,6 +389,65 @@ describe('validar, derivar y archivar (coordinador)', () => {
     expect(request.query.get('versionId')).toBe(V2);
     expect(request.query.get('format')).toBe('kml');
     HTMLAnchorElement.prototype.click = click;
+  });
+});
+
+describe('quitar de la misión desde «Usada en» (RF-512, D-N6, D-N7)', () => {
+  const open = { missionId: 'm-open', missionRouteId: 'mr-open', missionName: 'Simulacro Aneto', missionStatus: 'active', pinnedVersionNumber: 1 };
+  const planned = { missionId: 'm-plan', missionRouteId: 'mr-plan', missionName: 'Rescate Posets', missionStatus: 'planning', pinnedVersionNumber: 2 };
+  const closed = { missionId: 'm-closed', missionRouteId: 'mr-closed', missionName: 'Ejercicio Monte Perdido', missionStatus: 'closed', pinnedVersionNumber: 1 };
+  const removeFor = (mission: string) => T.relations.removeFor.replace('{{mission}}', mission);
+
+  it('solo las misiones en planificación o activas tienen el botón; la cerrada dice «solo lectura»', async () => {
+    setup({}, { data: detail({ usedIn: [open, planned, closed] }) });
+    expect(await screen.findByRole('button', { name: removeFor('Simulacro Aneto') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: removeFor('Rescate Posets') })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: removeFor('Ejercicio Monte Perdido') })).toBeNull();
+    expect(screen.getByText(new RegExp(`${T.relations.readOnly}$`))).toBeTruthy();
+  });
+
+  it('pide confirmación con el foco en «No quitar»; «No quitar» no envía nada; confirmar llama a removeMissionRoute y lo anuncia', async () => {
+    let removed = false;
+    const { user, calls } = setup({
+      [`GET /routes/${ROUTE}`]: () => json(200, detail({ usedIn: removed ? [] : [open] })),
+      [`DELETE /missions/m-open/routes/mr-open`]: () => {
+        removed = true;
+        return json(204, null);
+      },
+    });
+    await user.click(await screen.findByRole('button', { name: removeFor('Simulacro Aneto') }));
+    const group = screen.getByRole('group', { name: T.relations.removeConfirm.replace('{{mission}}', 'Simulacro Aneto') });
+    expect(document.activeElement).toBe(within(group).getByRole('button', { name: T.relations.removeNo }));
+    await user.click(within(group).getByRole('button', { name: T.relations.removeNo }));
+    expect(calls().filter((c) => c.method === 'DELETE')).toHaveLength(0);
+    // Al cancelar, el foco vuelve al botón que abrió la confirmación (no cae al cuerpo de la página)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: removeFor('Simulacro Aneto') }));
+    await user.click(screen.getByRole('button', { name: removeFor('Simulacro Aneto') }));
+    await user.click(screen.getByRole('button', { name: T.relations.removeYes }));
+    expect(calls().find((c) => c.method === 'DELETE')).toMatchObject({ path: '/missions/m-open/routes/mr-open' });
+    expect(await screen.findByText(T.relations.removeDone.replace('{{mission}}', 'Simulacro Aneto'))).toBeTruthy();
+    expect(await screen.findByText(T.relations.notUsed)).toBeTruthy();
+    // La fila ya no existe: el foco pasa al bloque «Usada en», que contiene el resultado
+    expect(document.activeElement).toBe(screen.getByText(T.relations.notUsed).closest('.used-in'));
+  });
+
+  it('el nombre accesible del botón empieza por su texto visible (WCAG 2.5.3)', async () => {
+    setup({}, { data: detail({ usedIn: [open] }) });
+    const button = await screen.findByRole('button', { name: removeFor('Simulacro Aneto') });
+    expect(removeFor('Simulacro Aneto').startsWith(button.textContent ?? '')).toBe(true);
+  });
+
+  it('si la misión se cerró mientras tanto, lo dice', async () => {
+    const { user } = setup({ [`DELETE /missions/m-open/routes/mr-open`]: () => apiError(409, 'MISSION_CLOSED') }, { data: detail({ usedIn: [open] }) });
+    await user.click(await screen.findByRole('button', { name: removeFor('Simulacro Aneto') }));
+    await user.click(screen.getByRole('button', { name: T.relations.removeYes }));
+    expect(await screen.findByText(es.missionDetail.closedMeanwhile)).toBeTruthy();
+  });
+
+  it('el administrador ve «Usada en» sin ningún botón', async () => {
+    setup({}, { user: admin(), data: detail({ usedIn: [open] }) });
+    expect(await screen.findByRole('link', { name: 'Simulacro Aneto' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: removeFor('Simulacro Aneto') })).toBeNull();
   });
 });
 

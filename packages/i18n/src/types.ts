@@ -611,10 +611,26 @@ export interface Messages {
       start: string;
       stop: string;
     };
-    relations: { derivedFrom: string; derivatives: string; usedIn: string; usedInRow: string; notUsed: string; noDerivatives: string };
-    actions: { validate: string; duplicate: string; archive: string; edit: string; exportGpx: string; exportKml: string; exporting: string; exportError: string };
+    relations: {
+      derivedFrom: string;
+      derivatives: string;
+      usedIn: string;
+      usedInRow: string;
+      notUsed: string;
+      noDerivatives: string;
+      readOnly: string;
+      remove: string;
+      removeFor: string;
+      removeConfirm: string;
+      removeYes: string;
+      removeNo: string;
+      removeBusy: string;
+      removeDone: string;
+    };
+    actions: { validate: string; duplicate: string; rename: string; archive: string; edit: string; exportGpx: string; exportKml: string; exporting: string; exportError: string };
     validate: { title: string; description: string; warning: string; acknowledge: string; confirm: string; working: string; cancel: string; needsAcknowledge: string; immutable: string };
     derive: { title: string; description: string; nameLabel: string; nameRequired: string; confirm: string; working: string; cancel: string };
+    rename: { title: string; description: string; nameLabel: string; nameRequired: string; confirm: string; working: string; cancel: string; done: string };
     archive: { title: string; description: string; confirm: string; working: string; cancel: string; inUse: string };
   };
   routeImport: {
@@ -717,6 +733,7 @@ export interface Messages {
     update: { action: string; confirm: string; yes: string; no: string; busy: string; done: string };
     unavailable: { mark: string; marked: string; reactivate: string; reactivated: string };
     remove: { action: string; confirm: string; yes: string; no: string; busy: string; done: string };
+    rename: { action: string };
     export: { gpx: string; kml: string; busy: string; nothing: string; fileName: string };
     profiles: { title: string; forRoute: string };
     add: {
@@ -761,6 +778,7 @@ export interface Messages {
     removeVia: string;
     alternativesLabel: string;
     nameLabel: string;
+    nameRequired: string;
     missionTitle: string;
     missionTarget: string;
     originLabel: string;
