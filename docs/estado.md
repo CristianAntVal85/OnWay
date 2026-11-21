@@ -5,15 +5,12 @@ Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya n
 Última actualización: 2026-11-21
 
 ## Dónde estamos
-- MVP (H0 a H4), `H5-acceso` y `UI-rediseno` validados y fusionados en `main`.
-- Issues #17 y #18: implementadas y validadas, en una pull request conjunta.
-- `UI-simplificacion` (menos botones, menús, boceto de `docs/boteto-interface/`, fondo topográfico): validado por `reviewer` y `reviewer-ui` el 2026-11-21 y fusionado en `main` (PR #23, #24 y #27).
-- Nombre de las rutas y desvincular (`specs/issue-rutas-nombre-y-desvincular/`): T1 a T8 hechas en `hito/issue-rutas-nombre`; validado por los cuatro revisores el 2026-11-21; PR #26 abierta.
+- En `main`: MVP (H0 a H4), `H5-acceso`, `UI-rediseno`, issues #17 y #18 (PR #21), `UI-simplificacion` con el fondo topográfico (PR #23, #24, #25 y #27) y nombre de las rutas y desvincular (PR #26), todo validado por sus revisores.
+- Sin pull requests abiertas. Ramas ya fusionadas borradas el 2026-11-21.
+- El CI de GitHub Actions no arranca por la facturación de la cuenta: la verificación completa se hace en local.
 
 ## Siguiente paso
-- Fusionar la PR #26 (nombre de las rutas y desvincular).
-- Fusionar la pull request de las issues #17 y #18 (el CI no arranca por la facturación de GitHub).
-- Después: el resto de H5 (perfil, habilidades, equipos, usuarios, `changePassword`, `updateMe`) con `/sdd-plan`.
+- El resto de H5 (perfil, habilidades, equipos, usuarios, `changePassword`, `updateMe`) con `/sdd-plan`.
 
 ## Pendiente del usuario
 - Ver el pintado real del mapa de carreteras en oscuro y en claro con la pila `onway` reconstruida.
