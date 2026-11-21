@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.13 · **Estado:** borrador para revisión · **Fecha:** 13 de noviembre de 2026
+**Versión:** 0.14 · **Estado:** borrador para revisión · **Fecha:** 21 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -200,6 +200,18 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 | **Operaciones (0)** | Ninguna |
 | **Tal como se construyó** | Diez tareas. **T1** paleta del boceto y escalas en `tokens.css` (`--space-*`, `--radius-*`, `--text-*`, `--control-h` 40/48 px, `--accent-vivid`); **T2** componentes comunes (`Icon`, `Menu`, `SectionCard`, `PageHeader`, `Segmented`; `TextField` sin ayuda y con asterisco); **T3** cabecera con iconos, subrayado activo y botón de tema; **T4** capas del mapa en un desplegable sobre el mapa (sin franja superior); **T5** Inicio como centro de operaciones; **T6** Crear misión en secciones, barra de acciones en el flujo (ya no tapa campos); **T7** detalle de ruta en una fila y editor con «Guardar versión» + desplegable; **T8** Rutas con «Nueva ruta ▾», búsqueda con icono y tarjetas compactas, Generar en secciones; **T9** detalle de misión con una acción del ciclo + «Más», «⋯» por ruta y por punto, «Añadir punto ▾» y exportar/generar en el menú de la sección (columna de la ruta fija al desplazar la tabla); **T10** limpieza de ayudas, CSS sin uso y demostración. **Desviaciones:** el menú se coloca respecto a la ventana (`position: fixed`) para que no lo recorte una tabla con desplazamiento, y se cierra al desplazar; se conserva como nota de una línea el aviso de que las rutas generadas son propuestas; la tabla de rutas de la misión sigue desplazándose de lado (12 columnas) con la columna de la ruta fija. Dependencias nuevas: ninguna |
 
+### Issue · Nombre de las rutas y desvincular de la misión (fuera de la hoja de ruta) · S–M
+
+> **No es un hito nuevo de v1 ni revierte ninguna regla.** Petición del usuario del 2026-11-21: las rutas generadas sin nombre se llamaban todas «Ruta generada N» y no se podían renombrar, y quitar una ruta de la misión existía pero no se encontraba. Plan y tareas en `specs/issue-rutas-nombre-y-desvincular/` (rama `hito/issue-rutas-nombre`, desde `hito/UI-simplificacion`, ocho tareas).
+
+| | |
+|---|---|
+| **Demostración** | `rutas-nombre-demo.spec.ts`, en escritorio y a 375 px (francés solo con teclado): generar desde una misión con el nombre propuesto del origen (vacío no deja generar) → «<origen> 1», «<origen> 2»; renombrar desde la fila de la misión y desde el detalle; desde «Usada en» del detalle, **Quitar de la misión** → archivar → eliminar en la lista de archivadas; una misión cerrada no ofrece quitar en ningún sitio |
+| **Alcance** | RF-501 (nombre obligatorio), RF-512 (renombrar; quitar desde «Usada en»), RF-513; INV-01, INV-04 (renombrar no toca versiones), INV-11, INV-16. Decisiones D-N1 a D-N8 del plan |
+| **Operaciones (1 nueva, 2 cambian)** | `updateRoute` (`PATCH /routes/{routeId}`, `{ name }`, 200 `RouteDetail`, coordinador, auditada, `INVALID_STATE_TRANSITION` si está archivada, `x-milestone: H2`): 98 en el registro, **60 montadas**. `generateRoutes`: `namePrefix` obligatorio. `getRoute`: `usedIn[].missionRouteId` |
+| **Salida** | Contratos con 98 operaciones; `test:api` con renombrar (auditoría `route_renamed`, versiones intactas, roles, aislamiento, archivada) y generar sin nombre rechazado; web sin poder generar sin nombre y con «Quitar de la misión» solo en misiones abiertas; E2E entero en verde |
+| **Fuera** | Renombrar rutas archivadas, quitar de una misión cerrada, renombrar o quitar en lote, nombres únicos, renombrar automáticamente las «Ruta generada N» que ya existen (se renombran a mano), cambios en la base de datos |
+
 ### H6 · Voluntariado, cierre con asistencia, historial y privacidad · M
 
 **Objetivo:** el ciclo completo de una misión con personas.
@@ -303,6 +315,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.14 | 2026-11-21 | Cambio de alcance (nombre de las rutas y desvincular): subsección nueva en la sección 3, tras `UI-simplificacion`. Nombre obligatorio al generar, propuesto con el del punto de inicio; `updateRoute` para renombrar; quitar de la misión desde «Usada en» del detalle de la ruta. Sin cambios en la base de datos ni en las reglas |
 | 0.13 | 2026-11-13 | Cambio de alcance (issue #18): tarjeta del tiempo simple con vista de detalle. Nueva subsección «Issue #18» en la sección 3, tras la «Issue #17»: tres iconos por tramo del día, temperatura y viento; sin contrato ni operaciones nuevas |
 | 0.12 | 2026-11-13 | Cambio de alcance (issue #17): eliminar rutas archivadas y sin misión. Nueva subsección «Issue #17» en la sección 3, tras `UI-rediseno`, con el protocolo quitar → archivar → eliminar, la operación `deleteRoute` (97 en el registro, 59 montadas), la migración 0013 y lo construido en T1 a T5. Revierte la regla «las rutas no se borran» (constitución, `CLAUDE.md`, RN-14, INV-04, INV-07) |
 | 0.11 | 2026-11-06 | `UI-rediseno` (sección 3) al día tras construirlo (T10): fila «Tal como se construyó» con los temas, el arranque sin destello, el mapa que sigue al tema, los anchos, el alto del mapa de Crear misión, la accesibilidad, las pruebas (web 788, E2E 110), el tamaño del bundle, las desviaciones y lo pendiente del usuario (mapa oscuro real y `forced-colors` en Windows). El lector de pantalla y los botones de zoom siguen en H7 |
