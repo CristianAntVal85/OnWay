@@ -2,7 +2,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
-import { admin, apiError, chooseMenuItem, json, menuItemNames, org, renderApp, sessionServer, sessionUser, type Call } from './support';
+import { admin, apiError, openMenu, chooseMenuItem, json, menuItemNames, org, renderApp, sessionServer, sessionUser, type Call } from './support';
 
 const MORE = es.common.more;
 const EXPORT = es.common.export;
@@ -153,7 +153,7 @@ describe('detalle de ruta: datos y estados', () => {
   it('en francés los textos salen en francés', async () => {
     const { user } = setup({}, { language: 'fr' });
     expect(await screen.findByRole('heading', { level: 2, name: fr.routeDetail.versions.title })).toBeTruthy();
-    expect(await menuItemNames(user, fr.common.more)).toEqual([fr.routeDetail.actions.rename, fr.routeDetail.actions.duplicate, fr.routeDetail.actions.archive]);
+    expect(await menuItemNames(user, fr.common.more)).toEqual([fr.routeDetail.actions.rename, fr.routeDetail.actions.continue, fr.routeDetail.actions.duplicate, fr.routeDetail.actions.archive]);
   });
 });
 
@@ -299,6 +299,12 @@ describe('validar, derivar y archivar (coordinador)', () => {
     expect(screen.getByRole('link', { name: 'Deriva de «Senda del Circo» (versión 2)' })).toBeTruthy();
   });
 
+  it('«Continuar a mano» está en «Más» y lleva a la vista con la versión que se ve (D-P4)', async () => {
+    const { user } = setup();
+    const list = await openMenu(user, MORE);
+    expect(within(list).getByRole('menuitem', { name: T.actions.continue }).getAttribute('href')).toMatch(new RegExp(`^/routes/${ROUTE}/continue\\?base=`));
+  });
+
   it('cambiar nombre está en «Más», pide un nombre, envía updateRoute y enseña el nombre nuevo (RF-512)', async () => {
     let renamed = false;
     const { user, calls } = setup({
@@ -308,7 +314,7 @@ describe('validar, derivar y archivar (coordinador)', () => {
       },
       [`GET /routes/${ROUTE}`]: () => json(200, detail(renamed ? { name: 'Collado Norte' } : {})),
     });
-    expect(await menuItemNames(user, MORE)).toEqual([T.actions.rename, T.actions.duplicate, T.actions.archive]);
+    expect(await menuItemNames(user, MORE)).toEqual([T.actions.rename, T.actions.continue, T.actions.duplicate, T.actions.archive]);
     await chooseMenuItem(user, MORE, T.actions.rename);
     const dialog = await screen.findByRole('dialog', { name: T.rename.title });
     const name = within(dialog).getByLabelText(T.rename.nameLabel);

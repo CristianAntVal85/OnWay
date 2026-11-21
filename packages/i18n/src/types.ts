@@ -627,7 +627,7 @@ export interface Messages {
       removeBusy: string;
       removeDone: string;
     };
-    actions: { validate: string; duplicate: string; rename: string; archive: string; edit: string; exportGpx: string; exportKml: string; exporting: string; exportError: string };
+    actions: { validate: string; duplicate: string; rename: string; continue: string; archive: string; edit: string; exportGpx: string; exportKml: string; exporting: string; exportError: string };
     validate: { title: string; description: string; warning: string; acknowledge: string; confirm: string; working: string; cancel: string; needsAcknowledge: string; immutable: string };
     derive: { title: string; description: string; nameLabel: string; nameRequired: string; confirm: string; working: string; cancel: string };
     rename: { title: string; description: string; nameLabel: string; nameRequired: string; confirm: string; working: string; cancel: string; done: string };
@@ -654,6 +654,24 @@ export interface Messages {
     changeFile: string;
     mapLabel: string;
     mission: { notice: string; origin: string; noOrigin: string; closed: string; back: string; added: string; loading: string };
+  };
+  routeContinue: {
+    title: string;
+    mapLabel: string;
+    baseLabel: string;
+    keptLabel: string;
+    droppedLabel: string;
+    handLabel: string;
+    cutLabel: string;
+    cutTitle: string;
+    keepLabel: string;
+    noCut: string;
+    kept: string;
+    cutTooFar: string;
+    handTitle: string;
+    handCount: string;
+    tooMany: string;
+    savedDraft: string;
   };
   routeEditor: {
     paint: string;
@@ -745,6 +763,7 @@ export interface Messages {
     unavailable: { mark: string; marked: string; reactivate: string; reactivated: string };
     remove: { action: string; confirm: string; yes: string; no: string; busy: string; done: string };
     rename: { action: string };
+    continue: { action: string };
     export: { gpx: string; kml: string; busy: string; nothing: string; fileName: string };
     profiles: { title: string; forRoute: string };
     add: {

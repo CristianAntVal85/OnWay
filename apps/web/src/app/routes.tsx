@@ -19,6 +19,7 @@ import { ImportRoutePage } from '../pages/import-route-page';
 import { RegisterPage } from '../pages/register-page';
 import { ResetPasswordPage } from '../pages/reset-password-page';
 import { RouteDetailPage } from '../pages/route-detail-page';
+import { RouteContinuePage } from '../pages/route-continue-page';
 import { RouteEditorPage } from '../pages/route-editor-page';
 import { RoutesPage } from '../pages/routes-page';
 import { WaitingPage } from '../pages/waiting-page';
@@ -108,6 +109,14 @@ export function AppRoutes() {
                 element={
                   <RoleGate route="createRoute">
                     <RouteEditorPage mode="edit" />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={`${PATHS.routes}/:routeId/continue`}
+                element={
+                  <RoleGate route="createRoute">
+                    <RouteContinuePage />
                   </RoleGate>
                 }
               />

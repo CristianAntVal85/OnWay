@@ -93,7 +93,7 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
   - Hecho cuando: las pruebas están en verde.
   - Commit: `feat(issue-draw-route): T6 draw a route from the mission, from the origin to the target`.
 
-- [ ] **T7. Web: «Continuar a mano».** RF-505, RF-503; D-P4, D-P5, D-P6.
+- [x] **T7. Web: «Continuar a mano».** RF-505, RF-503; D-P4, D-P5, D-P6.
   - Pruebas primero (`apps/web/test/route-continue.test.tsx`, nuevo):
     - carga la versión base;
     - un toque cerca de la línea fija el corte y muestra los km conservados;

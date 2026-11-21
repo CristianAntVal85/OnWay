@@ -124,6 +124,8 @@ export function RouteDetailPage() {
 
   const moreItems: MenuItem[] = [
     ...(archived ? [] : [{ id: 'rename', label: t('routeDetail.actions.rename'), icon: 'pencil' as const, onSelect: () => setDialog('rename') }]),
+    // Continuar a mano (D-P4): desde la versión que se está viendo, hasta un corte, y desde ahí en línea recta.
+    ...(archived || !shown ? [] : [{ id: 'continue', label: t('routeDetail.actions.continue'), icon: 'route' as const, to: `${routePath(routeId)}/continue?base=${shown.id}` }]),
     { id: 'duplicate', label: t('routeDetail.actions.duplicate'), icon: 'copy', onSelect: () => setDialog('derive') },
     ...(archived ? [] : [{ id: 'archive', label: t('routeDetail.actions.archive'), icon: 'archive' as const, danger: true, onSelect: () => setDialog('archive') }]),
   ];

@@ -4,7 +4,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
-import { admin, apiError, chooseMenuItem, json, menuItemNames, renderApp, sessionServer, sessionUser, type Call } from './support';
+import { admin, apiError, openMenu, chooseMenuItem, json, menuItemNames, renderApp, sessionServer, sessionUser, type Call } from './support';
 
 interface FakeMapProps {
   routes?: readonly { id: string; name: string; tone: string }[];
@@ -443,6 +443,14 @@ describe('exportar las rutas de la misión (RF-508, RF-603)', () => {
     await within(section).findByText(R.empty);
     await user.click(within(section).getByRole('button', { name: R.more }));
     expect(screen.getByRole('menuitem', { name: es.routeEditor.paint }).getAttribute('href')).toBe(`/routes/draw?mission=${MISSION_ID}`);
+  });
+
+  it('el «⋯» de cada fila lleva a «Continuar a mano» desde la versión fijada, con la misión (D-P4)', async () => {
+    const { user } = setup([row(1, 'Senda del Circo')]);
+    const line = await rowOf('Senda del Circo');
+    const list = await openMenu(user, ACTIONS('Senda del Circo'), line);
+    const item = within(list).getByRole('menuitem', { name: R.continue.action });
+    expect(item.getAttribute('href')).toBe(`/routes/${row(1, 'x').routeId}/continue?base=${row(1, 'x').pinned.versionId}&mission=${MISSION_ID}`);
   });
 
   it('sin origen, «Pintar ruta» y «Generar rutas» están desactivados', async () => {

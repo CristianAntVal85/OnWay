@@ -29,3 +29,4 @@ export {
   type MarkerKind,
 } from './types.js';
 export { editReducer, initialEdit, nearestSegment, simplifyVertices, type EditAction, type EditState, type Vertex } from './edit.js';
+export { MAX_CUT_OFFSET_M, alongRoute, cutAtDistance, cutAtPoint } from './cut.js';

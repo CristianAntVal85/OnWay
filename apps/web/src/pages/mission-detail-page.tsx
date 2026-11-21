@@ -92,7 +92,7 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
   const [importing, setImporting] = useState(false);
   // Aviso de lo último guardado, junto a lo que se ha tocado (cabecera o puntos); las regiones `status` existen siempre para que se anuncie.
   // Si se llega desde «Duplicar», la copia lo anuncia (la navegación lleva el nombre del original).
-  const arrival = useLocation().state as { duplicatedFrom?: string; routeAdded?: string; routeDrawn?: string } | null;
+  const arrival = useLocation().state as { duplicatedFrom?: string; routeAdded?: string; routeDrawn?: string; versionDraft?: { name: string; number: number } } | null;
   const [saved, setSaved] = useState<{ area: 'head' | 'points'; text: string } | null>(
     arrival?.duplicatedFrom
       ? { area: 'head', text: t('missionDetail.lifecycle.duplicated', { name: arrival.duplicatedFrom }) }
@@ -100,7 +100,9 @@ function MissionView({ mission, locale, organizationCountry, elevationLookup, re
         ? { area: 'head', text: t('routeImport.mission.added', { name: arrival.routeAdded }) }
         : arrival?.routeDrawn
           ? { area: 'head', text: t('routeEditor.mission.added', { name: arrival.routeDrawn }) }
-          : null,
+          : arrival?.versionDraft
+            ? { area: 'head', text: t('routeContinue.savedDraft', arrival.versionDraft) }
+            : null,
   );
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const [focusId, setFocusId] = useState<string | null>(null);

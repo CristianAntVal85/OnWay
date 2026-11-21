@@ -12,7 +12,7 @@ import { ElevationProfile } from '../library/elevation-profile';
 import { saveBlob } from '../library/download';
 import { formatKm } from '../library/format';
 import { RoadMix } from '../library/road-mix';
-import { PATHS } from '../nav/navigation';
+import { PATHS, routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { missionChangedMeanwhile, writeFailureMessage } from './errors';
 import { formatDate } from './format';
@@ -309,6 +309,12 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
                 onSelect: () => availability.mutate(unavailable ? 'added' : 'unavailable'),
               },
               { id: 'rename', label: t('missionRoutes.rename.action'), icon: 'pencil' as const, onSelect: () => setRenaming(true) },
+              {
+                id: 'continue',
+                label: t('missionRoutes.continue.action'),
+                icon: 'route' as const,
+                to: `${routePath(row.routeId)}/continue?base=${row.pinned.versionId}&mission=${missionId}`,
+              },
               { id: 'remove', label: t('missionRoutes.remove.action'), icon: 'trash' as const, danger: true, onSelect: () => onConfirm('remove') },
             ]}
           />

@@ -7,6 +7,7 @@ import { RoadMix } from '../library/road-mix';
 import { Dialog } from '../components/dialog';
 import { Icon } from '../components/icon';
 import { TextField } from '../components/text-field';
+import { VertexList } from '../library/vertex-list';
 import { Menu } from '../components/menu';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
@@ -65,8 +66,6 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
   const [nameMissing, setNameMissing] = useState(false);
   const [asNew, setAsNew] = useState(false);
   const [simplified, setSimplified] = useState(false);
-  const [coordinateError, setCoordinateError] = useState<number | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
   // Al dibujar, los puntos se unen en línea recta salvo que se pida unirlos por los caminos (H3): dibujar a mano se usa cuando el
   // camino no está en la red (D-P2). Al editar una versión, los vértices se guardan tal cual.
   const [snap, setSnap] = useState(false);
@@ -172,19 +171,6 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
   if (editing && (route.isError || base.isError)) return <ErrorState error={route.error ?? base.error} onRetry={() => void (route.isError ? route.refetch() : base.refetch())} />;
   // Una ruta archivada no se edita y una misión cerrada no admite rutas nuevas (INV-11): solo se mira.
   const archived = (editing && route.data?.status === 'archived') || missionClosed;
-
-  const commit = (index: number, axis: 0 | 1, text: string) => {
-    const value = Number(text.replace(',', '.'));
-    const limit = axis === 0 ? 180 : 90;
-    if (text.trim() === '' || !Number.isFinite(value) || Math.abs(value) > limit) {
-      setCoordinateError(index);
-      return;
-    }
-    setCoordinateError(null);
-    const current = state.vertices[index]!;
-    if (current[axis] === value) return;
-    dispatch({ type: 'move', index, point: axis === 0 ? [value, current[1]] : [current[0], value] });
-  };
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -340,71 +326,7 @@ export function RouteEditorPage({ mode }: { mode: 'draw' | 'edit' }) {
             {t('routeEditor.verticesCount', { count: total })} · {state.selected === null ? t('routeEditor.noneSelected') : t('routeEditor.selectedVertex', { n: state.selected + 1 })}
           </p>
 
-          {total > 0 && (
-            <section aria-labelledby="vertices-title">
-              <h2 id="vertices-title">{t('routeEditor.verticesTitle')}</h2>
-              <div className="vertex-scroll">
-                <table className="vertex-table">
-                  <tbody>
-                    {state.vertices.map(([lon, lat], index) => (
-                      <tr key={`${index}-${lon}-${lat}`} data-selected={state.selected === index || undefined}>
-                        <th scope="row">
-                          <button
-                            type="button"
-                            className="button-link"
-                            aria-pressed={state.selected === index}
-                            onClick={() => dispatch({ type: 'select', index: state.selected === index ? null : index })}
-                          >
-                            {index + 1}
-                          </button>
-                        </th>
-                        <td>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            aria-label={t('routeEditor.latLabel', { n: index + 1 })}
-                            aria-invalid={coordinateError === index || undefined}
-                            value={drafts[`${index}:1`] ?? String(lat)}
-                            onChange={(event) => setDrafts((previous) => ({ ...previous, [`${index}:1`]: event.target.value }))}
-                            onBlur={(event) => {
-                              commit(index, 1, event.target.value);
-                              setDrafts((previous) => Object.fromEntries(Object.entries(previous).filter(([key]) => key !== `${index}:1`)));
-                            }}
-                            onKeyDown={(event) => event.key === 'Enter' && (event.preventDefault(), event.currentTarget.blur())}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            aria-label={t('routeEditor.lonLabel', { n: index + 1 })}
-                            aria-invalid={coordinateError === index || undefined}
-                            value={drafts[`${index}:0`] ?? String(lon)}
-                            onChange={(event) => setDrafts((previous) => ({ ...previous, [`${index}:0`]: event.target.value }))}
-                            onBlur={(event) => {
-                              commit(index, 0, event.target.value);
-                              setDrafts((previous) => Object.fromEntries(Object.entries(previous).filter(([key]) => key !== `${index}:0`)));
-                            }}
-                            onKeyDown={(event) => event.key === 'Enter' && (event.preventDefault(), event.currentTarget.blur())}
-                          />
-                        </td>
-                        <td>
-                          <button type="button" className="button button-secondary" aria-label={t('routeEditor.removeVertex', { n: index + 1 })} onClick={() => dispatch({ type: 'remove', index })}>
-                            ×
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {coordinateError !== null && (
-                <p className="field-error" role="alert">
-                  {t('routeEditor.invalidCoordinates')}
-                </p>
-              )}
-            </section>
-          )}
+          <VertexList vertices={state.vertices} selected={state.selected} dispatch={dispatch} />
 
           {!enough && <p className="form-note">{t('routeEditor.needTwo')}</p>}
           {failure && (
