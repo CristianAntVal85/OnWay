@@ -43,7 +43,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Hecho cuando: las pruebas nuevas en verde contra PostGIS real, con AC-02 con 60 montadas.
   - Commit: `feat(issue-route-names): T4 add the updateRoute operation`.
 
-- [ ] **T5. Cambiar nombre en la web.** RF-512; D-N4.
+- [x] **T5. Cambiar nombre en la web.** RF-512; D-N4.
   - Pruebas primero:
     - `apps/web/test/route-detail.test.tsx`: «Cambiar nombre» en «Más ⋯» solo para quien escribe y con la ruta no archivada; el diálogo pone el foco en el campo, no guarda vacío, guarda con `updateRoute` y muestra el nombre nuevo; error del servidor visible;
     - `apps/web/test/mission-routes.test.tsx`: «Cambiar nombre» en el «⋯» de la fila; no aparece con la misión cerrada ni para el administrador.

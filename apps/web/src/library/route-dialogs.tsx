@@ -140,6 +140,74 @@ export function DeriveDialog({ routeId, versionId, versionNumber, defaultName, o
   );
 }
 
+/**
+ * Cambiar el nombre de una ruta (RF-512, `updateRoute`). El nombre es de la ruta, no de la versión: no crea versión y lo ven igual las
+ * misiones que la usan. Al guardar se recargan el detalle, la biblioteca y las misiones.
+ */
+export function RenameDialog({ routeId, currentName, onClose, onRenamed }: Common & { currentName: string; onRenamed?: (name: string) => void }) {
+  const { t } = useTranslation();
+  const api = useApi();
+  const queryClient = useQueryClient();
+  const [name, setName] = useState(currentName);
+  const [missing, setMissing] = useState(false);
+  const rename = useMutation({
+    mutationFn: (value: string) => api.updateRoute({ params: { routeId }, body: { name: value } }),
+    onSuccess: async (detail) => {
+      await queryClient.invalidateQueries({ queryKey: ['route', routeId] });
+      void queryClient.invalidateQueries({ queryKey: ['routes'] });
+      void queryClient.invalidateQueries({ queryKey: ['missions'] });
+      onClose();
+      onRenamed?.(detail.name);
+    },
+  });
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    const value = name.trim();
+    if (!value) {
+      setMissing(true);
+      return;
+    }
+    rename.mutate(value);
+  };
+  return (
+    <Dialog title={t('routeDetail.rename.title')} description={t('routeDetail.rename.description')} onClose={() => !rename.isPending && onClose()}>
+      <form onSubmit={submit} noValidate>
+        <div className="field">
+          <label htmlFor="rename-name">{t('routeDetail.rename.nameLabel')}</label>
+          <input
+            id="rename-name"
+            data-autofocus
+            type="text"
+            maxLength={160}
+            required
+            value={name}
+            aria-invalid={missing || undefined}
+            aria-describedby={missing ? 'rename-name-error' : undefined}
+            onChange={(event) => {
+              setName(event.target.value);
+              setMissing(false);
+            }}
+          />
+          {missing && (
+            <p id="rename-name-error" className="field-error" role="alert">
+              {t('routeDetail.rename.nameRequired')}
+            </p>
+          )}
+        </div>
+        {rename.isError && <p role="alert">{errorMessage(t, rename.error)}</p>}
+        <div className="dialog-actions">
+          <button type="submit" className="button button-primary" disabled={rename.isPending}>
+            {rename.isPending ? t('routeDetail.rename.working') : t('routeDetail.rename.confirm')}
+          </button>
+          <button type="button" className="button button-secondary" disabled={rename.isPending} onClick={onClose}>
+            {t('routeDetail.rename.cancel')}
+          </button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
 /** Archivar: si hay misiones sin cerrar que la usan, las lista (`ROUTE_IN_USE`). */
 export function ArchiveDialog({ routeId, onClose }: Common) {
   const { t } = useTranslation();

@@ -14,7 +14,7 @@ import { saveBlob } from '../library/download';
 import { ElevationProfile } from '../library/elevation-profile';
 import { RoadMix } from '../library/road-mix';
 import { formatKm } from '../library/format';
-import { ArchiveDialog, DeriveDialog, ValidateDialog } from '../library/route-dialogs';
+import { ArchiveDialog, DeriveDialog, RenameDialog, ValidateDialog } from '../library/route-dialogs';
 import { MapView, type MapRoute } from '../map';
 import { errorMessage } from '../i18n/error-message';
 import { formatDate, formatMeters } from '../missions/format';
@@ -22,7 +22,7 @@ import { PATHS, missionPath, routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { useCurrentUser } from '../session/session';
 
-type Dialogs = 'validate' | 'derive' | 'archive' | null;
+type Dialogs = 'validate' | 'derive' | 'rename' | 'archive' | null;
 
 /**
  * Detalle de una ruta (boceto 10, RF-502, RF-504, RF-506, RF-511, RF-516, RF-517, RF-519): mapa de la versión elegida, datos, perfil
@@ -121,6 +121,7 @@ export function RouteDetailPage() {
   const metrics = version.data?.metrics;
 
   const moreItems: MenuItem[] = [
+    ...(archived ? [] : [{ id: 'rename', label: t('routeDetail.actions.rename'), icon: 'pencil' as const, onSelect: () => setDialog('rename') }]),
     { id: 'duplicate', label: t('routeDetail.actions.duplicate'), icon: 'copy', onSelect: () => setDialog('derive') },
     ...(archived ? [] : [{ id: 'archive', label: t('routeDetail.actions.archive'), icon: 'archive' as const, danger: true, onSelect: () => setDialog('archive') }]),
   ];
@@ -340,6 +341,7 @@ export function RouteDetailPage() {
 
       {dialog === 'validate' && shown && <ValidateDialog routeId={routeId} versionId={shown.id} versionNumber={shown.number} onClose={() => setDialog(null)} />}
       {dialog === 'derive' && shown && <DeriveDialog routeId={routeId} versionId={shown.id} versionNumber={shown.number} defaultName={`${data.name} (2)`} onClose={() => setDialog(null)} />}
+      {dialog === 'rename' && <RenameDialog routeId={routeId} currentName={data.name} onClose={() => setDialog(null)} />}
       {dialog === 'archive' && <ArchiveDialog routeId={routeId} onClose={() => setDialog(null)} />}
     </>
   );

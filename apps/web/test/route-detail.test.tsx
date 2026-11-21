@@ -153,7 +153,7 @@ describe('detalle de ruta: datos y estados', () => {
   it('en francés los textos salen en francés', async () => {
     const { user } = setup({}, { language: 'fr' });
     expect(await screen.findByRole('heading', { level: 2, name: fr.routeDetail.versions.title })).toBeTruthy();
-    expect(await menuItemNames(user, fr.common.more)).toEqual([fr.routeDetail.actions.duplicate, fr.routeDetail.actions.archive]);
+    expect(await menuItemNames(user, fr.common.more)).toEqual([fr.routeDetail.actions.rename, fr.routeDetail.actions.duplicate, fr.routeDetail.actions.archive]);
   });
 });
 
@@ -297,6 +297,43 @@ describe('validar, derivar y archivar (coordinador)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Mi copia' })).toBeTruthy();
     expect(calls().find((c) => c.method === 'POST')!.body).toEqual({ name: 'Mi copia', fromVersionId: V2 });
     expect(screen.getByRole('link', { name: 'Deriva de «Senda del Circo» (versión 2)' })).toBeTruthy();
+  });
+
+  it('cambiar nombre está en «Más», pide un nombre, envía updateRoute y enseña el nombre nuevo (RF-512)', async () => {
+    let renamed = false;
+    const { user, calls } = setup({
+      [`PATCH /routes/${ROUTE}`]: () => {
+        renamed = true;
+        return json(200, detail({ name: 'Collado Norte' }));
+      },
+      [`GET /routes/${ROUTE}`]: () => json(200, detail(renamed ? { name: 'Collado Norte' } : {})),
+    });
+    expect(await menuItemNames(user, MORE)).toEqual([T.actions.rename, T.actions.duplicate, T.actions.archive]);
+    await chooseMenuItem(user, MORE, T.actions.rename);
+    const dialog = await screen.findByRole('dialog', { name: T.rename.title });
+    const name = within(dialog).getByLabelText(T.rename.nameLabel);
+    expect(name).toHaveProperty('value', 'Senda del Circo');
+    await waitFor(() => expect(document.activeElement).toBe(name));
+    await user.clear(name);
+    await user.type(name, '   ');
+    await user.click(within(dialog).getByRole('button', { name: T.rename.confirm }));
+    expect(within(dialog).getByText(T.rename.nameRequired)).toBeTruthy();
+    expect(calls().filter((c) => c.method === 'PATCH')).toHaveLength(0);
+    await user.clear(name);
+    await user.type(name, ' Collado Norte ');
+    await user.click(within(dialog).getByRole('button', { name: T.rename.confirm }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Collado Norte' })).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(calls().find((c) => c.method === 'PATCH')!.body).toEqual({ name: 'Collado Norte' });
+  });
+
+  it('cambiar nombre: un error del servidor se dice y el diálogo sigue abierto', async () => {
+    const { user } = setup({ [`PATCH /routes/${ROUTE}`]: () => apiError(409, 'INVALID_STATE_TRANSITION') });
+    await chooseMenuItem(user, MORE, T.actions.rename);
+    const dialog = await screen.findByRole('dialog', { name: T.rename.title });
+    await user.click(within(dialog).getByRole('button', { name: T.rename.confirm }));
+    expect(await within(dialog).findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: T.rename.title })).toBeTruthy();
   });
 
   it('archivar con ROUTE_IN_USE enseña las misiones y no cierra el diálogo', async () => {

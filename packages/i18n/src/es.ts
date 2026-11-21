@@ -817,6 +817,7 @@ export const es: Messages = {
     actions: {
       validate: 'Validar',
       duplicate: 'Duplicar ruta',
+      rename: 'Cambiar nombre',
       archive: 'Archivar ruta',
       edit: 'Editar ruta',
       exportGpx: 'GPX',
@@ -843,6 +844,16 @@ export const es: Messages = {
       confirm: 'Crear copia',
       working: 'Creando…',
       cancel: 'Cancelar',
+    },
+    rename: {
+      title: 'Cambiar el nombre',
+      description: 'Cambia en la biblioteca y en las misiones que usan la ruta. Las versiones no cambian.',
+      nameLabel: 'Nombre de la ruta',
+      nameRequired: 'Escribe un nombre.',
+      confirm: 'Guardar nombre',
+      working: 'Guardando…',
+      cancel: 'Cancelar',
+      done: 'La ruta se llama ahora «{{name}}».',
     },
     archive: {
       title: 'Archivar la ruta',
@@ -987,6 +998,7 @@ export const es: Messages = {
       busy: 'Quitando…',
       done: '«{{name}}» ya no está en la misión. Sigue en la biblioteca.',
     },
+    rename: { action: 'Cambiar nombre' },
     export: {
       gpx: 'Exportar GPX',
       kml: 'Exportar KML',

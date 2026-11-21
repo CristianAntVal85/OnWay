@@ -817,6 +817,7 @@ export const fr: Messages = {
     actions: {
       validate: 'Valider',
       duplicate: 'Dupliquer l’itinéraire',
+      rename: 'Renommer',
       archive: 'Archiver l’itinéraire',
       edit: 'Modifier l’itinéraire',
       exportGpx: 'GPX',
@@ -843,6 +844,16 @@ export const fr: Messages = {
       confirm: 'Créer la copie',
       working: 'Création…',
       cancel: 'Annuler',
+    },
+    rename: {
+      title: 'Renommer l’itinéraire',
+      description: 'Le nom change dans la bibliothèque et dans les missions qui utilisent l’itinéraire. Les versions ne changent pas.',
+      nameLabel: 'Nom de l’itinéraire',
+      nameRequired: 'Saisissez un nom.',
+      confirm: 'Enregistrer le nom',
+      working: 'Enregistrement…',
+      cancel: 'Annuler',
+      done: 'L’itinéraire s’appelle désormais « {{name}} ».',
     },
     archive: {
       title: 'Archiver l’itinéraire',
@@ -987,6 +998,7 @@ export const fr: Messages = {
       busy: 'Retrait…',
       done: '« {{name}} » n’est plus dans la mission. Il reste dans la bibliothèque.',
     },
+    rename: { action: 'Renommer' },
     export: {
       gpx: 'Exporter en GPX',
       kml: 'Exporter en KML',

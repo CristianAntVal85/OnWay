@@ -6,7 +6,7 @@ import { ApiError, type OperationOutput } from '@onway/contracts/client';
 import { Icon } from '../components/icon';
 import { Menu, type MenuItem } from '../components/menu';
 import { ErrorState, LoadingState } from '../components/states';
-import { ValidateDialog } from '../library/route-dialogs';
+import { RenameDialog, ValidateDialog } from '../library/route-dialogs';
 import { errorMessage } from '../i18n/error-message';
 import { ElevationProfile } from '../library/elevation-profile';
 import { saveBlob } from '../library/download';
@@ -216,6 +216,7 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
   const queryClient = useQueryClient();
   const safe = useRef<HTMLButtonElement>(null);
   const [validating, setValidating] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const unavailable = row.status === 'unavailable';
   const newer = row.newerValidatedVersion;
   const km = (meters: number) => t('units.km', { value: formatKm(meters, locale) });
@@ -304,6 +305,7 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
                 icon: unavailable ? ('play' as const) : ('close' as const),
                 onSelect: () => availability.mutate(unavailable ? 'added' : 'unavailable'),
               },
+              { id: 'rename', label: t('missionRoutes.rename.action'), icon: 'pencil' as const, onSelect: () => setRenaming(true) },
               { id: 'remove', label: t('missionRoutes.remove.action'), icon: 'trash' as const, danger: true, onSelect: () => onConfirm('remove') },
             ]}
           />
@@ -339,6 +341,16 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
             onClose={() => setValidating(false)}
             onValidated={() => {
               void refresh().then(() => onDone(t('missionRoutes.validate.done', { name: row.name })));
+            }}
+          />
+        )}
+        {renaming && (
+          <RenameDialog
+            routeId={row.routeId}
+            currentName={row.name}
+            onClose={() => setRenaming(false)}
+            onRenamed={(name) => {
+              void refresh().then(() => onDone(t('routeDetail.rename.done', { name })));
             }}
           />
         )}
