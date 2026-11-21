@@ -4,7 +4,6 @@ import type { RoadMix, RouteMetrics, RouteSegment } from '@onway/contracts';
 import { computeMetrics, groupIntervals, labelIntervals, lengthM, prepareLine, type Position3D } from '@onway/geo';
 import { DomainError } from '../common/domain-error.js';
 import { ELEVATION_PROVIDER, type ElevationProvider } from '../geo/elevation.js';
-import type { EngineSegment } from '../routing/routing.js';
 
 /** Most vertices a measured route can have after `prepareLine` (about 1 800 km at 30 m): a guard for memory and time, not a rule of the domain. */
 export const MAX_MEASURED_VERTICES = 60_000;
@@ -31,10 +30,11 @@ export class RouteMeasurement {
   constructor(@Inject(ELEVATION_PROVIDER) private readonly elevation: ElevationProvider) {}
 
   /**
-   * `stretches` are the road types the routing engine gave to its own vertices (D-H3-04); they are carried to the prepared line by
-   * share of the length. Without them (an imported, drawn or edited line) the route is one `unknown` stretch (P1 of H2).
+   * `stretches` are the road types of the input vertices: the ones the routing engine gave to its own vertices (D-H3-04), or, for a
+   * route continued by hand, the kept part's and `offtrail` for the hand-drawn part. They are carried to the prepared line by share of
+   * the length. Without them (an imported, drawn or edited line) the route is one `unknown` stretch (P1 of H2).
    */
-  async measure(vertices: readonly (readonly number[])[], stretches?: readonly EngineSegment[]): Promise<MeasuredPath> {
+  async measure(vertices: readonly (readonly number[])[], stretches?: readonly RoadStretch[]): Promise<MeasuredPath> {
     const prepared = prepareLine(vertices);
     if (prepared.length < 2 || !(lengthM(prepared) > 0)) {
       throw new DomainError('VALIDATION_FAILED', 'Request validation failed', {
@@ -78,3 +78,10 @@ export class RouteMeasurement {
 }
 
 type RoadTypeValue = z.infer<typeof RouteSegment>['roadType'];
+
+/** A run of input vertices, `fromIndex` to `toIndex` included, with its road type. The engine's segments are one kind of it. */
+export interface RoadStretch {
+  fromIndex: number;
+  toIndex: number;
+  roadType: RoadTypeValue;
+}

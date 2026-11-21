@@ -43,7 +43,7 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
   - Hecho cuando: las pruebas del contrato están en verde, el cliente generado compila en la web y la API, y el doc 06 tiene la nota nueva.
   - Commit: `feat(issue-draw-route): T3 accept continueFrom in createRouteVersion`.
 
-- [ ] **T4. API: continuar una versión a mano.** RF-503, RF-505, RF-516; INV-01, INV-04, INV-16; regla 6; D-P5, D-P7, D-P8.
+- [x] **T4. API: continuar una versión a mano.** RF-503, RF-505, RF-516; INV-01, INV-04, INV-16; regla 6; D-P5, D-P7, D-P8.
   - Pruebas primero, contra base real (`apps/api/test/api/routes-continue.test.ts`, nuevo, con los ayudantes de `routes-writes.test.ts`). Base: una ruta **generada** con varios tramos (como en `generate-routes.test.ts`, con el motor falso) y una **dibujada** en línea recta.
     - Corte en mitad y 3 puntos: 201, versión N+1 `edited` con `manuallyModified`.
     - La geometría empieza igual que la base hasta el corte y acaba en el último punto.

@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { CreateRouteRequest, CreateVersionRequest, DeriveRouteRequest, OperationOutput, ValidateVersionRequest } from '@onway/contracts';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
+import { projectOnLine } from '@onway/geo';
 import { AuditWriter } from '../audit/audit.writer.js';
 import { assertCanLink, pinRoute } from '../mission-routes/mission-route-links.js';
 import { DomainError } from '../common/domain-error.js';
@@ -13,7 +14,7 @@ import { viewerOf } from '../missions/mission-support.js';
 import { translateRouteWriteError } from './errors.js';
 import { readRouteDetail, readVersion } from './route-reads.js';
 import { ROUTING_PROVIDER, type EngineSegment, type RoutingProvider } from '../routing/routing.js';
-import { RouteMeasurement, type MeasuredPath } from './route-measurement.js';
+import { RouteMeasurement, type MeasuredPath, type RoadStretch } from './route-measurement.js';
 
 type CreateBody = z.infer<typeof CreateRouteRequest>;
 type VersionBody = z.infer<typeof CreateVersionRequest>;
@@ -42,6 +43,9 @@ function notYet(path: string, milestone: string): DomainError {
     issues: [{ path, code: 'not_available', message: `${path} arrives with ${milestone}` }],
   });
 }
+
+/** How far from the route a cut may fall (D-P7): beyond this, the coordinator did not mean the route. */
+const MAX_CUT_OFFSET_M = 200;
 
 const lineString = (coordinates: readonly (readonly number[])[]) => sql`ST_SetSRID(ST_GeomFromGeoJSON(${JSON.stringify({ type: 'LineString', coordinates })}::text), 4326)`;
 
@@ -133,8 +137,9 @@ export class RouteWrites {
     const route = await this.lockRoute(viewer.orgId, routeId);
     if (route.status === 'archived') throw new DomainError('INVALID_STATE_TRANSITION', 'An archived route is read-only');
     const base = await this.versionNumber(viewer.orgId, routeId, body.baseVersionId);
-    if (!body.geometry) throw notYet('continueFrom', 'the next task of issue-pintar-ruta');
-    const measured = await this.measurement.measure(body.geometry.coordinates);
+    // Continued by hand (issue-pintar-ruta): the kept part comes from the stored version, never from the client (rule 6).
+    const continued = body.continueFrom ? await this.continuedLine(viewer.orgId, body.baseVersionId, body.continueFrom) : null;
+    const measured = continued ? await this.measurement.measure(continued.vertices, continued.stretches) : await this.measurement.measure(body.geometry!.coordinates);
 
     const number = await this.nextNumber(routeId);
     const versionId = await this.insertVersion({
@@ -154,7 +159,7 @@ export class RouteWrites {
       routeId,
       action: 'route_version_created',
       actorUserId: viewer.userId,
-      detail: { name: route.name, versionNumber: number, baseVersionNumber: base },
+      detail: { name: route.name, versionNumber: number, baseVersionNumber: base, ...(continued ? { continued: true, keptDistanceM: Math.round(continued.keptDistanceM) } : {}) },
     });
     return { routeId, versionId, versionNumber: number, missionRouteId: null };
   }
@@ -405,6 +410,54 @@ export class RouteWrites {
   }
 
   // ---------- Pieces ----------
+
+  /**
+   * The line of a version continued by hand (D-P4, D-P5, D-P7): the stored version from its start to the vertex nearest to the cut,
+   * with the road types of its stored stretches, then the hand-drawn points in straight lines, `offtrail`. A cut more than
+   * `MAX_CUT_OFFSET_M` away from the route, or on its first vertex, keeps nothing worth continuing: `VALIDATION_FAILED`.
+   */
+  private async continuedLine(
+    orgId: string,
+    versionId: string,
+    continueFrom: NonNullable<VersionBody['continueFrom']>,
+  ): Promise<{ vertices: [number, number][]; stretches: RoadStretch[]; keptDistanceM: number }> {
+    const [version] = (await this.tx.execute(sql`SELECT ST_AsGeoJSON(geom)::json AS geometry FROM route_versions WHERE id = ${versionId} AND organization_id = ${orgId}`)).rows as {
+      geometry: { coordinates: number[][] };
+    }[];
+    if (!version) throw new DomainError('NOT_FOUND');
+    const base = version.geometry.coordinates.map(([lon, lat]) => [lon!, lat!] as [number, number]);
+    const cut = projectOnLine(base, [continueFrom.cutPoint.lon, continueFrom.cutPoint.lat]);
+    if (cut.offsetM > MAX_CUT_OFFSET_M || cut.index === 0) {
+      throw new DomainError('VALIDATION_FAILED', 'Request validation failed', {
+        issues: [
+          {
+            path: 'continueFrom.cutPoint',
+            code: cut.index === 0 ? 'at_start' : 'too_far',
+            message: cut.index === 0 ? 'the cut keeps nothing of the route' : `the cut is more than ${MAX_CUT_OFFSET_M} m away from the route`,
+          },
+        ],
+      });
+    }
+
+    // The stored stretches are consecutive pieces of the version's line that share their joining vertex.
+    const pieces = (await this.tx.execute(sql`SELECT road_type::text AS road_type, ST_NPoints(geom) AS points FROM route_segments WHERE version_id = ${versionId} ORDER BY position`)).rows as {
+      road_type: RoadStretch['roadType'];
+      points: number;
+    }[];
+    const kept: RoadStretch[] = [];
+    let start = 0;
+    for (const piece of pieces) {
+      const end = start + piece.points - 1;
+      if (start < cut.index) kept.push({ fromIndex: start, toIndex: Math.min(end, cut.index), roadType: piece.road_type });
+      start = end;
+    }
+    // If the pieces do not add up to the line (they always should), the kept part is not classified rather than wrongly classified.
+    const stretches: RoadStretch[] = start === base.length - 1 ? kept : [{ fromIndex: 0, toIndex: cut.index, roadType: 'unknown' }];
+
+    const vertices = [...base.slice(0, cut.index + 1), ...continueFrom.points.map(({ lat, lon }) => [lon, lat] as [number, number])];
+    stretches.push({ fromIndex: cut.index, toIndex: vertices.length - 1, roadType: 'offtrail' });
+    return { vertices, stretches, keptDistanceM: cut.distanceM };
+  }
 
   /** Takes the row lock of a route of the caller's organization (its writers go one at a time) or answers `NOT_FOUND`: another organization's route is not there (INV-01). */
   private async lockRoute(orgId: string, routeId: string): Promise<LockedRoute> {
