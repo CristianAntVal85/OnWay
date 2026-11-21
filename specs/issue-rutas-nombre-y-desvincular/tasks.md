@@ -80,7 +80,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Commit: `test(issue-route-names): T7 add the route name and unlink demonstration`.
   - *Hecho así:* `rutas-nombre-demo.spec.ts` con 5 pruebas por formato (escritorio y `mobile`), la de francés solo con teclado. `h3-engine-down.spec.ts` rellena el nombre. `ui-simplificacion-demo.spec.ts` (en T5) ya espera «Cambiar nombre» en «Más ⋯». E2E entero 138 de 138 con `CI=1` contra `onway-e2e` (4,1 min). Ojo: lanzar Playwright directamente, sin el script `e2e`, usa el `@onway/i18n` compilado anterior: hay que compilarlo antes.
 
-- [ ] **T8. Cierre.** Criterios del doc 07 §4.
+- [x] **T8. Cierre.** Criterios del doc 07 §4.
   - Archivos: `docs/07-plan-de-implementacion.md` (fila «Tal como se construyó»), `docs/estado.md` (≤ 30 líneas), `docs/historial.md`, `CLAUDE.md` (recuentos y la demostración nueva en la lista del E2E), `specs/issue-rutas-nombre-y-desvincular/tasks.md` (marcas y desviaciones).
   - Comprobación: `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test && pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`, y el E2E de T7.
   - Hecho cuando: todo en verde y los documentos al día; listo para `/sdd-validate`.

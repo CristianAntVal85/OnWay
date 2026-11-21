@@ -2,15 +2,17 @@
 
 Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya no sirva para decidir el siguiente paso se mueve a `docs/historial.md`. Sin recuentos de pruebas: se obtienen ejecutándolas. Repositorio: https://github.com/CristianAntVal85/OnWay.git
 
-Última actualización: 2026-11-15
+Última actualización: 2026-11-21
 
 ## Dónde estamos
 - MVP (H0 a H4), `H5-acceso` y `UI-rediseno` validados y fusionados en `main`.
 - Issues #17 y #18: implementadas y validadas, en una pull request conjunta.
-- `UI-simplificacion` (menos botones, menús, boceto de `docs/boteto-interface/`): T1 a T10 hechas en `hito/UI-simplificacion`, sin revisores todavía.
+- `UI-simplificacion` (menos botones, menús, boceto de `docs/boteto-interface/`, fondo topográfico): T1 a T10 hechas en `hito/UI-simplificacion`, sin revisores todavía.
+- Nombre de las rutas y desvincular (`specs/issue-rutas-nombre-y-desvincular/`): T1 a T8 hechas en `hito/issue-rutas-nombre` (sale de `hito/UI-simplificacion`), sin revisores todavía.
 
 ## Siguiente paso
 - Cerrar `UI-simplificacion`: el usuario mira la interfaz (`docker compose up --build --wait`), revisores `reviewer` y `reviewer-ui`, pull request.
+- Después, validar `hito/issue-rutas-nombre` (`/sdd-validate`: `reviewer`, `reviewer-ui`, `reviewer-security`, `reviewer-db`) y abrir su pull request tras la de `UI-simplificacion`.
 - Fusionar la pull request de las issues #17 y #18 (el CI no arranca por la facturación de GitHub).
 - Después: el resto de H5 (perfil, habilidades, equipos, usuarios, `changePassword`, `updateMe`) con `/sdd-plan`.
 
@@ -26,4 +28,3 @@ Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya n
 - Una sola organización en la demostración; no validar a mano la «Variante de la Pradera».
 - Una ruta archivada que quedó en una misión cerrada no se puede eliminar (D-I6).
 - Pruebas intermitentes: `test/unit/hgt.test.ts` (límite 5 s) y `h2-demo.spec.ts:352` (móvil).
-- Backlog tras el MVP: `docs/backlog-post-mvp.md`.
