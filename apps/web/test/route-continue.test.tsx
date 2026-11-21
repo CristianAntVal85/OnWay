@@ -120,6 +120,11 @@ describe('continuar a mano (D-P4)', () => {
     const km = screen.getByLabelText(/Conservar los primeros km/);
     await user.type(km, '0,5{Enter}');
     expect(await screen.findByText(/Se conservan 0,5 km/)).toBeTruthy();
+    // El campo enseña los km con la coma del idioma, como el resto de cifras
+    expect((km as HTMLInputElement).value).toMatch(/^0,\d{2}$/);
+    // Dentro de «Tramo a mano» (h2), la lista de puntos baja un nivel
+    pick(42.601, 0.61);
+    expect(await screen.findByRole('heading', { level: 3, name: E.verticesTitle })).toBeTruthy();
     expect(paint()?.getAttribute('aria-pressed')).toBe('true');
   });
 

@@ -128,7 +128,8 @@ export function RouteContinuePage() {
     event.preventDefault();
     if (ready && !save.isPending) save.mutate();
   };
-  const kmValue = kmDraft ?? (cut === null ? '' : (along[cut]! / 1000).toFixed(2));
+  // Con la coma o el punto del idioma, como el resto de cifras; al escribir se aceptan los dos.
+  const kmValue = kmDraft ?? (cut === null ? '' : new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false }).format(along[cut]! / 1000));
   const commitKm = (text: string) => {
     const km = Number(text.replace(',', '.'));
     if (text.trim() === '' || !Number.isFinite(km)) return setKmDraft(null);
@@ -229,7 +230,7 @@ export function RouteContinuePage() {
               <p role="status" className="selection-hint">
                 {t('routeContinue.handCount', { count: hand.vertices.length })}
               </p>
-              <VertexList vertices={hand.vertices} selected={hand.selected} dispatch={dispatch} />
+              <VertexList vertices={hand.vertices} selected={hand.selected} dispatch={dispatch} headingLevel={3} />
               {tooMany && (
                 <p className="field-error" role="alert">
                   {t('routeContinue.tooMany', { max: MAX_HAND_POINTS })}

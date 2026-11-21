@@ -440,7 +440,9 @@ export class RouteWrites {
     }
 
     // The stored stretches are consecutive pieces of the version's line that share their joining vertex.
-    const pieces = (await this.tx.execute(sql`SELECT road_type::text AS road_type, ST_NPoints(geom) AS points FROM route_segments WHERE version_id = ${versionId} ORDER BY position`)).rows as {
+    const pieces = (
+      await this.tx.execute(sql`SELECT road_type::text AS road_type, ST_NPoints(geom) AS points FROM route_segments WHERE version_id = ${versionId} AND organization_id = ${orgId} ORDER BY position`)
+    ).rows as {
       road_type: RoadStretch['roadType'];
       points: number;
     }[];

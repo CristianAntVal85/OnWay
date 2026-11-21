@@ -6,7 +6,19 @@ import type { EditAction, Vertex } from '../map';
  * La lista de vértices del editor (RF-505): la alternativa sin ratón al mapa. Cada vértice se elige, se escribe (latitud y longitud,
  * con validación del rango) y se borra. La usan dibujar, editar y continuar a mano.
  */
-export function VertexList({ vertices, selected, dispatch }: { vertices: readonly Vertex[]; selected: number | null; dispatch: Dispatch<EditAction> }) {
+export function VertexList({
+  vertices,
+  selected,
+  dispatch,
+  headingLevel = 2,
+}: {
+  vertices: readonly Vertex[];
+  selected: number | null;
+  dispatch: Dispatch<EditAction>;
+  /** Dentro de otra sección con su título (continuar a mano), la lista baja un nivel. */
+  headingLevel?: 2 | 3;
+}) {
+  const Heading = headingLevel === 3 ? 'h3' : 'h2';
   const { t } = useTranslation();
   const [coordinateError, setCoordinateError] = useState<number | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -27,7 +39,7 @@ export function VertexList({ vertices, selected, dispatch }: { vertices: readonl
   if (vertices.length === 0) return null;
   return (
     <section aria-labelledby="vertices-title">
-      <h2 id="vertices-title">{t('routeEditor.verticesTitle')}</h2>
+      <Heading id="vertices-title">{t('routeEditor.verticesTitle')}</Heading>
       <div className="vertex-scroll">
         <table className="vertex-table">
           <tbody>
