@@ -3,6 +3,7 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
 import { admin, apiError, chooseMenuItem, json, renderApp, sessionServer, sessionUser, type Call } from './support';
+import { MISSION_ID, allActions, mission, noActions } from './mission-fixtures';
 
 interface Editor {
   vertices: readonly (readonly [number, number])[];
@@ -13,13 +14,14 @@ interface Editor {
   onRemove: (i: number) => void;
   labelFor: (i: number) => string;
 }
-const map: { editor?: Editor; onPick?: (p: { lat: number; lon: number }) => void; routes?: { id: string; tone: string; line: unknown[] }[] } = {};
+const map: { editor?: Editor; onPick?: (p: { lat: number; lon: number }) => void; routes?: { id: string; tone: string; line: unknown[] }[]; markers?: { id: string; kind: string }[] } = {};
 vi.mock('../src/map', async () => {
   const edit = await vi.importActual<typeof import('../src/map/edit')>('../src/map/edit');
   return {
     MAP_LAYERS: [],
     ...edit,
-    MapView: (props: { editor?: Editor; onPick?: (p: { lat: number; lon: number }) => void; routes?: { id: string; tone: string; line: unknown[] }[] }) => {
+    MapView: (props: { editor?: Editor; onPick?: (p: { lat: number; lon: number }) => void; routes?: { id: string; tone: string; line: unknown[] }[]; markers?: { id: string; kind: string }[] }) => {
+      map.markers = props.markers;
       map.editor = props.editor;
       map.onPick = props.onPick;
       map.routes = props.routes;
@@ -214,6 +216,91 @@ describe('«Pintar ruta» (D-P1)', () => {
   it('en francés se llama «Tracer l’itinéraire»', async () => {
     setup('/routes/draw', {}, sessionUser({ locale: 'fr' }), 'fr');
     expect(await screen.findByRole('button', { name: fr.routeEditor.paint })).toBeTruthy();
+  });
+});
+
+describe('pintar desde una misión (D-P3, doc 02 §4.3-B)', () => {
+  const M = es.routeEditor.mission;
+  const ORIGIN_2 = { id: 'p2', kind: 'origin', name: 'Collado Norte', note: null, lat: 42.62, lon: 0.68, elevationM: 2300, position: 1 };
+  const draw = `/routes/draw?mission=${MISSION_ID}`;
+  const withMission = (overrides: Record<string, unknown> = {}, extra: Handlers = {}) =>
+    setup(draw, { [`GET /missions/${MISSION_ID}`]: () => json(200, mission({ actions: allActions, status: 'active', ...overrides })), ...extra });
+  const title = M.title.replace('{{name}}', mission().name);
+
+  it('empieza en el origen, enseña origen y objetivo, propone el nombre del origen y «Terminar en el objetivo» añade el objetivo', async () => {
+    const { user } = withMission();
+    await screen.findByRole('heading', { level: 1, name: title });
+    await waitFor(() => expect(map.editor?.vertices).toEqual([[0.65, 42.6]]));
+    expect(map.markers?.map((marker) => marker.kind)).toEqual(['origin', 'target']);
+    expect((screen.getByLabelText(new RegExp(T.nameLabel)) as HTMLInputElement).value).toBe('Refugio de la Renclusa');
+    pick(42.61, 0.6);
+    await user.click(screen.getByRole('button', { name: M.toTarget }));
+    expect(map.editor?.vertices).toEqual([
+      [0.65, 42.6],
+      [0.6, 42.61],
+      [0.1021, 42.6335],
+    ]);
+  });
+
+  it('con varios orígenes, cambiar de origen mueve el primer punto y el nombre propuesto', async () => {
+    const { user } = withMission({ points: [...mission().points, ORIGIN_2] });
+    await screen.findByRole('heading', { level: 1, name: title });
+    pick(42.61, 0.6);
+    await user.selectOptions(screen.getByLabelText(M.origin), 'p2');
+    await waitFor(() => expect(map.editor?.vertices[0]).toEqual([0.68, 42.62]));
+    expect(map.editor?.vertices).toHaveLength(2);
+    expect((screen.getByLabelText(new RegExp(T.nameLabel)) as HTMLInputElement).value).toBe('Collado Norte');
+  });
+
+  it('el nombre es obligatorio; al guardar se añade a la misión con su origen y se vuelve a ella avisando', async () => {
+    const { user, calls } = withMission(
+      {},
+      {
+        'POST /routes': () => json(201, { ...created, missionRouteId: '88888888-aaaa-4aaa-8aaa-888888888888' }),
+        [`GET /missions/${MISSION_ID}/routes`]: () => json(200, { items: [] }),
+        [`GET /missions/${MISSION_ID}/history`]: () => json(200, { items: [], page: 1, pageSize: 20, total: 0 }),
+        'GET /geo/elevation': () => json(200, { lat: 42.6, lon: 0.65, elevationM: 2140 }),
+      },
+    );
+    await screen.findByRole('heading', { level: 1, name: title });
+    pick(42.61, 0.6);
+    const field = screen.getByLabelText(new RegExp(T.nameLabel));
+    await user.clear(field);
+    await user.click(screen.getByRole('button', { name: T.save }));
+    expect(await screen.findByText(T.nameRequired)).toBeTruthy();
+    expect(posts(calls())).toHaveLength(0);
+    await user.type(field, 'Por el barranco');
+    await user.click(screen.getByRole('button', { name: T.save }));
+    await waitFor(() => expect(posts(calls())).toHaveLength(1));
+    expect(posts(calls())[0]!.body).toMatchObject({ source: 'drawn', name: 'Por el barranco', snapToPaths: false, addToMission: { missionId: MISSION_ID, originPointId: 'p1' } });
+    expect(await screen.findByText(M.added.replace('{{name}}', 'Por el barranco'))).toBeTruthy();
+  });
+
+  it('si la misión se cerró mientras tanto, el error se dice y no se pierde lo pintado', async () => {
+    const { user } = withMission({}, { 'POST /routes': () => apiError(409, 'MISSION_CLOSED') });
+    await screen.findByRole('heading', { level: 1, name: title });
+    pick(42.61, 0.6);
+    await user.click(screen.getByRole('button', { name: T.save }));
+    expect(await screen.findByText(es.errors.MISSION_CLOSED)).toBeTruthy();
+    expect(map.editor?.vertices).toHaveLength(2);
+  });
+
+  it('una misión cerrada no admite rutas nuevas: lo dice y no hay guardar ni interruptor', async () => {
+    withMission({ actions: noActions, status: 'closed' });
+    expect(await screen.findByText(M.closed.replace('{{name}}', mission().name))).toBeTruthy();
+    expect(screen.queryByRole('button', { name: T.save })).toBeNull();
+    expect(screen.queryByRole('button', { name: T.paint })).toBeNull();
+  });
+
+  it('sin origen lo dice y no deja guardar', async () => {
+    withMission({ points: [] });
+    expect(await screen.findByText(M.noOrigin, { exact: false })).toBeTruthy();
+    expect((screen.getByRole('button', { name: T.save }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('carga y error de la misión', async () => {
+    setup(draw, { [`GET /missions/${MISSION_ID}`]: () => apiError(500, 'INTERNAL') });
+    expect(await screen.findByRole('button', { name: es.state.retry })).toBeTruthy();
   });
 });
 

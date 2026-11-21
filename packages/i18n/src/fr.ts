@@ -908,6 +908,16 @@ export const fr: Messages = {
   },
   routeEditor: {
     paint: 'Tracer l’itinéraire',
+    mission: {
+      title: 'Tracer un itinéraire pour « {{name}} »',
+      origin: 'Origine de la mission',
+      target: 'Objectif de la mission',
+      toTarget: 'Finir à l’objectif',
+      back: 'Retour à la mission',
+      noOrigin: 'La mission n’a pas d’origine : ajoutez-en une pour tracer à partir d’elle.',
+      closed: 'La mission « {{name}} » est clôturée : elle n’accepte plus de nouveaux itinéraires.',
+      added: 'Itinéraire « {{name}} » tracé et ajouté à la mission.',
+    },
     drawTitle: 'Dessiner un itinéraire',
     editTitle: 'Nouvelle version de « {{name}} »',
     simplifiedNote: 'Vous modifiez une version simplifiée ({{max}} sommets au plus). Le serveur mesure de nouveau l’itinéraire à l’enregistrement.',

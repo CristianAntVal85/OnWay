@@ -657,6 +657,16 @@ export interface Messages {
   };
   routeEditor: {
     paint: string;
+    mission: {
+      title: string;
+      origin: string;
+      target: string;
+      toTarget: string;
+      back: string;
+      noOrigin: string;
+      closed: string;
+      added: string;
+    };
     drawTitle: string;
     editTitle: string;
     simplifiedNote: string;

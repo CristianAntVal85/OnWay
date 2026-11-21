@@ -434,7 +434,31 @@ describe('exportar las rutas de la misión (RF-508, RF-603)', () => {
     const { user } = setup([]);
     const section = await region();
     await within(section).findByText(R.empty);
-    expect(await menuItemNames(user, R.more, section)).toEqual([es.generate.cta]);
+    expect(await menuItemNames(user, R.more, section)).toEqual([es.generate.cta, es.routeEditor.paint]);
+  });
+
+  it('«Pintar ruta» lleva al editor con la misión (D-P3)', async () => {
+    const { user } = setup([]);
+    const section = await region();
+    await within(section).findByText(R.empty);
+    await user.click(within(section).getByRole('button', { name: R.more }));
+    expect(screen.getByRole('menuitem', { name: es.routeEditor.paint }).getAttribute('href')).toBe(`/routes/draw?mission=${MISSION_ID}`);
+  });
+
+  it('sin origen, «Pintar ruta» y «Generar rutas» están desactivados', async () => {
+    const server = sessionServer(
+      { user: sessionUser() },
+      {
+        [`GET /missions/${MISSION_ID}`]: () => json(200, mission({ actions: allActions, status: 'active', points: [] })),
+        [`GET /missions/${MISSION_ID}/routes`]: () => json(200, { items: [] }),
+        [`GET /missions/${MISSION_ID}/history`]: () => json(200, { items: [], page: 1, pageSize: 20, total: 0 }),
+      },
+    );
+    const { user } = renderApp({ route: PATH, fetch: server.api.fetch });
+    const section = await region();
+    await within(section).findByText(R.empty);
+    await user.click(within(section).getByRole('button', { name: R.more }));
+    for (const name of [es.generate.cta, es.routeEditor.paint]) expect(screen.getByRole('menuitem', { name }).getAttribute('aria-disabled')).toBe('true');
   });
 });
 

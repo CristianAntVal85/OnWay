@@ -73,7 +73,7 @@ Operaciones nuevas: ninguna. Operación que cambia: `createRouteVersion` (`conti
   - Hecho cuando: las pruebas están en verde y el interruptor se ve junto al mapa a 375 px sin desplazarse.
   - Commit: `feat(issue-draw-route): T5 add the paint toggle to the route editor and draw in straight lines by default`.
 
-- [ ] **T6. Web: pintar una ruta desde la misión.** RF-513, doc 02 §4.3 B; INV-11; D-P3.
+- [x] **T6. Web: pintar una ruta desde la misión.** RF-513, doc 02 §4.3 B; INV-11; D-P3.
   - Pruebas primero:
     - `apps/web/test/mission-routes.test.tsx`: «Más ⋯» de la sección tiene «Pintar ruta» con la misión abierta y con origen; sin origen está desactivado, igual que generar; con la misión cerrada no aparece.
     - `apps/web/test/route-editor.test.tsx`, con `?mission=`:

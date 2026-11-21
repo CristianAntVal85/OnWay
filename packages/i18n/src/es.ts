@@ -908,6 +908,16 @@ export const es: Messages = {
   },
   routeEditor: {
     paint: 'Pintar ruta',
+    mission: {
+      title: 'Pintar una ruta para «{{name}}»',
+      origin: 'Origen de la misión',
+      target: 'Objetivo de la misión',
+      toTarget: 'Terminar en el objetivo',
+      back: 'Volver a la misión',
+      noOrigin: 'La misión no tiene origen: añade uno para pintar desde él.',
+      closed: 'La misión «{{name}}» está cerrada: no admite rutas nuevas.',
+      added: 'Ruta «{{name}}» pintada y añadida a la misión.',
+    },
     drawTitle: 'Dibujar una ruta',
     editTitle: 'Nueva versión de «{{name}}»',
     simplifiedNote: 'Se edita una versión simplificada (como mucho {{max}} vértices). El servidor vuelve a medir la ruta al guardarla.',
