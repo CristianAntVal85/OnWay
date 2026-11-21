@@ -30,11 +30,16 @@ html {
 body {
   margin: 0;
   min-width: 20rem;
-  background: var(--bg);
+  /* Topografía de fondo, fuera de los contenedores (una por tema, en public/); `--bg` queda debajo mientras carga. */
+  background: var(--bg) url('/topografia-oscuro.webp') center / cover fixed no-repeat;
   color: var(--text);
   font-family: var(--font-body);
   font-size: var(--text-md);
   line-height: 1.5;
+}
+
+[data-theme='light'] body {
+  background-image: url('/topografia-claro.webp');
 }
 
 h1,
@@ -3407,6 +3412,10 @@ label.signup-info {
    sistema `Highlight`, el subrayado o el trazo del borde. Los colores son de sistema (los tokens los sustituiría el navegador). No hay
    transiciones: cambiar de tema es instantáneo, y cualquiera que se añada va dentro de `(prefers-reduced-motion: no-preference)`. */
 @media (forced-colors: active) {
+  body {
+    background-image: none;
+  }
+
   /* pulsado y seleccionado */
   .segment input:checked + span,
   .tab[aria-selected='true'],

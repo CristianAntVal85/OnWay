@@ -68,13 +68,14 @@ describe('sin recursos externos', () => {
     }
   });
 
+  // `url()` solo para imágenes propias de public/ (el fondo topográfico): ruta local, sin anfitrión ni esquema.
   it('ningún CSS de src/ importa nada ni carga fuentes remotas (styles.css, theme/tokens.css y los que vengan)', () => {
     const sheets = files(join(ROOT, 'src')).filter((file) => file.endsWith('.css'));
     const names = sheets.map((file) => relative(ROOT, file));
     expect(names).toContain('src/styles.css');
     expect(names).toContain('src/theme/tokens.css');
     for (const sheet of sheets) {
-      expect(readFileSync(sheet, 'utf8'), relative(ROOT, sheet)).not.toMatch(/@import|@font-face|url\(/);
+      expect(readFileSync(sheet, 'utf8'), relative(ROOT, sheet)).not.toMatch(/@import|@font-face|url\((?!'\/[\w-]+\.webp'\))/);
     }
   });
 });
