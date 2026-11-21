@@ -739,7 +739,7 @@ export const fr: Messages = {
       working: 'Archivage…',
       done: 'Itinéraires archivés : {{count}}.',
       failed: 'Impossible d’archiver : {{names}}.',
-      inUse: '« {{name}} » est dans des missions non clôturées : {{missions}}.',
+      inUse: '« {{name}} » est dans des missions non clôturées : {{missions}}. Retirez-le de ces missions depuis son détail, dans « Utilisé dans ».',
     },
     map: {
       label: 'Carte de la bibliothèque d’itinéraires',
@@ -813,6 +813,14 @@ export const fr: Messages = {
       usedInRow: '{{status}} · version {{number}}',
       notUsed: 'Aucune mission n’utilise cet itinéraire.',
       noDerivatives: 'Aucune copie.',
+      readOnly: 'lecture seule',
+      remove: 'Retirer de la mission',
+      removeFor: 'Retirer l’itinéraire de « {{mission}} »',
+      removeConfirm: 'Retirer l’itinéraire de « {{mission}} » ? Il reste dans la bibliothèque.',
+      removeYes: 'Oui, retirer',
+      removeNo: 'Ne pas retirer',
+      removeBusy: 'Retrait…',
+      removeDone: 'L’itinéraire n’est plus dans « {{mission}} ». Il reste dans la bibliothèque.',
     },
     actions: {
       validate: 'Valider',
@@ -861,7 +869,7 @@ export const fr: Messages = {
       confirm: 'Archiver l’itinéraire',
       working: 'Archivage…',
       cancel: 'Annuler',
-      inUse: 'Impossible d’archiver : il est dans des missions non clôturées ({{missions}}).',
+      inUse: 'Impossible d’archiver : il est dans des missions non clôturées ({{missions}}). Retirez-le de ces missions dans « Utilisé dans », sur cette même page.',
     },
   },
   routeImport: {
@@ -991,7 +999,7 @@ export const fr: Messages = {
       reactivated: '« {{name}} » est de nouveau disponible.',
     },
     remove: {
-      action: 'Retirer',
+      action: 'Retirer de la mission',
       confirm: 'Retirer « {{name}} » de la mission ? L’itinéraire reste dans la bibliothèque.',
       yes: 'Oui, retirer',
       no: 'Ne pas retirer',

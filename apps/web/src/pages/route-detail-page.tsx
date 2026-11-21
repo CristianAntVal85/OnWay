@@ -13,12 +13,13 @@ import { ComparePanel } from '../library/compare-panel';
 import { saveBlob } from '../library/download';
 import { ElevationProfile } from '../library/elevation-profile';
 import { RoadMix } from '../library/road-mix';
+import { UsedInList } from '../library/used-in-list';
 import { formatKm } from '../library/format';
 import { ArchiveDialog, DeriveDialog, RenameDialog, ValidateDialog } from '../library/route-dialogs';
 import { MapView, type MapRoute } from '../map';
 import { errorMessage } from '../i18n/error-message';
 import { formatDate, formatMeters } from '../missions/format';
-import { PATHS, missionPath, routePath } from '../nav/navigation';
+import { PATHS, routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { useCurrentUser } from '../session/session';
 
@@ -309,18 +310,7 @@ export function RouteDetailPage() {
           </SectionCard>
 
           <SectionCard icon="flag" title={t('routeDetail.relations.usedIn')}>
-            {data.usedIn.length === 0 ? (
-              <p className="form-note">{t('routeDetail.relations.notUsed')}</p>
-            ) : (
-              <ul className="plain-list">
-                {data.usedIn.map((use) => (
-                  <li key={use.missionId}>
-                    <Link to={missionPath(use.missionId)}>{use.missionName}</Link>{' '}
-                    {t('routeDetail.relations.usedInRow', { status: t(`missions.status.${use.missionStatus}`), number: use.pinnedVersionNumber })}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <UsedInList routeId={routeId} usedIn={data.usedIn} canWrite={canWrite} />
           </SectionCard>
 
           <SectionCard icon="copy" title={t('routeDetail.relations.derivatives')}>

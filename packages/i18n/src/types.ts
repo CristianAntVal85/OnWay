@@ -611,7 +611,22 @@ export interface Messages {
       start: string;
       stop: string;
     };
-    relations: { derivedFrom: string; derivatives: string; usedIn: string; usedInRow: string; notUsed: string; noDerivatives: string };
+    relations: {
+      derivedFrom: string;
+      derivatives: string;
+      usedIn: string;
+      usedInRow: string;
+      notUsed: string;
+      noDerivatives: string;
+      readOnly: string;
+      remove: string;
+      removeFor: string;
+      removeConfirm: string;
+      removeYes: string;
+      removeNo: string;
+      removeBusy: string;
+      removeDone: string;
+    };
     actions: { validate: string; duplicate: string; rename: string; archive: string; edit: string; exportGpx: string; exportKml: string; exporting: string; exportError: string };
     validate: { title: string; description: string; warning: string; acknowledge: string; confirm: string; working: string; cancel: string; needsAcknowledge: string; immutable: string };
     derive: { title: string; description: string; nameLabel: string; nameRequired: string; confirm: string; working: string; cancel: string };

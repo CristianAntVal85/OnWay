@@ -285,7 +285,7 @@ describe('selección: conserva entre páginas, exporta y archiva', () => {
     expect(calls().some((c) => c.path.endsWith('/archive'))).toBe(false);
     await user.click(within(dialog).getByRole('button', { name: T.archive.confirm.replace('{{count}}', '2') }));
     expect(await screen.findByText('Rutas archivadas: 1.')).toBeTruthy();
-    expect(screen.getByText('«Ruta 2» está en misiones sin cerrar: Misión del Aneto.')).toBeTruthy();
+    expect(screen.getByText('«Ruta 2» está en misiones sin cerrar: Misión del Aneto. Quítala de ellas desde su detalle, en «Usada en».')).toBeTruthy();
     expect(
       calls()
         .filter((c) => c.path.endsWith('/archive'))

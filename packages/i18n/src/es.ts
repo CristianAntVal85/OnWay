@@ -739,7 +739,7 @@ export const es: Messages = {
       working: 'Archivando…',
       done: 'Rutas archivadas: {{count}}.',
       failed: 'No se han podido archivar: {{names}}.',
-      inUse: '«{{name}}» está en misiones sin cerrar: {{missions}}.',
+      inUse: '«{{name}}» está en misiones sin cerrar: {{missions}}. Quítala de ellas desde su detalle, en «Usada en».',
     },
     map: {
       label: 'Mapa de la biblioteca de rutas',
@@ -813,6 +813,14 @@ export const es: Messages = {
       usedInRow: '{{status}} · versión {{number}}',
       notUsed: 'Ninguna misión usa esta ruta.',
       noDerivatives: 'Ninguna copia.',
+      readOnly: 'solo lectura',
+      remove: 'Quitar de la misión',
+      removeFor: 'Quitar la ruta de «{{mission}}»',
+      removeConfirm: '¿Quitar la ruta de «{{mission}}»? Sigue en la biblioteca.',
+      removeYes: 'Sí, quitar',
+      removeNo: 'No quitar',
+      removeBusy: 'Quitando…',
+      removeDone: 'La ruta ya no está en «{{mission}}». Sigue en la biblioteca.',
     },
     actions: {
       validate: 'Validar',
@@ -861,7 +869,7 @@ export const es: Messages = {
       confirm: 'Archivar ruta',
       working: 'Archivando…',
       cancel: 'Cancelar',
-      inUse: 'No se puede archivar: está en misiones que no están cerradas ({{missions}}).',
+      inUse: 'No se puede archivar: está en misiones que no están cerradas ({{missions}}). Quítala de ellas en «Usada en», en esta misma página.',
     },
   },
   routeImport: {
@@ -991,7 +999,7 @@ export const es: Messages = {
       reactivated: '«{{name}}» vuelve a estar disponible.',
     },
     remove: {
-      action: 'Quitar',
+      action: 'Quitar de la misión',
       confirm: '¿Quitar «{{name}}» de la misión? La ruta sigue en la biblioteca.',
       yes: 'Sí, quitar',
       no: 'No quitar',

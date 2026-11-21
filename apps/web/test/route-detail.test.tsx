@@ -349,7 +349,9 @@ describe('validar, derivar y archivar (coordinador)', () => {
     await chooseMenuItem(user, MORE, T.actions.archive);
     const dialog = await screen.findByRole('dialog', { name: T.archive.title });
     await user.click(within(dialog).getByRole('button', { name: T.archive.confirm }));
-    expect(await within(dialog).findByText('No se puede archivar: está en misiones que no están cerradas (Misión del Aneto, Misión del Posets).')).toBeTruthy();
+    expect(
+      await within(dialog).findByText('No se puede archivar: está en misiones que no están cerradas (Misión del Aneto, Misión del Posets). Quítala de ellas en «Usada en», en esta misma página.'),
+    ).toBeTruthy();
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
@@ -382,6 +384,55 @@ describe('validar, derivar y archivar (coordinador)', () => {
     expect(request.query.get('versionId')).toBe(V2);
     expect(request.query.get('format')).toBe('kml');
     HTMLAnchorElement.prototype.click = click;
+  });
+});
+
+describe('quitar de la misión desde «Usada en» (RF-512, D-N6, D-N7)', () => {
+  const open = { missionId: 'm-open', missionRouteId: 'mr-open', missionName: 'Simulacro Aneto', missionStatus: 'active', pinnedVersionNumber: 1 };
+  const planned = { missionId: 'm-plan', missionRouteId: 'mr-plan', missionName: 'Rescate Posets', missionStatus: 'planning', pinnedVersionNumber: 2 };
+  const closed = { missionId: 'm-closed', missionRouteId: 'mr-closed', missionName: 'Ejercicio Monte Perdido', missionStatus: 'closed', pinnedVersionNumber: 1 };
+  const removeFor = (mission: string) => T.relations.removeFor.replace('{{mission}}', mission);
+
+  it('solo las misiones en planificación o activas tienen el botón; la cerrada dice «solo lectura»', async () => {
+    setup({}, { data: detail({ usedIn: [open, planned, closed] }) });
+    expect(await screen.findByRole('button', { name: removeFor('Simulacro Aneto') })).toBeTruthy();
+    expect(screen.getByRole('button', { name: removeFor('Rescate Posets') })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: removeFor('Ejercicio Monte Perdido') })).toBeNull();
+    expect(screen.getByText(new RegExp(`${T.relations.readOnly}$`))).toBeTruthy();
+  });
+
+  it('pide confirmación con el foco en «No quitar»; «No quitar» no envía nada; confirmar llama a removeMissionRoute y lo anuncia', async () => {
+    let removed = false;
+    const { user, calls } = setup({
+      [`GET /routes/${ROUTE}`]: () => json(200, detail({ usedIn: removed ? [] : [open] })),
+      [`DELETE /missions/m-open/routes/mr-open`]: () => {
+        removed = true;
+        return json(204, null);
+      },
+    });
+    await user.click(await screen.findByRole('button', { name: removeFor('Simulacro Aneto') }));
+    const group = screen.getByRole('group', { name: T.relations.removeConfirm.replace('{{mission}}', 'Simulacro Aneto') });
+    expect(document.activeElement).toBe(within(group).getByRole('button', { name: T.relations.removeNo }));
+    await user.click(within(group).getByRole('button', { name: T.relations.removeNo }));
+    expect(calls().filter((c) => c.method === 'DELETE')).toHaveLength(0);
+    await user.click(screen.getByRole('button', { name: removeFor('Simulacro Aneto') }));
+    await user.click(screen.getByRole('button', { name: T.relations.removeYes }));
+    expect(calls().find((c) => c.method === 'DELETE')).toMatchObject({ path: '/missions/m-open/routes/mr-open' });
+    expect(await screen.findByText(T.relations.removeDone.replace('{{mission}}', 'Simulacro Aneto'))).toBeTruthy();
+    expect(await screen.findByText(T.relations.notUsed)).toBeTruthy();
+  });
+
+  it('si la misión se cerró mientras tanto, lo dice', async () => {
+    const { user } = setup({ [`DELETE /missions/m-open/routes/mr-open`]: () => apiError(409, 'MISSION_CLOSED') }, { data: detail({ usedIn: [open] }) });
+    await user.click(await screen.findByRole('button', { name: removeFor('Simulacro Aneto') }));
+    await user.click(screen.getByRole('button', { name: T.relations.removeYes }));
+    expect(await screen.findByText(es.missionDetail.closedMeanwhile)).toBeTruthy();
+  });
+
+  it('el administrador ve «Usada en» sin ningún botón', async () => {
+    setup({}, { user: admin(), data: detail({ usedIn: [open] }) });
+    expect(await screen.findByRole('link', { name: 'Simulacro Aneto' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: removeFor('Simulacro Aneto') })).toBeNull();
   });
 });
 

@@ -53,7 +53,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Hecho cuando: pruebas en verde y el diálogo se maneja con teclado a 375 px.
   - Commit: `feat(issue-route-names): T5 rename a route from its detail and from the mission row`.
 
-- [ ] **T6. Quitar de la misión, visible.** RF-512, RF-513, INV-07, INV-11; D-N6, D-N7.
+- [x] **T6. Quitar de la misión, visible.** RF-512, RF-513, INV-07, INV-11; D-N6, D-N7.
   - Pruebas primero:
     - `apps/web/test/route-detail.test.tsx`: «Usada en» enseña «Quitar de la misión» solo en misiones en planificación o activas y para quien escribe; confirmación en la fila, con foco en «No quitar»; confirmar llama a `removeMissionRoute` con `missionRouteId`; las cerradas dicen «cerrada · solo lectura» sin botón; `ArchiveDialog` con `ROUTE_IN_USE` dice las misiones y cómo quitarla;
     - `apps/web/test/mission-routes.test.tsx`: el texto de la opción es «Quitar de la misión»;
@@ -62,6 +62,7 @@ Operación nueva (1): `updateRoute` (`x-milestone: H2`). Operaciones que cambian
   - Comprobación: `pnpm check @onway/web @onway/i18n` y `pnpm --filter @onway/api test:api mission-routes-writes`; a 375 px y con teclado.
   - Hecho cuando: pruebas en verde; desde el detalle de una ruta se puede soltar de una misión activa y después archivarla.
   - Commit: `feat(issue-route-names): T6 unlink a route from its missions from the route detail and name the action clearly`.
+  - *Hecho así:* «Usada en» pasa a `src/library/used-in-list.tsx` (`UsedInList`), con la confirmación en la fila (`point-row-confirm`, como la tabla de la misión) y el aviso en una región `status`; regla `.used-in-item` en `styles.css`. El mensaje de `ROUTE_IN_USE` al archivar en lote desde la biblioteca también dice dónde quitarla. La prueba de `removeMissionRoute` con la misión cerrada ya existía (`mission-routes-writes.test.ts`, «add, update and remove answer MISSION_CLOSED»).
 
 - [ ] **T7. Demostración E2E y demostraciones afectadas.** Demostración del plan §7.
   - `rutas-nombre-demo.spec.ts` (escritorio y móvil; francés solo con teclado):
