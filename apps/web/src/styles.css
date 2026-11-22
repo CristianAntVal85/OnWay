@@ -4177,8 +4177,10 @@ label.signup-info {
   font-size: 0.95rem;
 }
 
-.skill-certificate .button {
-  min-height: 2.75rem;
+/* Botones de cada entrada (abrir, adjuntar, editar, eliminar): todos con el mismo blanco táctil, pensado para guantes. */
+.skill-certificate .button,
+.skill-item .point-row-actions .button {
+  min-height: 3rem;
 }
 
 .skill-certificate-current {

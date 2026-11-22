@@ -248,7 +248,9 @@ export function SkillDialog({ skill, focusFile = false, onClose, onSaved }: Prop
             )}
             {skill?.hasCertificate && (
               <div className="skill-certificate-current">
-                <p className="form-note">{removeCertificate ? t('profile.skills.certificateWillRemove') : t('profile.skills.certificateCurrent')}</p>
+                <p className="form-note" role="status">
+                  {removeCertificate ? t('profile.skills.certificateWillRemove') : t('profile.skills.certificateCurrent')}
+                </p>
                 <button type="button" className="button button-secondary" onClick={() => setRemoveCertificate((current) => !current)}>
                   {t(removeCertificate ? 'profile.skills.keepCertificate' : 'profile.skills.removeCertificate')}
                 </button>

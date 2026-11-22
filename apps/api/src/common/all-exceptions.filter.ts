@@ -2,6 +2,7 @@ import { Catch, HttpException, Logger, type ArgumentsHost, type ExceptionFilter 
 import { ERROR_HTTP, type ErrorCode, type ErrorResponse } from '@onway/contracts';
 import type { Response } from 'express';
 import { DomainError } from './domain-error.js';
+import { loggablePath } from './access-log.js';
 import { loggableError } from './loggable-error.js';
 import type { OnwayRequest } from './operation.js';
 
@@ -56,7 +57,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return { code: 'VALIDATION_FAILED', message: 'Request validation failed', details: { issues: [{ path: '', code: 'invalid_request', message }] } };
     }
     const code = status === undefined ? undefined : BY_STATUS[status];
-    if (code) return { code, message: code === 'NOT_FOUND' ? `Cannot ${request.method} ${request.path}` : 'Request rejected' };
+    if (code) return { code, message: code === 'NOT_FOUND' ? `Cannot ${request.method} ${loggablePath(request.path)}` : 'Request rejected' };
     return { code: 'INTERNAL', message: 'Internal error' };
   }
 }

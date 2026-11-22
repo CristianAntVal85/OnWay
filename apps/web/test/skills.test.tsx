@@ -279,7 +279,8 @@ describe('añadir y editar (RF-808, D-29)', () => {
     await user.click(await region.findByRole('button', { name: S.editFor.replace('{{name}}', course.name) }));
     const dialog = within(await screen.findByRole('dialog'));
     await user.click(dialog.getByRole('button', { name: S.removeCertificate }));
-    expect(dialog.getByText(S.certificateWillRemove)).toBeTruthy();
+    // El cambio se anuncia: la nota es una región de estado (lector de pantalla).
+    expect(dialog.getByRole('status').textContent).toBe(S.certificateWillRemove);
     await user.click(dialog.getByRole('button', { name: S.keepCertificate }));
     expect(dialog.getByText(S.certificateCurrent)).toBeTruthy();
     await user.click(dialog.getByRole('button', { name: S.removeCertificate }));
