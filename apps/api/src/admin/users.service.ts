@@ -49,7 +49,7 @@ const SELECT_ITEM = (orgId: string) => sql`
     FROM memberships m
     JOIN users u ON u.id = m.user_id
     LEFT JOIN rescuer_profiles p ON p.user_id = u.id AND p.organization_id = m.organization_id
-   WHERE m.organization_id = ${orgId}::uuid`;
+   WHERE m.organization_id = ${orgId}::uuid AND u.anonymized_at IS NULL`;
 
 /**
  * Users of the organization (RF-813, doc 06 §7.1). Only the administrator reaches it (registry roles); the filter by organization is the
@@ -75,7 +75,7 @@ export class UsersService {
       query.accountStatus ? sql`AND u.account_status = ${query.accountStatus}::account_status` : sql``,
     ];
     const where = sql.join(filters, sql` `);
-    const { rows: counted } = await this.tx.execute(sql`SELECT count(*)::int AS total FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ${orgId}::uuid ${where}`);
+    const { rows: counted } = await this.tx.execute(sql`SELECT count(*)::int AS total FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ${orgId}::uuid AND u.anonymized_at IS NULL ${where}`);
     const { rows } = await this.tx.execute(sql`
       ${SELECT_ITEM(orgId)} ${where}
        ORDER BY lower(u.display_name), u.id
@@ -128,7 +128,7 @@ export class UsersService {
 
     const { rows } = await this.tx.execute(sql`
       SELECT m.role, u.account_status, u.display_name FROM memberships m JOIN users u ON u.id = m.user_id
-       WHERE m.organization_id = ${orgId}::uuid AND m.user_id = ${userId}::uuid`);
+       WHERE m.organization_id = ${orgId}::uuid AND m.user_id = ${userId}::uuid AND u.anonymized_at IS NULL`);
     const current = (rows as unknown as { role: Item['role']; account_status: Item['accountStatus']; display_name: string }[])[0];
     if (!current) throw new DomainError('NOT_FOUND');
 

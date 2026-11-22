@@ -415,18 +415,19 @@ export interface Messages {
       cancel: string;
       staleState: string;
       lastAdmin: string;
-      done: { roleChanged: string; disabled: string; reactivated: string };
+      done: { roleChanged: string; roleChangedSelf: string; disabled: string; reactivated: string };
       roleDialog: {
         title: string;
         description: string;
         legend: string;
         adminHelp: string;
         adminWarning: string;
+        selfWarning: string;
         roleRequired: string;
         summary: string;
         confirm: string;
       };
-      disableDialog: { title: string; description: string; confirm: string };
+      disableDialog: { title: string; description: string; selfWarning: string; confirm: string };
       reactivateDialog: { title: string; description: string; confirm: string };
       reassign: {
         legend: string;

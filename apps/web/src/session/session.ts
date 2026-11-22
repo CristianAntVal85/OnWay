@@ -87,6 +87,33 @@ export function useLogin() {
   });
 }
 
+/**
+ * Tras cambiarse el propio rol: vuelve a leer quién es la persona, pasa a la pantalla de inicio de su nuevo rol y recién entonces
+ * actualiza la sesión, para que ninguna guarda enseñe «sin acceso» a mitad de camino. Si no puede leerla, deja que las guardas decidan.
+ */
+export function useRefreshSelf() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return async (go: (user: SessionUser) => void) => {
+    try {
+      const { user } = await api.getMe();
+      go(user);
+      queryClient.setQueryData(SESSION_KEY, authenticated(user));
+    } catch {
+      await queryClient.invalidateQueries({ queryKey: SESSION_KEY });
+    }
+  };
+}
+
+/** La propia cuenta se acaba de desactivar: no hay sesión y el acceso lo explica. */
+export function useSelfDisabled() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== SESSION_KEY[0] });
+    queryClient.setQueryData(SESSION_KEY, anonymous('ACCOUNT_DISABLED'));
+  };
+}
+
 export function useLogout() {
   const api = useApi();
   const queryClient = useQueryClient();

@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useLocation, useParams } from 'react-router';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { ApiError, type OperationOutput } from '@onway/contracts/client';
 import { PageHeader } from '../components/page-header';
 import { SectionCard } from '../components/section-card';
 import { ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { formatDate, formatDateTime } from '../missions/format';
-import { PATHS } from '../nav/navigation';
+import { landingPath, PATHS } from '../nav/navigation';
 import { PopupBlockedError, useOpenCertificate } from '../profile/skills';
+import { useCurrentUser, useRefreshSelf, useSelfDisabled } from '../session/session';
 import { useUser } from './queries';
 import { ChangeRoleDialog, DisableDialog, ReactivateDialog, type Role } from './user-dialogs';
 import { ROLE_LABEL } from './users-section';
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Skill = OperationOutput<'getUser'>['skills'][number];
 
@@ -30,7 +33,12 @@ export function UserPage() {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '';
   const back = { to: `${PATHS.admin}${from}`, label: t('admin.user.back') };
-  const person = useUser(userId);
+  const validId = UUID.test(userId);
+  const me = useCurrentUser();
+  const navigate = useNavigate();
+  const refreshSelf = useRefreshSelf();
+  const selfDisabled = useSelfDisabled();
+  const person = useUser(userId, validId);
   const open = useOpenCertificate();
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
@@ -38,6 +46,10 @@ export function UserPage() {
   const [done, setDone] = useState('');
   const [focusDone, setFocusDone] = useState(0);
   const doneRef = useRef<HTMLParagraphElement>(null);
+  const openDialog = (next: 'role' | 'disable' | 'reactivate') => {
+    setDone('');
+    setDialog(next);
+  };
   usePageTitle(person.data?.displayName ?? t('admin.users.title'));
 
   // Desactivar o reactivar cambia el botón que abrió el diálogo y ya no existe: el foco pasa al aviso del resultado.
@@ -45,9 +57,9 @@ export function UserPage() {
     if (focusDone > 0) doneRef.current?.focus();
   }, [focusDone]);
 
-  if (person.isPending) return <LoadingState label={t('admin.user.loading')} />;
-  if (person.isError) {
-    const notFound = person.error instanceof ApiError && person.error.code === 'NOT_FOUND';
+  if (validId && person.isPending) return <LoadingState label={t('admin.user.loading')} />;
+  if (!validId || person.isError) {
+    const notFound = !validId || (person.error instanceof ApiError && person.error.code === 'NOT_FOUND');
     return (
       <>
         <p>
@@ -60,13 +72,13 @@ export function UserPage() {
             <h1>{t('admin.user.notFound')}</h1>
           </section>
         ) : (
-          <ErrorState error={person.error} onRetry={() => void person.refetch()} />
+          <ErrorState error={person.error!} onRetry={() => void person.refetch()} />
         )}
       </>
     );
   }
-  const data = person.data;
-  const target = { id: data.userId, name: data.displayName, role: data.role, openMissions: data.hasMissionsAsResponsible };
+  const data = person.data!;
+  const target = { id: data.userId, name: data.displayName, role: data.role, openMissions: data.hasMissionsAsResponsible, self: data.userId === me.id };
 
   const openCertificate = (skill: Skill) => {
     setNotice('');
@@ -123,19 +135,23 @@ export function UserPage() {
         </SectionCard>
 
         <SectionCard title={t('admin.user.manage')} icon="shield">
-          <p ref={doneRef} className="notice" role="status" tabIndex={-1} hidden={!done}>
-            {done}
-          </p>
+          <div role="status" className="notice-slot">
+            {done && (
+              <p ref={doneRef} className="notice" tabIndex={-1}>
+                {done}
+              </p>
+            )}
+          </div>
           <div className="point-row-actions">
-            <button type="button" className="button button-secondary" onClick={() => setDialog('role')}>
+            <button type="button" className="button button-secondary" onClick={() => openDialog('role')}>
               {t('admin.user.changeRole')}
             </button>
             {data.accountStatus === 'active' ? (
-              <button type="button" className="button button-secondary" onClick={() => setDialog('disable')}>
+              <button type="button" className="button button-secondary" onClick={() => openDialog('disable')}>
                 {t('admin.user.disable')}
               </button>
             ) : (
-              <button type="button" className="button button-secondary" onClick={() => setDialog('reactivate')}>
+              <button type="button" className="button button-secondary" onClick={() => openDialog('reactivate')}>
                 {t('admin.user.reactivate')}
               </button>
             )}
@@ -202,7 +218,13 @@ export function UserPage() {
           onClose={() => setDialog(null)}
           onDone={(role: Role) => {
             setDialog(null);
+            if (target.self) {
+              // Pierde Administración: la sesión se refresca y se va a la pantalla del nuevo rol, con el aviso allí.
+              void refreshSelf((user) => navigate(landingPath(user), { replace: true, state: { flash: { roleChangedSelf: role } } }));
+              return;
+            }
             setDone(t('admin.user.done.roleChanged', { role: t(ROLE_LABEL[role]) }));
+            setFocusDone((n) => n + 1);
           }}
         />
       )}
@@ -212,6 +234,11 @@ export function UserPage() {
           onClose={() => setDialog(null)}
           onDone={() => {
             setDialog(null);
+            if (target.self) {
+              // La cuenta propia ya no vale: se cierra la sesión y el acceso lo explica (el aviso `ACCOUNT_DISABLED`).
+              selfDisabled();
+              return;
+            }
             setDone(t('admin.user.done.disabled'));
             setFocusDone((n) => n + 1);
           }}

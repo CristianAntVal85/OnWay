@@ -497,6 +497,7 @@ export const es: Messages = {
       lastAdmin: 'No se puede hacer este cambio: es el único administrador activo de la organización. Nombra antes a otro administrador.',
       done: {
         roleChanged: 'El rol de la cuenta es ahora: {{role}}.',
+        roleChangedSelf: 'Tu rol es ahora: {{role}}. Ya no tienes acceso a Administración.',
         disabled: 'La cuenta se ha desactivado y ya no puede entrar.',
         reactivated: 'La cuenta se ha reactivado.',
       },
@@ -506,6 +507,7 @@ export const es: Messages = {
         legend: 'Nuevo rol',
         adminHelp: 'Gestiona usuarios y datos sensibles de la organización.',
         adminWarning: 'Atención: el rol de administrador concede acceso a la gestión de usuarios y a los datos sensibles. Concédelo solo a quien deba tenerlo.',
+        selfWarning: 'Es tu propia cuenta: al cambiar tu rol perderás el acceso a Administración y volverás a tu pantalla de inicio.',
         roleRequired: 'Elige un rol para continuar.',
         summary: 'Rol elegido: {{role}}.',
         confirm: 'Cambiar el rol',
@@ -513,6 +515,7 @@ export const es: Messages = {
       disableDialog: {
         title: 'Desactivar la cuenta de {{name}}',
         description: 'La persona perderá el acceso y se cerrarán sus sesiones. Sus datos se conservan y se puede reactivar después.',
+        selfWarning: 'Es tu propia cuenta: al desactivarla se cerrará tu sesión ahora mismo y no podrás volver a entrar hasta que otro administrador la reactive.',
         confirm: 'Desactivar la cuenta',
       },
       reactivateDialog: {

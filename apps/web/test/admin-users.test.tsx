@@ -52,7 +52,7 @@ interface Options {
 function setup(options: Options = {}) {
   const language = options.language ?? 'es';
   const people = options.people ?? [person(1), person(2)];
-  const { api } = sessionServer(
+  const { api, state } = sessionServer(
     { user: { ...(options.user ?? admin()), locale: language } },
     {
       'GET /admin/signup-requests': () =>
@@ -77,7 +77,7 @@ function setup(options: Options = {}) {
   window.localStorage.setItem('onway.locale', language);
   const view = renderApp({ route: options.route ?? '/admin', fetch: api.fetch, language });
   const lists = () => api.calls.filter((call) => call.method === 'GET' && call.path === '/admin/users');
-  return { ...view, api, people, lists, lastQuery: () => lists().at(-1)!.query };
+  return { ...view, api, state, people, lists, lastQuery: () => lists().at(-1)!.query };
 }
 
 const section = (name: string) => screen.findByRole('region', { name });
@@ -259,6 +259,12 @@ describe.each(LANGUAGES)('administración: ficha de usuario (%s)', (language, te
     setup(opts());
     expect(await screen.findByRole('heading', { level: 1, name: A.notFound })).toBeTruthy();
     expect(screen.getByRole('link', { name: A.back }).getAttribute('href')).toBe('/admin');
+  });
+
+  it('un identificador que no es un UUID es una persona que no existe, sin pedirla al servidor', async () => {
+    const { api } = setup(opts({ route: '/admin/users/no-es-uuid' }));
+    expect(await screen.findByRole('heading', { level: 1, name: A.notFound })).toBeTruthy();
+    expect(api.calls.filter((call) => call.path.startsWith('/admin/users/'))).toHaveLength(0);
   });
 
   it('otro error se puede reintentar', async () => {
@@ -453,5 +459,64 @@ describe.each(LANGUAGES)('administración: cambiar el rol, desactivar y reactiva
     await user.keyboard('{Escape}');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(document.activeElement).toBe(opener);
+  });
+
+  it('el aviso del resultado existe siempre (vacío) y se limpia al abrir otro diálogo', async () => {
+    const { user } = open();
+    await user.click(await screen.findByRole('button', { name: A.disable }));
+    await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+    expect(await screen.findByText(A.done.disabled)).toBeTruthy();
+    expect(screen.getByRole('region', { name: A.manage }).querySelector('[role="status"]')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: A.changeRole }));
+    expect(screen.queryByText(A.done.disabled)).toBeNull();
+    expect(screen.getByRole('region', { name: A.manage }).querySelector('[role="status"]')).toBeTruthy();
+  });
+
+  describe('la propia cuenta', () => {
+    const me = '11111111-1111-4111-8111-111111111111';
+    function openSelf() {
+      let state: ReturnType<typeof setup>['state'] | null = null;
+      const view = setup({
+        language,
+        route: `/admin/users/${me}`,
+        details: { [me]: () => json(200, { ...detailOf(2), userId: me, displayName: 'Admin Demo', role: 'admin' }) },
+        extra: {
+          'GET /org/coordinators': () => json(200, coordinators),
+          [`PATCH /admin/users/${me}`]: (call) => {
+            const body = call.body as { role?: 'admin' | 'coordinator' | 'rescuer'; accountStatus?: string };
+            if (body.role) state!.user = { ...state!.user!, role: body.role, nextStep: body.role === 'rescuer' ? 'complete-profile' : 'home' };
+            if (body.accountStatus) state!.user = null;
+            return json(200, { ...detailOf(2), userId: me, displayName: 'Admin Demo', ...body });
+          },
+        },
+      });
+      state = view.state;
+      return view;
+    }
+
+    it('cambiarse el rol avisa antes, y después deja la ficha, refresca la sesión y va a la pantalla del nuevo rol con un aviso', async () => {
+      const { user } = openSelf();
+      await user.click(await screen.findByRole('button', { name: A.changeRole }));
+      expect(within(dialog()).getByText(A.roleDialog.selfWarning)).toBeTruthy();
+      await user.click(within(dialog()).getByRole('radio', { name: roleName(text.account.roleCoordinator) }));
+      await user.click(within(dialog()).getByRole('button', { name: A.roleDialog.confirm }));
+      await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/home'));
+      expect(await screen.findByText(A.done.roleChangedSelf.replace('{{role}}', text.account.roleCoordinator))).toBeTruthy();
+    });
+
+    it('desactivarse avisa antes y después lleva al acceso con el aviso de cuenta desactivada', async () => {
+      const { user } = openSelf();
+      await user.click(await screen.findByRole('button', { name: A.disable }));
+      expect(within(dialog()).getByText(A.disableDialog.selfWarning)).toBeTruthy();
+      await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+      await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/login'));
+      expect(await screen.findByText(text.errors.ACCOUNT_DISABLED)).toBeTruthy();
+    });
+
+    it('en la ficha de otra persona no hay aviso de cuenta propia', async () => {
+      const { user } = open();
+      await user.click(await screen.findByRole('button', { name: A.changeRole }));
+      expect(within(dialog()).queryByText(A.roleDialog.selfWarning)).toBeNull();
+    });
   });
 });

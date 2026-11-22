@@ -495,3 +495,20 @@ describe('updateUser: LAST_ADMIN (D-U5)', () => {
     await expectError(await patch(secondSession, second.userId, { accountStatus: 'disabled' }), 'LAST_ADMIN');
   });
 });
+
+describe('anonymized accounts (INV-22)', () => {
+  it('are not listed and are a 404 for getUser and updateUser, and nothing changes', async () => {
+    const org = await organization('UsersAnon');
+    const gone = await fixtures.member(org.orgId, 'rescuer', 'active', { ...options, profile: 'complete' });
+    await rename(gone, 'Anonima Persona');
+    await fixtures.query(`UPDATE users SET account_status = 'disabled', anonymized_at = now() WHERE id = $1`, [gone.userId]);
+
+    const listed = await page(await list(org.session, '?pageSize=100'));
+    expect(listed.items.map((item) => item.userId)).not.toContain(gone.userId);
+    expect(listed.total).toBe(listed.items.length);
+    await expectError(await detail(org.session, gone.userId), 'NOT_FOUND');
+    await expectError(await patch(org.session, gone.userId, { accountStatus: 'active' }), 'NOT_FOUND');
+    await expectError(await patch(org.session, gone.userId, { role: 'coordinator' }), 'NOT_FOUND');
+    expect((await fixtures.query(`SELECT m.role, u.account_status FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.id = $1`, [gone.userId]))[0]).toEqual({ role: 'rescuer', account_status: 'disabled' });
+  });
+});

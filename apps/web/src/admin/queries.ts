@@ -74,9 +74,9 @@ export function useUsers(query: UsersQuery) {
   });
 }
 
-export function useUser(userId: string) {
+export function useUser(userId: string, enabled = true) {
   const api = useApi();
-  return useQuery({ queryKey: [...USERS_KEY, 'detail', userId], queryFn: ({ signal }) => api.getUser({ params: { userId } }, { signal }), retry: false });
+  return useQuery({ queryKey: [...USERS_KEY, 'detail', userId], queryFn: ({ signal }) => api.getUser({ params: { userId } }, { signal }), retry: false, enabled });
 }
 
 /** Cambiar el rol, desactivar o reactivar (RN-11, INV-29). Solo se envía lo que cambia: el servidor rechaza un campo igual al actual. */

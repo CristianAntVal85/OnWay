@@ -16,6 +16,8 @@ export interface Target {
   role: Role;
   /** Misiones no cerradas de las que es responsable (RN-11). */
   openMissions: number;
+  /** Es la persona de la sesión: cambiarse el rol o desactivarse tiene consecuencias propias. */
+  self?: boolean;
 }
 
 interface DialogProps {
@@ -138,7 +140,12 @@ export function ChangeRoleDialog({ target, onClose, onDone }: DialogProps & { on
   };
 
   return (
-    <Dialog title={t('admin.user.roleDialog.title', { name: target.name })} description={<p>{t('admin.user.roleDialog.description')}</p>} onClose={() => !update.isPending && onClose()}>
+    <Dialog title={t('admin.user.roleDialog.title', { name: target.name })} description={
+        <>
+          <p>{t('admin.user.roleDialog.description')}</p>
+          {target.self && <p className="dialog-warning">{t('admin.user.roleDialog.selfWarning')}</p>}
+        </>
+      } onClose={() => !update.isPending && onClose()}>
       <fieldset ref={group} className="role-choice" aria-describedby={missingRole ? roleErrorId : undefined}>
         <legend>{t('admin.user.roleDialog.legend')}</legend>
         {ROLES.filter((option) => option !== target.role).map((option) => (
@@ -213,7 +220,12 @@ export function DisableDialog({ target, onClose, onDone }: DialogProps & { onDon
   };
 
   return (
-    <Dialog title={t('admin.user.disableDialog.title', { name: target.name })} description={<p>{t('admin.user.disableDialog.description')}</p>} onClose={() => !update.isPending && onClose()}>
+    <Dialog title={t('admin.user.disableDialog.title', { name: target.name })} description={
+        <>
+          <p>{t('admin.user.disableDialog.description')}</p>
+          {target.self && <p className="dialog-warning">{t('admin.user.disableDialog.selfWarning')}</p>}
+        </>
+      } onClose={() => !update.isPending && onClose()}>
       {needsReassign && (
         <ReassignField
           excludeId={target.id}

@@ -497,6 +497,7 @@ export const fr: Messages = {
       lastAdmin: "Ce changement est impossible : c'est le seul administrateur actif de l'organisation. Nommez d'abord un autre administrateur.",
       done: {
         roleChanged: 'Le rôle du compte est maintenant : {{role}}.',
+        roleChangedSelf: 'Votre rôle est maintenant : {{role}}. Vous n’avez plus accès à l’Administration.',
         disabled: 'Le compte a été désactivé et ne peut plus se connecter.',
         reactivated: 'Le compte a été réactivé.',
       },
@@ -506,6 +507,7 @@ export const fr: Messages = {
         legend: 'Nouveau rôle',
         adminHelp: "Gère les utilisateurs et les données sensibles de l'organisation.",
         adminWarning: "Attention : le rôle d'administrateur donne accès à la gestion des utilisateurs et aux données sensibles. Ne l'accordez qu'à qui doit l'avoir.",
+        selfWarning: 'C’est votre propre compte : en changeant votre rôle, vous perdrez l’accès à l’Administration et reviendrez à votre écran d’accueil.',
         roleRequired: 'Choisissez un rôle pour continuer.',
         summary: 'Rôle choisi : {{role}}.',
         confirm: 'Changer le rôle',
@@ -513,6 +515,7 @@ export const fr: Messages = {
       disableDialog: {
         title: 'Désactiver le compte de {{name}}',
         description: 'La personne perdra son accès et ses sessions seront fermées. Ses données sont conservées et le compte peut être réactivé ensuite.',
+        selfWarning: 'C’est votre propre compte : en le désactivant, votre session sera fermée tout de suite et vous ne pourrez plus entrer tant qu’un autre administrateur ne l’aura pas réactivé.',
         confirm: 'Désactiver le compte',
       },
       reactivateDialog: {
