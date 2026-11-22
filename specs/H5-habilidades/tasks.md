@@ -13,7 +13,7 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
   - **Comprobación:** `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc gen/ && pnpm check @onway/contracts`.
   - **Hecho cuando:** pasan `registry` y `schema-guards`, y el doc 06 enseña `openCertificate` con `x-milestone` H5, roles de todos y respuesta de archivo.
 
-- [ ] **T2. Subir un certificado.** Cubre D-29 y doc 02 («tipo o tamaño no admitido»).
+- [x] **T2. Subir un certificado.** Cubre D-29 y doc 02 («tipo o tamaño no admitido»).
   - **Qué se hace:**
     - `certificateContentType(buffer)`, que reconoce PDF, JPEG y PNG por sus bytes iniciales.
     - `FilesService.upload` acepta `certificate` solo del rescatista: guarda el archivo con `owner_user_id` y lo inserta en `files`.
