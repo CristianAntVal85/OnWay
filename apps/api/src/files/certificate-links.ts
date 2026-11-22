@@ -96,9 +96,7 @@ export class CertificateLinks {
     const own = entry.ownerId === principal.userId;
     if (!own) {
       if (principal.role === 'coordinator') {
-        const related = await tx.execute(
-          sql`SELECT 1 FROM participations WHERE organization_id = ${principal.orgId} AND user_id = ${entry.ownerId} AND status IN ('pending', 'accepted') LIMIT 1`,
-        );
+        const related = await tx.execute(sql`SELECT 1 FROM participations WHERE organization_id = ${principal.orgId} AND user_id = ${entry.ownerId} AND status IN ('pending', 'accepted') LIMIT 1`);
         if (related.rows.length === 0) throw new DomainError('NOT_FOUND');
       } else if (principal.role !== 'admin') {
         throw new DomainError('NOT_FOUND'); // another rescuer

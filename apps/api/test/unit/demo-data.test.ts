@@ -98,4 +98,35 @@ describe('data/seed/demo.json (D-H0-18, R-10)', () => {
     expect(Demo.safeParse({ ...raw(), missions: [first, { ...first, name: String(first.name).toUpperCase() }] }).success).toBe(false);
     expect(Demo.safeParse({ ...raw(), missions: [{ ...first, elevationM: 1200 }] }).success).toBe(false);
   });
+
+  it('gives rescatista1 to rescatista5 one to three courses and skills, with a single invented certificate (H5-habilidades)', () => {
+    const rescuers = demo.members.filter((m) => m.role === 'rescuer');
+    expect(rescuers.map((m) => [m.key, m.skills.length])).toEqual([
+      ['rescuer-1', 3],
+      ['rescuer-2', 2],
+      ['rescuer-3', 1],
+      ['rescuer-4', 2],
+      ['rescuer-5', 1],
+      ['rescuer-6', 0],
+    ]);
+    expect(demo.members.filter((m) => m.role !== 'rescuer').every((m) => m.skills.length === 0)).toBe(true);
+    const withCertificate = rescuers.flatMap((m) => m.skills.filter((skill) => skill.certificate).map(() => m.key));
+    expect(withCertificate).toEqual(['rescuer-1']);
+  });
+
+  it('rejects a skill with a certificate, an expiry before its date and a repeated name', () => {
+    const members = raw().members as Record<string, unknown>[];
+    const withSkills = (skills: unknown[]) => ({ ...raw(), members: members.map((m) => (m.key === 'rescuer-3' ? { ...m, skills } : m)) });
+    expect(Demo.safeParse(withSkills([{ name: 'Dron', kind: 'skill', certificate: true }])).success).toBe(false);
+    expect(Demo.safeParse(withSkills([{ name: 'Curso', kind: 'course', issuedOn: '2026-05-01', expiresOn: '2026-04-01' }])).success).toBe(false);
+    expect(
+      Demo.safeParse(
+        withSkills([
+          { name: 'Dron', kind: 'skill' },
+          { name: 'dron', kind: 'skill' },
+        ]),
+      ).success,
+    ).toBe(false);
+    expect(Demo.safeParse({ ...raw(), members: members.map((m) => (m.key === 'admin' ? { ...m, skills: [{ name: 'X', kind: 'skill' }] } : m)) }).success).toBe(false);
+  });
 });

@@ -68,7 +68,7 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
     - **El enlace:** el válido da 200 con su `Content-Type`, `inline`, `nosniff` y `no-store`; caducado, alterado, de otra sesión o de un archivo borrado, 404.
     - En `app.test.ts`, 69 montadas y solo las 9 de `H5-equipos` responden 404.
 
-- [ ] **T5. Pruebas de la base, CSP del certificado, semilla y smoke.** Cubre el doc 05 (`skills_guard`, políticas) y D-S3.
+- [x] **T5. Pruebas de la base, CSP del certificado, semilla y smoke.** Cubre el doc 05 (`skills_guard`, políticas) y D-S3.
   - **Qué se hace:**
     - **Prueba `test:db`**, con SQL directo como `onway_app`:
       - políticas de `skills` y `files` (plan §7);
@@ -162,3 +162,8 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
 - **Recuento de montadas:** antes de H5 había 53 (no 51); al acabar el hito serán 71 (53 + 7 + 5 + 6), no 69. `app.test.ts` usa los números reales. El doc 07 aún dice 69 y se corrige en T9.
 - **Límite de 50 (T3):** no bloquea la fila del perfil; dos altas simultáneas podrían pasar de 50 (riesgo bajo). La entrada 51 usa `path = name` y código `too_many`.
 - **T4, auditoría:** la fila `certificate_opened` lleva además `subject_user_id` (el propietario del certificado); el detalle es solo `{fileId}`.
+- **T5, CSP del certificado (`infra/Caddyfile`):** un segundo `header` que fija `Content-Security-Policy` dentro de `handle /api/v1/certificates/*` NO sustituía a la general: el `header` del sitio lleva `-Server`, que aplaza todas sus operaciones y las deja ganar al final (se vio en la pila de revisión: la respuesta llevaba la general). Se resolvió sacando la general a `header @general Content-Security-Policy ...` con `@general not path /api/v1/certificates/*`. El test `no-external-resources` sigue leyendo la general.
+- **T5, comprobación en Chromium 155 (pila `onway-review`, puerto 18081):** con la CSP nueva completa, `sandbox` incluido, el visor de PDF enseña «Certificado de demostración · datos ficticios» y un PNG se ve como imagen (`document.contentType = image/png`, `naturalWidth = 1`). No hizo falta quitar `sandbox` ni aplicar la salida de D-S3 (`attachment`).
+- **T5, `smoke.sh` en la pila de revisión:** se pasó con `SMOKE_SKIP_ROUTING=1` (la superposición E2E de esa pila no levantó `routing`/`worker` para la comprobación). El bloque de habilidades sí se ejecutó.
+- **T5, semilla:** la entrada de demostración se crea solo al crear la entrada (si el rescatista quita el certificado, la semilla no lo repone); `seed` pasa a exigir `FILES_DIR` (la imagen ya lo trae, y `compose.yml` lo declara y monta `files`). `SeedOptions.storage` es opcional: sin él se crean las entradas y se omite el certificado con un aviso.
+- **T5, `test:db`:** `files_insert` pide dueño y finalidad, no el rol: un coordinador o administrador podría insertar un `certificate` a su nombre en la base; que solo lo suba un rescatista (`FORBIDDEN`) es regla del servicio (T2).

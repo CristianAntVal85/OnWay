@@ -98,6 +98,31 @@ sign_in coordinador@example.org
 [ "$(status -b "$jar" "$base/api/v1/my/profile/sensitive")" = 403 ] || fail "a coordinator must get 403 on /my/profile/sensitive"
 echo "ok  profile: rescatista1 complete and masked, sensitive data in clear only for them, coordinator 403"
 
+# Cursos y habilidades (H5-habilidades): rescatista1 trae de la semilla 3 entradas y el certificado PDF inventado del primer curso. Lo abre con el
+# enlace firmado (200 `application/pdf`, `inline`, con la CSP propia de esa ruta); el coordinador, sin participación suya, recibe 404 (INV-28).
+: >"$jar"
+login_body="$(curl -s -c "$jar" -b "$jar" -H 'Content-Type: application/json' -d "{\"email\":\"rescatista1@example.org\",\"password\":\"$password\"}" "$base/api/v1/auth/login")"
+csrf="$(echo "$login_body" | sed -n 's/.*"csrfToken":"\([^"]*\)".*/\1/p')"
+skills="$(curl -s -b "$jar" "$base/api/v1/my/skills")"
+[ "$(echo "$skills" | grep -o '"hasCertificate"' | wc -l)" = 3 ] || fail "rescatista1 must list 3 courses and skills: $skills"
+echo "$skills" | grep -q '"name":"Primeros auxilios en montaña"' || fail "the first course of rescatista1 is missing: $skills"
+skill_id="$(echo "$skills" | sed -n 's/.*"id":"\([^"]*\)","name":"Primeros auxilios en montaña".*/\1/p')"
+[ -n "$skill_id" ] || fail "cannot find the id of the course with certificate: $skills"
+link="$(curl -s -b "$jar" -X POST -H "X-CSRF-Token: $csrf" "$base/api/v1/skills/$skill_id/certificate-link")"
+url="$(echo "$link" | sed -n 's/.*"url":"\([^"]*\)".*/\1/p')"
+case "$url" in /api/v1/certificates/*) ;; *) fail "getCertificateLink did not return a same-origin path: $link" ;; esac
+headers="$(curl -s -D - -o /dev/null -b "$jar" "$base$url")"
+echo "$headers" | head -1 | grep -q ' 200' || fail "openCertificate is not 200: $headers"
+echo "$headers" | grep -qi '^content-type: application/pdf' || fail "the certificate is not application/pdf: $headers"
+echo "$headers" | grep -qi '^content-disposition: inline' || fail "the certificate is not inline: $headers"
+echo "$headers" | grep -qi "^content-security-policy:.*object-src 'self'" || fail "the certificate route lacks its own CSP: $headers"
+curl -s -b "$jar" "$base$url" | head -c 5 | grep -q '%PDF-' || fail "the certificate is not a PDF"
+: >"$jar"
+login_body="$(curl -s -c "$jar" -b "$jar" -H 'Content-Type: application/json' -d "{\"email\":\"coordinador@example.org\",\"password\":\"$password\"}" "$base/api/v1/auth/login")"
+csrf="$(echo "$login_body" | sed -n 's/.*"csrfToken":"\([^"]*\)".*/\1/p')"
+[ "$(status -b "$jar" -X POST -H "X-CSRF-Token: $csrf" "$base/api/v1/skills/$skill_id/certificate-link")" = 404 ] || fail "a coordinator without a participation of rescatista1 must get 404 on the certificate link"
+echo "ok  skills: rescatista1 lists 3, opens the demo PDF with a signed link (inline, own CSP), a coordinator without participation gets 404"
+
 # Biblioteca de rutas (H2-T6): la semilla deja 6 rutas ficticias (5 activas y 1 archivada); el coordinador las lista, el administrador las lee y el rescatista no.
 # Se exporta una a GPX y se comprueba que no lleva autor.
 check_routes() {

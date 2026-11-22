@@ -68,13 +68,19 @@ async function expectNotFound(response: Response) {
 }
 async function participate(member: Member, status: 'pending' | 'accepted' | 'withdrawn') {
   if (status === 'accepted') {
-    await fixtures.query(
-      `INSERT INTO participations (organization_id, mission_id, user_id, status, origin, decided_by, decided_at) VALUES ($1, $2, $3, 'accepted', 'coordinator', $4, now())`,
-      [orgId, missionId, member.userId, missionCoordinator.userId],
-    );
+    await fixtures.query(`INSERT INTO participations (organization_id, mission_id, user_id, status, origin, decided_by, decided_at) VALUES ($1, $2, $3, 'accepted', 'coordinator', $4, now())`, [
+      orgId,
+      missionId,
+      member.userId,
+      missionCoordinator.userId,
+    ]);
     return;
   }
-  await fixtures.query(`INSERT INTO participations (organization_id, mission_id, user_id, status, origin, offered_at) VALUES ($1, $2, $3, 'pending', 'volunteer', now())`, [orgId, missionId, member.userId]);
+  await fixtures.query(`INSERT INTO participations (organization_id, mission_id, user_id, status, origin, offered_at) VALUES ($1, $2, $3, 'pending', 'volunteer', now())`, [
+    orgId,
+    missionId,
+    member.userId,
+  ]);
   if (status === 'withdrawn') await fixtures.query(`UPDATE participations SET status = 'withdrawn' WHERE mission_id = $1 AND user_id = $2`, [missionId, member.userId]);
 }
 

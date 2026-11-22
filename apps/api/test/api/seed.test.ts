@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import { loadDemo } from '../../src/seed/demo.js';
 import type { ElevationProvider } from '../../src/geo/elevation.js';
 import { SyntheticElevationProvider } from '../../src/geo/synthetic-elevation.js';
+import { InMemoryFileStorage } from '../../src/files/file-storage.js';
 import { seedDemo } from '../../src/seed/seed.js';
 import { randomBytes } from 'node:crypto';
 import { sensitiveKeysFromSecrets } from '../../src/sensitive/config.js';
@@ -21,7 +22,8 @@ const elevation = new SyntheticElevationProvider();
 const warnings: string[] = [];
 // The seed and the API share the keys of the sensitive data (D-P8): the app below gets the same ones.
 const sensitive = sensitiveKeysFromSecrets(randomBytes(48), randomBytes(48));
-const options = { elevation, sensitive, warn: (message: string) => warnings.push(message) };
+const storage = new InMemoryFileStorage();
+const options = { elevation, sensitive, storage, warn: (message: string) => warnings.push(message) };
 
 const count = async (sql: string, values: unknown[] = []) => Number((await fixtures.query<{ n: string }>(sql, values))[0]!.n);
 
@@ -42,6 +44,8 @@ async function fingerprint(): Promise<string> {
       `SELECT id, route_id, version_number, status, ST_AsEWKT(geom) geom, distance_m, ascent_m, descent_m, provenance, note, created_at, validated_at FROM route_versions ORDER BY id`,
       `SELECT id, version_id, position, road_type, distance_m FROM route_segments ORDER BY id`,
       `SELECT id, mission_id, route_id, pinned_version_id, origin_point_id, team_id, status, note, added_by, added_at FROM mission_routes ORDER BY id`,
+      `SELECT * FROM skills ORDER BY id`,
+      `SELECT * FROM files ORDER BY id`,
       `SELECT * FROM audit_log ORDER BY id`,
     ].map(async (query) => JSON.stringify(await fixtures.query(query))),
   );
@@ -63,12 +67,12 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
   it('loads the agreed demo and a second run changes nothing', async () => {
     const { owner } = inject('database');
     const first = await seedDemo(owner, demo, options);
-    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6, missionRoutes: 4, profiles: 5 });
+    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6, missionRoutes: 4, profiles: 5, skills: 9 });
     orgId = first.organizationId;
     const before = await fingerprint();
 
     const second = await seedDemo(owner, demo, options);
-    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0, missionRoutes: 0, profiles: 0 });
+    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0, missionRoutes: 0, profiles: 0, skills: 0 });
     expect(await fingerprint()).toBe(before);
 
     // Two runs at once also end with a single organization.
@@ -79,6 +83,34 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
     expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1`, [orgId])).toBe(6);
     expect(await count(`SELECT count(*) n FROM route_versions WHERE organization_id = $1`, [orgId])).toBe(9);
     expect(warnings).toEqual([]);
+  });
+
+  it('H5-habilidades: 9 courses and skills for rescatista1 to 5, and a single invented PDF, owned by rescatista1, attached to one course', async () => {
+    const { owner } = inject('database');
+    const result = await seedDemo(owner, demo, options);
+    expect(result.skills).toBe(0); // the first test already loaded them: a second run adds nothing
+    const perRescuer = await fixtures.query<{ email: string; n: string }>(
+      `SELECT u.email, count(s.id) n FROM users u JOIN rescuer_profiles p ON p.user_id = u.id LEFT JOIN skills s ON s.profile_id = p.id WHERE p.organization_id = $1 GROUP BY u.email`,
+      [result.organizationId],
+    );
+    expect(Object.fromEntries(perRescuer.map((r) => [r.email, Number(r.n)]))).toMatchObject({
+      'rescatista1@example.org': 3,
+      'rescatista2@example.org': 2,
+      'rescatista3@example.org': 1,
+      'rescatista4@example.org': 2,
+      'rescatista5@example.org': 1,
+      'rescatista6@example.org': 0,
+    });
+    const certificates = await fixtures.query<{ email: string; content_type: string; storage_key: string; purpose: string }>(
+      `SELECT u.email, f.content_type, f.storage_key, f.purpose FROM files f JOIN users u ON u.id = f.owner_user_id WHERE f.organization_id = $1`,
+      [result.organizationId],
+    );
+    expect(certificates).toEqual([{ email: 'rescatista1@example.org', content_type: 'application/pdf', storage_key: certificates[0]!.storage_key, purpose: 'certificate' }]);
+    const bytes = await storage.get(certificates[0]!.storage_key);
+    expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(bytes.toString('latin1')).toContain('Certificado de demostraci\xf3n \xb7 datos ficticios');
+    const attached = await fixtures.query<{ name: string }>(`SELECT s.name FROM skills s JOIN files f ON f.id = s.certificate_file_id WHERE s.organization_id = $1`, [result.organizationId]);
+    expect(attached).toEqual([{ name: 'Primeros auxilios en montaña' }]);
   });
 
   it('has the agreed counts, one organization only (D-H0-18)', async () => {
@@ -287,14 +319,14 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
       };
       const nothing: ElevationProvider = { elevationAt: async () => null, elevationsAt: async (points) => points.map(() => null) };
       const messages: string[] = [];
-      const first = await seedDemo(owner, other, { elevation: nothing, sensitive, warn: (m) => messages.push(m) });
+      const first = await seedDemo(owner, other, { elevation: nothing, sensitive, storage, warn: (m) => messages.push(m) });
       expect(first).toMatchObject({ seeded: true, missions: 0, routes: 0, missionRoutes: 0 });
       expect(messages).toHaveLength(9); // the routes of a mission that was skipped add no warning of their own
       expect(messages[0]).toMatch(/skipped/);
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(0);
 
       const second = await seedDemo(owner, other, options);
-      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6, missionRoutes: 4, profiles: 0 });
+      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6, missionRoutes: 4, profiles: 0, skills: 0 });
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(3);
       expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1`, [first.organizationId])).toBe(6);
     });
@@ -482,7 +514,7 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
         })),
       };
       const again = await seedDemo(owner, withRoutes, options);
-      expect(again).toEqual({ seeded: false, organizationId: first.organizationId, missions: 0, routes: 0, missionRoutes: 4, profiles: 0 });
+      expect(again).toEqual({ seeded: false, organizationId: first.organizationId, missions: 0, routes: 0, missionRoutes: 4, profiles: 0, skills: 0 });
       expect(await count(`SELECT count(*) n FROM mission_routes WHERE organization_id = $1`, [first.organizationId])).toBe(4);
       expect(await count(`SELECT count(*) n FROM audit_log WHERE organization_id = $1 AND action IN ('route_added', 'route_marked_unavailable')`, [first.organizationId])).toBe(5);
       expect((await seedDemo(owner, withRoutes, options)).missionRoutes).toBe(0);
