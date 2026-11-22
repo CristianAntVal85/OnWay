@@ -1,15 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ListUsersQuery, OperationOutput } from '@onway/contracts';
+import type { ListUsersQuery, OperationOutput, UpdateUserRequest } from '@onway/contracts';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
+import { AuditWriter } from '../audit/audit.writer.js';
 import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import { DatabaseService, type Tx } from '../db/database.service.js';
+import { pgErrorOf } from '../db/errors.js';
 import { isoUtc, viewerOf } from '../missions/mission-support.js';
 import { listSkillsOf } from '../profile/skill-rows.js';
 
 type Item = OperationOutput<'listUsers'>['items'][number];
 type Query = z.infer<typeof ListUsersQuery>;
+type UpdateBody = z.infer<typeof UpdateUserRequest>;
 
 interface UserRow {
   user_id: string;
@@ -55,7 +58,10 @@ const SELECT_ITEM = (orgId: string) => sql`
  */
 @Injectable()
 export class UsersService {
-  constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Inject(AuditWriter) private readonly audit: AuditWriter,
+  ) {}
 
   private get tx(): Tx {
     return this.database.current();
@@ -109,4 +115,82 @@ export class UsersService {
       createdAt: row.created_at,
     };
   }
+
+  /**
+   * Changes the role and/or the state of an account (RF-813, RN-11, INV-25, INV-29), all in the transaction of the request. One change at a
+   * time per organization (advisory lock, as in the inbox) so that two administrators cannot leave the organization without one (`LAST_ADMIN`).
+   * Order: the missions are reassigned first (the function checks the new responsible), then the role, the profile and the state. A field
+   * that does not change anything (the same role, reactivating an active account) is `INVALID_STATE_TRANSITION` (D-U4).
+   */
+  async update(principal: Principal, userId: string, body: UpdateBody): Promise<OperationOutput<'updateUser'>> {
+    const { orgId, userId: actorId } = viewerOf(principal);
+    await this.tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`user-updates:${orgId}`}, 0))`);
+
+    const { rows } = await this.tx.execute(sql`
+      SELECT m.role, u.account_status, u.display_name FROM memberships m JOIN users u ON u.id = m.user_id
+       WHERE m.organization_id = ${orgId}::uuid AND m.user_id = ${userId}::uuid`);
+    const current = (rows as unknown as { role: Item['role']; account_status: Item['accountStatus']; display_name: string }[])[0];
+    if (!current) throw new DomainError('NOT_FOUND');
+
+    const changesRole = body.role !== undefined;
+    const changesStatus = body.accountStatus !== undefined;
+    if ((changesRole && body.role === current.role) || (changesStatus && body.accountStatus === current.account_status)) {
+      throw new DomainError('INVALID_STATE_TRANSITION', 'The change does not change anything');
+    }
+    const losesRole = changesRole && body.role !== current.role;
+    const disables = changesStatus && body.accountStatus === 'disabled';
+
+    if (current.role === 'admin' && current.account_status === 'active' && (losesRole || disables)) {
+      const { rows: others } = await this.tx.execute(sql`
+        SELECT count(*)::int AS n FROM memberships m JOIN users u ON u.id = m.user_id
+         WHERE m.organization_id = ${orgId}::uuid AND m.role = 'admin' AND m.status = 'active' AND u.account_status = 'active' AND m.user_id <> ${userId}::uuid`);
+      if ((others as unknown as { n: number }[])[0]!.n === 0) throw new DomainError('LAST_ADMIN', 'The organization needs at least one active administrator');
+    }
+
+    if (current.role === 'coordinator' && (losesRole || disables)) {
+      const { rows: open } = await this.tx.execute(sql`
+        SELECT id FROM missions WHERE organization_id = ${orgId}::uuid AND coordinator_id = ${userId}::uuid AND status <> 'closed' ORDER BY id`);
+      const missionIds = (open as unknown as { id: string }[]).map((r) => r.id);
+      if (missionIds.length > 0) {
+        if (!body.reassignMissionsTo) throw new DomainError('COORDINATOR_HAS_MISSIONS', 'The coordinator is responsible for missions that are not closed', { missionIds });
+        try {
+          await this.tx.execute(sql`SELECT admin_reassign_missions(${userId}::uuid, ${body.reassignMissionsTo}::uuid)`);
+        } catch (error) {
+          throw translate(error);
+        }
+      }
+    }
+
+    if (losesRole) {
+      await this.tx.execute(sql`UPDATE memberships SET role = ${body.role}::member_role WHERE organization_id = ${orgId}::uuid AND user_id = ${userId}::uuid`);
+      await this.audit.recordRoleChanged({ orgId, userId, actorUserId: actorId, from: current.role, to: body.role! });
+      if (body.role === 'rescuer') {
+        // D-U3: a person who was never a rescuer gets an incomplete profile; one who was keeps hers, hidden until now
+        await this.tx.execute(sql`
+          INSERT INTO rescuer_profiles (organization_id, user_id, full_name, status)
+          SELECT ${orgId}::uuid, ${userId}::uuid, ${current.display_name}, 'incomplete'
+           WHERE NOT EXISTS (SELECT 1 FROM rescuer_profiles WHERE organization_id = ${orgId}::uuid AND user_id = ${userId}::uuid)`);
+      }
+    }
+    if (changesStatus) {
+      try {
+        await this.tx.execute(sql`SELECT admin_set_account_status(${userId}::uuid, ${body.accountStatus}::account_status)`);
+      } catch (error) {
+        throw translate(error);
+      }
+    }
+    return this.detailIn(orgId, userId);
+  }
+}
+
+/** What `admin_reassign_missions` and `admin_set_account_status` raise: a destination that is not an active coordinator (or `missions_guard`, INV-03) is the caller's mistake. */
+function translate(error: unknown): Error {
+  const pg = pgErrorOf(error);
+  if (pg?.code === '22023' || pg?.code === '23000') {
+    return new DomainError('VALIDATION_FAILED', 'Request validation failed', {
+      issues: [{ path: 'reassignMissionsTo', code: 'invalid_value', message: 'The new responsible must be another active coordinator of the organization' }],
+    });
+  }
+  if (pg?.code === '42501') return new DomainError('FORBIDDEN');
+  return error instanceof Error ? error : new Error(String(error));
 }

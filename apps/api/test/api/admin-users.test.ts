@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { AdminUserDetail, ERROR_HTTP, ErrorResponse, UsersPage } from '@onway/contracts';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
-import { mustLogin, startApp, withSession, type Session, type TestApp } from '../support/app.js';
+import { login, mustLogin, startApp, withSession, type Session, type TestApp } from '../support/app.js';
 import { Fixtures, TEST_PASSWORD, type Member } from '../support/fixtures.js';
 
-// RF-813 (to see), doc 06 §7.1, rule 1 (INV-01), rule 3 and D-U6, against a real PostGIS. T4 adds `updateUser` to this file.
+// RF-813, doc 06 §7.1, rule 1 (INV-01), rule 3, D-U2 to D-U6, INV-25 and INV-29, against a real PostGIS.
 
 let app: TestApp;
 let fixtures: Fixtures;
@@ -266,5 +266,229 @@ describe('access to the user operations', () => {
   it('a pending account reaches none of them (INV-25)', async () => {
     const session = await mustLogin(app, person.email, TEST_PASSWORD);
     for (const call of calls(session)) await expectError(await call(), 'ACCOUNT_PENDING');
+  });
+});
+
+const patch = (session: Session, userId: string, body: unknown) =>
+  fetch(`${app.baseUrl}/admin/users/${userId}`, { method: 'PATCH', headers: { ...withSession(session), 'content-type': 'application/json' }, body: JSON.stringify(body) });
+const updated = async (response: Response) => {
+  expect(response.status).toBe(200);
+  return AdminUserDetail.parse(await response.json());
+};
+const audit = (userId: string, action: string) =>
+  fixtures.query<{ detail: Record<string, unknown>; actor_user_id: string; subject_user_id: string }>(`SELECT detail, actor_user_id, subject_user_id FROM audit_log WHERE entity_id = $1 AND action = $2`, [userId, action]);
+const openMission = async (orgId: string, coordinator: Member, status: 'planning' | 'active' | 'closed' = 'active') => {
+  const id = randomUUID();
+  await fixtures.query(
+    `INSERT INTO missions (id, organization_id, name, coordinator_id, status, target, target_source, created_by, activated_at, closed_at) VALUES ($1, $2, $3, $4, $5, 'POINT Z (0 0 0)', 'map', $4, $6, $7)`,
+    [id, orgId, `Mission ${id}`, coordinator.userId, status, status === 'planning' ? null : new Date(), status === 'closed' ? new Date() : null],
+  );
+  return id;
+};
+const responsibleOf = async (missionId: string) => (await fixtures.query<{ coordinator_id: string }>(`SELECT coordinator_id FROM missions WHERE id = $1`, [missionId]))[0]!.coordinator_id;
+
+describe('updateUser: the role (RF-813, INV-29, D-U3)', () => {
+  let org: Org;
+
+  beforeAll(async () => {
+    org = await organization('UsersRole');
+  });
+
+  it('rescuer to coordinator: the profile stays, the audit has {from, to} and the next request already uses the new role', async () => {
+    const person = await fixtures.member(org.orgId, 'rescuer', 'active', { password: TEST_PASSWORD, profile: 'complete' });
+    const session = await mustLogin(app, person.email, TEST_PASSWORD);
+    const before = await fetch(`${app.baseUrl}/admin/users`, { headers: withSession(session, false) });
+    await expectError(before, 'FORBIDDEN');
+
+    const result = await updated(await patch(org.session, person.userId, { role: 'coordinator' }));
+    expect(result).toMatchObject({ userId: person.userId, role: 'coordinator', profileStatus: null });
+    expect((await fixtures.query(`SELECT status FROM rescuer_profiles WHERE user_id = $1`, [person.userId]))[0]).toMatchObject({ status: 'complete' });
+    const [line, ...rest] = await audit(person.userId, 'role_changed');
+    expect(rest).toEqual([]);
+    expect(line).toMatchObject({ detail: { from: 'rescuer', to: 'coordinator' }, actor_user_id: org.admin.userId, subject_user_id: person.userId });
+    // same session, no new login: a coordinator may list the missions, a rescuer could not
+    const after = await fetch(`${app.baseUrl}/missions`, { headers: withSession(session, false) });
+    expect(after.status).toBe(200);
+  });
+
+  it('coordinator to rescuer creates an incomplete profile, and back to rescuer later recovers the old one (D-U3)', async () => {
+    const person = await fixtures.member(org.orgId, 'coordinator', 'active');
+    await fixtures.query(`UPDATE users SET display_name = 'Pedro Coord' WHERE id = $1`, [person.userId]);
+    const result = await updated(await patch(org.session, person.userId, { role: 'rescuer' }));
+    expect(result).toMatchObject({ role: 'rescuer', profileStatus: 'incomplete' });
+    expect((await fixtures.query(`SELECT full_name, status FROM rescuer_profiles WHERE user_id = $1`, [person.userId]))).toEqual([{ full_name: 'Pedro Coord', status: 'incomplete' }]);
+    await updated(await patch(org.session, person.userId, { role: 'admin' }));
+    await updated(await patch(org.session, person.userId, { role: 'rescuer' }));
+    expect(await fixtures.query(`SELECT 1 FROM rescuer_profiles WHERE user_id = $1`, [person.userId])).toHaveLength(1);
+    expect(await audit(person.userId, 'role_changed')).toHaveLength(3);
+  });
+
+  it('to administrator', async () => {
+    const person = await fixtures.member(org.orgId, 'coordinator', 'active');
+    expect((await updated(await patch(org.session, person.userId, { role: 'admin' }))).role).toBe('admin');
+    expect((await audit(person.userId, 'role_changed'))[0]!.detail).toEqual({ from: 'coordinator', to: 'admin' });
+  });
+
+  it('only the administrator changes a role: the coordinator and the rescuer get 403 and nothing changes (INV-29)', async () => {
+    const target = await fixtures.member(org.orgId, 'rescuer', 'active');
+    for (const who of [org.coordinator, org.rescuer]) {
+      const session = await mustLogin(app, who.email, TEST_PASSWORD);
+      await expectError(await patch(session, target.userId, { role: 'admin' }), 'FORBIDDEN');
+    }
+    expect((await fixtures.query(`SELECT role FROM memberships WHERE user_id = $1`, [target.userId]))[0]).toEqual({ role: 'rescuer' });
+    expect(await audit(target.userId, 'role_changed')).toEqual([]);
+  });
+
+  it('a change that changes nothing, or an empty body, is refused', async () => {
+    const person = await fixtures.member(org.orgId, 'rescuer', 'active');
+    await expectError(await patch(org.session, person.userId, { role: 'rescuer' }), 'INVALID_STATE_TRANSITION');
+    await expectError(await patch(org.session, person.userId, {}), 'VALIDATION_FAILED');
+    await expectError(await patch(org.session, person.userId, { role: 'boss' }), 'VALIDATION_FAILED');
+    await expectError(await patch(org.session, person.userId, { role: 'admin', extra: 1 }), 'VALIDATION_FAILED');
+  });
+
+  it('another organization and an unknown id are 404, and nothing is written (INV-01)', async () => {
+    const other = await organization('UsersRoleOther');
+    await expectError(await patch(org.session, other.rescuer.userId, { role: 'coordinator' }), 'NOT_FOUND');
+    await expectError(await patch(org.session, randomUUID(), { role: 'coordinator' }), 'NOT_FOUND');
+    await expectError(await patch(org.session, (await fixtures.applicant(org.orgId, 'pending')).userId, { accountStatus: 'active' }), 'NOT_FOUND');
+    expect((await fixtures.query(`SELECT role FROM memberships WHERE user_id = $1`, [other.rescuer.userId]))[0]).toEqual({ role: 'rescuer' });
+  });
+});
+
+describe('updateUser: disable and reactivate (INV-25)', () => {
+  let org: Org;
+
+  beforeAll(async () => {
+    org = await organization('UsersStatus');
+  });
+
+  it('disabling closes the session (401), leaves account_disabled and cannot log in; reactivating leaves account_active and lets the person in', async () => {
+    const person = await fixtures.member(org.orgId, 'rescuer', 'active', { password: TEST_PASSWORD, profile: 'complete' });
+    const session = await mustLogin(app, person.email, TEST_PASSWORD);
+    expect((await fetch(`${app.baseUrl}/my/skills`, { headers: withSession(session, false) })).status).toBe(200);
+
+    const off = await updated(await patch(org.session, person.userId, { accountStatus: 'disabled' }));
+    expect(off.accountStatus).toBe('disabled');
+    await expectError(await fetch(`${app.baseUrl}/my/skills`, { headers: withSession(session, false) }), 'UNAUTHENTICATED');
+    expect(await audit(person.userId, 'account_disabled')).toHaveLength(1);
+    expect((await login(app, person.email, TEST_PASSWORD)).response.status).not.toBe(200);
+
+    const on = await updated(await patch(org.session, person.userId, { accountStatus: 'active' }));
+    expect(on.accountStatus).toBe('active');
+    expect(await audit(person.userId, 'account_active')).toHaveLength(1);
+    await mustLogin(app, person.email, TEST_PASSWORD);
+  });
+
+  it('reactivating an active account, or disabling a disabled one, is INVALID_STATE_TRANSITION', async () => {
+    const active = await fixtures.member(org.orgId, 'rescuer', 'active');
+    const disabled = await fixtures.member(org.orgId, 'rescuer', 'disabled');
+    await expectError(await patch(org.session, active.userId, { accountStatus: 'active' }), 'INVALID_STATE_TRANSITION');
+    await expectError(await patch(org.session, disabled.userId, { accountStatus: 'disabled' }), 'INVALID_STATE_TRANSITION');
+    expect(await audit(active.userId, 'account_active')).toEqual([]);
+  });
+
+  it('a role and a state in one request both apply', async () => {
+    const person = await fixtures.member(org.orgId, 'rescuer', 'active');
+    const result = await updated(await patch(org.session, person.userId, { role: 'coordinator', accountStatus: 'disabled' }));
+    expect(result).toMatchObject({ role: 'coordinator', accountStatus: 'disabled' });
+  });
+});
+
+describe('updateUser: a coordinator with missions (RN-11, INV-03, INV-11, D-U1, D-U2)', () => {
+  let org: Org;
+
+  beforeAll(async () => {
+    org = await organization('UsersMissions');
+  });
+
+  it('disabling is COORDINATOR_HAS_MISSIONS with the ids of the open missions, and nothing changes', async () => {
+    const lead = await fixtures.member(org.orgId, 'coordinator', 'active');
+    const planning = await openMission(org.orgId, lead, 'planning');
+    const active = await openMission(org.orgId, lead, 'active');
+    await openMission(org.orgId, lead, 'closed');
+    const error = await expectError(await patch(org.session, lead.userId, { accountStatus: 'disabled' }), 'COORDINATOR_HAS_MISSIONS');
+    expect((error.error.details as { missionIds: string[] }).missionIds.sort()).toEqual([planning, active].sort());
+    expect((await fixtures.query(`SELECT account_status FROM users WHERE id = $1`, [lead.userId]))[0]).toEqual({ account_status: 'active' });
+    expect(await audit(lead.userId, 'account_disabled')).toEqual([]);
+  });
+
+  it('with reassignMissionsTo, the open missions move, the closed one stays, each leaves its line and the account is disabled', async () => {
+    const lead = await fixtures.member(org.orgId, 'coordinator', 'active');
+    const next = await fixtures.member(org.orgId, 'coordinator', 'active');
+    const planning = await openMission(org.orgId, lead, 'planning');
+    const active = await openMission(org.orgId, lead, 'active');
+    const closed = await openMission(org.orgId, lead, 'closed');
+    const result = await updated(await patch(org.session, lead.userId, { accountStatus: 'disabled', reassignMissionsTo: next.userId }));
+    expect(result).toMatchObject({ accountStatus: 'disabled', hasMissionsAsResponsible: 0 });
+    expect(await responsibleOf(planning)).toBe(next.userId);
+    expect(await responsibleOf(active)).toBe(next.userId);
+    expect(await responsibleOf(closed)).toBe(lead.userId);
+    for (const id of [planning, active]) {
+      const [line] = await audit(id, 'mission_updated');
+      expect(line!.detail).toMatchObject({ fields: ['coordinatorId'], reassignedFrom: lead.userId, reassignedTo: next.userId });
+    }
+    expect(await audit(closed, 'mission_updated')).toEqual([]);
+  });
+
+  it('changing the role of a coordinator with open missions needs it too (D-U2), and with it everything happens together', async () => {
+    const lead = await fixtures.member(org.orgId, 'coordinator', 'active');
+    const next = await fixtures.member(org.orgId, 'coordinator', 'active');
+    const mission = await openMission(org.orgId, lead, 'active');
+    await expectError(await patch(org.session, lead.userId, { role: 'rescuer' }), 'COORDINATOR_HAS_MISSIONS');
+    const result = await updated(await patch(org.session, lead.userId, { role: 'rescuer', reassignMissionsTo: next.userId }));
+    expect(result.role).toBe('rescuer');
+    expect(await responsibleOf(mission)).toBe(next.userId);
+  });
+
+  it('a coordinator without open missions needs nothing, and a reassignment that is not needed is ignored', async () => {
+    const lead = await fixtures.member(org.orgId, 'coordinator', 'active');
+    await openMission(org.orgId, lead, 'closed');
+    await updated(await patch(org.session, lead.userId, { accountStatus: 'disabled', reassignMissionsTo: randomUUID() }));
+  });
+
+  it.each([
+    ['a rescuer', async () => (await fixtures.member(org.orgId, 'rescuer', 'active')).userId],
+    ['an administrator', async () => org.admin.userId],
+    ['a disabled coordinator', async () => (await fixtures.member(org.orgId, 'coordinator', 'disabled')).userId],
+    ['a person of another organization', async () => (await fixtures.member(await fixtures.organization('Elsewhere'), 'coordinator', 'active')).userId],
+    ['an unknown id', async () => randomUUID()],
+  ])('%s is not a valid new responsible: VALIDATION_FAILED on reassignMissionsTo, and the whole change is undone', async (_name, destination) => {
+    const lead = await fixtures.member(org.orgId, 'coordinator', 'active');
+    const mission = await openMission(org.orgId, lead, 'active');
+    const failed = await expectError(await patch(org.session, lead.userId, { accountStatus: 'disabled', reassignMissionsTo: await destination() }), 'VALIDATION_FAILED');
+    expect((failed.error.details as { issues: { path: string }[] }).issues[0]!.path).toBe('reassignMissionsTo');
+    expect(await responsibleOf(mission)).toBe(lead.userId);
+    expect((await fixtures.query(`SELECT account_status FROM users WHERE id = $1`, [lead.userId]))[0]).toEqual({ account_status: 'active' });
+  });
+
+  it('the person herself is not a valid destination', async () => {
+    const lead = await fixtures.member(org.orgId, 'coordinator', 'active');
+    await openMission(org.orgId, lead, 'active');
+    await expectError(await patch(org.session, lead.userId, { accountStatus: 'disabled', reassignMissionsTo: lead.userId }), 'VALIDATION_FAILED');
+  });
+});
+
+describe('updateUser: LAST_ADMIN (D-U5)', () => {
+  it('the only active administrator can neither lose the role nor be disabled, and nothing changes', async () => {
+    const org = await organization('UsersLast');
+    await expectError(await patch(org.session, org.admin.userId, { role: 'coordinator' }), 'LAST_ADMIN');
+    await expectError(await patch(org.session, org.admin.userId, { accountStatus: 'disabled' }), 'LAST_ADMIN');
+    expect((await fixtures.query(`SELECT role FROM memberships WHERE user_id = $1`, [org.admin.userId]))[0]).toEqual({ role: 'admin' });
+    expect(await audit(org.admin.userId, 'role_changed')).toEqual([]);
+  });
+
+  it('a disabled administrator does not count: the active one is still the last', async () => {
+    const org = await organization('UsersLastDisabled');
+    await fixtures.member(org.orgId, 'admin', 'disabled');
+    await expectError(await patch(org.session, org.admin.userId, { role: 'rescuer' }), 'LAST_ADMIN');
+  });
+
+  it('with two administrators, one can step down (and then the other is the last)', async () => {
+    const org = await organization('UsersTwo');
+    const second = await fixtures.member(org.orgId, 'admin', 'active', options);
+    const secondSession = await mustLogin(app, second.email, TEST_PASSWORD);
+    expect((await updated(await patch(org.session, org.admin.userId, { role: 'coordinator' }))).role).toBe('coordinator');
+    await expectError(await patch(secondSession, second.userId, { accountStatus: 'disabled' }), 'LAST_ADMIN');
   });
 });

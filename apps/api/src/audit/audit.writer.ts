@@ -192,4 +192,20 @@ export class AuditWriter {
         detail: { fileId: entry.fileId },
       });
   }
+
+  /** The role of a person changed (INV-29). Only the two roles: no name, no email. */
+  async recordRoleChanged(entry: { orgId: string; userId: string; actorUserId: string; from: string; to: string }): Promise<void> {
+    await this.database
+      .current()
+      .insert(auditLog)
+      .values({
+        organizationId: entry.orgId,
+        entityType: 'user',
+        entityId: entry.userId,
+        action: 'role_changed',
+        actorUserId: entry.actorUserId,
+        subjectUserId: entry.userId,
+        detail: { from: entry.from, to: entry.to },
+      });
+  }
 }

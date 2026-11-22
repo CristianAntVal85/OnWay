@@ -92,7 +92,7 @@ const SKILLS_BUILT: string[] = ['listMySkills', 'createMySkill', 'updateMySkill'
  * The 3 operations of H5-usuarios, the third part. T3 mounts the two reads, T4 `updateUser`. The 6 of teams stay unmounted.
  */
 const USERS_OPERATIONS = ['listUsers', 'getUser', 'updateUser'];
-const USERS_BUILT: string[] = ['listUsers', 'getUser']; // T3 and T4
+const USERS_BUILT: string[] = ['listUsers', 'getUser', 'updateUser'];
 const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT, ...SKILLS_BUILT, ...USERS_BUILT];
 
 const MOUNTED_IDS = [...BUILT, ...BUILT_IN_H5];

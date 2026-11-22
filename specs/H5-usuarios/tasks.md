@@ -40,7 +40,7 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
     - **Ficha:** trae `phone`, `skills` (iguales que `listSkillsOf`) y `teams`, y no trae documento ni dirección.
     - **Accesos:** otra organización da 404; un coordinador o un rescatista, 403; una cuenta pendiente no entra.
 
-- [ ] **T4. `updateUser`.** Cubre RF-813 (cambiar el rol, desactivar y reactivar), RN-11, INV-25, INV-29, D-U2 a D-U5 y `LAST_ADMIN`.
+- [x] **T4. `updateUser`.** Cubre RF-813 (cambiar el rol, desactivar y reactivar), RN-11, INV-25, INV-29, D-U2 a D-U5 y `LAST_ADMIN`.
   - **Qué se hace:**
     - `UsersService.update` (plan §3), con un cerrojo consultivo por organización.
     - `recordRoleChanged`.
@@ -136,3 +136,10 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
   - **Archivos:** `docs/02-flujo-coordinador-y-vistas.md`, `docs/05-modelo-de-datos.md`, `docs/07-plan-de-implementacion.md`, `CLAUDE.md`, `docs/estado.md` y `docs/historial.md`.
   - **Comprobación:** `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test && pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`, y el E2E con `CI=1` en `onway-e2e`.
   - **Hecho cuando:** todo pasa y los documentos dicen lo construido y sus desviaciones.
+
+## Desviaciones y notas de la implementación
+
+- **T3.** `getUser.teams` solo lista equipos activos, por nombre (`TeamRef` no lleva estado). Un rescatista sin fila de `rescuer_profiles` sale con `profileStatus: 'incomplete'`, como `auth.service.ts`. `listUsers` incluye miembros desactivados y anonimizados (para el filtro de estado); la bandeja de solicitudes excluye a los anonimizados. `users.service.ts` tiene `detailIn` para reutilizarlo en la respuesta de `updateUser`.
+- **T2.** `admin_reassign_missions(p_from, p_to)` da `insufficient_privilege` si no es administrador e `invalid_parameter_value` si el destino no vale; `updateUser` lo traduce a `VALIDATION_FAILED` con `path = reassignMissionsTo` (también `integrity_constraint_violation` de `missions_guard`).
+- **T4.** En `app.test.ts` solo se añade `updateUser` a `USERS_BUILT` (74). `updateUser` es estricto por campo: un `role` igual al actual o un `accountStatus` igual al actual dan `INVALID_STATE_TRANSITION`, aunque el otro campo sí cambie (D-U4). Si `reassignMissionsTo` no hace falta, se ignora sin validarlo. Cerrojo consultivo `user-updates:<org>`. Al pasar a rescatista, el perfil se inserta solo si no existe ninguno (D-U3).
+

@@ -1,5 +1,5 @@
 import { Controller, Inject, Req, Res } from '@nestjs/common';
-import type { ListUsersQuery, OperationOutput } from '@onway/contracts';
+import type { ListUsersQuery, OperationOutput, UpdateUserRequest } from '@onway/contracts';
 import type { Response } from 'express';
 import type { z } from 'zod';
 import { Input, Operation, type OnwayRequest, type OperationInput } from '../common/operation.js';
@@ -25,5 +25,11 @@ export class UsersController {
   async getUser(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'getUser'>> {
     response.setHeader('Cache-Control', 'no-store');
     return this.users.detail(request.principal!, userId(input));
+  }
+
+  @Operation('updateUser')
+  async updateUser(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'updateUser'>> {
+    response.setHeader('Cache-Control', 'no-store');
+    return this.users.update(request.principal!, userId(input), input.body as z.infer<typeof UpdateUserRequest>);
   }
 }
