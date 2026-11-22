@@ -110,7 +110,16 @@ export interface Messages {
     announceMission: string;
     announceMissionUnnamed: string;
     locating: string;
-    noLocation: { title: string; denied: string; failed: string; unsupported: string; retry: string; pickHint: string };
+    noLocation: {
+      title: string;
+      denied: string;
+      failed: string;
+      unsupported: string;
+      retry: string;
+      pickHint: string;
+      /** Donde no hay lista en la que elegir (Mis misiones del rescatista): se remite a abrir una misión. */
+      open: { title: string; denied: string; failed: string; unsupported: string };
+    };
     /** Vista «Tiempo en detalle» (issue #18). */
     detail: { title: string; backHome: string; backMissions: string; backToMission: string };
     /** Tarjeta del tiempo simple (issue #18). */
@@ -421,6 +430,8 @@ export interface Messages {
     };
     history: {
       title: string;
+      showMore: string;
+      showLess: string;
       empty: string;
       system: string;
       by: string;
@@ -568,6 +579,7 @@ export interface Messages {
   };
   routeDetail: {
     back: string;
+    backToMission: string;
     mapLabel: string;
     archivedNotice: string;
     staleNotice: string;

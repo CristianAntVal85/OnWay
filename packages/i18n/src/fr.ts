@@ -146,6 +146,12 @@ export const fr: Messages = {
       unsupported: 'Ce navigateur ne propose pas la position de l’appareil. Choisissez une mission pour voir la météo à son objectif.',
       retry: 'Réessayer',
       pickHint: 'Choisissez une mission dans la liste pour voir la météo à son objectif.',
+      open: {
+        title: 'Activez la localisation',
+        denied: 'Vous n’avez pas autorisé l’accès à votre position. Activez-le dans le navigateur ou ouvrez une mission pour voir la météo à son objectif.',
+        failed: 'Impossible d’obtenir votre position. Réessayez ou ouvrez une mission pour voir la météo à son objectif.',
+        unsupported: 'Ce navigateur ne propose pas la position de l’appareil. Ouvrez une mission pour voir la météo à son objectif.',
+      },
     },
     detail: { title: 'La météo en détail', backHome: '← Retour à l’accueil', backMissions: '← Retour aux missions', backToMission: '← Retour à la mission' },
     simple: {
@@ -558,6 +564,8 @@ export const fr: Messages = {
     },
     history: {
       title: 'Historique',
+      showMore: 'Voir plus',
+      showLess: 'Voir moins',
       empty: 'Aucune modification enregistrée pour le moment.',
       system: 'le système',
       by: 'par {{actor}}',
@@ -756,6 +764,7 @@ export const fr: Messages = {
   },
   routeDetail: {
     back: 'Retour aux itinéraires',
+    backToMission: 'Retour à la mission',
     mapLabel: 'Carte de l’itinéraire',
     archivedNotice: 'Itinéraire archivé : lecture seule.',
     staleNotice: 'La dernière validation date de {{days}} jours et dépasse les {{max}} fixés par votre organisation. Vérifiez l’itinéraire avant de l’utiliser.',

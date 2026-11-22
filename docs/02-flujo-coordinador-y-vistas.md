@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.7 (borrador) · Fecha: 2026-11-21 · Depende de: documento 01 (v1.8)
+Versión: 1.8 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.8)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -113,7 +113,7 @@ Boceto 3. Vista informativa. No se edita nada desde aquí (RF-701). El criterio 
 - **Sin permiso de ubicación o sin señal:** la tarjeta muestra "Activa la ubicación o elige una misión". Está pendiente decidir si se usa el punto base de la organización como alternativa (Q-32).
 - **Sin misiones activas:** mensaje claro y botón para crear una misión. El tiempo sigue mostrándose para la ubicación del dispositivo.
 - **Fallo del proveedor meteorológico:** la tarjeta muestra "no disponible" o el último dato con su hora, y el resto del inicio sigue funcionando.
-- **Rescatista:** versión reducida con las misiones activas, aquellas en las que se ha ofrecido (con su estado) y la misma tarjeta del tiempo simple (la luz y la luna, en el detalle, 3.2.1), con la misma regla de ubicación (boceto 14).
+- **Rescatista:** versión reducida con las misiones activas, aquellas en las que se ha ofrecido (con su estado) y la misma tarjeta del tiempo simple (la luz y la luna, en el detalle, 3.2.1), pero **solo de su ubicación**: las tarjetas de sus misiones no llevan botón para cambiarla al objetivo, porque el tiempo del objetivo ya está en el detalle de cada misión. Sin ubicación, la tarjeta remite a abrir una misión (boceto 14).
 
 ### 3.2.1 Tiempo en detalle
 
@@ -596,7 +596,7 @@ Boceto 14. Se detallará en un documento posterior, pero el recorrido base es:
 
 1. Registro con código de invitación → pantalla de espera → el administrador aprueba (3.1).
 2. Primer acceso → **formulario de alta** (3.9).
-3. Login → Inicio reducido, con la tarjeta del tiempo simple de su ubicación o de la misión que elija (luz y luna, en el detalle).
+3. Login → Inicio reducido, con la tarjeta del tiempo simple de su ubicación (luz y luna, en el detalle); el tiempo en el objetivo, dentro de cada misión.
 4. Misiones activas → Detalle en solo lectura.
 5. En la misión: ver mapa, puntos y rutas validadas con métricas, **compartir la ubicación del objetivo** (coordenadas que se copian con un aviso para el lector de pantalla, y un enlace `geo:` que abre la aplicación de mapas del móvil) y elegir una ruta para verla en el mapa con su perfil.
 6. **Me ofrezco como voluntario**, y consultar el estado de la oferta. Puede retirarla.
@@ -688,6 +688,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.8 (2026-11-22)**
+- §3.2 y §7: en Mis misiones del rescatista, la tarjeta del tiempo es solo de su ubicación y las tarjetas de misión pierden el botón «Tiempo» (se confundía con la tarjeta de arriba); el tiempo del objetivo está en el detalle de la misión.
 
 **1.7 (2026-11-21)**
 - Pintar ruta y continuar a mano (`specs/issue-pintar-ruta/`): §3.6 C con el interruptor «Pintar ruta», la casilla de unir por los caminos desmarcada de serie y el dibujo desde la misión; §3.6 D nueva «Continuar a mano»; «Más ⋯» del detalle de ruta y §3.5 con las acciones nuevas; §4.3 B, dibujar construido.

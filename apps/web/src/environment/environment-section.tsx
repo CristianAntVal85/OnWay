@@ -27,6 +27,8 @@ interface Props {
   title?: string;
   /** `simple` (Inicio y cabeceras de misión): tarjeta con tres iconos, temperatura y viento y el botón al detalle. `detail`: todos los datos y la luz y la luna. */
   variant?: 'simple' | 'detail';
+  /** `pick` (por defecto): sin ubicación se sugiere elegir una misión de la lista. `open`: no hay nada que elegir (Mis misiones del rescatista); se sugiere abrir una misión. */
+  missionHint?: 'pick' | 'open';
   locale: string;
 }
 
@@ -35,7 +37,7 @@ interface Props {
  * personal, a la cabecera de Mis misiones y al detalle de una misión del rescatista. Una consulta por punto: no se refresca sola.
  * Cada fallo se queda en su tarjeta; el resto de la pantalla sigue funcionando.
  */
-export function EnvironmentSection({ mission, onBackToDevice, title, locale, variant = 'simple' }: Props) {
+export function EnvironmentSection({ mission, onBackToDevice, title, locale, variant = 'simple', missionHint = 'pick' }: Props) {
   const { t } = useTranslation();
   const { location, request } = useDeviceLocation();
   const headingId = useId();
@@ -76,8 +78,8 @@ export function EnvironmentSection({ mission, onBackToDevice, title, locale, var
 
       {noLocation && (
         <div className="state state-empty env-nolocation">
-          <h3>{t('environment.noLocation.title')}</h3>
-          <p>{t(`environment.noLocation.${location.status as 'denied' | 'failed' | 'unsupported'}`)}</p>
+          <h3>{t(missionHint === 'open' ? 'environment.noLocation.open.title' : 'environment.noLocation.title')}</h3>
+          <p>{t(`environment.noLocation.${missionHint === 'open' ? 'open.' : ''}${location.status as 'denied' | 'failed' | 'unsupported'}`)}</p>
           {location.status !== 'unsupported' && (
             <button type="button" className="button button-secondary" onClick={request}>
               {t('environment.noLocation.retry')}

@@ -305,6 +305,17 @@ describe('validar, derivar y archivar (coordinador)', () => {
     expect(within(list).getByRole('menuitem', { name: T.actions.continue }).getAttribute('href')).toMatch(new RegExp(`^/routes/${ROUTE}/continue\\?base=`));
   });
 
+  it('llegando desde una misión, «Volver a la misión» lleva a ella, enseña la versión pedida y «Continuar a mano» conserva la misión', async () => {
+    const MISSION = '44444444-aaaa-4aaa-8aaa-444444444444';
+    const { user } = setup({}, { route: `/routes/${ROUTE}?v=${V1}&mission=${MISSION}` });
+    const back = await screen.findByRole('link', { name: T.backToMission });
+    expect(back.getAttribute('href')).toBe(`/missions/${MISSION}`);
+    expect(screen.queryByRole('link', { name: T.back })).toBeNull();
+    expect(await screen.findByTestId('line-validated')).toBeTruthy();
+    const list = await openMenu(user, MORE);
+    expect(within(list).getByRole('menuitem', { name: T.actions.continue }).getAttribute('href')).toBe(`/routes/${ROUTE}/continue?base=${V1}&mission=${MISSION}`);
+  });
+
   it('cambiar nombre está en «Más», pide un nombre, envía updateRoute y enseña el nombre nuevo (RF-512)', async () => {
     let renamed = false;
     const { user, calls } = setup({

@@ -216,6 +216,15 @@ describe('selección: varias rutas en el mapa y su perfil (RF-504)', () => {
     expect(mapProps.current.selectedRouteIds).toEqual(new Set([second.id]));
   });
 
+  it('el nombre lleva al detalle de la ruta, a la versión fijada y con la vuelta a la misión; no marca la casilla', async () => {
+    const first = row(1, 'Senda del Circo');
+    setup([first]);
+    const line = await rowOf('Senda del Circo');
+    const link = within(line).getByRole('link', { name: 'Senda del Circo' });
+    expect(link.getAttribute('href')).toBe(`/routes/${first.routeId}?v=${first.pinned.versionId}&mission=${MISSION_ID}`);
+    expect((within(line).getByRole('checkbox', { name: /Senda del Circo/ }) as HTMLInputElement).checked).toBe(false);
+  });
+
   it('tocar una línea del mapa marca su fila', async () => {
     const first = row(1, 'Senda del Circo');
     setup([first], { extra: { [`GET /missions/${MISSION_ID}/routes/${first.id}/geometry`]: () => json(200, geometryOf(first.id)) } });
