@@ -1,0 +1,156 @@
+# H5-perfil · Tareas
+
+Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `<tipo>(H5-perfil): Tn <resumen>`.
+
+- [ ] **T1. Reparto de H5 y contrato de las 5 operaciones.** Cubre el doc 07 (partes de H5), Q-36, `getMyProfile`, `updateMyProfile`, `getMySensitive`, `updateMe` y `changePassword`.
+  - **Qué se hace:**
+    - Doc 07 §3 H5: la tabla de las tres partes, con sus operaciones y el recuento de montadas, y el registro de cambios.
+    - Doc 01: Q-36, «se decide en `H5-equipos`», y el registro de cambios.
+    - Notas de las 5 operaciones en el contrato (plan §3) y `changePassword` con `audited: true`.
+    - Regenerar el OpenAPI y el doc 06, con su registro de cambios.
+  - **Archivos:** `docs/07-plan-de-implementacion.md`, `docs/01-vision-y-requisitos.md`, `packages/contracts/src/endpoints.ts`, `packages/contracts/openapi.json`, `docs/06-contratos-de-api.md`.
+  - **Comprobación:** `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc gen/ && pnpm check @onway/contracts`.
+  - **Hecho cuando:** las pruebas del registro y de `schema-guards` pasan, y el doc 06 enseña las notas nuevas.
+
+- [ ] **T2. Cifrado y huella de los datos sensibles, con sus claves.** Doc 04 §6.3 y doc 05 §7.
+  - **Qué se hace:**
+    - `SensitiveCipher.encrypt(profileId, field, plaintext)` y `decrypt`, con el formato `nonce ‖ texto ‖ etiqueta`, AAD `profileId ‖ field` y `keyId`.
+    - `DocumentFingerprint.of(type, number)`: HMAC sobre `type ‖ normalizeDocument(number)`.
+    - `sensitiveOptionsFromEnv`: lee `SENSITIVE_KEY_FILE` y `DOCUMENT_HASH_KEY_FILE` con `readSecret`, deriva con HKDF y falla si faltan o tienen menos de 32 bytes.
+    - Secretos nuevos y su montaje en compose.
+  - **Archivos:**
+    - nuevos: `apps/api/src/sensitive/sensitive-cipher.ts`, `apps/api/src/sensitive/document-fingerprint.ts`, `apps/api/src/sensitive/config.ts`, `apps/api/src/sensitive/sensitive.module.ts`, `apps/api/test/unit/sensitive-cipher.test.ts`;
+    - se tocan: `infra/scripts/gen-secrets.sh`, `infra/compose.yml` (servicios `api` y `seed`), `apps/api/test/support/app.ts` (claves de prueba en archivos temporales).
+  - **Comprobación:** `pnpm check @onway/api`.
+  - **Hecho cuando:** las pruebas unitarias cubren que cifrar y descifrar recupera el texto, que la AAD de otro perfil o campo falla, que un byte cambiado falla, que el mismo documento con distinto formato da la misma huella y que una clave ausente impide arrancar.
+
+- [ ] **T3. `getMyProfile` y `getMySensitive`.** Cubre RF-806 (propio), RF-810, INV-18, INV-31 e INV-32.
+  - **Qué se hace:**
+    - Servicio que lee las tres tablas por separado, dentro de la transacción de la petición.
+    - Enmascarado con `maskDocument` y `addressSummary`.
+    - `missingFields` según lo que falte.
+    - `teams` sale de las membresías de equipo visibles y `skills` de la tabla.
+    - `getMySensitive` con `Cache-Control: no-store`.
+    - Montar las dos y añadirlas a `PROFILE_BUILT`.
+  - **Archivos:**
+    - nuevos: `apps/api/src/profile/profile.controller.ts`, `apps/api/src/profile/profile.service.ts`, `apps/api/src/profile/profile.module.ts`, `apps/api/test/api/profile.test.ts`;
+    - se tocan: `apps/api/src/app.module.ts`, `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api -- profile app`.
+  - **Hecho cuando:** pasan las pruebas de INV-18 (lo propio en claro; coordinador y administrador reciben `FORBIDDEN`), INV-31 (`email` igual a `users.email`) y del perfil a medias (`missingFields`), y AC-02 cuenta 60 operaciones.
+
+- [ ] **T4. `updateMyProfile`.** Cubre RF-807, RF-812 (corregir), INV-24 e INV-32.
+  - **Qué se hace:**
+    - Actualización parcial, en una transacción:
+      - `fullName` va a `rescuer_profiles`;
+      - `phone`, con *upsert*, a `rescuer_contact`;
+      - `document` y `address`, cifrados y con *upsert*, a `rescuer_sensitive`. El primer documento exige también la dirección: la fila tiene ambos `NOT NULL`, así que sin la otra pieza es `VALIDATION_FAILED` con `details`.
+    - Si ya no falta nada, `status = 'complete'` y `completed_at = clock.now()`.
+    - Errores: `23505` de `document_hash` da `DOCUMENT_ALREADY_REGISTERED` y el esquema da `INVALID_DOCUMENT`.
+    - Auditoría `profile_completed` o `profile_updated`, con los nombres de los bloques.
+  - **Archivos:** `apps/api/src/profile/profile.service.ts`, `apps/api/src/profile/profile.controller.ts`, `apps/api/src/audit/audit.writer.ts`, `apps/api/src/db/errors.ts` (si hace falta mapear la restricción), `apps/api/test/api/profile.test.ts`, `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api -- profile app`.
+  - **Hecho cuando:**
+    - pasan las pruebas de INV-24: el duplicado en la misma organización da 409 sin datos de nadie, en otra organización se admite, y guardar de nuevo lo propio no falla;
+    - el alta completa da `complete`, una sola fila de auditoría sin valores, y `getMe.nextStep = home`;
+    - en la base, los bytes cifrados no contienen el texto en claro;
+    - AC-02 cuenta 61.
+
+- [ ] **T5. `updateMe` y `changePassword`.** Cubre RF-102, D-P5 y D-P6.
+  - **Qué se hace:**
+    - `updateMe` actualiza `display_name` y `locale` y devuelve `MeResponse`.
+    - `changePassword` verifica la contraseña actual con `verifyPassword`; si es errónea, registra el intento con `auth_record_attempt(…, false, …)` y responde `INVALID_CREDENTIALS`.
+    - Si es correcta: guarda el hash nuevo, borra las demás sesiones (`DELETE FROM sessions WHERE user_id = me AND id <> actual`) y registra la auditoría `password_changed`.
+  - **Archivos:** `apps/api/src/identity/identity.controller.ts`, `apps/api/src/identity/auth.service.ts`, `apps/api/src/identity/session.service.ts`, `apps/api/test/api/auth.test.ts`, `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api -- auth app`.
+  - **Hecho cuando:**
+    - con dos sesiones, cambiar la contraseña deja viva la actual y la otra recibe `SESSION_EXPIRED`;
+    - se entra con la nueva y no con la vieja;
+    - la contraseña actual errónea da 401 y cuenta para el bloqueo;
+    - `updateMe` con `role` da `VALIDATION_FAILED` y el rol no cambia;
+    - AC-02 cuenta 63.
+
+- [ ] **T6. Semilla con perfiles completos y smoke.** Cubre D-P8 y P1.
+  - **Qué se hace:**
+    - `demo.json`: el bloque `profile` (teléfono, DNI con letra válida y dirección ficticios) en `rescuer-1` a `rescuer-5`.
+    - `seedProfiles` completa, con `SensitiveCipher` y `DocumentFingerprint`, los que sigan `incomplete` y sin sensibles.
+    - `rescatista6` queda incompleto.
+    - Al día: `seed.test.ts`, `smoke.sh` (`rescatista1` va a `home` y `rescatista6` a `complete-profile`; perfil enmascarado; el coordinador recibe `FORBIDDEN` en `/my/profile/sensitive`) y `data/seed/README.md`.
+    - E2E: `roles.spec.ts`, con el caso incompleto pasado a `rescatista6`.
+  - **Archivos:** `data/seed/demo.json`, `apps/api/src/seed/demo.ts`, `apps/api/src/seed/seed.ts`, `apps/api/test/api/seed.test.ts`, `apps/api/test/unit/demo-data.test.ts`, `infra/scripts/smoke.sh`, `data/seed/README.md`, `apps/web/e2e/roles.spec.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api -- seed` y, con la pila `onway` reconstruida (`docker compose up --build --wait`), `infra/scripts/smoke.sh`.
+  - **Hecho cuando:**
+    - la semilla deja 5 perfiles completos con bytes cifrados y huellas distintas;
+    - una segunda ejecución no cambia nada;
+    - smoke pasa entero.
+
+- [ ] **T7. Web: alta obligatoria y Mi perfil.** Cubre RF-101, RF-807, RF-810 y P1.
+  - **Qué se hace:**
+    - Guardia `RequireCompleteProfile`: con `nextStep = complete-profile`, todo salvo `/profile` y `/account` lleva a `/profile`. Con el perfil incompleto, la barra solo enseña «Mi perfil» y «Cuenta».
+    - **Formulario de alta** con los bloques del doc 02 §3.9:
+      - el correo, de solo lectura;
+      - el aviso de quién ve qué;
+      - validación en el cliente con los esquemas del contrato (`isValidDocument`, `PHONE_PATTERN`);
+      - errores del servidor en su campo: `INVALID_DOCUMENT`, y `DOCUMENT_ALREADY_REGISTERED` con texto neutro;
+      - al completar, se vuelve a leer la sesión y se va a Mis misiones.
+    - **Mi perfil:**
+      - contacto y sensibles en bloques separados;
+      - documento y dirección enmascarados y «Mostrar» (`getMySensitive`), que se oculta al salir;
+      - «Corregir», el mismo formulario con los datos;
+      - Mis equipos.
+    - Estados de carga, vacío y error; teclado; 375 px; textos es y fr.
+  - **Archivos:**
+    - nuevos: `apps/web/src/profile/profile-form.tsx`, `apps/web/src/profile/profile-view.tsx`, `apps/web/src/profile/queries.ts`, `apps/web/test/profile.test.tsx`;
+    - se tocan: `apps/web/src/pages/profile-page.tsx`, `apps/web/src/components/guards.tsx`, `apps/web/src/app/routes.tsx`, `apps/web/src/nav/navigation.ts`, `apps/web/src/styles.css`, `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts`, `packages/i18n/src/types.ts`, `apps/web/test/navigation.test.ts`.
+  - **Comprobación:** `pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:** las pruebas cubren:
+    - la redirección desde `/missions` con el perfil incompleto, y que con el perfil completo no se redirige;
+    - el envío exacto del cuerpo;
+    - la letra del DNI mal, sin enviar nada;
+    - el 409 en su campo;
+    - el enmascarado y «Mostrar»;
+    - el francés;
+    - que no queda texto fijo (`no-fixed-text`).
+
+- [ ] **T8. Web: Cuenta con nombre visible, idioma en la cuenta y cambiar contraseña.** Cubre D-P5 y D-P6.
+  - **Qué se hace:**
+    - **Nombre visible** con guardar y su error.
+    - **Idioma:** `useLocale` llama a `updateMe({locale})` además de guardar en el navegador; si falla, avisa sin deshacer el cambio local.
+    - **Cambiar contraseña:**
+      - campos actual, nueva y repetir, validados con `ChangePasswordRequest`;
+      - `INVALID_CREDENTIALS` en el campo «actual» y `ACCOUNT_LOCKED` con su tiempo de espera;
+      - aviso de que se han cerrado las demás sesiones.
+  - **Archivos:** `apps/web/src/pages/account-page.tsx`, `apps/web/src/i18n/use-locale.ts`, `apps/web/src/components/language-switch.tsx`, nuevo `apps/web/src/session/account-forms.tsx`, `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts`, `packages/i18n/src/types.ts`, `apps/web/test/account.test.tsx` (nuevo), `apps/web/test/locale-and-errors.test.ts`.
+  - **Comprobación:** `pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:**
+    - cambiar el idioma envía `PATCH /auth/me {locale}`;
+    - el nombre nuevo se ve en la cabecera tras guardar;
+    - la contraseña envía el cuerpo exacto, enseña el error en el campo y el aviso de sesiones cerradas;
+    - funciona con teclado y en francés.
+
+- [ ] **T9. Demostración de extremo a extremo `h5-perfil-demo.spec.ts`.** Es la demostración del plan §7, en escritorio y 375 px.
+  - **Qué se hace:**
+    - El DNI de cada ejecución se genera con letra válida a partir del sello.
+    - Al terminar, `retireE2eAccounts` deja la cuenta aprobada y desactivada.
+    - Las demostraciones que usan `rescatista1` y dependían del perfil incompleto se ajustan.
+    - `apps/web/e2e/README.md`: qué crea y qué deja.
+  - **Archivos:** nuevo `apps/web/e2e/h5-perfil-demo.spec.ts`; se tocan `apps/web/e2e/support/stack.ts`, `apps/web/e2e/support/app.ts`, `apps/web/e2e/h5-acceso-demo.spec.ts` (el título del alta cambia), `apps/web/e2e/README.md`.
+  - **Comprobación:** con la pila `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d`, y con las mismas variables más `E2E_BASE_URL=http://localhost:18080 CI=1`, ejecutar `pnpm --filter @onway/web exec playwright test -c e2e h5-perfil-demo.spec.ts` y después `pnpm --filter @onway/web e2e`.
+  - **Hecho cuando:** la demostración pasa en los dos formatos y el E2E completo pasa sin fallos.
+
+- [ ] **T10. Cierre: documentos y verificación completa.**
+  - **Qué se hace:**
+    - Documentos al día:
+      - doc 02 (§3.9 y §2, y el registro);
+      - doc 05 (la fila de la semilla de datos sensibles);
+      - doc 07 («Tal como se construyó (`H5-perfil`)»);
+      - `CLAUDE.md` (las claves y lo que borra `down -v`);
+      - `infra/README.md` (las claves y su pérdida);
+      - `docs/estado.md` y `docs/historial.md` (el cambio de D-H0-19 y D-H0-21).
+    - Marcar las tareas.
+  - **Archivos:** `docs/02-flujo-coordinador-y-vistas.md`, `docs/05-modelo-de-datos.md`, `docs/07-plan-de-implementacion.md`, `CLAUDE.md`, `infra/README.md`, `docs/estado.md`, `docs/historial.md`, `specs/H5-perfil/tasks.md`.
+  - **Comprobación:**
+    - `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test`;
+    - `pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`;
+    - `infra/scripts/smoke.sh`;
+    - el E2E con `CI=1` en `onway-e2e`.
+  - **Hecho cuando:** todo está en verde y queda lista para `/sdd-validate H5-perfil`.
