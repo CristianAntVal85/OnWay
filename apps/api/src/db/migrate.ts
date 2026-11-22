@@ -23,7 +23,7 @@ export function resolveMigrationsFolder(env: Record<string, string | undefined> 
 }
 
 /**
- * Applies 0002-0014 as `onway_owner` with the Drizzle migrator, then installs the job queue (pg-boss: its own schema, created by
+ * Applies 0002-0015 as `onway_owner` with the Drizzle migrator, then installs the job queue (pg-boss: its own schema, created by
  * the library, H3). 0001 (extensions and roles) needs a superuser and runs at database start-up (infra/db/init).
  */
 export async function runMigrations(connection: DbConnection, migrationsFolder = resolveMigrationsFolder()): Promise<void> {

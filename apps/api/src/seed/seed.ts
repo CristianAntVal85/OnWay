@@ -9,7 +9,7 @@ import type { FileStorage } from '../files/file-storage.js';
 import type { ElevationProvider } from '../geo/elevation.js';
 import { hashPassword } from '../identity/password.js';
 import { RouteMeasurement, type MeasuredPath } from '../routes/route-measurement.js';
-import { normalizeDocument } from '@onway/contracts';
+import { localityCode, normalizeDocument } from '@onway/contracts';
 import type { SensitiveKeys } from '../sensitive/config.js';
 import { DocumentFingerprint } from '../sensitive/document-fingerprint.js';
 import { SensitiveCipher } from '../sensitive/sensitive-cipher.js';
@@ -252,7 +252,12 @@ async function seedOrganization(pool: pg.Pool, demo: Demo): Promise<{ seeded: bo
     }
 
     for (const team of demo.teams) {
-      const { rows } = await client.query<{ id: string }>(`INSERT INTO teams (organization_id, name, locality) VALUES ($1, $2, $3) RETURNING id`, [orgId, team.name, team.locality]);
+      const { rows } = await client.query<{ id: string }>(`INSERT INTO teams (organization_id, name, locality, code) VALUES ($1, $2, $3, $4) RETURNING id`, [
+        orgId,
+        team.name,
+        team.locality,
+        localityCode(team.locality),
+      ]); // provisional (H5-equipos T2): T5 lleva `code` a demo.json
       for (const key of team.members) {
         await client.query(`INSERT INTO team_members (team_id, user_id, organization_id) VALUES ($1, $2, $3)`, [rows[0]!.id, userIds.get(key), orgId]);
       }

@@ -65,6 +65,8 @@ export const memberships = pgTable(
     userId: uuid('user_id').notNull().unique(),
     role: memberRole('role').notNull(),
     status: memberStatus('status').notNull().default('active'),
+    /** Q-36: lo fija solo `set_member_alias` (la aplicación no puede escribirlo). */
+    alias: text('alias'),
     createdAt: timestamptz('created_at').notNull().defaultNow(),
   },
   (t) => [unique().on(t.organizationId, t.userId)],
@@ -123,6 +125,7 @@ export const teams = pgTable('teams', {
   organizationId: uuid('organization_id').notNull(),
   name: text('name').notNull(),
   locality: text('locality').notNull(),
+  code: text('code').notNull(),
   status: teamStatus('status').notNull().default('active'),
   createdAt: timestamptz('created_at').notNull().defaultNow(),
 });

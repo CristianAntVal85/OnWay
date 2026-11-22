@@ -49,7 +49,7 @@ beforeAll(async () => {
   await owner.query(`INSERT INTO missions (id, organization_id, name, coordinator_id, status, target, target_source, created_by, activated_at) VALUES ($1, $2, 'Active mission', $3, 'active', 'POINT Z (0 0 0)', 'map', $3, now())`, [ids.mission, orgId, ids.coordinator]);
   await owner.query(`INSERT INTO mission_points (id, organization_id, mission_id, kind, name, geom) VALUES ($1, $2, $3, 'origin', 'Origin', 'POINT Z (0 0 0)')`, [ids.point, orgId, ids.mission]);
   await owner.query(`INSERT INTO routes (id, organization_id, name, created_by) VALUES ($1, $2, 'Route', $3)`, [ids.route, orgId, ids.coordinator]);
-  await owner.query(`INSERT INTO teams (id, organization_id, name, locality) VALUES ($1, $2, 'Team', 'Locality')`, [ids.team, orgId]);
+  await owner.query(`INSERT INTO teams (id, organization_id, name, locality, code) VALUES ($1, $2, 'Team', 'Locality', 'LCL')`, [ids.team, orgId]);
 });
 
 afterAll(async () => {

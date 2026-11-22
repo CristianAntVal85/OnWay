@@ -18,7 +18,7 @@ Plan: `specs/H5-equipos/plan.md`. Las tareas van en orden de dependencia, con un
     - pasan `registry` y `schema-guards`;
     - `pnpm typecheck` sigue en verde. Si la API o la web no compilan por los campos nuevos, se rellenan con `null` o un valor provisional y se anota; su lógica llega en T3 y T4.
 
-- [ ] **T2. Migración 0015: código del equipo, D-34 y alias.** Cubre INV-23, D-34, D-E1 y D-E3.
+- [x] **T2. Migración 0015: código del equipo, D-34 y alias.** Cubre INV-23, D-34, D-E1 y D-E3.
   - **Qué se hace:**
     - **La migración**, tal como la describe el plan §3: `teams.code` (relleno de los equipos que ya existen, `NOT NULL`, `CHECK` y `UNIQUE`), la nueva `teams_select`, `memberships.alias` con su unicidad parcial, y las funciones `set_member_alias` y `mission_coordinator_alias`. Lleva su `GRANT` y su `REVOKE` y la entrada en el diario de migraciones.
     - **Las pruebas de la base**, con SQL directo como `onway_app`:
@@ -167,3 +167,6 @@ Plan: `specs/H5-equipos/plan.md`. Las tareas van en orden de dependencia, con un
 
 - **T1.** `aliasBase` devuelve `user` si el nombre no tiene letras (el plan no lo cubría). `localityCode` rellena con `X` si la localidad tiene menos de tres letras. Las letras de relleno van detrás de las consonantes (Jaca → `JCA`). Las partículas saltadas son de, del, la, las, los, y, e.
 - **T1.** `my-missions.service.ts` lleva `coordinatorAlias: null` provisional hasta T4. Las pruebas del contrato nuevas (`registry`, `behavior`) cubren H5 = 28 y H6 = 16 operaciones. Doc 06 pasa a 1.17, doc 01 a 1.11 y doc 07 a 0.25 (la fila de `H5-equipos` ya existía desde la 0.22).
+- **T2.** `onway_app` pierde `UPDATE` de toda la tabla `memberships` y conserva `UPDATE (role)`: sin eso un `REVOKE` de columna no tenía efecto (la concesión de 0008 era de tabla). `memberships.status` ya solo lo escriben funciones `SECURITY DEFINER`; la prueba lo comprueba. `memberships.alias` lleva un `CHECK` de formato (`^[a-z]+[0-9]*( [A-Z0-9]{3})?$`) que el plan no mencionaba.
+- **T2.** Tocados por el `NOT NULL` de `teams.code`: `db/tests/seed_and_tests.sql` y `run_tests.sql` (el recuento «rescatista ve su equipo» pasa de 1 a 2 por D-34 y cambia de nombre; siguen 194 comprobaciones), `test/support/fixtures.ts`, `mission-writers-policy.test.ts`, `database.test.ts` y `organization.test.ts`. `seed.ts` usa `localityCode(locality)` de forma provisional; T5 lleva `code` a `demo.json`.
+- **T2.** La prueba de la base aplica 0002-0014 a mano, inserta los equipos con choque y luego ejecuta 0015 (relleno con `AL2`, `AL3` para los choques).

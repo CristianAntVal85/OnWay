@@ -69,7 +69,7 @@ INSERT INTO rescuer_sensitive (profile_id,organization_id,document_type,document
  ('c0000000-0000-0000-0000-0000000000b1','b0000000-0000-0000-0000-000000000002','passport','\x05','\x0c','\x06',1);
 UPDATE rescuer_profiles SET status='complete', completed_at=now() WHERE id IN ('c0000000-0000-0000-0000-000000000001','c0000000-0000-0000-0000-000000000002','c0000000-0000-0000-0000-0000000000b1');
 
-INSERT INTO teams (id,organization_id,name,locality) VALUES ('d0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000001','Equipo Norte','Localidad A');
+INSERT INTO teams (id,organization_id,name,locality,code) VALUES ('d0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000001','Equipo Norte','Localidad A','LCA');
 INSERT INTO team_members (team_id,user_id,organization_id) VALUES ('d0000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000001');
 
 INSERT INTO missions (id,organization_id,name,coordinator_id,status,target,target_source,created_by,activated_at) VALUES
@@ -100,7 +100,7 @@ INSERT INTO mission_routes (organization_id,mission_id,route_id,pinned_version_i
  ('a0000000-0000-0000-0000-000000000001','e0000000-0000-0000-0000-000000000002','90000000-0000-0000-0000-000000000002','91000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-0000000000c1');
 
 -- datos de la 0011 (Q-14): un equipo sin asignar, dos rutas sin usar (una con un borrador y un tramo), una asignación y una zona a evitar
-INSERT INTO teams (id,organization_id,name,locality) VALUES ('d0000000-0000-0000-0000-000000000002','a0000000-0000-0000-0000-000000000001','Equipo Sur','Localidad B');
+INSERT INTO teams (id,organization_id,name,locality,code) VALUES ('d0000000-0000-0000-0000-000000000002','a0000000-0000-0000-0000-000000000001','Equipo Sur','Localidad B','LCB');
 INSERT INTO mission_team_assignments (mission_id,team_id,organization_id,assigned_by) VALUES
  ('e0000000-0000-0000-0000-000000000002','d0000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-0000000000c1');
 INSERT INTO routes (id,organization_id,name,created_by) VALUES

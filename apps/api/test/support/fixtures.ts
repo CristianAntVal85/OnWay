@@ -87,10 +87,20 @@ export class Fixtures {
     return { userId: user!.id, orgId, role: 'rescuer', email, ...(options.password ? { password: options.password } : {}) };
   }
 
-  async team(orgId: string, name = 'Team'): Promise<string> {
-    const [row] = await this.query<{ id: string }>(`INSERT INTO teams (organization_id, name, locality) VALUES ($1, $2, 'Locality') RETURNING id`, [
+  async team(
+    orgId: string,
+    name = 'Team',
+    code = `${randomBytes(2)
+      .toString('base64url')
+      .replace(/[^A-Za-z0-9]/g, 'x')
+      .slice(0, 3)
+      .toUpperCase()
+      .padEnd(3, 'X')}`,
+  ): Promise<string> {
+    const [row] = await this.query<{ id: string }>(`INSERT INTO teams (organization_id, name, locality, code) VALUES ($1, $2, 'Locality', $3) RETURNING id`, [
       orgId,
       `${name} ${randomBytes(3).toString('hex')}`,
+      code,
     ]);
     return row!.id;
   }
