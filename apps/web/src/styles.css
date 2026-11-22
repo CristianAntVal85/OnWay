@@ -4176,3 +4176,19 @@ label.signup-info {
   color: var(--text-muted);
   font-size: 0.95rem;
 }
+
+.skill-certificate .button {
+  min-height: 2.75rem;
+}
+
+.skill-certificate-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.skill-certificate-current .form-note {
+  margin: 0;
+}

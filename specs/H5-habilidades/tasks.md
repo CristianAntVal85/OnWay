@@ -107,7 +107,7 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
     - pasan `no-fixed-text`, `layout-widths` y `a11y-styles`;
     - a 375 px no hay desplazamiento horizontal.
 
-- [ ] **T7. Web: añadir, editar y certificado.** Cubre RF-808 (añadir y editar), D-29 y D-S3 (abrir).
+- [x] **T7. Web: añadir, editar y certificado.** Cubre RF-808 (añadir y editar), D-29 y D-S3 (abrir).
   - **Qué se hace:**
     - `SkillDialog`:
       - validación con `SkillInput` en el cliente;
@@ -170,3 +170,6 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
 - **T6, «Adjuntar»:** en esta tarea no hay diálogo todavía, así que un curso sin certificado dice «Sin certificado» (texto, no botón) y la habilidad no dice nada; T7 lo cambia por el botón «Adjuntar» que abre el diálogo de edición. `skills.ts` lleva solo `useMySkills`, `useDeleteSkill` y `useInvalidateSkills`; T7 añade el resto.
 - **T6, hoja de estilos:** se añadió un bloque `.skill-*` a `apps/web/src/styles.css` (no estaba en la lista de archivos); el foco programático de la sección usa la regla global `[tabindex='-1']:focus`.
 - **T6, comprobación a 375 px:** `pnpm --filter @onway/web dev` con `API_URL` apuntando a la pila `onway-review` (Caddy, puerto 18081; ya retirada con `down -v`): sin desplazamiento horizontal (`scrollWidth = clientWidth = 375`), la lista y «Eliminar» se ven bien. En el Chromium sin fuentes de emoji, «📎» sale como un cuadrado; se mantiene el texto pedido por el doc 02 (con `aria-hidden`, y «adjunto» va en texto aparte).
+- **T7, no se pueden vaciar las fechas guardadas:** `updateMySkill` no admite `null` en `issuedOn` ni `expiresOn`, así que el diálogo solo envía una fecha que tenga valor; vaciar la entidad sí funciona (se envía `''`). El tipo (curso o habilidad) no se cambia al editar (el selector queda desactivado): pasar un curso con certificado a habilidad se resuelve quitando antes el certificado y creando otra entrada.
+- **T7, archivo ya subido:** si la subida sale bien y guardar la entrada falla, el diálogo recuerda el id del archivo y, al reintentar con el mismo archivo, no lo vuelve a subir. Si se cierra el diálogo, el archivo subido queda huérfano (ya anotado como riesgo del plan).
+- **T7, foco:** el foco de la sección tras eliminar pasa de un efecto sobre el número de entradas a un contador (`focusTick`), que sirve también tras «Adjuntar» (su botón desaparece al guardar). `test/support.tsx` guarda el `FormData` de la petición en `Call.form`; `uploadCertificate` y `useOpenCertificate` (con `PopupBlockedError`) están en `skills.ts`. Hoja `.skill-*`: dos reglas más.

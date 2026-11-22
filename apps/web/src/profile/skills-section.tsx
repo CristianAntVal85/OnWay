@@ -6,7 +6,8 @@ import { SectionCard } from '../components/section-card';
 import { ErrorState, LoadingState } from '../components/states';
 import { errorMessage } from '../i18n/error-message';
 import { formatDate } from '../missions/format';
-import { useDeleteSkill, useMySkills } from './skills';
+import { SkillDialog } from './skill-dialog';
+import { PopupBlockedError, useDeleteSkill, useMySkills, useOpenCertificate } from './skills';
 
 type Skill = OperationOutput<'listMySkills'>['items'][number];
 
@@ -22,18 +23,27 @@ export function SkillsSection() {
   const { t } = useTranslation();
   const skills = useMySkills();
   const remove = useDeleteSkill();
+  const open = useOpenCertificate();
   const [removing, setRemoving] = useState<Skill | null>(null);
+  const [editing, setEditing] = useState<{ skill?: Skill; focusFile: boolean } | null>(null);
   const [notice, setNotice] = useState('');
+  const [openingId, setOpeningId] = useState<string | null>(null);
   const section = useRef<HTMLDivElement>(null);
-  const returnFocus = useRef(false);
-  const count = skills.data?.items.length;
+  // Cuando quien abrió un diálogo desaparece (la entrada eliminada, el botón «Adjuntar» ya sin sentido), el foco pasa a la sección.
+  const [focusTick, setFocusTick] = useState(0);
 
   useEffect(() => {
-    if (returnFocus.current) {
-      returnFocus.current = false;
-      section.current?.focus();
-    }
-  }, [count]);
+    if (focusTick > 0) section.current?.focus();
+  }, [focusTick]);
+
+  const openCertificate = (skill: Skill) => {
+    setNotice('');
+    setOpeningId(skill.id);
+    open.mutate(skill.id, {
+      onError: (error) => setNotice(error instanceof PopupBlockedError ? t('profile.skills.popupBlocked') : t('profile.skills.openFailed')),
+      onSettled: () => setOpeningId(null),
+    });
+  };
 
   const close = () => {
     if (remove.isPending) return;
@@ -45,15 +55,30 @@ export function SkillsSection() {
     if (!removing || remove.isPending) return;
     remove.mutate(removing.id, {
       onSuccess: () => {
-        returnFocus.current = true;
         setNotice(t('profile.skills.removed'));
         setRemoving(null);
+        setFocusTick((tick) => tick + 1);
       },
     });
   };
 
   return (
-    <SectionCard title={t('profile.skills.title')} icon="document">
+    <SectionCard
+      title={t('profile.skills.title')}
+      icon="document"
+      actions={
+        <button
+          type="button"
+          className="button button-secondary"
+          onClick={() => {
+            setNotice('');
+            setEditing({ focusFile: false });
+          }}
+        >
+          {t('profile.skills.add')}
+        </button>
+      }
+    >
       <div ref={section} className="skills-section" tabIndex={-1}>
         <div role="status" className="notice-slot">
           {notice && <p className="notice">{notice}</p>}
@@ -67,6 +92,12 @@ export function SkillsSection() {
               <SkillItem
                 key={skill.id}
                 skill={skill}
+                opening={openingId === skill.id}
+                onOpen={() => openCertificate(skill)}
+                onEdit={(focusFile) => {
+                  setNotice('');
+                  setEditing({ skill, focusFile });
+                }}
                 onRemove={() => {
                   setNotice('');
                   setRemoving(skill);
@@ -77,6 +108,19 @@ export function SkillsSection() {
         )}
       </div>
 
+      {editing && (
+        <SkillDialog
+          skill={editing.skill}
+          focusFile={editing.focusFile}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setNotice(t('profile.skills.saved'));
+            setEditing(null);
+            // «Adjuntar» desaparece al guardar el certificado: el foco no puede volver a ese botón.
+            if (editing.focusFile) setFocusTick((tick) => tick + 1);
+          }}
+        />
+      )}
       {removing && (
         <Dialog
           title={t('profile.skills.removeTitle', { name: removing.name })}
@@ -102,7 +146,7 @@ export function SkillsSection() {
   );
 }
 
-function SkillItem({ skill, onRemove }: { skill: Skill; onRemove: () => void }) {
+function SkillItem({ skill, opening, onOpen, onEdit, onRemove }: { skill: Skill; opening: boolean; onOpen: () => void; onEdit: (focusFile: boolean) => void; onRemove: () => void }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? 'es';
   return (
@@ -123,12 +167,22 @@ function SkillItem({ skill, onRemove }: { skill: Skill; onRemove: () => void }) 
                 {t('profile.skills.attached')}
               </>
             ) : (
-              t('profile.skills.noCertificate')
+              <button type="button" className="button button-secondary" aria-label={t('profile.skills.attachFor', { name: skill.name })} onClick={() => onEdit(true)}>
+                {t('profile.skills.attach')}
+              </button>
             )}
           </p>
         )}
       </div>
       <div className="point-row-actions">
+        {skill.hasCertificate && (
+          <button type="button" className="button button-secondary" aria-label={t('profile.skills.openFor', { name: skill.name })} disabled={opening} onClick={onOpen}>
+            {t('profile.skills.openCertificate')}
+          </button>
+        )}
+        <button type="button" className="button button-secondary" aria-label={t('profile.skills.editFor', { name: skill.name })} onClick={() => onEdit(false)}>
+          {t('profile.skills.edit')}
+        </button>
         <button type="button" className="button button-secondary" aria-label={t('profile.skills.removeFor', { name: skill.name })} onClick={onRemove}>
           {t('profile.skills.remove')}
         </button>

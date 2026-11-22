@@ -1,6 +1,6 @@
 // «Cursos y habilidades» en Mi perfil (H5-habilidades T6): RF-808 (ver y eliminar), doc 02 §3.9 (columna del certificado).
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { es, fr } from '@onway/i18n';
 import { apiError, json, renderApp, rescuer, sessionServer, type Call } from './support';
 
@@ -72,11 +72,12 @@ describe('cursos y habilidades en Mi perfil (RF-808)', () => {
     expect(first.getByText(/Fecha: .*2026/)).toBeTruthy();
     expect(first.getByText(/Caduca: .*2028/)).toBeTruthy();
     expect(first.getByText(S.attached, { exact: false })).toBeTruthy();
-    // El curso sin certificado lo dice y no lleva la marca; la habilidad no admite certificado y no dice nada.
-    expect(within(items[1]!).getByText(S.noCertificate)).toBeTruthy();
+    // El curso sin certificado ofrece «Adjuntar» y no lleva la marca; la habilidad no admite certificado y no ofrece nada.
+    expect(within(items[1]!).getByRole('button', { name: S.attachFor.replace('{{name}}', bare.name) })).toBeTruthy();
     expect(within(items[1]!).queryByText(S.attached, { exact: false })).toBeNull();
     expect(within(items[2]!).getByText(S.kind.skill)).toBeTruthy();
-    expect(within(items[2]!).queryByText(S.noCertificate)).toBeNull();
+    expect(within(items[2]!).queryByRole('button', { name: /Adjuntar/ })).toBeNull();
+    expect(within(items[2]!).queryByRole('button', { name: S.openCertificate })).toBeNull();
     expect(within(items[2]!).queryByText(S.attached, { exact: false })).toBeNull();
   });
 
@@ -141,5 +142,241 @@ describe('cursos y habilidades en Mi perfil (RF-808)', () => {
     expect(await region.findByText(course.name)).toBeTruthy();
     expect(region.getByText(fr.profile.skills.kind.course)).toBeTruthy();
     expect(region.getByText('Délivrée par Entidad Ficticia')).toBeTruthy();
+  });
+});
+
+// ---------- T7: añadir, editar y abrir el certificado ----------
+
+const FILE = '66666666-6666-4666-8666-666666666661';
+const fileRef = (contentType: string) => ({ id: FILE, purpose: 'certificate', contentType, sizeBytes: 5, createdAt: '2026-11-22T09:00:00.000Z' });
+const pdf = () => new File(['%PDF-'], 'certificado.pdf', { type: 'application/pdf' });
+const png = () => new File(['PNG'], 'certificado.png', { type: 'image/png' });
+const saved = (body: object) => ({ id: ids.other, issuer: null, issuedOn: null, expiresOn: null, hasCertificate: 'certificateFileId' in body, ...body });
+
+afterEach(() => vi.restoreAllMocks());
+
+describe('añadir y editar (RF-808, D-29)', () => {
+  it('crea un curso con certificado: primero sube el archivo y después guarda la entrada con su id', async () => {
+    const order: string[] = [];
+    const { user, calls } = setup({
+      items: [],
+      extra: {
+        'POST /files': () => (order.push('upload'), json(201, fileRef('application/pdf'))),
+        'POST /my/skills': (call) => (order.push('create'), json(201, saved({ ...(call.body as object), kind: 'course' }))),
+      },
+    });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.add }));
+    const dialog = within(await screen.findByRole('dialog', { name: S.addTitle }));
+    await user.type(dialog.getByLabelText(S.fields.name), 'Primeros auxilios en montaña');
+    await user.type(dialog.getByLabelText(S.fields.issuer), 'Entidad Ficticia');
+    await user.type(dialog.getByLabelText(S.fields.issuedOn), '2026-03-01');
+    await user.type(dialog.getByLabelText(S.fields.expiresOn), '2028-03-01');
+    await user.upload(dialog.getByLabelText(S.fields.certificate), pdf());
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(order).toEqual(['upload', 'create']);
+    const upload = calls().find((c) => c.path === '/files')!;
+    expect(upload.form?.get('purpose')).toBe('certificate');
+    expect((upload.form?.get('file') as File).name).toBe('certificado.pdf');
+    expect(calls().find((c) => c.path === '/my/skills' && c.method === 'POST')!.body).toEqual({
+      name: 'Primeros auxilios en montaña',
+      kind: 'course',
+      issuer: 'Entidad Ficticia',
+      issuedOn: '2026-03-01',
+      expiresOn: '2028-03-01',
+      certificateFileId: FILE,
+    });
+    expect(await region.findByText(S.saved)).toBeTruthy();
+  });
+
+  it('un tipo de archivo no admitido sale en el campo del archivo y la entrada no se guarda', async () => {
+    const { user, calls } = setup({ items: [], extra: { 'POST /files': () => apiError(415, 'UNSUPPORTED_FILE_TYPE') } });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.add }));
+    const dialog = within(await screen.findByRole('dialog'));
+    await user.type(dialog.getByLabelText(S.fields.name), 'Curso');
+    const input = dialog.getByLabelText(S.fields.certificate);
+    await user.upload(input, new File(['hola'], 'nota.pdf', { type: 'application/pdf' }));
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    expect(await dialog.findByText(es.errors.UNSUPPORTED_FILE_TYPE)).toBeTruthy();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(input);
+    expect(calls().some((c) => c.path === '/my/skills' && c.method === 'POST')).toBe(false);
+  });
+
+  it('valida en el cliente con SkillInput: nombre vacío y caducidad anterior a la fecha, sin llamar al servidor', async () => {
+    const { user, calls } = setup({ items: [] });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.add }));
+    const dialog = within(await screen.findByRole('dialog'));
+    await user.type(dialog.getByLabelText(S.fields.issuedOn), '2026-03-01');
+    await user.type(dialog.getByLabelText(S.fields.expiresOn), '2026-01-01');
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    expect(await dialog.findByText(S.errors.name)).toBeTruthy();
+    expect(dialog.getByText(S.errors.expiresBeforeIssued)).toBeTruthy();
+    expect(document.activeElement).toBe(dialog.getByLabelText(S.fields.name));
+    expect(calls().some((c) => c.method === 'POST')).toBe(false);
+  });
+
+  it('una habilidad no ofrece el archivo, y al volver a curso sí', async () => {
+    const { user } = setup({ items: [] });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.add }));
+    const dialog = within(await screen.findByRole('dialog'));
+    expect(dialog.getByLabelText(S.fields.certificate)).toBeTruthy();
+    await user.selectOptions(dialog.getByLabelText(S.fields.kind), 'skill');
+    expect(dialog.queryByLabelText(S.fields.certificate)).toBeNull();
+    await user.selectOptions(dialog.getByLabelText(S.fields.kind), 'course');
+    expect(dialog.getByLabelText(S.fields.certificate)).toBeTruthy();
+  });
+
+  it('crea una habilidad sin archivo y no sube nada', async () => {
+    const { user, calls } = setup({ items: [], extra: { 'POST /my/skills': (call) => json(201, saved(call.body as object)) } });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.add }));
+    const dialog = within(await screen.findByRole('dialog'));
+    await user.type(dialog.getByLabelText(S.fields.name), 'Conducción 4x4');
+    await user.selectOptions(dialog.getByLabelText(S.fields.kind), 'skill');
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(calls().some((c) => c.path === '/files')).toBe(false);
+    expect(calls().find((c) => c.method === 'POST' && c.path === '/my/skills')!.body).toEqual({ name: 'Conducción 4x4', kind: 'skill' });
+  });
+
+  it('edita un curso: envía solo lo que cambió y el foco vuelve a «Editar»', async () => {
+    const { user, calls } = setup({ extra: { [`PATCH /my/skills/${ids.course}`]: (call) => json(200, { ...course, ...(call.body as object) }) } });
+    const region = await section();
+    const opener = await region.findByRole('button', { name: S.editFor.replace('{{name}}', course.name) });
+    await user.click(opener);
+    const dialog = within(await screen.findByRole('dialog', { name: S.editTitle }));
+    expect((dialog.getByLabelText(S.fields.name) as HTMLInputElement).value).toBe(course.name);
+    expect((dialog.getByLabelText(S.fields.kind) as HTMLSelectElement).disabled).toBe(true);
+    await user.clear(dialog.getByLabelText(S.fields.name));
+    await user.type(dialog.getByLabelText(S.fields.name), 'Primeros auxilios 2');
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(calls().find((c) => c.method === 'PATCH')!.body).toEqual({ name: 'Primeros auxilios 2' });
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('edita y cambia el certificado: sube el archivo nuevo y lo envía en el PATCH', async () => {
+    const { user, calls } = setup({
+      extra: { 'POST /files': () => json(201, fileRef('image/png')), [`PATCH /my/skills/${ids.course}`]: (call) => json(200, { ...course, ...(call.body as object) }) },
+    });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.editFor.replace('{{name}}', course.name) }));
+    const dialog = within(await screen.findByRole('dialog'));
+    await user.upload(dialog.getByLabelText(S.fields.certificateReplace), png());
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(calls().find((c) => c.method === 'PATCH')!.body).toEqual({ certificateFileId: FILE });
+  });
+
+  it('«Quitar certificado» envía certificateFileId: null y se puede deshacer antes de guardar', async () => {
+    const { user, calls } = setup({ extra: { [`PATCH /my/skills/${ids.course}`]: (call) => json(200, { ...course, ...(call.body as object), hasCertificate: false }) } });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.editFor.replace('{{name}}', course.name) }));
+    const dialog = within(await screen.findByRole('dialog'));
+    await user.click(dialog.getByRole('button', { name: S.removeCertificate }));
+    expect(dialog.getByText(S.certificateWillRemove)).toBeTruthy();
+    await user.click(dialog.getByRole('button', { name: S.keepCertificate }));
+    expect(dialog.getByText(S.certificateCurrent)).toBeTruthy();
+    await user.click(dialog.getByRole('button', { name: S.removeCertificate }));
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(calls().find((c) => c.method === 'PATCH')!.body).toEqual({ certificateFileId: null });
+  });
+
+  it('«Adjuntar» abre el diálogo con el foco en el archivo; al guardar, el foco pasa a la sección', async () => {
+    const { user } = setup({
+      extra: {
+        'POST /files': () => json(201, fileRef('application/pdf')),
+        [`PATCH /my/skills/${ids.other}`]: (call) => json(200, { ...bare, ...(call.body as object), hasCertificate: true }),
+        'GET /my/skills': () => json(200, { items: [course, bare, skill] }),
+      },
+    });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.attachFor.replace('{{name}}', bare.name) }));
+    const dialog = within(await screen.findByRole('dialog'));
+    expect(document.activeElement).toBe(dialog.getByLabelText(S.fields.certificate));
+    await user.upload(dialog.getByLabelText(S.fields.certificate), pdf());
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(document.activeElement?.className).toContain('skills-section'));
+  });
+
+  it('se maneja con teclado: Escape cierra y Tab no sale del diálogo', async () => {
+    const { user } = setup({ items: [] });
+    const region = await section();
+    const opener = await region.findByRole('button', { name: S.add });
+    opener.focus();
+    await user.keyboard('{Enter}');
+    const dialog = await screen.findByRole('dialog', { name: S.addTitle });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    for (let i = 0; i < 12; i++) {
+      await user.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('un error del servidor sin campo se ve en el diálogo y no lo cierra', async () => {
+    const { user } = setup({ items: [], extra: { 'POST /my/skills': () => apiError(500, 'INTERNAL') } });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.add }));
+    const dialog = within(await screen.findByRole('dialog'));
+    await user.type(dialog.getByLabelText(S.fields.name), 'Curso');
+    await user.click(dialog.getByRole('button', { name: S.save }));
+    expect(await dialog.findByText(es.errors.INTERNAL)).toBeTruthy();
+  });
+
+  it('en francés el diálogo usa los textos de fr', async () => {
+    const { user } = setup({ items: [], language: 'fr' });
+    const region = within(await screen.findByRole('region', { name: fr.profile.skills.title }));
+    await user.click(await region.findByRole('button', { name: fr.profile.skills.add }));
+    const dialog = within(await screen.findByRole('dialog', { name: fr.profile.skills.addTitle }));
+    expect(dialog.getByLabelText(fr.profile.skills.fields.issuer)).toBeTruthy();
+  });
+});
+
+describe('abrir el certificado (D-S3)', () => {
+  const fakeTab = () => {
+    const tab = { opener: 'window', location: { href: '' }, close: vi.fn() };
+    vi.spyOn(window, 'open').mockReturnValue(tab as unknown as Window);
+    return tab;
+  };
+
+  it('abre la pestaña en el gesto, pide el enlace y la navega a él sin opener', async () => {
+    const tab = fakeTab();
+    const { user, calls } = setup({ extra: { [`POST /skills/${ids.course}/certificate-link`]: () => json(200, { url: '/api/v1/certificates/abc.def', expiresAt: '2026-11-22T09:05:00.000Z' }) } });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.openFor.replace('{{name}}', course.name) }));
+    await waitFor(() => expect(tab.location.href).toBe('/api/v1/certificates/abc.def'));
+    expect(window.open).toHaveBeenCalledWith('', '_blank');
+    expect(tab.opener).toBeNull();
+    expect(calls().filter((c) => c.path.endsWith('/certificate-link'))).toHaveLength(1);
+    expect(tab.close).not.toHaveBeenCalled();
+  });
+
+  it('si el enlace falla, cierra la pestaña y lo avisa', async () => {
+    const tab = fakeTab();
+    const { user } = setup({ extra: { [`POST /skills/${ids.course}/certificate-link`]: () => apiError(404, 'NOT_FOUND') } });
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.openFor.replace('{{name}}', course.name) }));
+    expect(await region.findByText(S.openFailed)).toBeTruthy();
+    expect(tab.close).toHaveBeenCalled();
+    expect(tab.location.href).toBe('');
+  });
+
+  it('si el navegador bloquea la pestaña, lo dice y no pide el enlace', async () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const { user, calls } = setup();
+    const region = await section();
+    await user.click(await region.findByRole('button', { name: S.openFor.replace('{{name}}', course.name) }));
+    expect(await region.findByText(S.popupBlocked)).toBeTruthy();
+    expect(calls().some((c) => c.path.endsWith('/certificate-link'))).toBe(false);
   });
 });

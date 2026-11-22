@@ -14,6 +14,8 @@ export interface Call {
   query: URLSearchParams;
   headers: Headers;
   body: unknown;
+  /** El cuerpo `multipart/form-data` (subida de archivos), si lo hubo. */
+  form?: FormData;
 }
 
 type Handler = (call: Call) => Response | Promise<Response>;
@@ -36,6 +38,7 @@ export function fakeApi(handlers: Record<string, Handler>) {
       query: url.searchParams,
       headers: new Headers(init?.headers),
       body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
+      form: init?.body instanceof FormData ? init.body : undefined,
     };
     calls.push(call);
     const handler = handlers[`${method} ${call.path}`];
