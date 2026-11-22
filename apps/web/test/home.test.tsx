@@ -458,13 +458,16 @@ describe('rescatista: Mis misiones (RF-601)', () => {
     expect(await screen.findByRole('link', { name: 'Simulacro ficticio · Valle de Ordesa' })).toBeTruthy();
   });
 
-  it('elegir una misión muestra el tiempo de su objetivo; sin ubicación sigue siendo posible', async () => {
+  it('el tiempo es solo de su ubicación: las tarjetas no tienen botón «Tiempo» y, sin ubicación, se remite a abrir una misión', async () => {
     mockGeolocation('denied');
-    const { user, calls } = setup('/missions', { 'GET /my/missions': () => json(200, page([myItem()])) }, { user: complete() });
-    expect(await screen.findByText(E.noLocation.title)).toBeTruthy();
-    await user.click(await screen.findByRole('button', { name: H.pickLabel.replace('{{name}}', 'Simulacro ficticio · Valle de Ordesa') }));
-    expect(await screen.findByRole('heading', { level: 3, name: E.weather.title })).toBeTruthy();
-    expect(envCalls(calls())[0]!.query.get('missionId')).toBe(MISSION_ID);
+    const { calls } = setup('/missions', { 'GET /my/missions': () => json(200, page([myItem()])) }, { user: complete() });
+    expect(await screen.findByRole('link', { name: 'Simulacro ficticio · Valle de Ordesa' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: H.pickLabel.replace('{{name}}', 'Simulacro ficticio · Valle de Ordesa') })).toBeNull();
+    expect(screen.queryByRole('button', { name: H.pick })).toBeNull();
+    expect(await screen.findByText(E.noLocation.open.title)).toBeTruthy();
+    expect(screen.getByText(E.noLocation.open.denied)).toBeTruthy();
+    expect(screen.queryByText(E.noLocation.title)).toBeNull();
+    expect(envCalls(calls())).toHaveLength(0);
   });
 
   it('en francés', async () => {

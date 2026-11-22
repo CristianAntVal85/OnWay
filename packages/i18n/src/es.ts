@@ -146,6 +146,12 @@ export const es: Messages = {
       unsupported: 'Este navegador no ofrece la ubicación del dispositivo. Elige una misión para ver el tiempo en su objetivo.',
       retry: 'Probar de nuevo',
       pickHint: 'Elige una misión de la lista para ver el tiempo en su objetivo.',
+      open: {
+        title: 'Activa la ubicación',
+        denied: 'No has dado permiso para usar tu ubicación. Actívala en el navegador o abre una misión para ver el tiempo en su objetivo.',
+        failed: 'No se ha podido obtener tu ubicación. Inténtalo de nuevo o abre una misión para ver el tiempo en su objetivo.',
+        unsupported: 'Este navegador no ofrece la ubicación del dispositivo. Abre una misión para ver el tiempo en su objetivo.',
+      },
     },
     detail: { title: 'Tiempo en detalle', backHome: '← Volver a Inicio', backMissions: '← Volver a Misiones', backToMission: '← Volver a la misión' },
     simple: {

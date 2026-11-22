@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
@@ -6,7 +5,7 @@ import type { OperationOutput } from '@onway/contracts/client';
 import { formatCoordinate } from '@onway/geo';
 import { EmptyState, ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
-import { EnvironmentSection, revealEnvironment } from '../environment/environment-section';
+import { EnvironmentSection } from '../environment/environment-section';
 import { MissionSearch, MissionTabs, Pager, useListState } from '../missions/list-controls';
 import { StatusBadge } from '../missions/status-badge';
 import { missionPath } from '../nav/navigation';
@@ -19,8 +18,8 @@ const TABS: readonly Tab[] = ['active', 'closed'];
 const PAGE_SIZE = 20;
 
 /**
- * Mis misiones (RF-601, boceto 14): lo primero que ve el rescatista. Arriba, la versión reducida del inicio (tiempo, luz y luna de su
- * ubicación o del objetivo de la misión que elija, doc 02 §3.2); debajo, las misiones activas y cerradas de su organización con el
+ * Mis misiones (RF-601, boceto 14): lo primero que ve el rescatista. Arriba, la versión reducida del inicio (el tiempo de su
+ * ubicación; el del objetivo está en el detalle de cada misión, doc 02 §3.2); debajo, las misiones activas y cerradas de su organización con el
  * estado de su oferta. Solo lectura: no hay ningún control de escritura ni botón de oferta (llega en H6).
  */
 export function MyMissionsPage() {
@@ -29,7 +28,6 @@ export function MyMissionsPage() {
   const locale = i18n.resolvedLanguage ?? 'es';
   usePageTitle(t('myMissions.title'));
   const { tab, q, page, draft, setDraft, update, submit } = useListState(TABS, 'active');
-  const [picked, setPicked] = useState<{ id: string; name: string } | null>(null);
 
   const missions = useQuery({
     queryKey: ['my-missions', 'list', { tab, q, page }],
@@ -44,7 +42,7 @@ export function MyMissionsPage() {
     <div className="page-wide-flow">
       <h1>{t('myMissions.title')}</h1>
 
-      <EnvironmentSection mission={picked} onBackToDevice={() => setPicked(null)} locale={locale} />
+      <EnvironmentSection mission={null} missionHint="open" locale={locale} />
 
       <MissionTabs tabs={TABS} tab={tab} label={t('myMissions.tabsLabel')} tabLabel={(id) => t(`myMissions.tabs.${id}`)} onSelect={(id) => update({ tab: id, page: null })} />
 
@@ -73,15 +71,7 @@ export function MyMissionsPage() {
             </p>
             <ul className="mission-list" aria-busy={missions.isFetching}>
               {data.items.map((item) => (
-                <MyMissionCard
-                  key={item.id}
-                  item={item}
-                  picked={picked?.id === item.id}
-                  onTogglePick={() => {
-                    setPicked(picked?.id === item.id ? null : { id: item.id, name: item.name });
-                    revealEnvironment();
-                  }}
-                />
+                <MyMissionCard key={item.id} item={item} />
               ))}
             </ul>
             <Pager page={page} pages={pages} onPage={(next) => update({ page: String(next) })} />
@@ -92,11 +82,11 @@ export function MyMissionsPage() {
   );
 }
 
-function MyMissionCard({ item, picked, onTogglePick }: { item: Item; picked: boolean; onTogglePick: () => void }) {
+function MyMissionCard({ item }: { item: Item }) {
   const { t } = useTranslation();
   const objective = item.target.label ?? formatCoordinate(item.target, 'decimal');
   return (
-    <li className="mission-card" data-picked={picked || undefined}>
+    <li className="mission-card">
       <h2>
         <Link to={missionPath(item.id)}>{item.name}</Link>
       </h2>
@@ -116,9 +106,6 @@ function MyMissionCard({ item, picked, onTogglePick }: { item: Item; picked: boo
           <dd>{item.myParticipation ? t(`myMissions.participation.status.${item.myParticipation.status}`) : t('myMissions.participation.none')}</dd>
         </div>
       </dl>
-      <button type="button" className="button button-secondary mission-pick" aria-pressed={picked} aria-label={t('home.pickLabel', { name: item.name })} onClick={onTogglePick}>
-        {t('home.pick')}
-      </button>
     </li>
   );
 }
