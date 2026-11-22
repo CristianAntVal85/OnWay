@@ -127,7 +127,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - la contraseña envía el cuerpo exacto, enseña el error en el campo y el aviso de sesiones cerradas;
     - funciona con teclado y en francés.
 
-- [ ] **T9. Demostración de extremo a extremo `h5-perfil-demo.spec.ts`.** Es la demostración del plan §7, en escritorio y 375 px.
+- [x] **T9. Demostración de extremo a extremo `h5-perfil-demo.spec.ts`.** Es la demostración del plan §7, en escritorio y 375 px.
   - **Qué se hace:**
     - El DNI de cada ejecución se genera con letra válida a partir del sello.
     - Al terminar, `retireE2eAccounts` deja la cuenta aprobada y desactivada.

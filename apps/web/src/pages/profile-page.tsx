@@ -23,6 +23,17 @@ export function ProfilePage() {
   const incomplete = profile.data?.status === 'incomplete';
   usePageTitle(incomplete ? t('profile.completeTitle') : t('profile.title'));
 
+  // El alta se acaba de completar: se abre el resto de la app (Mis misiones). Se decide aquí, al ver el cambio, y no en el `onSuccess` del
+  // envío: el formulario de alta deja de existir en cuanto el perfil está completo y su callback ya no llegaría.
+  const wasIncomplete = useRef(false);
+  useEffect(() => {
+    if (incomplete) wasIncomplete.current = true;
+    else if (wasIncomplete.current && profile.data?.status === 'complete') {
+      wasIncomplete.current = false;
+      navigate(PATHS.missions, { replace: true });
+    }
+  }, [incomplete, profile.data?.status, navigate]);
+
   if (profile.isPending) return <LoadingState />;
   if (profile.isError) return <ErrorState error={profile.error} onRetry={() => void profile.refetch()} />;
   const data = profile.data;
@@ -34,8 +45,8 @@ export function ProfilePage() {
         <ProfileForm
           initial={valuesFrom(data, null)}
           email={data.email}
-          // El alta queda completa: la sesión ya se volvió a leer y se abre el resto de la app (Mis misiones).
-          onSaved={() => navigate(PATHS.missions, { replace: true })}
+          // Al completarse, la vista lleva a Mis misiones por sí misma (arriba).
+          onSaved={() => undefined}
         />
       </>
     );

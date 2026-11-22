@@ -53,6 +53,15 @@ test('a rescuer who opens /admin sees "no access" and the administration link is
   }
 });
 
+test('the rescuer with an incomplete profile only has My profile and Account until the signup is done (H5-perfil P1)', async ({ page }) => {
+  await login(page, ACCOUNTS.rescuerIncomplete);
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(heading(page, es.profile.completeTitle)).toBeVisible();
+  expect(await navLabels(page)).toEqual([nav.myProfile, nav.account]);
+  await page.goto('/missions');
+  await expect(page).toHaveURL(/\/profile$/);
+});
+
 test('a coordinator cannot open /admin either, but can open the staff views', async ({ page }) => {
   await login(page, ACCOUNTS.coordinator);
   await page.goto('/admin');

@@ -10,6 +10,8 @@ export const ACCOUNTS = {
   coordinator: { email: 'coordinador@example.org', password: DEMO_PASSWORD },
   coordinatorFr: { email: 'coordinatrice@example.org', password: DEMO_PASSWORD },
   rescuer: { email: 'rescatista1@example.org', password: DEMO_PASSWORD },
+  /** El rescatista con el perfil incompleto de la semilla (H5-perfil): rescatista1 a 5 lo tienen completo. */
+  rescuerIncomplete: { email: 'rescatista6@example.org', password: DEMO_PASSWORD },
   pending: { email: 'pendiente@example.org', password: DEMO_PASSWORD },
 } as const;
 

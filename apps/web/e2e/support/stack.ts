@@ -144,6 +144,31 @@ DELETE FROM sessions WHERE user_id IN (${mine});
 COMMIT;`);
 }
 
+/**
+ * Una cuenta de rescatista recién aprobada, con el perfil incompleto, como la deja `admin_decide_signup` (H5-perfil). La demostración de
+ * `H5-acceso` ya registra y aprueba por la web; esta no repite el registro porque el código de invitación es de toda la organización y
+ * aquella lo regenera en paralelo, y el registro tiene límite por IP. Correo `e2e-…@example.org` y nombre «E2E …»: `retireE2eAccounts`
+ * la desactiva al terminar.
+ */
+export async function createApprovedRescuer(email: string, displayName: string, password: string): Promise<void> {
+  if (!/^e2e-[a-z0-9-]+@example\.org$/.test(email) || !/^E2E [A-Za-z0-9 ]+$/.test(displayName)) throw new Error('unsafe E2E account');
+  const hash = await hashPassword(password);
+  const admin = demo.members.find((m) => m.role === 'admin')!.email;
+  await psqlAsOwner(`
+BEGIN;
+WITH org AS (SELECT id FROM organizations WHERE name = '${ORG_A_NAME.replace(/'/g, "''")}'),
+usr AS (
+  INSERT INTO users (email, password_hash, display_name, locale, account_status) VALUES ('${email}', '${hash}', '${displayName}', 'es', 'active') RETURNING id
+), mem AS (
+  INSERT INTO memberships (organization_id, user_id, role, status) SELECT org.id, usr.id, 'rescuer', 'active' FROM org, usr RETURNING organization_id, user_id
+), req AS (
+  INSERT INTO signup_requests (organization_id, user_id, status, decided_by, decided_at, granted_role)
+  SELECT mem.organization_id, mem.user_id, 'approved', (SELECT id FROM users WHERE email = '${admin}'), now(), 'rescuer' FROM mem RETURNING user_id
+)
+INSERT INTO rescuer_profiles (organization_id, user_id, full_name) SELECT mem.organization_id, mem.user_id, '${displayName}' FROM mem;
+COMMIT;`);
+}
+
 function compose(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn('docker', ['compose', ...args], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });

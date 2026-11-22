@@ -21,16 +21,19 @@ export function useMySensitive(enabled: boolean) {
   return useQuery({ queryKey: SENSITIVE_KEY, queryFn: ({ signal }) => api.getMySensitive({ signal }), enabled, gcTime: 0, staleTime: 0 });
 }
 
-/** Al guardar se vuelve a leer la sesión: si el alta quedó completa, `nextStep` deja de pedirla y se abre el resto de la app. */
+/**
+ * Al guardar se vuelve a leer la sesión ANTES de poner el perfil nuevo en la caché: si el alta quedó completa, `nextStep` ya no la pide
+ * cuando la vista ve el perfil completo y lleva a Mis misiones (el guardia no la devuelve al alta).
+ */
 export function useUpdateMyProfile() {
   const api = useApi();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: OperationInput<'updateMyProfile'>['body']) => api.updateMyProfile({ body }),
     onSuccess: async (profile) => {
-      queryClient.setQueryData(PROFILE_KEY, profile);
       queryClient.removeQueries({ queryKey: SENSITIVE_KEY });
       await queryClient.invalidateQueries({ queryKey: SESSION_KEY });
+      queryClient.setQueryData(PROFILE_KEY, profile);
     },
   });
 }
