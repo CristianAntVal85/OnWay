@@ -71,7 +71,8 @@ test('the administrator searches and filters the users, opens a profile and its 
   const page = await openSession(roleContext, ACCOUNTS.admin);
   await page.goto('/admin');
   const users = usersSection(page);
-  await expect(users.getByRole('link', { name: ADMIN.displayName, exact: true })).toBeVisible();
+  // La lista crece con las cuentas «E2E …» de ejecuciones anteriores (20 por página): basta con que haya filas.
+  await expect(users.getByRole('link').first()).toBeVisible();
 
   await users.getByRole('searchbox', { name: U.searchLabel }).fill('rescatista1');
   await users.getByRole('button', { name: U.searchSubmit }).click();

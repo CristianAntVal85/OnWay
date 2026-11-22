@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.10 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.9)
+Versión: 1.11 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.9)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -412,6 +412,8 @@ Boceto 13. Vista solo para el administrador de organización (RF-106, RF-813).
 
 El administrador no escribe misiones (Q-14 resuelta: no); las lee, sin acciones de escritura.
 
+**Tal como se construyó (`H5-usuarios`).** «Usuarios» es la sección de `/admin` entre la bandeja y el código de invitación: búsqueda por nombre o correo, filtros de rol y estado y paginación, todo en la dirección (`?users.q=…&users.role=…&users.status=…&users.page=…`, parámetros propios para no chocar con los de la bandeja). Solo lista a quien ya es miembro; las solicitudes pendientes y rechazadas siguen en la bandeja. Cada fila enseña nombre, correo, rol, estado y último acceso, y lleva a la ficha `/admin/users/:userId`, que vuelve a la lista con sus filtros. La ficha muestra contacto (correo, teléfono), rol, estado, último acceso y alta, cursos y habilidades (con «Abrir certificado», que avisa de que queda registrado) y equipos en solo lectura; nunca documento ni dirección (H6). Sus acciones: **Cambiar rol** (sin opción marcada de antemano, con el aviso de permisos de coordinador y de administrador), **Desactivar cuenta** y **Reactivar cuenta**, cada una con su diálogo con el foco inicial en «Cancelar». Si la persona es coordinadora con misiones abiertas, tanto cambiar el rol como desactivarla piden quién asume esas misiones (un coordinador activo que no sea ella) y las reasignan en el mismo cambio; las cerradas no cambian (RN-11, INV-11). El administrador puede cambiar o desactivar su propia cuenta salvo que sea el último administrador activo (`LAST_ADMIN`, que se explica en el diálogo y no cambia nada). Datos sensibles y auditoría siguen en H6.
+
 ## 4. Subflujos desde el detalle de misión
 
 ### 4.1 Voluntariado
@@ -692,6 +694,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.11 (2026-11-22)**
+- Cierre de `H5-usuarios` (`specs/H5-usuarios/`): §3.10 «Tal como se construyó (`H5-usuarios`)»: sección Usuarios, ficha y diálogos de rol, desactivar y reactivar con la reasignación de misiones. Sin cambios de permisos
 
 **1.10 (2026-11-22)**
 - Cierre de `H5-habilidades` (`specs/H5-habilidades/`): §3.9 «Tal como se construyó (`H5-habilidades`)»: lista, añadir, editar, «Adjuntar», abrir y eliminar. Sin cambios de permisos.
