@@ -9,6 +9,7 @@ import { AdminPage } from '../pages/admin-page';
 import { CreateMissionPage } from '../pages/create-mission-page';
 import { ForgotPasswordPage } from '../pages/forgot-password-page';
 import { HomePage } from '../pages/home-page';
+import { TeamPage } from '../teams/team-page';
 import { TeamsPage } from '../teams/teams-page';
 import { MissionDetailPage } from '../pages/mission-detail-page';
 import { MissionsPage } from '../pages/missions-page';
@@ -134,6 +135,14 @@ export function AppRoutes() {
                 element={
                   <RoleGate route="teams">
                     <TeamsPage />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={`${PATHS.teams}/:teamId`}
+                element={
+                  <RoleGate route="teams">
+                    <TeamPage />
                   </RoleGate>
                 }
               />

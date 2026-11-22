@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import type { OperationOutput } from '@onway/contracts/client';
 import { EmptyState, ErrorState, LoadingState } from '../components/states';
 import { usePageTitle } from '../components/use-page-title';
 import { MissionTabs, Pager, useListState } from '../missions/list-controls';
+import { PATHS } from '../nav/navigation';
 import { TeamFormDialog } from './team-form-dialog';
 import { TEAM_STATUSES, useTeams } from './queries';
 
@@ -89,10 +91,13 @@ export function TeamsPage() {
 
 function TeamRow({ item, onEdit }: { item: Item; onEdit: () => void }) {
   const { t } = useTranslation();
+  const location = useLocation();
   return (
     <li className="signup-row user-row team-row">
       <div className="signup-info">
-        <span className="signup-name">{item.name}</span>
+        <Link className="signup-name team-link" to={`${PATHS.teams}/${item.id}`} state={{ from: location.search }}>
+          {item.name}
+        </Link>
         <span className="signup-email">{t('teams.row.locality', { locality: item.locality, code: item.code })}</span>
         <span className="signup-date">{t('teams.row.members', { count: item.memberCount })}</span>
       </div>

@@ -114,6 +114,43 @@ export interface Messages {
       saving: string;
       cancel: string;
     };
+    status: { active: string; archived: string };
+    detail: {
+      back: string;
+      loading: string;
+      notFound: string;
+      members: string;
+      addMembers: string;
+      noMembers: string;
+      archivedNote: string;
+      remove: string;
+      removeLabel: string;
+      manage: string;
+      createdAt: string;
+      archive: string;
+      reactivate: string;
+      working: string;
+      cancel: string;
+      done: { added: string; removed: string; archived: string; reactivated: string };
+      removeDialog: { title: string; description: string; confirm: string };
+      archiveDialog: { title: string; description: string; confirm: string };
+      reactivateDialog: { title: string; description: string; confirm: string };
+    };
+    add: {
+      title: string;
+      description: string;
+      searchLabel: string;
+      empty: string;
+      emptySearch: string;
+      alreadyMember: string;
+      noTeams: string;
+      selectionHint: string;
+      selectionCount: string;
+      selectionFull: string;
+      confirm: string;
+      working: string;
+      cancel: string;
+    };
   };
   later: { title: string; body: string };
   /** Alta y Mi perfil del rescatista (H5-perfil, doc 02 §3.9). */

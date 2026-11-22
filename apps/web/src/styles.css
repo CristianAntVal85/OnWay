@@ -4234,3 +4234,34 @@ label.signup-info {
 .skill-certificate-current .form-note {
   margin: 0;
 }
+
+/* ---------- Equipos: detalle y selector de miembros (H5-equipos T7) ---------- */
+.team-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.picker-list {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 18rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.picker-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  min-height: var(--tap);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.picker-row .signup-info {
+  padding-inline-start: 0;
+}

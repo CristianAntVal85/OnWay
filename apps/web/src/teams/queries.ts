@@ -37,3 +37,40 @@ export function useUpdateTeam(teamId: string) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: TEAMS_KEY }),
   });
 }
+
+export function useTeam(teamId: string, enabled = true) {
+  const api = useApi();
+  return useQuery({ queryKey: [...TEAMS_KEY, 'detail', teamId], queryFn: ({ signal }) => api.getTeam({ params: { teamId } }, { signal }), retry: false, enabled });
+}
+
+/** Añadir miembros: el equipo, las listas y el selector (que enseña los equipos de cada persona) se vuelven a leer. */
+export function useAddMembers(teamId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userIds: string[]) => api.addTeamMembers({ params: { teamId }, body: { userIds } }),
+    onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: TEAMS_KEY }), queryClient.invalidateQueries({ queryKey: RESCUERS_KEY })]),
+  });
+}
+
+export function useRemoveMember(teamId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) => api.removeTeamMember({ params: { teamId, userId } }),
+    onSuccess: () => Promise.all([queryClient.invalidateQueries({ queryKey: TEAMS_KEY }), queryClient.invalidateQueries({ queryKey: RESCUERS_KEY })]),
+  });
+}
+
+export const RESCUERS_PAGE_SIZE = 10;
+const RESCUERS_KEY = ['rescuers'] as const;
+
+/** El selector de rescatistas (RN-21: solo nombre y equipos, sin contacto); solo perfiles completos, que es lo que el servidor ofrece por defecto. */
+export function useRescuers(query: { q: string; page: number }) {
+  const api = useApi();
+  return useQuery({
+    queryKey: [...RESCUERS_KEY, query],
+    queryFn: ({ signal }) => api.listRescuers({ query: { ...(query.q ? { q: query.q } : {}), page: query.page, pageSize: RESCUERS_PAGE_SIZE } }, { signal }),
+    placeholderData: keepPreviousData,
+  });
+}

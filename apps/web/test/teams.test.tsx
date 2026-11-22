@@ -84,6 +84,12 @@ describe.each(LANGUAGES)('equipos: la lista (%s)', (language, text: Text) => {
     expect(api.calls.filter((c) => c.method !== 'GET')).toEqual([]);
   });
 
+  it('el nombre de cada equipo es un enlace a su detalle', async () => {
+    setup(opts());
+    const link = await screen.findByRole('link', { name: 'Equipo Ficticio 1' });
+    expect(link.getAttribute('href')).toBe(`/teams/${idOf(1)}`);
+  });
+
   it('muestra «cargando» mientras espera, el vacío de cada pestaña y un error con «reintentar»', async () => {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => (release = resolve));
