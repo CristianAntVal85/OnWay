@@ -3385,6 +3385,17 @@ label.signup-info {
   inline-size: 100%;
 }
 
+.user-sections {
+  display: grid;
+  gap: 1rem;
+  max-width: 48rem;
+}
+
+.user-teams {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
 .user-row {
   flex-wrap: wrap;
 }

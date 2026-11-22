@@ -4,6 +4,7 @@ import { Shell } from '../components/shell';
 import { SkipLink } from '../components/skip-link';
 import { PATHS } from '../nav/navigation';
 import { AccountPage } from '../pages/account-page';
+import { UserPage } from '../admin/user-page';
 import { AdminPage } from '../pages/admin-page';
 import { CreateMissionPage } from '../pages/create-mission-page';
 import { ForgotPasswordPage } from '../pages/forgot-password-page';
@@ -141,6 +142,14 @@ export function AppRoutes() {
                 element={
                   <RoleGate route="admin">
                     <AdminPage />
+                  </RoleGate>
+                }
+              />
+              <Route
+                path={`${PATHS.admin}/users/:userId`}
+                element={
+                  <RoleGate route="admin">
+                    <UserPage />
                   </RoleGate>
                 }
               />

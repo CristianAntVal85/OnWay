@@ -69,7 +69,7 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
     - las pruebas cubren carga, vacío, error y reintento, la búsqueda y los filtros en la dirección, la paginación y el enlace a la ficha;
     - pasan `no-fixed-text`, `layout-widths` y `a11y-styles`.
 
-- [ ] **T6. Web: la ficha del usuario.** Cubre D-U7, el doc 06 §7.1 y RF-808 (el administrador abre el certificado).
+- [x] **T6. Web: la ficha del usuario.** Cubre D-U7, el doc 06 §7.1 y RF-808 (el administrador abre el certificado).
   - **Qué se hace:**
     - La ruta `/admin/users/:userId` bajo `RoleGate`, con `useUser`.
     - La ficha muestra nombre, correo, teléfono, rol, estado, último acceso y alta.
@@ -143,4 +143,5 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
 - **T2.** `admin_reassign_missions(p_from, p_to)` da `insufficient_privilege` si no es administrador e `invalid_parameter_value` si el destino no vale; `updateUser` lo traduce a `VALIDATION_FAILED` con `path = reassignMissionsTo` (también `integrity_constraint_violation` de `missions_guard`).
 - **T4.** En `app.test.ts` solo se añade `updateUser` a `USERS_BUILT` (74). `updateUser` es estricto por campo: un `role` igual al actual o un `accountStatus` igual al actual dan `INVALID_STATE_TRANSITION`, aunque el otro campo sí cambie (D-U4). Si `reassignMissionsTo` no hace falta, se ignora sin validarlo. Cerrojo consultivo `user-updates:<org>`. Al pasar a rescatista, el perfil se inserta solo si no existe ninguno (D-U3).
 - **T5.** La sección usa parámetros propios de la dirección (`users.q`, `users.role`, `users.status`, `users.page`) y no `useListState`, porque la bandeja de altas, en la misma página, usa `tab`, `q` y `page`. Las etiquetas de búsqueda llevan «usuarios» para no repetir las de la bandeja (los lectores de pantalla y las pruebas las distinguen). La lista enseña rol y estado como insignias; el enlace a la ficha lleva `state.from` (la búsqueda de la dirección) para que la vuelta conserve los filtros. Se añade `userPath` en `navigation.ts`; las claves `admin.user.*` de la ficha entran ya en T5 con el resto de `i18n`. `admin.test.tsx` cuenta ahora tres secciones y simula `GET /admin/users`. Prettier reformó `admin-users.test.tsx` de la API (de T4) en este commit.
+- **T6.** La ficha no repite todo `SkillItem` del perfil propio: solo enseña la entrada y «Abrir certificado» (sin editar, adjuntar ni eliminar). El 404 es un `h1` con «Esta persona no existe o no es de tu organización» y el enlace de vuelta; cualquier otro error, `ErrorState` con reintento. `useUser` no reintenta. La vuelta usa `location.state.from`: si se abre la ficha por enlace directo, vuelve a `/admin` sin filtros. `ROLE_LABEL` se exporta desde `users-section.tsx` y lo usa la ficha. La ruta es `/admin/users/:userId` (sin `PATHS`, como la ficha de ruta: `userPath` en `navigation.ts`). El diálogo de acciones sobre la persona es T7.
 
