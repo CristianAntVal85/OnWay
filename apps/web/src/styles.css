@@ -3022,13 +3022,23 @@ h4 {
   margin: 0;
 }
 
-/* El nombre es la etiqueta de la casilla: toda la línea se toca para marcarla (objetivo táctil de 44 px). */
-.mission-route-name label {
+/* La casilla y el enlace del nombre tienen cada uno su objetivo táctil de 44 px. */
+.mission-route-check {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  margin-inline: -0.625rem;
+  cursor: pointer;
+}
+
+.mission-route-name a {
   display: flex;
   flex: 1 1 auto;
   align-items: center;
   min-height: 2.75rem;
-  cursor: pointer;
 }
 
 .mission-route-badges {
@@ -3052,7 +3062,7 @@ h4 {
   background: var(--danger-soft);
 }
 
-.mission-routes-table tr[data-unavailable] .mission-route-name label {
+.mission-routes-table tr[data-unavailable] .mission-route-name a {
   text-decoration: line-through;
   text-decoration-thickness: 1px;
 }

@@ -568,6 +568,7 @@ export interface Messages {
   };
   routeDetail: {
     back: string;
+    backToMission: string;
     mapLabel: string;
     archivedNotice: string;
     staleNotice: string;

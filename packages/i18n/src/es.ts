@@ -756,6 +756,7 @@ export const es: Messages = {
   },
   routeDetail: {
     back: 'Volver a Rutas',
+    backToMission: 'Volver a la misión',
     mapLabel: 'Mapa de la ruta',
     archivedNotice: 'Ruta archivada: solo lectura.',
     staleNotice: 'La última validación es de hace {{days}} días y supera los {{max}} que fija tu organización. Revisa la ruta antes de usarla.',

@@ -269,8 +269,11 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
     <tr data-unavailable={unavailable || undefined}>
       <th scope="row" className="mission-route-main">
         <span className="mission-route-name">
-          <input id={`route-pick-${row.id}`} type="checkbox" checked={checked} onChange={onToggle} aria-label={t('missionRoutes.select', { name: row.name })} />
-          <label htmlFor={`route-pick-${row.id}`}>{row.name}</label>
+          {/* La casilla muestra la ruta en el mapa y su perfil; el nombre lleva a su detalle, a la versión fijada, con la vuelta a la misión. */}
+          <label className="mission-route-check">
+            <input id={`route-pick-${row.id}`} type="checkbox" checked={checked} onChange={onToggle} aria-label={t('missionRoutes.select', { name: row.name })} />
+          </label>
+          <Link to={`${routePath(row.routeId)}?v=${row.pinned.versionId}&mission=${missionId}`}>{row.name}</Link>
         </span>
         <span className="mission-route-badges">
           {unavailable && (

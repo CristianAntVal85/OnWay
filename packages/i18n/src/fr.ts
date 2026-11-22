@@ -756,6 +756,7 @@ export const fr: Messages = {
   },
   routeDetail: {
     back: 'Retour aux itinéraires',
+    backToMission: 'Retour à la mission',
     mapLabel: 'Carte de l’itinéraire',
     archivedNotice: 'Itinéraire archivé : lecture seule.',
     staleNotice: 'La dernière validation date de {{days}} jours et dépasse les {{max}} fixés par votre organisation. Vérifiez l’itinéraire avant de l’utiliser.',

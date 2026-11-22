@@ -19,7 +19,7 @@ import { ArchiveDialog, DeriveDialog, RenameDialog, ValidateDialog } from '../li
 import { MapView, type MapRoute } from '../map';
 import { errorMessage } from '../i18n/error-message';
 import { formatDate, formatMeters } from '../missions/format';
-import { PATHS, routePath } from '../nav/navigation';
+import { missionPath, PATHS, routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { useCurrentUser } from '../session/session';
 
@@ -41,6 +41,9 @@ export function RouteDetailPage() {
   const [dialog, setDialog] = useState<Dialogs>(null);
   const [renamed, setRenamed] = useState<string | null>(null);
   const canWrite = user.role === 'coordinator';
+  // Llegada desde una misión (su tabla de rutas): la vuelta lleva a ella y «Continuar a mano» la conserva.
+  const missionId = params.get('mission');
+  const back = missionId ? { to: missionPath(missionId), label: t('routeDetail.backToMission') } : { to: PATHS.routes, label: t('routeDetail.back') };
 
   const route = useQuery({ queryKey: ['route', routeId], queryFn: ({ signal }) => api.getRoute({ params: { routeId } }, { signal }) });
   const organization = useQuery({ queryKey: ['organization'], queryFn: ({ signal }) => api.getOrganization({ signal }) });
@@ -108,7 +111,7 @@ export function RouteDetailPage() {
     return (
       <>
         <p>
-          <Link to={PATHS.routes}>{t('routeDetail.back')}</Link>
+          <Link to={back.to}>{back.label}</Link>
         </p>
         <ErrorState error={route.error} onRetry={() => void route.refetch()} />
       </>
@@ -125,7 +128,9 @@ export function RouteDetailPage() {
   const moreItems: MenuItem[] = [
     ...(archived ? [] : [{ id: 'rename', label: t('routeDetail.actions.rename'), icon: 'pencil' as const, onSelect: () => setDialog('rename') }]),
     // Continuar a mano (D-P4): desde la versión que se está viendo, hasta un corte, y desde ahí en línea recta.
-    ...(archived || !shown ? [] : [{ id: 'continue', label: t('routeDetail.actions.continue'), icon: 'route' as const, to: `${routePath(routeId)}/continue?base=${shown.id}` }]),
+    ...(archived || !shown
+      ? []
+      : [{ id: 'continue', label: t('routeDetail.actions.continue'), icon: 'route' as const, to: `${routePath(routeId)}/continue?base=${shown.id}${missionId ? `&mission=${missionId}` : ''}` }]),
     { id: 'duplicate', label: t('routeDetail.actions.duplicate'), icon: 'copy', onSelect: () => setDialog('derive') },
     ...(archived ? [] : [{ id: 'archive', label: t('routeDetail.actions.archive'), icon: 'archive' as const, danger: true, onSelect: () => setDialog('archive') }]),
   ];
@@ -135,7 +140,7 @@ export function RouteDetailPage() {
       <PageHeader
         icon="route"
         title={data.name}
-        back={{ to: PATHS.routes, label: t('routeDetail.back') }}
+        back={back}
         badges={
           shown && (
             <>
