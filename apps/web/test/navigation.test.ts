@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MemberRole } from '@onway/contracts';
 import { es } from '@onway/i18n';
 import { ICON_NAMES } from '../src/components/icon';
-import { NAV_ITEMS, PATHS, missionPath, ROUTE_ROLES, canAccess, landingPath, navItemsFor, postLoginPath, routeIdForPath, type RouteId } from '../src/nav/navigation';
+import { NAV_ITEMS, PATHS, allowedWhileIncomplete, missionPath, ROUTE_ROLES, canAccess, landingPath, navItemsFor, postLoginPath, routeIdForPath, type RouteId } from '../src/nav/navigation';
 
 const ROLES = MemberRole.options;
 const ROUTE_IDS = Object.keys(ROUTE_ROLES) as RouteId[];
@@ -116,6 +116,18 @@ describe('destinos', () => {
     expect(postLoginPath(coordinator, '/admin')).toBe(PATHS.home);
     expect(postLoginPath(coordinator, '/desconocida')).toBe(PATHS.home);
     expect(postLoginPath(coordinator, null)).toBe(PATHS.home);
+  });
+
+  it('con el perfil incompleto la barra solo tiene Mi perfil y Cuenta, y tras entrar solo se vuelve a ellas (alta obligatoria, H5-perfil P1)', () => {
+    expect(navItemsFor('rescuer', 'complete-profile').map((item) => item.id)).toEqual(['profile', 'account']);
+    expect(navItemsFor('rescuer', 'home').map((item) => item.id)).toEqual(['missions', 'profile', 'account']);
+    const incomplete = { role: 'rescuer', nextStep: 'complete-profile' } as const;
+    expect(postLoginPath(incomplete, '/missions')).toBe(PATHS.profile);
+    expect(postLoginPath(incomplete, '/account')).toBe('/account');
+    expect(allowedWhileIncomplete('/profile')).toBe(true);
+    expect(allowedWhileIncomplete('/account/')).toBe(true);
+    expect(allowedWhileIncomplete('/missions')).toBe(false);
+    expect(allowedWhileIncomplete('/missions/123')).toBe(false);
   });
 
   it('una cuenta pendiente va siempre a la espera, pida lo que pida', () => {

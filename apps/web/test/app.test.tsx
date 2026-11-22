@@ -178,13 +178,13 @@ describe('marco y barra por rol (RF-702)', () => {
     expect(navNames()).toEqual([es.nav.home, es.nav.missions, es.nav.createMission, es.nav.routes, es.nav.teams, es.nav.account]);
   });
 
-  it('rescatista con el perfil incompleto: entra por «Completa tu perfil» con Misiones, Mi perfil y Cuenta', async () => {
+  it('rescatista con el perfil incompleto: entra por «Completa tu perfil» y solo tiene Mi perfil y Cuenta (alta obligatoria, H5-perfil P1)', async () => {
     const { api } = sessionServer({ user: rescuer() });
     renderApp({ fetch: api.fetch });
     expect(await screen.findByRole('heading', { level: 1, name: es.profile.completeTitle })).toBeTruthy();
     expect(screen.getByText(es.profile.completeBody)).toBeTruthy();
     expect(path()).toBe('/profile');
-    expect(navNames()).toEqual([es.nav.missions, es.nav.myProfile, es.nav.account]);
+    expect(navNames()).toEqual([es.nav.myProfile, es.nav.account]);
   });
 
   it('rescatista con el perfil completo entra por Misiones', async () => {
@@ -238,7 +238,8 @@ describe('marco y barra por rol (RF-702)', () => {
 
   it('el rescatista que abre /admin o /home ve «sin acceso» y ningún contenido ajeno', async () => {
     for (const route of ['/admin', '/home', '/missions/new', '/routes', '/teams']) {
-      const { api } = sessionServer({ user: rescuer() });
+      // Con el perfil completo: con él incompleto, cualquier vista lleva antes a «Mi perfil» (profile.test.tsx).
+      const { api } = sessionServer({ user: rescuer({ profileStatus: 'complete', nextStep: 'home' }) });
       const view = renderApp({ route, fetch: api.fetch });
       expect(await screen.findByRole('heading', { level: 1, name: es.forbidden.title }), route).toBeTruthy();
       expect(screen.getByText(es.forbidden.body)).toBeTruthy();

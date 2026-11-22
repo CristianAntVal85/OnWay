@@ -83,7 +83,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - una segunda ejecución no cambia nada;
     - smoke pasa entero.
 
-- [ ] **T7. Web: alta obligatoria y Mi perfil.** Cubre RF-101, RF-807, RF-810 y P1.
+- [x] **T7. Web: alta obligatoria y Mi perfil.** Cubre RF-101, RF-807, RF-810 y P1.
   - **Qué se hace:**
     - Guardia `RequireCompleteProfile`: con `nextStep = complete-profile`, todo salvo `/profile` y `/account` lleva a `/profile`. Con el perfil incompleto, la barra solo enseña «Mi perfil» y «Cuenta».
     - **Formulario de alta** con los bloques del doc 02 §3.9:

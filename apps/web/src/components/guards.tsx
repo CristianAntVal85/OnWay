@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { DeviceLocationProvider } from '../environment/device-location';
-import { PATHS, canAccess, landingPath, type RouteId } from '../nav/navigation';
+import { PATHS, allowedWhileIncomplete, canAccess, landingPath, type RouteId } from '../nav/navigation';
 import { CurrentUserContext, useCurrentUser, useSession } from '../session/session';
 import { ForbiddenPage } from '../pages/forbidden-page';
 import { ErrorState, LoadingState } from './states';
@@ -40,12 +40,15 @@ export function RequireSession() {
 }
 
 /**
- * Una cuenta pendiente (INV-25) solo ve la pantalla de espera: cualquier otra vista la devuelve allí. Quien sí puede entrar recibe aquí
- * la ubicación del dispositivo (RF-708): se pide una vez mientras dure la sesión y vive solo en memoria (INV-30).
+ * Una cuenta pendiente (INV-25) solo ve la pantalla de espera: cualquier otra vista la devuelve allí. Un rescatista con el perfil
+ * incompleto solo ve «Mi perfil» y «Cuenta» hasta completar el alta (RF-101, P1 de H5-perfil); el servidor no bloquea lecturas
+ * (D-P7). Quien sí puede entrar recibe aquí la ubicación del dispositivo (RF-708): se pide una vez mientras dure la sesión y vive solo en memoria (INV-30).
  */
 export function RequireActive() {
   const user = useCurrentUser();
+  const location = useLocation();
   if (user.nextStep === 'awaiting-approval' || !user.role) return <Navigate to={PATHS.waiting} replace />;
+  if (user.nextStep === 'complete-profile' && !allowedWhileIncomplete(location.pathname)) return <Navigate to={PATHS.profile} replace />;
   return (
     <DeviceLocationProvider>
       <Outlet />

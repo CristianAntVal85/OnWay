@@ -29,7 +29,7 @@ export function Shell() {
     lastPath.current = pathname;
   }, [pathname, key]);
 
-  const items = user.role ? navItemsFor(user.role) : [];
+  const items = user.role ? navItemsFor(user.role, user.nextStep) : [];
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && open) {

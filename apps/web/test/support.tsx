@@ -67,6 +67,23 @@ export const pending = () => sessionUser({ email: 'pendiente@example.org', displ
 
 export const org = () => ({ id: '22222222-2222-4222-8222-222222222222', name: 'Servicio de Rescate Valle Demo', country: 'ES', config: { validationMaxAgeDays: 90, maxUploadBytes: 10_485_760 } });
 
+/** El perfil propio que respondería `getMyProfile` para un rescatista de prueba (datos ficticios). */
+export function myProfileOf(user: SessionUser) {
+  const complete = user.profileStatus === 'complete';
+  return {
+    status: complete ? 'complete' : 'incomplete',
+    fullName: user.displayName,
+    email: user.email,
+    phone: complete ? '+34 600 000 001' : null,
+    document: complete ? { type: 'dni', masked: '•••••••8Z' } : null,
+    addressSummary: complete ? '•••••, 22600 Sabiñánigo (ES)' : null,
+    skills: [],
+    teams: [],
+    missingFields: complete ? [] : ['phone', 'document', 'address'],
+    completedAt: complete ? '2026-11-22T09:00:00.000Z' : null,
+  };
+}
+
 /** Servidor simulado con una sesión que las pruebas pueden cambiar: `state.user` = quién está dentro; `state.expired` = cookie caducada. */
 export function sessionServer(initial: { user?: SessionUser | null; expired?: boolean } = {}, extra: Record<string, Handler> = {}) {
   const state = { user: initial.user ?? null, expired: initial.expired ?? false, password: 'OnWay-demo-ficticia-2026', accounts: new Map<string, SessionUser>() };
@@ -90,6 +107,8 @@ export function sessionServer(initial: { user?: SessionUser | null; expired?: bo
       return json(204, null);
     },
     'GET /org': () => (state.user?.role ? json(200, org()) : apiError(403, 'ACCOUNT_PENDING')),
+    // Mi perfil (H5-perfil): el del rescatista de la sesión, incompleto o completo según `profileStatus`.
+    'GET /my/profile': () => (state.user?.role === 'rescuer' ? json(200, myProfileOf(state.user)) : apiError(403, 'FORBIDDEN')),
     ...extra,
   });
   return { state, api };

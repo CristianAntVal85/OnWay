@@ -4085,3 +4085,34 @@ label.signup-info {
     display: inline;
   }
 }
+
+/* ---------- Alta y Mi perfil del rescatista (H5-perfil) ---------- */
+.profile-form {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 44rem;
+}
+
+.profile-form .field-row > .field {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.profile-form select {
+  width: 100%;
+}
+
+.plain-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plain-list li + li {
+  margin-top: var(--space-2);
+}
+
+/* El número de documento y la dirección no deben desbordar en 375 px. */
+.sensitive-value {
+  overflow-wrap: anywhere;
+}
