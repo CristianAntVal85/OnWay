@@ -131,6 +131,14 @@ describe('formulario de alta (RF-807)', () => {
     });
   });
 
+  it('el foco va al primer campo con error en el orden de la pantalla: el número de documento va antes que el teléfono', async () => {
+    const { user } = setup();
+    await screen.findByLabelText(P.fields.fullName);
+    await user.click(screen.getByRole('button', { name: P.save }));
+    // El nombre viene relleno con el de la cuenta: el primero vacío en pantalla es el número de documento.
+    expect(document.activeElement).toBe(screen.getByLabelText(P.fields.documentNumber));
+  });
+
   it('un documento ya registrado se dice en su campo, sin decir de quién es', async () => {
     const { user } = setup({ extra: { 'PATCH /my/profile': () => apiError(409, 'DOCUMENT_ALREADY_REGISTERED') } });
     await fillSignup(user);
@@ -154,13 +162,18 @@ describe('Mi perfil (RF-806, RF-810)', () => {
     expect(screen.getByText('+34 600 000 001')).toBeTruthy();
     expect(screen.getByText('•••••••8Z')).toBeTruthy();
     expect(screen.getByText('•••••, 22600 Sabiñánigo (ES)')).toBeTruthy();
+    // Los puntos no se leen: el lector de pantalla oye una frase.
+    expect(screen.getByText('•••••••8Z').getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByText(P.view.maskedDocument.replace('{{end}}', '8Z'))).toBeTruthy();
+    expect(screen.getByText(P.view.maskedAddress.replace('{{rest}}', '22600 Sabiñánigo (ES)'))).toBeTruthy();
     expect(screen.getByText('Equipo Ordesa · Torla')).toBeTruthy();
     expect(calls().some((c) => c.path === '/my/profile/sensitive')).toBe(false);
 
     await user.click(screen.getByRole('button', { name: P.view.show }));
     expect(await screen.findByText('12345678Z')).toBeTruthy();
     expect(screen.getByText(/Calle Inventada 7, 2º B, 22600 Sabiñánigo, Huesca/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: P.view.hide }).getAttribute('aria-pressed')).toBe('true');
+    // Sin `aria-pressed`: la etiqueta ya dice lo que hará (un lector diría si no «Ocultar, pulsado»).
+    expect(screen.getByRole('button', { name: P.view.hide }).hasAttribute('aria-pressed')).toBe(false);
     await user.click(screen.getByRole('button', { name: P.view.hide }));
     expect(screen.queryByText('12345678Z')).toBeNull();
     expect(screen.getByText('•••••••8Z')).toBeTruthy();
@@ -186,6 +199,15 @@ describe('Mi perfil (RF-806, RF-810)', () => {
     await user.click(screen.getByRole('button', { name: P.save }));
     expect(await screen.findByText(P.saved)).toBeTruthy();
     expect(body).toEqual({ phone: '+34 600 000 099' });
+    // El foco vuelve al botón que abrió la corrección, no al principio de la página.
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: P.edit })));
+  });
+
+  it('«Cancelar» cierra la corrección y devuelve el foco a «Corregir mis datos»', async () => {
+    const { user } = setup({ complete: true });
+    await user.click(await screen.findByRole('button', { name: P.edit }));
+    await user.click(await screen.findByRole('button', { name: P.cancel }));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: P.edit })));
   });
 
   it('si el perfil no carga, lo dice y deja reintentar', async () => {

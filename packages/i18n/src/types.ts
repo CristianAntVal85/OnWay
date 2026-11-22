@@ -117,7 +117,18 @@ export interface Messages {
     documentTypes: { dni: string; nie: string; passport: string; other: string };
     blocks: { personal: string; contact: string; address: string; sensitive: string; teams: string };
     errors: { required: string; invalid: string; tooLong: string; invalidDocument: string; documentTaken: string; phone: string };
-    view: { document: string; address: string; show: string; hide: string; showing: string; sensitiveError: string; noTeams: string; teamLine: string };
+    view: {
+      document: string;
+      address: string;
+      show: string;
+      hide: string;
+      showing: string;
+      maskedDocument: string;
+      maskedAddress: string;
+      sensitiveError: string;
+      noTeams: string;
+      teamLine: string;
+    };
   };
   home: {
     title: string;

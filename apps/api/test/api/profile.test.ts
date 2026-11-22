@@ -1,6 +1,7 @@
 // Perfil propio del rescatista (H5-perfil T3 y T4): RF-806, RF-807, RF-810, INV-18, INV-24, INV-31, INV-32. Datos ficticios (regla 10).
 import { ErrorResponse, MyProfile, MySensitive } from '@onway/contracts';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
+import { DOCUMENT_UNIQUE } from '../../src/profile/profile.service.js';
 import { DocumentFingerprint } from '../../src/sensitive/document-fingerprint.js';
 import { SensitiveCipher } from '../../src/sensitive/sensitive-cipher.js';
 import { mustLogin, startApp, withSession, type Session, type TestApp } from '../support/app.js';
@@ -217,6 +218,20 @@ describe('updateMyProfile (RF-807, RF-812, INV-24, INV-32)', () => {
 
     const elsewhere = await rescuer(otherOrgId);
     expect((await patch(await signIn(elsewhere), { phone: '+34 600 000 014', document: { type: 'dni', number }, address: ADDRESS })).status).toBe(200);
+  });
+
+  it('the duplicate is told apart by the constraint of INV-24, whose name is the one the database gave it', async () => {
+    const rows = await fixtures.query<{ conname: string }>(`SELECT conname FROM pg_constraint WHERE conrelid = 'rescuer_sensitive'::regclass AND contype = 'u'`);
+    expect(rows.map((r) => r.conname)).toEqual([DOCUMENT_UNIQUE]);
+  });
+
+  it('two first saves of the same profile at once both succeed: the second updates the row, it is not a duplicate document', async () => {
+    const member = await rescuer();
+    const session = await signIn(member);
+    const body = { phone: '+34 600 000 017', document: { type: 'dni', number: freshDni() }, address: ADDRESS };
+    const responses = await Promise.all([patch(session, body), patch(session, { ...body, address: { ...ADDRESS, locality: 'Jaca', postalCode: '22700' } })]);
+    expect(responses.map((r) => r.status)).toEqual([200, 200]);
+    expect(await fixtures.query(`SELECT 1 FROM rescuer_sensitive WHERE profile_id = $1`, [await profileIdOf(member)])).toHaveLength(1);
   });
 
   it("saving one's own document again is not a duplicate", async () => {

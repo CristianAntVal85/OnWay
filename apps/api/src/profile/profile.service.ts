@@ -24,6 +24,9 @@ export interface ProfileChanges {
   address?: Address;
 }
 
+/** Name PostgreSQL gave to `UNIQUE (organization_id, document_hash)` of migration 0003 (INV-24). */
+export const DOCUMENT_UNIQUE = 'rescuer_sensitive_organization_id_document_hash_key';
+
 export interface ProfileRow {
   id: string;
   organizationId: string;
@@ -108,18 +111,19 @@ export class ProfileService {
           .set({ ...documentColumns, ...addressColumns, updatedAt: this.clock.now() })
           .where(eq(rescuerSensitive.profileId, profile.id));
       } else {
-        await tx.insert(rescuerSensitive).values({
-          profileId: profile.id,
-          organizationId: profile.organizationId,
-          ...(documentColumns as Required<typeof documentColumns>),
-          ...(addressColumns as Required<typeof addressColumns>),
-          keyId: this.cipher.keyId,
-        });
+        // Two first saves of the same profile at once: the second one finds the row of the first and updates it instead of failing on
+        // the primary key (which would otherwise read as a duplicate document).
+        const columns = { ...(documentColumns as Required<typeof documentColumns>), ...(addressColumns as Required<typeof addressColumns>), keyId: this.cipher.keyId };
+        await tx
+          .insert(rescuerSensitive)
+          .values({ profileId: profile.id, organizationId: profile.organizationId, ...columns })
+          .onConflictDoUpdate({ target: rescuerSensitive.profileId, set: { ...columns, updatedAt: this.clock.now() } });
       }
     } catch (error) {
       // INV-24: `UNIQUE (organization_id, document_hash)`. The person cannot read other rows (`sensitive_own`), so the database is the one
-      // that knows; the answer says nothing of whose it is (D-P2).
-      if (pgErrorOf(error)?.code === '23505') throw new DomainError('DOCUMENT_ALREADY_REGISTERED', 'This document is already registered');
+      // that knows; the answer says nothing of whose it is (D-P2). Only that constraint means a duplicate document.
+      const failure = pgErrorOf(error);
+      if (failure?.code === '23505' && failure.constraint === DOCUMENT_UNIQUE) throw new DomainError('DOCUMENT_ALREADY_REGISTERED', 'This document is already registered');
       throw error;
     }
   }

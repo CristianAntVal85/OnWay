@@ -97,11 +97,8 @@ async function seedProfiles(pool: pg.Pool, orgId: string, demo: Demo, options: S
         continue;
       }
       const { phone, document, address } = member.profile;
-      await client.query(`INSERT INTO rescuer_contact (profile_id, organization_id, phone) VALUES ($1, $2, $3) ON CONFLICT (profile_id) DO UPDATE SET phone = EXCLUDED.phone`, [
-        profile.id,
-        orgId,
-        phone,
-      ]);
+      // A phone the person already saved stays: the seed only fills what is missing (reviewer-db, H5-perfil).
+      await client.query(`INSERT INTO rescuer_contact (profile_id, organization_id, phone) VALUES ($1, $2, $3) ON CONFLICT (profile_id) DO NOTHING`, [profile.id, orgId, phone]);
       await client.query(`INSERT INTO rescuer_sensitive (profile_id, organization_id, document_type, document_enc, document_hash, address_enc, key_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [
         profile.id,
         orgId,

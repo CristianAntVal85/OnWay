@@ -149,6 +149,8 @@ export const es: Messages = {
       show: 'Mostrar',
       hide: 'Ocultar',
       showing: 'Se muestran tus datos sin ocultar.',
+      maskedDocument: 'Oculto; termina en {{end}}',
+      maskedAddress: 'Calle oculta; {{rest}}',
       sensitiveError: 'No se han podido mostrar tus datos.',
       noTeams: 'Todavía no estás en ningún equipo.',
       teamLine: '{{name}} · {{locality}}',

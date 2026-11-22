@@ -3,7 +3,8 @@
 import { ApiError } from '@onway/contracts/client';
 import { Address, DocumentInput, Phone, UpdateMyProfileRequest, isValidDocument, type DocumentTypeValue } from '@onway/contracts';
 
-export const PROFILE_FIELDS = ['fullName', 'phone', 'documentType', 'documentNumber', 'street', 'number', 'floor', 'postalCode', 'locality', 'province', 'country'] as const;
+/** En el orden de la pantalla (`profile-form.tsx`): el foco va al primero con error. */
+export const PROFILE_FIELDS = ['fullName', 'documentType', 'documentNumber', 'phone', 'street', 'number', 'floor', 'postalCode', 'locality', 'province', 'country'] as const;
 export type ProfileField = (typeof PROFILE_FIELDS)[number];
 export type ProfileValues = Record<ProfileField, string>;
 

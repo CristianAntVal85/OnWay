@@ -154,3 +154,14 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - `infra/scripts/smoke.sh`;
     - el E2E con `CI=1` en `onway-e2e`.
   - **Hecho cuando:** todo está en verde y queda lista para `/sdd-validate H5-perfil`.
+
+## Validación (2026-11-22), vuelta 1 de correcciones
+
+`reviewer`, `reviewer-security` y `reviewer-db`: APROBADO. `reviewer-ui`: CAMBIOS NECESARIOS por dos hallazgos medios. Corregidos, con los bajos 3, 6 y 10 que eligió el usuario:
+- [x] Medio 1: el foco va al primer campo con error en el orden de la pantalla (`PROFILE_FIELDS`).
+- [x] Medio 2: al cerrar «Corregir mis datos» (guardar o cancelar) el foco vuelve a su botón.
+- [x] Bajo 3: dos primeras altas simultáneas del mismo perfil ya no dan un «documento ya registrado» falso (`ON CONFLICT (profile_id) DO UPDATE`; solo la restricción de INV-24 da ese error).
+- [x] Bajo 6: la semilla no pisa un teléfono ya guardado (`DO NOTHING`).
+- [x] Bajo 10: «Mostrar»/«Ocultar» sin `aria-pressed`; los datos ocultos se leen como frase, no como puntos.
+
+Quedan anotados sin corregir (bajos): `principal.orgId!` en `changePassword` y que cuenta como último acceso; `independent` usa una segunda conexión del pool; orden de habilidades sin desempate por `id`; «contraseña nueva igual» antes de comprobar la actual; espaciado de Cuenta a 375 px; «Datos guardados» sin cambios; páginas nuevas en el paquete principal.

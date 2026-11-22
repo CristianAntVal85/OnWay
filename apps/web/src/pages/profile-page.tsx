@@ -20,6 +20,15 @@ export function ProfilePage() {
   const profile = useMyProfile();
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Al cerrar «Corregir mis datos» el formulario desaparece: el foco vuelve al botón que lo abrió, no al principio de la página.
+  const editButton = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef(false);
+  useEffect(() => {
+    if (!editing && returnFocus.current) {
+      returnFocus.current = false;
+      editButton.current?.focus();
+    }
+  }, [editing]);
   const incomplete = profile.data?.status === 'incomplete';
   usePageTitle(incomplete ? t('profile.completeTitle') : t('profile.title'));
 
@@ -58,7 +67,7 @@ export function ProfilePage() {
         title={editing ? t('profile.editTitle') : t('profile.title')}
         actions={
           !editing && (
-            <button type="button" className="button button-secondary" onClick={() => setEditing(true)}>
+            <button ref={editButton} type="button" className="button button-secondary" onClick={() => setEditing(true)}>
               {t('profile.edit')}
             </button>
           )
@@ -71,6 +80,7 @@ export function ProfilePage() {
         <EditProfile
           profile={data}
           onDone={(didSave) => {
+            returnFocus.current = true;
             setEditing(false);
             setSaved(didSave);
           }}

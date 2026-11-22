@@ -48,6 +48,18 @@ export function ProfileView({ profile }: { profile: MyProfile }) {
   );
 }
 
+/** Un dato oculto: se ven los puntos, y el lector de pantalla oye una frase en lugar de «punto, punto, punto». */
+function Masked({ shown, spoken }: { shown: string; spoken: string }) {
+  return (
+    <>
+      <span className="sensitive-value" aria-hidden="true">
+        {shown}
+      </span>
+      <span className="visually-hidden">{spoken}</span>
+    </>
+  );
+}
+
 function SensitiveBlock({ profile }: { profile: MyProfile }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.resolvedLanguage ?? 'es';
@@ -57,7 +69,8 @@ function SensitiveBlock({ profile }: { profile: MyProfile }) {
   const address = clear ? sensitive.data.address : null;
 
   const toggle = (
-    <button type="button" className="button button-secondary" aria-pressed={shown} onClick={() => setShown(!shown)}>
+    // La etiqueta ya dice qué hará («Mostrar» u «Ocultar»): sin `aria-pressed`, que haría leer «Ocultar, pulsado».
+    <button type="button" className="button button-secondary" onClick={() => setShown(!shown)}>
       {shown ? t('profile.view.hide') : t('profile.view.show')}
     </button>
   );
@@ -74,7 +87,11 @@ function SensitiveBlock({ profile }: { profile: MyProfile }) {
           <dt>{t('profile.view.document')}</dt>
           <dd>
             {profile.document && `${t(`profile.documentTypes.${profile.document.type}`)} · `}
-            <span className="sensitive-value">{clear ? sensitive.data.document?.number : profile.document?.masked}</span>
+            {clear ? (
+              <span className="sensitive-value">{sensitive.data.document?.number}</span>
+            ) : (
+              profile.document && <Masked shown={profile.document.masked} spoken={t('profile.view.maskedDocument', { end: profile.document.masked.replace(/•/g, '') })} />
+            )}
           </dd>
         </div>
         <div>
@@ -82,7 +99,7 @@ function SensitiveBlock({ profile }: { profile: MyProfile }) {
           <dd className="sensitive-value">
             {address
               ? `${address.street} ${address.number}${address.floor ? `, ${address.floor}` : ''}, ${address.postalCode} ${address.locality}, ${address.province} (${countryName(address.country, locale)})`
-              : profile.addressSummary}
+              : profile.addressSummary && <Masked shown={profile.addressSummary} spoken={t('profile.view.maskedAddress', { rest: profile.addressSummary.replace(/^•+,\s*/, '') })} />}
           </dd>
         </div>
       </dl>
