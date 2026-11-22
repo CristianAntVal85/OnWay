@@ -28,7 +28,7 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
     - la fila lleva `owner_user_id` y `purpose = certificate`;
     - las pruebas de `route_import` siguen en verde.
 
-- [ ] **T3. `afterCommit` y las cuatro operaciones de mis cursos y habilidades.** Cubre RF-808, RF-806 (los cursos propios), D-S4, D-S5 e INV-25.
+- [x] **T3. `afterCommit` y las cuatro operaciones de mis cursos y habilidades.** Cubre RF-808, RF-806 (los cursos propios), D-S4, D-S5 e INV-25.
   - **Qué se hace:**
     - `DatabaseService.afterCommit(fn)` (plan §3).
     - `SkillsService` y `SkillsController`: `listMySkills`, `createMySkill`, `updateMySkill` y `deleteMySkill`.
