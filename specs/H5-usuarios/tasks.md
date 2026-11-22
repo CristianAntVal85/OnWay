@@ -27,7 +27,7 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
   - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:db admin-reassign schema && db/tests/run-postgis.sh`.
   - **Hecho cuando:** las pruebas pasan sobre una base vacía con PostGIS y `run-postgis.sh` sigue en verde.
 
-- [ ] **T3. `listUsers` y `getUser`.** Cubre RF-813 (ver), el doc 06 §7.1, la regla 1, la regla 3 y D-U6.
+- [x] **T3. `listUsers` y `getUser`.** Cubre RF-813 (ver), el doc 06 §7.1, la regla 1, la regla 3 y D-U6.
   - **Qué se hace:**
     - `UsersService.list` y `UsersService.detail`, y `UsersController` (plan §3).
     - Se montan las dos operaciones. `app.test.ts` pasa a 73 montadas.
