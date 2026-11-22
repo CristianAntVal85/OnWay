@@ -66,6 +66,25 @@ function setup(options: Options = {}) {
           for (const p of people) if (selection.ids.includes(p.userId)) p.status = action === 'approve' ? 'approved' : 'rejected';
           return json(200, { affected: selection.ids.length, skipped: [] });
         }),
+      // La lista de usuarios (H5-usuarios) la prueba `admin-users.test.tsx`; aquí solo evita un error en la página.
+      'GET /admin/users': () =>
+        json(200, {
+          items: [
+            {
+              userId: idOf(900),
+              displayName: 'Usuario Demo',
+              email: 'usuario@example.org',
+              role: 'rescuer',
+              accountStatus: 'active',
+              lastLoginAt: null,
+              profileStatus: 'complete',
+              hasMissionsAsResponsible: 0,
+            },
+          ],
+          page: 1,
+          pageSize: 20,
+          total: 1,
+        }),
       'GET /admin/invite-code': options.invite ?? (() => json(200, code)),
       'POST /admin/invite-code/rotate':
         options.rotate ??
@@ -88,14 +107,15 @@ describe.each(LANGUAGES)('administración: solicitudes de alta (%s)', (language,
   const S = text.admin.signups;
   const opts = (extra: Options = {}) => ({ language, ...extra });
 
-  it('la ruta /admin es «Administración» con sus dos secciones y nada más (ni usuarios ni datos sensibles)', async () => {
+  it('la ruta /admin es «Administración» con sus tres secciones y nada más (ni datos sensibles)', async () => {
     setup(opts());
     expect(await screen.findByRole('heading', { level: 1, name: text.nav.administration })).toBeTruthy();
     expect(document.title).toBe(`${text.nav.administration} · OnWay`);
     expect(screen.getByRole('heading', { level: 2, name: S.title })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: text.admin.inviteCode.title })).toBeTruthy();
     expect(screen.queryByText(text.later.title)).toBeNull();
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(2);
+    expect(screen.getByRole('heading', { level: 2, name: text.admin.users.title })).toBeTruthy();
+    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(3);
   });
 
   it('pide las pendientes por defecto y enseña nombre, correo y fecha local de cada una, con una casilla', async () => {

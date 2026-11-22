@@ -3368,6 +3368,35 @@ label.signup-info {
   }
 }
 
+/* ---------- administración: usuarios (H5-usuarios T5) ---------- */
+
+.users-filters {
+  margin: 0.75rem 0 0.5rem;
+}
+
+.users-selects {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.users-selects select {
+  inline-size: 100%;
+}
+
+.user-row {
+  flex-wrap: wrap;
+}
+
+.user-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: 0.375rem;
+  padding: 0 0.75rem 0.625rem;
+}
+
 .dialog-count {
   margin: 0 0 0.375rem;
   font-weight: 700;

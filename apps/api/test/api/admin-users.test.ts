@@ -276,7 +276,10 @@ const updated = async (response: Response) => {
   return AdminUserDetail.parse(await response.json());
 };
 const audit = (userId: string, action: string) =>
-  fixtures.query<{ detail: Record<string, unknown>; actor_user_id: string; subject_user_id: string }>(`SELECT detail, actor_user_id, subject_user_id FROM audit_log WHERE entity_id = $1 AND action = $2`, [userId, action]);
+  fixtures.query<{ detail: Record<string, unknown>; actor_user_id: string; subject_user_id: string }>(
+    `SELECT detail, actor_user_id, subject_user_id FROM audit_log WHERE entity_id = $1 AND action = $2`,
+    [userId, action],
+  );
 const openMission = async (orgId: string, coordinator: Member, status: 'planning' | 'active' | 'closed' = 'active') => {
   const id = randomUUID();
   await fixtures.query(
@@ -316,7 +319,7 @@ describe('updateUser: the role (RF-813, INV-29, D-U3)', () => {
     await fixtures.query(`UPDATE users SET display_name = 'Pedro Coord' WHERE id = $1`, [person.userId]);
     const result = await updated(await patch(org.session, person.userId, { role: 'rescuer' }));
     expect(result).toMatchObject({ role: 'rescuer', profileStatus: 'incomplete' });
-    expect((await fixtures.query(`SELECT full_name, status FROM rescuer_profiles WHERE user_id = $1`, [person.userId]))).toEqual([{ full_name: 'Pedro Coord', status: 'incomplete' }]);
+    expect(await fixtures.query(`SELECT full_name, status FROM rescuer_profiles WHERE user_id = $1`, [person.userId])).toEqual([{ full_name: 'Pedro Coord', status: 'incomplete' }]);
     await updated(await patch(org.session, person.userId, { role: 'admin' }));
     await updated(await patch(org.session, person.userId, { role: 'rescuer' }));
     expect(await fixtures.query(`SELECT 1 FROM rescuer_profiles WHERE user_id = $1`, [person.userId])).toHaveLength(1);

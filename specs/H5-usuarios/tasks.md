@@ -55,7 +55,7 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
     - **`LAST_ADMIN`:** sale al quitarle el rol o desactivar al único administrador activo, y con dos administradores, sí se puede.
     - **En `app.test.ts`:** 74 montadas, y solo las 6 de equipos responden 404.
 
-- [ ] **T5. Web: la lista de usuarios en Administración.** Cubre el doc 02 §3.10 (la lista) y D-U6.
+- [x] **T5. Web: la lista de usuarios en Administración.** Cubre el doc 02 §3.10 (la lista) y D-U6.
   - **Qué se hace:**
     - `useUsers` en `queries.ts`.
     - `UsersSection` (plan §3), con su estado en la dirección.
@@ -142,4 +142,5 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
 - **T3.** `getUser.teams` solo lista equipos activos, por nombre (`TeamRef` no lleva estado). Un rescatista sin fila de `rescuer_profiles` sale con `profileStatus: 'incomplete'`, como `auth.service.ts`. `listUsers` incluye miembros desactivados y anonimizados (para el filtro de estado); la bandeja de solicitudes excluye a los anonimizados. `users.service.ts` tiene `detailIn` para reutilizarlo en la respuesta de `updateUser`.
 - **T2.** `admin_reassign_missions(p_from, p_to)` da `insufficient_privilege` si no es administrador e `invalid_parameter_value` si el destino no vale; `updateUser` lo traduce a `VALIDATION_FAILED` con `path = reassignMissionsTo` (también `integrity_constraint_violation` de `missions_guard`).
 - **T4.** En `app.test.ts` solo se añade `updateUser` a `USERS_BUILT` (74). `updateUser` es estricto por campo: un `role` igual al actual o un `accountStatus` igual al actual dan `INVALID_STATE_TRANSITION`, aunque el otro campo sí cambie (D-U4). Si `reassignMissionsTo` no hace falta, se ignora sin validarlo. Cerrojo consultivo `user-updates:<org>`. Al pasar a rescatista, el perfil se inserta solo si no existe ninguno (D-U3).
+- **T5.** La sección usa parámetros propios de la dirección (`users.q`, `users.role`, `users.status`, `users.page`) y no `useListState`, porque la bandeja de altas, en la misma página, usa `tab`, `q` y `page`. Las etiquetas de búsqueda llevan «usuarios» para no repetir las de la bandeja (los lectores de pantalla y las pruebas las distinguen). La lista enseña rol y estado como insignias; el enlace a la ficha lleva `state.from` (la búsqueda de la dirección) para que la vuelta conserve los filtros. Se añade `userPath` en `navigation.ts`; las claves `admin.user.*` de la ficha entran ya en T5 con el resto de `i18n`. `admin.test.tsx` cuenta ahora tres secciones y simula `GET /admin/users`. Prettier reformó `admin-users.test.tsx` de la API (de T4) en este commit.
 

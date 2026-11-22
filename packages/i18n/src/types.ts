@@ -371,6 +371,43 @@ export interface Messages {
       rejected: string;
       stale: string;
     };
+    users: {
+      title: string;
+      searchLabel: string;
+      searchSubmit: string;
+      roleFilter: string;
+      statusFilter: string;
+      all: string;
+      status: { active: string; disabled: string };
+      summary: string;
+      empty: string;
+      emptyFiltered: string;
+      clearFilters: string;
+      lastLogin: string;
+      neverLoggedIn: string;
+      openMissions: string;
+      profileIncomplete: string;
+    };
+    user: {
+      back: string;
+      loading: string;
+      notFound: string;
+      contact: string;
+      email: string;
+      phone: string;
+      noPhone: string;
+      role: string;
+      status: string;
+      lastLogin: string;
+      neverLoggedIn: string;
+      createdAt: string;
+      skills: string;
+      noSkills: string;
+      certificateNotice: string;
+      teams: string;
+      noTeams: string;
+      locality: string;
+    };
     inviteCode: {
       title: string;
       codeLabel: string;
