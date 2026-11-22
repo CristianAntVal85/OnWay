@@ -1,6 +1,6 @@
 #!/bin/sh
 # Comprobación de humo de la pila de `docker compose up`: salud, página de acceso y el ciclo
-# login -> getMe -> logout con cookie y CSRF, para un administrador, un coordinador y un rescatista. Comprueba también el acceso de H5:
+# login -> getMe -> logout con cookie y CSRF, para un administrador, un coordinador y dos rescatistas (uno con el perfil incompleto). Comprueba también el acceso de H5:
 # el administrador lee el código de invitación y los demás reciben 403, `register` con un código inválido da REGISTRATION_FAILED,
 # `forgotPassword` responde 202 y la bandeja del administrador trae la solicitud de `pendiente@example.org`. No registra ninguna cuenta ni
 # envía ningún correo (el correo del `forgotPassword` no existe), así que no deja nada en la pila.
@@ -44,7 +44,8 @@ check_account() {
 
 check_account admin@example.org admin home
 check_account coordinador@example.org coordinator home
-check_account rescatista1@example.org rescuer complete-profile
+check_account rescatista1@example.org rescuer home
+check_account rescatista6@example.org rescuer complete-profile
 check_account pendiente@example.org "" awaiting-approval
 
 # Altitud del servidor (H1-T4): un punto de los Pirineos lo resuelve el DEM local (Copernicus o el sintético del E2E); es solo para el personal.
@@ -78,6 +79,24 @@ check_environment() {
 check_environment coordinador@example.org
 check_environment rescatista1@example.org
 echo "ok  getEnvironment: coordinator and rescuer 200 with weather, sun and moon, position rounded"
+
+# Perfil (H5-perfil): el de rescatista1 viene completo de la semilla, con el documento y la dirección enmascarados (sus datos en claro no
+# salen en la lectura del perfil) y en claro solo a petición suya; el coordinador no tiene vía a los datos sensibles (INV-18).
+sign_in() {
+  : >"$jar"
+  curl -s -c "$jar" -b "$jar" -H 'Content-Type: application/json' -d "{\"email\":\"$1\",\"password\":\"$password\"}" "$base/api/v1/auth/login" >/dev/null
+}
+sign_in rescatista1@example.org
+body="$(curl -s -b "$jar" "$base/api/v1/my/profile")"
+echo "$body" | grep -q '"status":"complete"' || fail "rescatista1's profile is not complete: $body"
+echo "$body" | grep -q '"masked":"•••••••1R"' || fail "getMyProfile does not mask the document: $body"
+echo "$body" | grep -q '00000001R' && fail "getMyProfile showed the document in clear"
+echo "$body" | grep -q 'Inventado' && fail "getMyProfile showed the street"
+[ "$(curl -s -b "$jar" -o /dev/null -w '%{http_code}' "$base/api/v1/my/profile/sensitive")" = 200 ] || fail "getMySensitive for the rescuer is not 200"
+curl -s -b "$jar" "$base/api/v1/my/profile/sensitive" | grep -q '"number":"00000001R"' || fail "getMySensitive does not decrypt the document"
+sign_in coordinador@example.org
+[ "$(status -b "$jar" "$base/api/v1/my/profile/sensitive")" = 403 ] || fail "a coordinator must get 403 on /my/profile/sensitive"
+echo "ok  profile: rescatista1 complete and masked, sensitive data in clear only for them, coordinator 403"
 
 # Biblioteca de rutas (H2-T6): la semilla deja 6 rutas ficticias (5 activas y 1 archivada); el coordinador las lista, el administrador las lee y el rescatista no.
 # Se exporta una a GPX y se comprueba que no lleva autor.

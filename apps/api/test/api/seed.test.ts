@@ -5,6 +5,9 @@ import { loadDemo } from '../../src/seed/demo.js';
 import type { ElevationProvider } from '../../src/geo/elevation.js';
 import { SyntheticElevationProvider } from '../../src/geo/synthetic-elevation.js';
 import { seedDemo } from '../../src/seed/seed.js';
+import { randomBytes } from 'node:crypto';
+import { sensitiveKeysFromSecrets } from '../../src/sensitive/config.js';
+import { SensitiveCipher } from '../../src/sensitive/sensitive-cipher.js';
 import { verifyPassword } from '../../src/identity/password.js';
 import { login, mustLogin, startApp, withSession, type TestApp } from '../support/app.js';
 import { Fixtures, TEST_PASSWORD } from '../support/fixtures.js';
@@ -16,7 +19,9 @@ let app: TestApp;
 let orgId: string;
 const elevation = new SyntheticElevationProvider();
 const warnings: string[] = [];
-const options = { elevation, warn: (message: string) => warnings.push(message) };
+// The seed and the API share the keys of the sensitive data (D-P8): the app below gets the same ones.
+const sensitive = sensitiveKeysFromSecrets(randomBytes(48), randomBytes(48));
+const options = { elevation, sensitive, warn: (message: string) => warnings.push(message) };
 
 const count = async (sql: string, values: unknown[] = []) => Number((await fixtures.query<{ n: string }>(sql, values))[0]!.n);
 
@@ -46,7 +51,7 @@ async function fingerprint(): Promise<string> {
 beforeAll(async () => {
   const { owner, app: appConnection } = inject('database');
   fixtures = new Fixtures(owner);
-  app = await startApp({ database: appConnection });
+  app = await startApp({ database: appConnection, sensitive });
 });
 
 afterAll(async () => {
@@ -58,12 +63,12 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
   it('loads the agreed demo and a second run changes nothing', async () => {
     const { owner } = inject('database');
     const first = await seedDemo(owner, demo, options);
-    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6, missionRoutes: 4 });
+    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6, missionRoutes: 4, profiles: 5 });
     orgId = first.organizationId;
     const before = await fingerprint();
 
     const second = await seedDemo(owner, demo, options);
-    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0, missionRoutes: 0 });
+    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0, missionRoutes: 0, profiles: 0 });
     expect(await fingerprint()).toBe(before);
 
     // Two runs at once also end with a single organization.
@@ -111,12 +116,31 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
     ).toBe(0);
   });
 
-  it('keeps every demo email on example.org, and rescuers incomplete with no contact and no sensitive data (D-H0-19, INV-18)', async () => {
+  it('keeps every demo email on example.org; five rescuers complete with encrypted data and one incomplete (H5-perfil P1, INV-18, INV-24)', async () => {
     const emails = [...demo.members, ...demo.applicants].map((p) => p.email);
     expect(await count(`SELECT count(*) n FROM users WHERE email = ANY($1) AND email NOT LIKE '%@example.org'`, [emails])).toBe(0);
-    expect(await count(`SELECT count(*) n FROM rescuer_profiles WHERE organization_id = $1 AND status = 'incomplete' AND completed_at IS NULL`, [orgId])).toBe(6);
-    expect(await count(`SELECT count(*) n FROM rescuer_contact WHERE organization_id = $1`, [orgId])).toBe(0);
-    expect(await count(`SELECT count(*) n FROM rescuer_sensitive WHERE organization_id = $1`, [orgId])).toBe(0);
+    expect(await count(`SELECT count(*) n FROM rescuer_profiles WHERE organization_id = $1 AND status = 'incomplete' AND completed_at IS NULL`, [orgId])).toBe(1);
+    expect(await count(`SELECT count(*) n FROM rescuer_profiles WHERE organization_id = $1 AND status = 'complete' AND completed_at IS NOT NULL`, [orgId])).toBe(5);
+    expect(await count(`SELECT count(*) n FROM rescuer_contact WHERE organization_id = $1`, [orgId])).toBe(5);
+    expect(await count(`SELECT count(*) n FROM rescuer_sensitive WHERE organization_id = $1`, [orgId])).toBe(5);
+    expect(await count(`SELECT count(DISTINCT document_hash) n FROM rescuer_sensitive WHERE organization_id = $1`, [orgId])).toBe(5);
+    // Solo bytes cifrados en la base, y se descifran con las claves de la API, ligados a su perfil.
+    const rows = await fixtures.query<{ profile_id: string; email: string; document_enc: Buffer; key_id: number }>(
+      `SELECT s.profile_id, u.email, s.document_enc, s.key_id FROM rescuer_sensitive s JOIN rescuer_profiles p ON p.id = s.profile_id JOIN users u ON u.id = p.user_id WHERE s.organization_id = $1`,
+      [orgId],
+    );
+    const cipher = new SensitiveCipher(sensitive);
+    for (const row of rows) {
+      const wanted = demo.members.find((m) => m.email === row.email)!.profile!.document.number;
+      expect(row.document_enc.includes(Buffer.from(wanted))).toBe(false);
+      expect(cipher.decrypt(row.profile_id, 'document', row.document_enc, row.key_id)).toBe(wanted);
+    }
+    expect(rows.map((r) => r.email).sort()).toEqual(
+      demo.members
+        .filter((m) => m.profile)
+        .map((m) => m.email)
+        .sort(),
+    );
   });
 
   it('stores Argon2id hashes of the documented password, never the password itself, and a different salt per account', async () => {
@@ -137,7 +161,7 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
 
   const expectations: { key: string; role: string; nextStep: string }[] = [];
   for (const member of demo.members) {
-    expectations.push({ key: member.key, role: member.role, nextStep: member.role === 'rescuer' ? 'complete-profile' : 'home' });
+    expectations.push({ key: member.key, role: member.role, nextStep: member.role === 'rescuer' && !member.profile ? 'complete-profile' : 'home' });
   }
 
   it.each(expectations)('$key logs in through the API with its role and next step', async ({ key, role, nextStep }) => {
@@ -147,7 +171,7 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
     expect(response.status).toBe(200);
     const { user } = MeResponse.parse(await response.json());
     expect(user).toMatchObject({ role, nextStep, accountStatus: 'active', locale: member.locale, organization: { id: orgId, name: demo.organization.name } });
-    if (role === 'rescuer') expect(user.profileStatus).toBe('incomplete');
+    if (role === 'rescuer') expect(user.profileStatus).toBe(member.profile ? 'complete' : 'incomplete');
   });
 
   it('the pending account logs in and only gets awaiting-approval, with no organization and no role (INV-25)', async () => {
@@ -263,14 +287,14 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
       };
       const nothing: ElevationProvider = { elevationAt: async () => null, elevationsAt: async (points) => points.map(() => null) };
       const messages: string[] = [];
-      const first = await seedDemo(owner, other, { elevation: nothing, warn: (m) => messages.push(m) });
+      const first = await seedDemo(owner, other, { elevation: nothing, sensitive, warn: (m) => messages.push(m) });
       expect(first).toMatchObject({ seeded: true, missions: 0, routes: 0, missionRoutes: 0 });
       expect(messages).toHaveLength(9); // the routes of a mission that was skipped add no warning of their own
       expect(messages[0]).toMatch(/skipped/);
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(0);
 
       const second = await seedDemo(owner, other, options);
-      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6, missionRoutes: 4 });
+      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6, missionRoutes: 4, profiles: 0 });
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(3);
       expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1`, [first.organizationId])).toBe(6);
     });
@@ -458,7 +482,7 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
         })),
       };
       const again = await seedDemo(owner, withRoutes, options);
-      expect(again).toEqual({ seeded: false, organizationId: first.organizationId, missions: 0, routes: 0, missionRoutes: 4 });
+      expect(again).toEqual({ seeded: false, organizationId: first.organizationId, missions: 0, routes: 0, missionRoutes: 4, profiles: 0 });
       expect(await count(`SELECT count(*) n FROM mission_routes WHERE organization_id = $1`, [first.organizationId])).toBe(4);
       expect(await count(`SELECT count(*) n FROM audit_log WHERE organization_id = $1 AND action IN ('route_added', 'route_marked_unavailable')`, [first.organizationId])).toBe(5);
       expect((await seedDemo(owner, withRoutes, options)).missionRoutes).toBe(0);

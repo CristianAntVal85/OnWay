@@ -69,7 +69,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - `updateMe` con `role` da `VALIDATION_FAILED` y el rol no cambia;
     - AC-02 cuenta 63.
 
-- [ ] **T6. Semilla con perfiles completos y smoke.** Cubre D-P8 y P1.
+- [x] **T6. Semilla con perfiles completos y smoke.** Cubre D-P8 y P1.
   - **Qué se hace:**
     - `demo.json`: el bloque `profile` (teléfono, DNI con letra válida y dirección ficticios) en `rescuer-1` a `rescuer-5`.
     - `seedProfiles` completa, con `SensitiveCipher` y `DocumentFingerprint`, los que sigan `incomplete` y sin sensibles.
