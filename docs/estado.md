@@ -6,11 +6,12 @@ Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya n
 
 ## Dónde estamos
 - En `main`: MVP (H0 a H4), `H5-acceso`, `UI-rediseno`, issues #17 y #18 (PR #21), `UI-simplificacion` con el fondo topográfico (PR #23, #24, #25 y #27), nombre de las rutas y desvincular (PR #26) pintar ruta y continuar a mano (PR #29), todo validado por sus revisores, y tres ajustes de interfaz (PR #31: nombre de ruta de la misión a su detalle con vuelta, historial plegado, sin botón «Tiempo» en Mis misiones; doc 02 v1.8).
-- Sin pull requests abiertas. Rama en curso: `hito/H5-perfil`.
+- `H5-perfil` construido en `hito/H5-perfil` (T1 a T10, `specs/H5-perfil/`), sin validar todavía. Sin pull requests abiertas.
 - El CI de GitHub Actions no arranca por la facturación de la cuenta: la verificación completa se hace en local.
 
 ## Siguiente paso
-- El resto de H5, partido en tres (decisión del usuario, 2026-11-22): `H5-perfil` (perfil, datos sensibles cifrados, `updateMe`, `changePassword`), luego `H5-habilidades` (habilidades y certificados) y `H5-equipos` (usuarios y equipos). Ahora: `/sdd-plan H5-perfil`.
+- `/sdd-validate H5-perfil` (con `reviewer-security`, `reviewer-db` y `reviewer-ui`) y la pull request.
+- Después, `H5-habilidades` (cursos y certificados) y `H5-equipos` (usuarios, equipos y alias, Q-36), con `/sdd-plan`.
 
 ## Pendiente del usuario
 - Ver el pintado real del mapa de carreteras en oscuro y en claro con la pila `onway` reconstruida.
@@ -20,6 +21,8 @@ Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya n
 
 ## Hechos que conviene recordar
 - Tras cambiar de rama o fusionar: `docker compose up --build` en la pila `onway`.
+- Claves de datos sensibles en el volumen `secrets`: si se pierden, se pierden documento y dirección (`infra/README.md`). Perfil incompleto de la semilla: `rescatista6`.
+- En la pila `onway` la misión de semilla «Valle de Ordesa» está cerrada a mano: el smoke falla ahí (estado de la pila).
 - E2E sin tocar la pila de desarrollo: proyecto `onway-e2e`, puerto 18080. Si acumula rutas archivadas, recrear con `down -v`.
 - Una sola organización en la demostración; no validar a mano la «Variante de la Pradera».
 - Una ruta archivada que quedó en una misión cerrada no se puede eliminar (D-I6).

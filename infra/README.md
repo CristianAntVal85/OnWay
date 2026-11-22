@@ -16,6 +16,12 @@ Los tres endpoints públicos (`register`, `forgotPassword`, `resetPassword`) tie
 
 Lo que ocurre con la solicitud de alta: la cuenta queda *pendiente* (puede iniciar sesión y ve la espera) hasta que el administrador la decide en `/admin`; el código de invitación (16 caracteres en grupos de 4) lo ve y regenera solo el administrador, y regenerarlo invalida el anterior en el acto. `forgotPassword` responde 202 igual exista o no el correo y no espera al `Mailer`.
 
+## Claves de los datos sensibles (H5-perfil)
+
+Documento y dirección del rescatista se guardan cifrados con AES-256-GCM, y el documento lleva una huella HMAC-SHA256 para detectar duplicados (doc 04 §6.3, doc 05 §7). Las dos claves son archivos del volumen `secrets`, que el servicio `secrets` genera la primera vez (`sensitive/key` y `fingerprint/key`, 48 bytes al azar en hexadecimal) y que montan **solo** `api` y `seed` (`SENSITIVE_KEY_FILE`, `DOCUMENT_HASH_KEY_FILE`). La API deriva de cada una, con HKDF-SHA256, la clave de 32 bytes que usa; sin los archivos no arranca. No están en la base ni en sus copias.
+
+**Si se pierden, se pierden el documento y la dirección de todos los perfiles** (riesgo aceptado, doc 05 §7). Por eso `secrets` y `db-data` van juntos: borrar uno sin el otro deja la base con datos que no se pueden leer; `docker compose down -v` borra los dos. Una pila sembrada antes de H5 recibe las claves en el siguiente `up` y la semilla completa entonces los perfiles de demostración. Rotar la clave (`key_id`) no está construido: hoy todo usa `key_id = 1`.
+
 ## Datos geográficos (`geodata`)
 
 **`geodata`** (H1) es un servicio de un solo uso con su volumen (`onway_geodata`): la primera vez descarga el DEM Copernicus GLO-30 de los Pirineos (12 teselas, 466 MB), un extracto PMTiles del mapa base (403 MB) y las fuentes y sprites de su estilo (14 MB); ~90 s con buena conexión, nada la segunda vez. Si una descarga falla, la pila arranca igual y se degrada. Fuentes, licencias y atribuciones: `docs/04` §9.0.

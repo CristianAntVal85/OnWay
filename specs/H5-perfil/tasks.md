@@ -137,7 +137,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
   - **Comprobación:** con la pila `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d`, y con las mismas variables más `E2E_BASE_URL=http://localhost:18080 CI=1`, ejecutar `pnpm --filter @onway/web exec playwright test -c e2e h5-perfil-demo.spec.ts` y después `pnpm --filter @onway/web e2e`.
   - **Hecho cuando:** la demostración pasa en los dos formatos y el E2E completo pasa sin fallos.
 
-- [ ] **T10. Cierre: documentos y verificación completa.**
+- [x] **T10. Cierre: documentos y verificación completa.**
   - **Qué se hace:**
     - Documentos al día:
       - doc 02 (§3.9 y §2, y el registro);

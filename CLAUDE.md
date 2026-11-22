@@ -59,8 +59,8 @@ PostgreSQL 16 + PostGIS, Drizzle (SQL propio para lo espacial), pg-boss para tra
 
 ```
 docker compose up --wait                    # todo en local (tras cambiar de rama o fusionar, con `--build`: si no, `web` sirve la hoja anterior, issue #8): http://localhost:8080 (cuentas en data/seed/README.md). La primera vez `geodata` descarga ~843 MB y `routing-data` ~1,3 GB (red de caminos de Geofabrik) y convierte el relieve (~10 min)
-docker compose down                         # para; conserva datos y descargas (con -v los borra, también las contraseñas generadas y los ~843 MB de geodata)
-infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 4 cuentas, altitud del servidor, entorno (tiempo, luz y luna), acceso de H5 (código de invitación del administrador, `register` con código inválido, `forgotPassword` 202, bandeja) y roles de la base (sin superusuario ni BYPASSRLS)
+docker compose down                         # para; conserva datos y descargas (con -v los borra, también las contraseñas y las claves de los datos sensibles generadas y los ~843 MB de geodata)
+infra/scripts/smoke.sh                      # salud, acceso, login/getMe/logout de 5 cuentas (rescatista6 con el perfil incompleto), perfil enmascarado de rescatista1 y 403 del coordinador en sus datos sensibles, altitud del servidor, entorno (tiempo, luz y luna), acceso de H5 (código de invitación del administrador, `register` con código inválido, `forgotPassword` 202, bandeja) y roles de la base (sin superusuario ni BYPASSRLS)
 COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --wait   # pila de pruebas: sin descargas (DEM sintético) y proveedores falsos (providers-stub)
 pnpm --filter @onway/web exec playwright test -c e2e <archivo>   # una sola demostración (p. ej. `h5-acceso-demo.spec.ts`); sin archivo, todas (como `e2e`, que antes compila `@onway/i18n`)
 pnpm --filter @onway/web e2e                # todas las pruebas de Playwright (Chromium; escritorio, móvil 375 px y una con el motor parado) contra la pila levantada (con la superposición, como en el CI)
@@ -76,11 +76,11 @@ pnpm --filter @onway/api test:db            # pruebas de Vitest sobre PostGIS: l
 pnpm --filter @onway/api test:api           # pruebas del API sobre PostGIS (Testcontainers); el trabajo con pg-boss real incluido
 pnpm --filter @onway/api test:routing       # pruebas contra el GraphHopper REAL sobre la red inventada: necesita la pila de pruebas con `routing` levantado (puerto 18989, `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml docker compose up --build --wait routing`)
 infra/scripts/routing-regression.sh         # regresión REAL del motor (extracto de los Pirineos y DEM de verdad, ~1,3 GB la primera vez; proyecto `onway-regression`): los casos de poc/motor-rutas/cases; también el workflow manual `routing-regression`
-pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME (seed: ELEVATION_DEM_DIR para la altitud de las misiones)
+pnpm --filter @onway/api migrate | seed     # necesitan DB_OWNER_PASSWORD_FILE y DB_HOST|PORT|NAME (seed: ELEVATION_DEM_DIR para la altitud de las misiones y SENSITIVE_KEY_FILE y DOCUMENT_HASH_KEY_FILE para cifrar los perfiles)
 pnpm --filter @onway/api synthetic-dem      # regenera data/seed/dem (terreno inventado del E2E)
 pnpm --filter @onway/api synthetic-network  # regenera data/seed/network.osm (red de caminos inventada del E2E y el CI)
 pnpm --filter @onway/api build-hgt          # convierte el DEM de OnWay (GLO-30) al formato de altitud del motor de rutas (lo hace `routing-data`)
-pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, DB_*, PORT, TRUSTED_PROXIES (quién puede decir la IP del cliente con X-Forwarded-For; por defecto los rangos privados: solo Caddy llega a la API) (el worker de trabajos: `node dist/src/worker.js`, servicio `worker`)
+pnpm --filter @onway/api start              # DB_APP_PASSWORD_FILE, CSRF_SECRET_FILE, SENSITIVE_KEY_FILE, DOCUMENT_HASH_KEY_FILE, DB_*, PORT, TRUSTED_PROXIES (quién puede decir la IP del cliente con X-Forwarded-For; por defecto los rangos privados: solo Caddy llega a la API) (el worker de trabajos: `node dist/src/worker.js`, servicio `worker`)
 pnpm --filter @onway/web dev                # Vite con proxy de /api a API_URL (3000)
 db/tests/run-postgis.sh                     # las pruebas del esquema con un PostGIS en Docker, sin Node
 ```
@@ -91,7 +91,7 @@ db/tests/run-postgis.sh                     # las pruebas del esquema con un Pos
 
 **Correo** (H5-acceso): un solo adaptador, `ConsoleMailer`, que escribe en el registro del `api` una línea JSON con el enlace (`docker compose logs api`). Con `NODE_ENV=production` son obligatorias `MAILER`, `MAILER_ALLOW_CONSOLE` y `PUBLIC_BASE_URL`. Los endpoints públicos (`register`, `forgotPassword`, `resetPassword`) tienen límite por IP en memoria del `api` (`docker compose restart api` lo vacía). Detalle: `infra/README.md`.
 
-`docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas y el secreto CSRF la primera vez, en un volumen.
+`docker compose up` no necesita `.env`: el servicio `secrets` genera las contraseñas, el secreto CSRF y las claves de los datos sensibles (cifrado y huella del documento, H5-perfil) la primera vez, en un volumen. Si se pierden esas claves, se pierden documento y dirección de los perfiles: `secrets` y `db-data` van juntos (`infra/README.md`).
 
 **Datos y motor de rutas:** `geodata` (H1) descarga la primera vez el DEM, el mapa base y sus fuentes; `routing-data` y `routing` (H3) preparan y sirven GraphHopper 11.1 con el perfil `infra/routing/mountain.json`; `worker` es la imagen de la API con la cola pg-boss. Si una descarga falla, la pila arranca y se degrada; sin red de caminos la API responde `ROUTING_UNAVAILABLE` (tras bajarla, `docker compose restart routing`). La superposición E2E (`infra/compose.e2e.yml`) no descarga nada: DEM sintético, red inventada y `providers-stub`. Únicos anfitriones de terceros en el navegador: los WMTS de IGN España y Francia (`apps/web/src/map/ign.ts` y la CSP de `infra/Caddyfile`). Cambiar `mountain.json` pide revisar los pesos con `specs/H3-generacion-rutas/revision-pesos.md` y repetir la regresión real. Detalle, fuentes y tamaños: `infra/README.md`. El estado al día lo anota `docs/estado.md`.
 

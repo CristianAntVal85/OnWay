@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 1.1 (borrador) · Fecha: 2026-11-13 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
+Versión: 1.2 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -614,10 +614,10 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 |---|---|---|
 | Organizaciones | 1 en la demostración. El aislamiento se prueba con una segunda que **crean las propias pruebas** (el fixture de `test:api` y la preparación del E2E) y que no forma parte de `demo.json` (D-H0-18) | 1 |
 | Administrador y coordinadores | 1 y 2 | 1 y 2 (uno con interfaz en francés) |
-| Rescatistas | 6, con perfil incompleto hasta que H5 traiga el perfil y sus datos; sin contacto ni datos sensibles | 6, todos `incomplete` |
+| Rescatistas | 6, con perfil incompleto hasta que H5 traiga el perfil y sus datos; sin contacto ni datos sensibles | **`H5-perfil`: 5 completos y 1 (`rescatista6`) incompleto** |
 | Cuentas pendientes | 1, con su solicitud de alta | 1 |
 | Equipos | 4, con localidades distintas, y rescatistas en 0, 1 y 2 equipos | 4 |
-| Datos sensibles | Documentos y direcciones inventados, con letra de DNI válida, cifrados | H5 |
+| Datos sensibles | Documentos y direcciones inventados, con letra de DNI válida, cifrados | **`H5-perfil`**: los 5 perfiles completos, con DNI `00000001R` a `00000005M`, teléfono y dirección inventados; la semilla los cifra con las claves de la API (volumen `secrets`), como `updateMyProfile`, y los completa en una pila ya sembrada |
 | Cursos y habilidades | 20, algunos con certificado ficticio (un PDF de una página) | H5 |
 | Misiones | 6: dos en planificación, dos activas, dos cerradas. Las cerradas con participación confirmada y alguna desmarcada. **H1 siembra 3 (una por estado, ficticias; la activa con origen, intermedio y reunión; la cerrada sin participaciones, que llegan en H6)**, cada una con sus filas de `audit_log` y la altitud calculada por el `ElevationProvider`; las 6 completas, con participaciones, son de H6 | H1 (3 de 6) |
 | Rutas | 8 en la biblioteca, con 1 a 3 versiones. Entre ellas una derivada, una archivada y una con borrador más nuevo que la validada. **H2 siembra 6** (una validada de una versión, una con tres versiones, una con borrador más nuevo que la validada, una derivada, una archivada y una con la validación de hace más de 90 días), a partir de GPX inventados de `data/seed/gpx/`, con sus filas de `audit_log` y las métricas que calcula el servidor; las 2 que faltan, generadas por el motor: **H3 no las siembra**, porque la semilla no depende del motor ni de su red; las produce el botón *Generar* (la demostración E2E crea por API una misión «E2E …» con un origen a cada lado de la frontera inventada y genera desde ella, y las deja archivadas) | H2 (6 de 8) |
@@ -683,6 +683,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**1.2 (2026-11-22)** `H5-perfil`. Sin migración: las tablas, políticas y funciones del perfil ya estaban. §12 (semilla): 5 rescatistas con el perfil completo y los datos sensibles cifrados con las claves de la API; `rescatista6` sigue incompleto. Las dos claves de §7 (cifrado y huella) son archivos del volumen `secrets` (`sensitive/key` y `fingerprint/key`), de los que la API deriva con HKDF-SHA256 las claves de 32 bytes; `key_id = 1`.
 
 **1.1 (2026-11-13)** Issue #17. **Migración 0013** (`0013_route_delete.sql`): `route_versions_guard()` pasa a `SECURITY DEFINER` y permite el `DELETE` de una versión validada solo si su ruta está `archived` y no hay filas de `mission_routes` para ella; el resto de INV-04 no cambia. Las políticas de borrado del coordinador (0011) bastan. INV-04 e INV-07 reformulados en §5.
 

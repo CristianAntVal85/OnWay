@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.8 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.9)
+Versión: 1.9 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.9)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -60,7 +60,7 @@ El administrador no tiene «Crear misión» porque no escribe misiones (Q-14 res
 
 En el boceto del rescatista (14) la barra tiene solo Misiones y Mi perfil.
 
-**Cuenta** reúne el idioma, el **tema** y cerrar sesión. El tema ofrece tres opciones, con teclado y objetivos de 48 px: «Oscuro» (el que se ve si no se ha elegido nada), «Claro (alto contraste)» y «Como el sistema» (la única que sigue la preferencia del sistema). Se aplica al momento, se recuerda solo en este navegador (no viaja al servidor) y vale también en la pantalla de acceso, sin destello al cargar. El mapa de carreteras sigue al tema; el satélite y el topográfico no.
+**Cuenta** reúne el **nombre visible**, el idioma (que se guarda en la cuenta: es el de los correos y el inicial en cualquier navegador; si no se puede guardar, el cambio vale solo en este navegador y se avisa), el **tema**, **cambiar la contraseña** (actual, nueva y repetida; la sesión actual sigue y se cierran las demás; una contraseña actual errónea cuenta para el bloqueo) y cerrar sesión (construido en `H5-perfil`). El tema ofrece tres opciones, con teclado y objetivos de 48 px: «Oscuro» (el que se ve si no se ha elegido nada), «Claro (alto contraste)» y «Como el sistema» (la única que sigue la preferencia del sistema). Se aplica al momento, se recuerda solo en este navegador (no viaja al servidor) y vale también en la pantalla de acceso, sin destello al cargar. El mapa de carreteras sigue al tema; el satélite y el topográfico no.
 
 ## 3. Vistas
 
@@ -381,6 +381,8 @@ Secciones:
 - Certificado de tipo o tamaño no admitido: error claro, el curso no se guarda con el archivo.
 - Cualquier dato sensible se muestra enmascarado por defecto (por ejemplo, el número de documento con los primeros dígitos ocultos) hasta que el propio usuario lo pide *(propuesto)*.
 
+**Tal como se construyó (`H5-perfil`).** Con el perfil incompleto, cualquier vista lleva a «Completa tu perfil» y la barra solo tiene «Mi perfil» y «Cuenta» (el servidor no bloquea lecturas; RN-20 impide ofrecerse). El formulario lleva el correo de la cuenta en solo lectura, el aviso de quién ve qué, tipo de documento (DNI, NIE, pasaporte, otro) y número, teléfono y la dirección con el país (España, Francia, Andorra o Portugal); se comprueba en el cliente con los mismos esquemas que el servidor, y el documento ya registrado se dice en su campo sin decir de quién es. Al completarse, la app abre Mis misiones. En Mi perfil, el documento sale como `•••••••8Z` y la dirección como `•••••, 22600 Sabiñánigo (ES)`; «Mostrar» los enseña enteros (`getMySensitive`, sin guardarlos) y «Ocultar» los retira. «Corregir mis datos» abre el mismo formulario con lo guardado y envía solo los bloques que cambiaron. Cursos y habilidades llegan en `H5-habilidades`; historial y privacidad, en H6.
+
 ### 3.10 Administración
 
 Boceto 13. Vista solo para el administrador de organización (RF-106, RF-813).
@@ -688,6 +690,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.9 (2026-11-22)**
+- Cierre de `H5-perfil` (`specs/H5-perfil/`): §2 Cuenta con nombre visible, idioma guardado en la cuenta (antes solo en el navegador, D-H0-21) y cambiar la contraseña; §3.9 «Tal como se construyó»: alta obligatoria, formulario, enmascarado con «Mostrar» y «Ocultar», corregir solo lo cambiado. Sin cambios de permisos.
 
 **1.8 (2026-11-22)**
 - §3.2 y §7: en Mis misiones del rescatista, la tarjeta del tiempo es solo de su ubicación y las tarjetas de misión pierden el botón «Tiempo» (se confundía con la tarjeta de arriba); el tiempo del objetivo está en el detalle de la misión.
