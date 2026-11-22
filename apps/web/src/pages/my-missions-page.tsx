@@ -94,8 +94,8 @@ function MyMissionCard({ item }: { item: Item }) {
       <dl className="facts-grid">
         <div>
           <dt>{t('missions.fields.coordinator')}</dt>
-          {/* La política de `users` solo deja leer el nombre al personal: hasta que se decida lo contrario llega `null` y se dice en neutro. */}
-          <dd>{item.coordinatorName ?? t('myMissions.coordinatorNeutral')}</dd>
+          {/* El rescatista ve el alias fijo del responsable (Q-36, D-E3); el nombre sigue siendo `null` para él. */}
+          <dd>{item.coordinatorAlias ?? item.coordinatorName ?? t('myMissions.coordinatorNeutral')}</dd>
         </div>
         <div>
           <dt>{t('missions.fields.objective')}</dt>

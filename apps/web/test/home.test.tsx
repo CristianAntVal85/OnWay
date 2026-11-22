@@ -336,6 +336,7 @@ const myItem = (overrides: Record<string, unknown> = {}) => ({
   status: 'active',
   target: { lat: 42.6, lon: -0.05, elevationM: 3100, label: null, country: 'ES', source: 'coordinates' },
   coordinatorName: null,
+  coordinatorAlias: null,
   validatedRoutes: 0,
   myParticipation: null,
   ...overrides,
@@ -348,6 +349,7 @@ const myDetail = (overrides: Record<string, unknown> = {}) => ({
   status: 'active',
   target: { lat: 42.6, lon: -0.05, elevationM: 3100, label: 'Circo de Soaso', country: 'ES', source: 'address' },
   coordinatorName: null,
+  coordinatorAlias: null,
   points: [
     { id: 'p1', kind: 'origin', name: 'Pradera de Ordesa', note: 'Aparcamiento', lat: 42.65, lon: -0.03, elevationM: 1320, position: 0 },
     { id: 'p2', kind: 'rendezvous', name: 'Refugio de Góriz', note: null, lat: 42.65, lon: -0.01, elevationM: 2200, position: 0 },
@@ -360,6 +362,14 @@ const myDetail = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('rescatista: Mis misiones (RF-601)', () => {
+  it('del responsable enseña su alias fijo (Q-36, D-E3), no un nombre ni el texto neutro', async () => {
+    mockGeolocation('granted');
+    setup('/missions', { 'GET /my/missions': () => json(200, page([myItem({ coordinatorAlias: 'criantval ALC' })])) }, { user: complete() });
+    const card = (await screen.findByRole('link', { name: 'Simulacro ficticio · Valle de Ordesa' })).closest('li')!;
+    expect(within(card).getByText('criantval ALC')).toBeTruthy();
+    expect(within(card).queryByText(M.coordinatorNeutral)).toBeNull();
+  });
+
   it('lista las activas de su organización con el tiempo arriba, sin control de escritura ni botón de oferta', async () => {
     mockGeolocation('granted');
     const { calls } = setup(
@@ -484,6 +494,13 @@ describe('rescatista: detalle en solo lectura (RF-602)', () => {
     [`GET /my/missions/${MISSION_ID}`]: () => json(200, body),
     [`GET /my/missions/${MISSION_ID}/routes`]: () => json(200, { items: [] }),
     'GET /environment': ({ query }) => json(200, environment({ basis: 'mission', missionId: query.get('missionId'), location: { lat: 42.6, lon: -0.05, elevationM: 3100, country: 'ES' } })),
+  });
+
+  it('en el detalle, el responsable se ve por su alias', async () => {
+    mockGeolocation('granted');
+    setup(`/missions/${MISSION_ID}`, detailHandlers(myDetail({ coordinatorAlias: 'criantval ALC' })), { user: complete() });
+    expect(await screen.findByText('criantval ALC')).toBeTruthy();
+    expect(screen.queryByText(M.coordinatorNeutral)).toBeNull();
   });
 
   it('muestra puntos, mapa y el tiempo del objetivo, sin rutas, sin altitud en las coordenadas y sin ninguna escritura', async () => {

@@ -1279,6 +1279,7 @@ export const es: Messages = {
     noTeam: 'Sin equipo',
     notValidated: 'Sin validar',
     teamValue: '{{name}} · {{locality}}',
+    team: { selectLabel: 'Equipo de «{{name}}»', done: 'Equipo de «{{name}}» actualizado.' },
     columns: {
       route: 'Ruta',
       version: 'Versión fijada',

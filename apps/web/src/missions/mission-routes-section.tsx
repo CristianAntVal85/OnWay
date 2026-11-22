@@ -16,6 +16,7 @@ import { PATHS, routePath } from '../nav/navigation';
 import { useApi } from '../session/api-context';
 import { missionChangedMeanwhile, writeFailureMessage } from './errors';
 import { formatDate } from './format';
+import { useActiveTeams } from '../teams/queries';
 import { AddRouteDialog } from './add-route-dialog';
 import type { MissionRouteRow } from './mission-route-style';
 
@@ -66,6 +67,8 @@ export function MissionRoutesSection({ missionId, locale, canManage, origins, ro
   const [adding, setAdding] = useState(false);
   const rows = routes.data?.items ?? [];
   const inMission = new Set(rows.map((row) => row.routeId));
+  // Con la misión cerrada o sin permiso, la columna es de lectura y no se piden los equipos.
+  const teamOptions = useActiveTeams(canManage);
 
   // Si la fila que se confirmaba desaparece (otra persona la quitó), la confirmación se cierra sola.
   const open = confirming && rows.some((row) => row.id === confirming.id) ? confirming : null;
@@ -154,6 +157,7 @@ export function MissionRoutesSection({ missionId, locale, canManage, origins, ro
                     row={row}
                     locale={locale}
                     canManage={canManage}
+                    teams={teamOptions.data?.items ?? []}
                     checked={selected.has(row.id)}
                     onToggle={() => onToggle(row.id)}
                     confirming={open?.id === row.id ? open.kind : null}
@@ -205,6 +209,7 @@ interface RowProps {
   row: MissionRouteRow;
   locale: string;
   canManage: boolean;
+  teams: readonly { id: string; name: string; locality: string }[];
   checked: boolean;
   onToggle: () => void;
   confirming: 'update' | 'remove' | null;
@@ -213,7 +218,7 @@ interface RowProps {
   onDone: (message: string, removed?: boolean) => void;
 }
 
-function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confirming, onConfirm, onCancel, onDone }: RowProps) {
+function RouteRow({ missionId, row, locale, canManage, teams, checked, onToggle, confirming, onConfirm, onCancel, onDone }: RowProps) {
   const { t } = useTranslation();
   const api = useApi();
   const queryClient = useQueryClient();
@@ -262,8 +267,23 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
     onError: failed,
   });
 
-  const pending = update.isPending || availability.isPending || remove.isPending;
-  const failure = update.error ?? availability.error ?? remove.error;
+  // RF-805, D-E7: el equipo de la ruta es un `<select>` nativo. Mientras se guarda enseña lo elegido; si el servidor lo rechaza, vuelve al valor anterior.
+  const [chosenTeam, setChosenTeam] = useState<string | null | undefined>(undefined);
+  const changeTeam = useMutation({
+    mutationFn: (teamId: string | null) => api.updateMissionRoute({ params: { missionId, missionRouteId: row.id }, body: { teamId } }),
+    onSuccess: async () => {
+      await refresh();
+      setChosenTeam(undefined);
+      onDone(t('missionRoutes.team.done', { name: row.name }));
+    },
+    onError: (error) => {
+      setChosenTeam(undefined);
+      failed(error);
+    },
+  });
+
+  const pending = update.isPending || availability.isPending || remove.isPending || changeTeam.isPending;
+  const failure = update.error ?? availability.error ?? remove.error ?? changeTeam.error;
 
   return (
     <tr data-unavailable={unavailable || undefined}>
@@ -384,7 +404,34 @@ function RouteRow({ missionId, row, locale, canManage, checked, onToggle, confir
       </td>
       <td>{row.pinned.validatedAt ? formatDate(row.pinned.validatedAt, locale) : t('missionRoutes.notValidated')}</td>
       <td>{row.origin ? row.origin.name : t('missionRoutes.noOrigin')}</td>
-      <td>{row.team ? t('missionRoutes.teamValue', { name: row.team.name, locality: row.team.locality }) : t('missionRoutes.noTeam')}</td>
+      <td>
+        {canManage ? (
+          <select
+            className="mission-route-team"
+            aria-label={t('missionRoutes.team.selectLabel', { name: row.name })}
+            value={chosenTeam !== undefined ? (chosenTeam ?? '') : (row.team?.id ?? '')}
+            disabled={pending}
+            onChange={(event) => {
+              const teamId = event.target.value === '' ? null : event.target.value;
+              setChosenTeam(teamId);
+              changeTeam.mutate(teamId);
+            }}
+          >
+            <option value="">{t('missionRoutes.noTeam')}</option>
+            {/* La del equipo actual sale aunque ya no esté entre los activos (archivado): si no, el valor no tendría opción. */}
+            {row.team && !teams.some((team) => team.id === row.team!.id) && <option value={row.team.id}>{t('missionRoutes.teamValue', { name: row.team.name, locality: row.team.locality })}</option>}
+            {teams.map((team) => (
+              <option key={team.id} value={team.id}>
+                {t('missionRoutes.teamValue', { name: team.name, locality: team.locality })}
+              </option>
+            ))}
+          </select>
+        ) : row.team ? (
+          t('missionRoutes.teamValue', { name: row.team.name, locality: row.team.locality })
+        ) : (
+          t('missionRoutes.noTeam')
+        )}
+      </td>
     </tr>
   );
 }

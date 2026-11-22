@@ -87,8 +87,8 @@ function MissionView({ mission }: { mission: Mission }) {
           <dl className="facts-grid">
             <div>
               <dt>{t('missionDetail.fields.coordinator')}</dt>
-              {/* `null` hasta que se decida cómo ve el rescatista el nombre del responsable (la política de `users` solo lo deja al personal). */}
-              <dd>{mission.coordinatorName ?? t('myMissions.coordinatorNeutral')}</dd>
+              {/* El alias fijo del responsable (Q-36, D-E3); sin alias, el nombre y, si tampoco, el texto neutro. */}
+              <dd>{mission.coordinatorAlias ?? mission.coordinatorName ?? t('myMissions.coordinatorNeutral')}</dd>
             </div>
             <div>
               <dt>{t('missionDetail.fields.objective')}</dt>

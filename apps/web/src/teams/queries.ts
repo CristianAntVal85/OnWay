@@ -74,3 +74,13 @@ export function useRescuers(query: { q: string; page: number }) {
     placeholderData: keepPreviousData,
   });
 }
+
+/** Los equipos activos para elegir (selector de equipo de la ruta de la misión, RF-805): una sola página, el servidor admite hasta 200. */
+export function useActiveTeams(enabled: boolean) {
+  const api = useApi();
+  return useQuery({
+    queryKey: [...TEAMS_KEY, 'list', 'options'],
+    queryFn: ({ signal }) => api.listTeams({ query: { status: 'active', page: 1, pageSize: 200 } }, { signal }),
+    enabled,
+  });
+}

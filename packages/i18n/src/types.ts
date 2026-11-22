@@ -993,6 +993,7 @@ export interface Messages {
     noTeam: string;
     notValidated: string;
     teamValue: string;
+    team: { selectLabel: string; done: string };
     columns: {
       route: string;
       version: string;

@@ -47,6 +47,7 @@ const detail = (overrides: Record<string, unknown> = {}) => ({
   status: 'active',
   target: { lat: 42.62, lon: -0.05, elevationM: 3100, label: 'Circo de Soaso', country: 'ES', source: 'address' },
   coordinatorName: null,
+  coordinatorAlias: null,
   points: [{ id: 'p1', kind: 'origin', name: 'Pradera de Ordesa', note: null, lat: 42.65, lon: -0.03, elevationM: 1320, position: 0 }],
   myParticipation: null,
   canOffer: true,
