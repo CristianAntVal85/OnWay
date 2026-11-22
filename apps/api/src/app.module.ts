@@ -18,6 +18,7 @@ import { MailModule } from './mail/mail.module.js';
 import { MissionsModule } from './missions/missions.module.js';
 import { AvoidZonesModule } from './avoid-zones/avoid-zones.module.js';
 import { MissionRoutesModule } from './mission-routes/mission-routes.module.js';
+import { ProfileModule } from './profile/profile.module.js';
 import { RoutesModule } from './routes/routes.module.js';
 import type { SensitiveKeys } from './sensitive/config.js';
 import { SensitiveModule } from './sensitive/sensitive.module.js';
@@ -63,6 +64,7 @@ export class AppModule {
         IdentityModule.register(options.identity),
         FilesModule.register(options.files),
         AdminModule,
+        ProfileModule,
         MissionsModule,
         RoutesModule,
         MissionRoutesModule,

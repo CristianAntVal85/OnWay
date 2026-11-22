@@ -24,7 +24,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
   - **Comprobación:** `pnpm check @onway/api`.
   - **Hecho cuando:** las pruebas unitarias cubren que cifrar y descifrar recupera el texto, que la AAD de otro perfil o campo falla, que un byte cambiado falla, que el mismo documento con distinto formato da la misma huella y que una clave ausente impide arrancar.
 
-- [ ] **T3. `getMyProfile` y `getMySensitive`.** Cubre RF-806 (propio), RF-810, INV-18, INV-31 e INV-32.
+- [x] **T3. `getMyProfile` y `getMySensitive`.** Cubre RF-806 (propio), RF-810, INV-18, INV-31 e INV-32.
   - **Qué se hace:**
     - Servicio que lee las tres tablas por separado, dentro de la transacción de la petición.
     - Enmascarado con `maskDocument` y `addressSummary`.
@@ -35,7 +35,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
   - **Archivos:**
     - nuevos: `apps/api/src/profile/profile.controller.ts`, `apps/api/src/profile/profile.service.ts`, `apps/api/src/profile/profile.module.ts`, `apps/api/test/api/profile.test.ts`;
     - se tocan: `apps/api/src/app.module.ts`, `apps/api/test/api/app.test.ts`.
-  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api -- profile app`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api profile app`.
   - **Hecho cuando:** pasan las pruebas de INV-18 (lo propio en claro; coordinador y administrador reciben `FORBIDDEN`), INV-31 (`email` igual a `users.email`) y del perfil a medias (`missingFields`), y AC-02 cuenta 60 operaciones.
 
 - [ ] **T4. `updateMyProfile`.** Cubre RF-807, RF-812 (corregir), INV-24 e INV-32.
@@ -48,7 +48,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - Errores: `23505` de `document_hash` da `DOCUMENT_ALREADY_REGISTERED` y el esquema da `INVALID_DOCUMENT`.
     - Auditoría `profile_completed` o `profile_updated`, con los nombres de los bloques.
   - **Archivos:** `apps/api/src/profile/profile.service.ts`, `apps/api/src/profile/profile.controller.ts`, `apps/api/src/audit/audit.writer.ts`, `apps/api/src/db/errors.ts` (si hace falta mapear la restricción), `apps/api/test/api/profile.test.ts`, `apps/api/test/api/app.test.ts`.
-  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api -- profile app`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api profile app`.
   - **Hecho cuando:**
     - pasan las pruebas de INV-24: el duplicado en la misma organización da 409 sin datos de nadie, en otra organización se admite, y guardar de nuevo lo propio no falla;
     - el alta completa da `complete`, una sola fila de auditoría sin valores, y `getMe.nextStep = home`;
@@ -61,7 +61,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - `changePassword` verifica la contraseña actual con `verifyPassword`; si es errónea, registra el intento con `auth_record_attempt(…, false, …)` y responde `INVALID_CREDENTIALS`.
     - Si es correcta: guarda el hash nuevo, borra las demás sesiones (`DELETE FROM sessions WHERE user_id = me AND id <> actual`) y registra la auditoría `password_changed`.
   - **Archivos:** `apps/api/src/identity/identity.controller.ts`, `apps/api/src/identity/auth.service.ts`, `apps/api/src/identity/session.service.ts`, `apps/api/test/api/auth.test.ts`, `apps/api/test/api/app.test.ts`.
-  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api -- auth app`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api auth app`.
   - **Hecho cuando:**
     - con dos sesiones, cambiar la contraseña deja viva la actual y la otra recibe `SESSION_EXPIRED`;
     - se entra con la nueva y no con la vieja;
@@ -77,7 +77,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - Al día: `seed.test.ts`, `smoke.sh` (`rescatista1` va a `home` y `rescatista6` a `complete-profile`; perfil enmascarado; el coordinador recibe `FORBIDDEN` en `/my/profile/sensitive`) y `data/seed/README.md`.
     - E2E: `roles.spec.ts`, con el caso incompleto pasado a `rescatista6`.
   - **Archivos:** `data/seed/demo.json`, `apps/api/src/seed/demo.ts`, `apps/api/src/seed/seed.ts`, `apps/api/test/api/seed.test.ts`, `apps/api/test/unit/demo-data.test.ts`, `infra/scripts/smoke.sh`, `data/seed/README.md`, `apps/web/e2e/roles.spec.ts`.
-  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api -- seed` y, con la pila `onway` reconstruida (`docker compose up --build --wait`), `infra/scripts/smoke.sh`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api seed` y, con la pila `onway` reconstruida (`docker compose up --build --wait`), `infra/scripts/smoke.sh`.
   - **Hecho cuando:**
     - la semilla deja 5 perfiles completos con bytes cifrados y huellas distintas;
     - una segunda ejecución no cambia nada;

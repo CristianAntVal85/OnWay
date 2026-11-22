@@ -74,7 +74,15 @@ const BUILT = [
 const ACCESS_OPERATIONS = ['register', 'forgotPassword', 'resetPassword', 'listSignupRequests', 'decideSignupRequests', 'getInviteCode', 'rotateInviteCode'];
 const ACCESS_BUILT: string[] = ['register', 'forgotPassword', 'resetPassword', 'listSignupRequests', 'decideSignupRequests', 'getInviteCode', 'rotateInviteCode']; // T3 to T5
 
-const MOUNTED_IDS = [...BUILT, ...ACCESS_BUILT];
+/**
+ * The 5 operations of H5-perfil, the first of the three parts of the rest of H5 (doc 07, 2026-11-22). They keep `x-milestone: H5`;
+ * each task (T3 to T5) appends the ids it mounts to `PROFILE_BUILT`.
+ */
+const PROFILE_OPERATIONS = ['getMyProfile', 'updateMyProfile', 'getMySensitive', 'updateMe', 'changePassword'];
+const PROFILE_BUILT: string[] = ['getMyProfile', 'getMySensitive']; // T3 to T5
+const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT];
+
+const MOUNTED_IDS = [...BUILT, ...BUILT_IN_H5];
 const routeOf = (e: { method: string; path: string }) => `${e.method} /api/v1${nestPath(e.path)}`;
 
 let real: TestApp;
@@ -116,7 +124,9 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(ACCESS_OPERATIONS).toHaveLength(7);
     expect(ACCESS_OPERATIONS.filter((id) => !ofH5.includes(id))).toEqual([]);
     expect(ACCESS_BUILT.filter((id) => !ACCESS_OPERATIONS.includes(id))).toEqual([]);
-    expect(MOUNTED_IDS).toHaveLength(53 + ACCESS_BUILT.length);
+    expect(PROFILE_OPERATIONS.filter((id) => !ofH5.includes(id))).toEqual([]);
+    expect(PROFILE_BUILT.filter((id) => !PROFILE_OPERATIONS.includes(id))).toEqual([]);
+    expect(MOUNTED_IDS).toHaveLength(53 + ACCESS_BUILT.length + PROFILE_BUILT.length);
     expect(new Set(MOUNTED_IDS).size).toBe(MOUNTED_IDS.length);
   });
 
@@ -126,10 +136,10 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing of H5 beyond the access scope, nor of a later milestone, test controllers included', () => {
-    const outside = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) >= MILESTONES.indexOf('H5') && !ACCESS_OPERATIONS.includes(e.id));
-    expect(outside.filter((e) => e.milestone === 'H5')).toHaveLength(19);
-    expect(outside).toHaveLength(38);
+  it('mounts nothing of H5 beyond the access and profile scopes, nor of a later milestone, test controllers included', () => {
+    const outside = ENDPOINTS.filter((e) => MILESTONES.indexOf(e.milestone) >= MILESTONES.indexOf('H5') && !ACCESS_OPERATIONS.includes(e.id) && !PROFILE_OPERATIONS.includes(e.id));
+    expect(outside.filter((e) => e.milestone === 'H5')).toHaveLength(14);
+    expect(outside).toHaveLength(33);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
     expect(outside.map(routeOf).filter((route) => mounted.has(route))).toEqual([]);
   });
@@ -153,9 +163,9 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     await expectError(await fetch(`${real.baseUrl}/health`, { method: 'POST' }), 'NOT_FOUND');
   });
 
-  it('answers every operation of H5 that is not mounted (the 19 outside the access scope and the access ones still to build) with 404 NOT_FOUND', async () => {
+  it('answers every operation of H5 that is not mounted (the 14 of H5-habilidades and H5-equipos and the profile ones still to build) with 404 NOT_FOUND', async () => {
     const unmounted = ENDPOINTS.filter((e) => e.milestone === 'H5' && !MOUNTED_IDS.includes(e.id));
-    expect(unmounted).toHaveLength(26 - ACCESS_BUILT.length);
+    expect(unmounted).toHaveLength(26 - BUILT_IN_H5.length);
     const someId = '00000000-0000-4000-8000-000000000000';
     for (const e of unmounted) {
       const url = `${real.baseUrl}${e.path.replace(/\{[^}]+\}/g, someId)}`;
