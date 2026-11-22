@@ -140,12 +140,16 @@ export function ChangeRoleDialog({ target, onClose, onDone }: DialogProps & { on
   };
 
   return (
-    <Dialog title={t('admin.user.roleDialog.title', { name: target.name })} description={
+    <Dialog
+      title={t('admin.user.roleDialog.title', { name: target.name })}
+      description={
         <>
           <p>{t('admin.user.roleDialog.description')}</p>
           {target.self && <p className="dialog-warning">{t('admin.user.roleDialog.selfWarning')}</p>}
         </>
-      } onClose={() => !update.isPending && onClose()}>
+      }
+      onClose={() => !update.isPending && onClose()}
+    >
       <fieldset ref={group} className="role-choice" aria-describedby={missingRole ? roleErrorId : undefined}>
         <legend>{t('admin.user.roleDialog.legend')}</legend>
         {ROLES.filter((option) => option !== target.role).map((option) => (
@@ -220,12 +224,16 @@ export function DisableDialog({ target, onClose, onDone }: DialogProps & { onDon
   };
 
   return (
-    <Dialog title={t('admin.user.disableDialog.title', { name: target.name })} description={
+    <Dialog
+      title={t('admin.user.disableDialog.title', { name: target.name })}
+      description={
         <>
           <p>{t('admin.user.disableDialog.description')}</p>
           {target.self && <p className="dialog-warning">{t('admin.user.disableDialog.selfWarning')}</p>}
         </>
-      } onClose={() => !update.isPending && onClose()}>
+      }
+      onClose={() => !update.isPending && onClose()}
+    >
       {needsReassign && (
         <ReassignField
           excludeId={target.id}
