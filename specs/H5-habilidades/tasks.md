@@ -47,7 +47,7 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
     - `afterCommit` corre tras el `COMMIT` y no tras un `ROLLBACK`; los bytes retirados desaparecen del `InMemoryFileStorage`;
     - `getMyProfile.skills` coincide con `listMySkills`.
 
-- [ ] **T4. `getCertificateLink` y `openCertificate`.** Cubre INV-26, INV-28 (el certificado), RN-24, D-S2, D-S3 y D-S7.
+- [x] **T4. `getCertificateLink` y `openCertificate`.** Cubre INV-26, INV-28 (el certificado), RN-24, D-S2, D-S3 y D-S7.
   - **Qué se hace:**
     - Las reglas de quién abre qué:
       - el propietario, sin auditoría;
@@ -155,3 +155,10 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
   - **Archivos:** `docs/02-flujo-coordinador-y-vistas.md`, `docs/04-arquitectura-y-stack.md`, `docs/05-modelo-de-datos.md`, `docs/07-plan-de-implementacion.md`, `infra/README.md`, `CLAUDE.md`, `docs/estado.md`, `docs/historial.md`.
   - **Comprobación:** `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test && pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`, y el E2E con `CI=1` en `onway-e2e`, que después se retira con `down -v`.
   - **Hecho cuando:** todo pasa, y los documentos dicen lo construido y sus desviaciones.
+
+## Desviaciones y notas de la implementación
+
+- **T4, `SignedLink.url` es una ruta del mismo origen** (decisión del coordinador): pasa de `z.url()` a `z.string().regex(/^\/api\/v1\/certificates\/[A-Za-z0-9._~-]+$/)` en `packages/contracts/src/files.ts`; anotado en la entrada v1.14 del doc 06. Descartado `PUBLIC_BASE_URL`, que solo es obligatoria en producción.
+- **Recuento de montadas:** antes de H5 había 53 (no 51); al acabar el hito serán 71 (53 + 7 + 5 + 6), no 69. `app.test.ts` usa los números reales. El doc 07 aún dice 69 y se corrige en T9.
+- **Límite de 50 (T3):** no bloquea la fila del perfil; dos altas simultáneas podrían pasar de 50 (riesgo bajo). La entrada 51 usa `path = name` y código `too_many`.
+- **T4, auditoría:** la fila `certificate_opened` lleva además `subject_user_id` (el propietario del certificado); el detalle es solo `{fileId}`.

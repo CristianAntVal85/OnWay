@@ -63,6 +63,16 @@ export interface ProfileAuditEntry {
   blocks: ProfileBlock[];
 }
 
+/** Somebody other than the owner asked for a certificate (INV-26, RN-24). Only ids: neither the name of the course nor the file's contents. */
+export interface CertificateOpenedEntry {
+  orgId: string;
+  skillId: string;
+  fileId: string;
+  actorUserId: string;
+  /** The owner of the certificate. */
+  subjectUserId: string;
+}
+
 /**
  * Writes `audit_log` (INV-16, RN-05) inside the transaction of the request: if the operation fails the row is
  * rolled back with it, and a change cannot commit without its row. By convention every action of a mission is
@@ -166,5 +176,20 @@ export class AuditWriter {
       .current()
       .insert(auditLog)
       .values({ organizationId: entry.orgId, entityType: 'organization', entityId: entry.orgId, action: 'invite_code_rotated', actorUserId: entry.actorUserId, detail: {} });
+  }
+
+  async recordCertificateOpened(entry: CertificateOpenedEntry): Promise<void> {
+    await this.database
+      .current()
+      .insert(auditLog)
+      .values({
+        organizationId: entry.orgId,
+        entityType: 'skill',
+        entityId: entry.skillId,
+        action: 'certificate_opened',
+        actorUserId: entry.actorUserId,
+        subjectUserId: entry.subjectUserId,
+        detail: { fileId: entry.fileId },
+      });
   }
 }

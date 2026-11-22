@@ -86,7 +86,7 @@ const PROFILE_BUILT: string[] = ['getMyProfile', 'getMySensitive', 'updateMyProf
  * `SKILLS_BUILT`: T3 the four of «mis cursos y habilidades», T4 the two of the certificate.
  */
 const SKILLS_OPERATIONS = ['listMySkills', 'createMySkill', 'updateMySkill', 'deleteMySkill', 'getCertificateLink', 'openCertificate'];
-const SKILLS_BUILT: string[] = ['listMySkills', 'createMySkill', 'updateMySkill', 'deleteMySkill']; // T3
+const SKILLS_BUILT: string[] = ['listMySkills', 'createMySkill', 'updateMySkill', 'deleteMySkill', 'getCertificateLink', 'openCertificate']; // T3 and T4
 const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT, ...SKILLS_BUILT];
 
 const MOUNTED_IDS = [...BUILT, ...BUILT_IN_H5];
@@ -174,7 +174,7 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     await expectError(await fetch(`${real.baseUrl}/health`, { method: 'POST' }), 'NOT_FOUND');
   });
 
-  it('answers every operation of H5 that is not mounted (the 9 of H5-equipos and the two of the certificate still to build) with 404 NOT_FOUND', async () => {
+  it('answers every operation of H5 that is not mounted (the 9 of H5-equipos) with 404 NOT_FOUND', async () => {
     const unmounted = ENDPOINTS.filter((e) => e.milestone === 'H5' && !MOUNTED_IDS.includes(e.id));
     expect(unmounted).toHaveLength(27 - BUILT_IN_H5.length);
     const someId = '00000000-0000-4000-8000-000000000000';
