@@ -38,7 +38,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
   - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api profile app`.
   - **Hecho cuando:** pasan las pruebas de INV-18 (lo propio en claro; coordinador y administrador reciben `FORBIDDEN`), INV-31 (`email` igual a `users.email`) y del perfil a medias (`missingFields`), y AC-02 cuenta 60 operaciones.
 
-- [ ] **T4. `updateMyProfile`.** Cubre RF-807, RF-812 (corregir), INV-24 e INV-32.
+- [x] **T4. `updateMyProfile`.** Cubre RF-807, RF-812 (corregir), INV-24 e INV-32.
   - **Qué se hace:**
     - Actualización parcial, en una transacción:
       - `fullName` va a `rescuer_profiles`;

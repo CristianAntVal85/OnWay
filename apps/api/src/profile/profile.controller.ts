@@ -1,9 +1,9 @@
 import { Controller, Inject, Req, Res } from '@nestjs/common';
 import type { OperationOutput } from '@onway/contracts';
 import type { Response } from 'express';
-import { Operation, type OnwayRequest } from '../common/operation.js';
+import { Input, Operation, type OnwayRequest, type OperationInput } from '../common/operation.js';
 import { DatabaseService } from '../db/database.service.js';
-import { ProfileService } from './profile.service.js';
+import { ProfileService, type ProfileChanges } from './profile.service.js';
 
 const noStore = (response: Response) => response.setHeader('Cache-Control', 'no-store');
 
@@ -18,6 +18,12 @@ export class ProfileController {
   async getMyProfile(@Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'getMyProfile'>> {
     noStore(response);
     return this.profiles.describe(this.database.current(), request.principal!);
+  }
+
+  @Operation('updateMyProfile')
+  async updateMyProfile(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'updateMyProfile'>> {
+    noStore(response);
+    return this.profiles.update(this.database.current(), request.principal!, input.body as ProfileChanges);
   }
 
   @Operation('getMySensitive')

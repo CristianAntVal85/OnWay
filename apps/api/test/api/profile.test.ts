@@ -125,3 +125,116 @@ describe('getMySensitive (RF-810, INV-18)', () => {
     expect(() => cipher.decrypt(another, 'document', row!.document_enc, row!.key_id)).toThrow();
   });
 });
+
+const patch = (session: Session, body: unknown) =>
+  fetch(`${app.baseUrl}/my/profile`, { method: 'PATCH', headers: { ...withSession(session), 'content-type': 'application/json' }, body: JSON.stringify(body) });
+
+/** A DNI with a valid control letter built from a number: each test uses its own so INV-24 never trips by chance. */
+const dni = (n: number) => {
+  const digits = String(n).padStart(8, '0');
+  return `${digits}${'TRWAGMYFPDXBNJZSQVHLCKE'[n % 23]}`;
+};
+let next = 10_000_000 + Math.floor(Math.random() * 80_000_000);
+const freshDni = () => dni(next++);
+
+describe('updateMyProfile (RF-807, RF-812, INV-24, INV-32)', () => {
+  it('fills the signup in one go: the profile becomes complete, getMe stops asking for it, and one audit row names the blocks, never a value', async () => {
+    const member = await rescuer();
+    const session = await signIn(member);
+    expect(session.body.user).toMatchObject({ nextStep: 'complete-profile' });
+    const number = freshDni();
+    const response = await patch(session, { fullName: 'Nombre Ficticio Completo', phone: '+34 600 000 010', document: { type: 'dni', number: number.toLowerCase() }, address: ADDRESS });
+    expect(response.status).toBe(200);
+    const profile = MyProfile.parse(await response.json());
+    expect(profile).toMatchObject({ status: 'complete', fullName: 'Nombre Ficticio Completo', phone: '+34 600 000 010', missingFields: [] });
+    expect(profile.document).toEqual({ type: 'dni', masked: `•••••••${number.slice(-2)}` });
+    expect(profile.completedAt).not.toBeNull();
+
+    const me = await (await get(session, '/auth/me')).json();
+    expect(me.user).toMatchObject({ profileStatus: 'complete', nextStep: 'home' });
+
+    const profileId = await profileIdOf(member);
+    const audit = await fixtures.query<{ action: string; detail: unknown; actor_user_id: string; subject_user_id: string }>(
+      `SELECT action, detail, actor_user_id, subject_user_id FROM audit_log WHERE entity_type = 'rescuer_profile' AND entity_id = $1`,
+      [profileId],
+    );
+    expect(audit).toEqual([{ action: 'profile_completed', detail: { blocks: ['fullName', 'phone', 'document', 'address'] }, actor_user_id: member.userId, subject_user_id: member.userId }]);
+    expect(JSON.stringify(audit)).not.toContain(number.slice(0, 6));
+
+    // Lo guardado es el número normalizado y cifrado: en la base no hay texto en claro (INV-18).
+    const [row] = await fixtures.query<{ document_enc: Buffer; address_enc: Buffer }>(`SELECT document_enc, address_enc FROM rescuer_sensitive WHERE profile_id = $1`, [profileId]);
+    expect(row!.document_enc.includes(Buffer.from(number))).toBe(false);
+    expect(row!.address_enc.includes(Buffer.from('Sabiñánigo'))).toBe(false);
+    expect(MySensitive.parse(await (await get(session, '/my/profile/sensitive')).json()).document).toEqual({ type: 'dni', number });
+  });
+
+  it('part by part: name and phone leave it incomplete with what is missing; the first document needs the address too', async () => {
+    const member = await rescuer();
+    const session = await signIn(member);
+    const partial = MyProfile.parse(await (await patch(session, { phone: '+34 600 000 011' })).json());
+    expect(partial).toMatchObject({ status: 'incomplete', phone: '+34 600 000 011', missingFields: ['document', 'address'] });
+    const body = await expectError(await patch(session, { document: { type: 'dni', number: freshDni() } }), 400, 'VALIDATION_FAILED');
+    expect(body.error.details).toEqual({ issues: [expect.objectContaining({ path: 'address', code: 'required' })] });
+    const complete = MyProfile.parse(await (await patch(session, { document: { type: 'passport', number: 'PAS123456' }, address: ADDRESS })).json());
+    expect(complete.status).toBe('complete');
+    // Corregir después: un bloque solo, y el perfil sigue completo (profile_updated).
+    const corrected = MyProfile.parse(await (await patch(session, { address: { ...ADDRESS, locality: 'Jaca', postalCode: '22700' } })).json());
+    expect(corrected).toMatchObject({ status: 'complete', addressSummary: '•••••, 22700 Jaca (ES)', document: { type: 'passport', masked: '•••••••56' } });
+    const actions = await fixtures.query<{ action: string }>(`SELECT action FROM audit_log WHERE entity_type = 'rescuer_profile' AND entity_id = $1 ORDER BY id`, [await profileIdOf(member)]);
+    expect(actions.map((a) => a.action)).toEqual(['profile_updated', 'profile_completed', 'profile_updated']);
+  });
+
+  it('a DNI with the wrong control letter is INVALID_DOCUMENT and nothing is stored', async () => {
+    const member = await rescuer();
+    const session = await signIn(member);
+    // Las 8 cifras de un DNI válido con la letra siguiente de la tabla: siempre incorrecta.
+    const valid = freshDni();
+    const letters = 'TRWAGMYFPDXBNJZSQVHLCKE';
+    const number = `${valid.slice(0, 8)}${letters[(letters.indexOf(valid.slice(-1)) + 1) % letters.length]}`;
+    const body = await expectError(await patch(session, { document: { type: 'dni', number }, address: ADDRESS }), 422, 'INVALID_DOCUMENT');
+    expect(body.error.details).toEqual({ issues: [expect.objectContaining({ path: 'document.number', message: 'INVALID_DOCUMENT' })] });
+    expect(await fixtures.query(`SELECT 1 FROM rescuer_sensitive WHERE profile_id = $1`, [await profileIdOf(member)])).toHaveLength(0);
+  });
+
+  it('INV-24: the same document in another profile of the organization is DOCUMENT_ALREADY_REGISTERED and says nothing of whose; in another organization it is accepted', async () => {
+    const number = freshDni();
+    const first = await rescuer();
+    expect((await patch(await signIn(first), { phone: '+34 600 000 012', document: { type: 'dni', number }, address: ADDRESS })).status).toBe(200);
+
+    const second = await rescuer();
+    const response = await patch(await signIn(second), {
+      phone: '+34 600 000 013',
+      document: { type: 'dni', number: `${number.slice(0, 2)}.${number.slice(2, 5)}.${number.slice(5)}` },
+      address: ADDRESS,
+    });
+    const body = await expectError(response, 409, 'DOCUMENT_ALREADY_REGISTERED');
+    expect(body.error.details).toBeUndefined();
+    expect(JSON.stringify(body)).not.toContain(first.userId);
+    expect(JSON.stringify(body)).not.toContain(first.email);
+    // Todo se deshizo con el error: ni teléfono ni sensibles del segundo.
+    const secondProfile = await profileIdOf(second);
+    expect(await fixtures.query(`SELECT 1 FROM rescuer_contact WHERE profile_id = $1`, [secondProfile])).toHaveLength(0);
+
+    const elsewhere = await rescuer(otherOrgId);
+    expect((await patch(await signIn(elsewhere), { phone: '+34 600 000 014', document: { type: 'dni', number }, address: ADDRESS })).status).toBe(200);
+  });
+
+  it("saving one's own document again is not a duplicate", async () => {
+    const member = await rescuer();
+    const session = await signIn(member);
+    const number = freshDni();
+    expect((await patch(session, { phone: '+34 600 000 015', document: { type: 'dni', number }, address: ADDRESS })).status).toBe(200);
+    expect((await patch(session, { document: { type: 'dni', number } })).status).toBe(200);
+  });
+
+  it('INV-31: there is no email to change here; the strict body refuses it', async () => {
+    const member = await rescuer();
+    await expectError(await patch(await signIn(member), { email: 'otro@example.org' }), 400, 'VALIDATION_FAILED');
+    await expectError(await patch(await signIn(member), {}), 400, 'VALIDATION_FAILED');
+  });
+
+  it("a coordinator cannot write anyone's profile through it", async () => {
+    const coordinator = await fixtures.member(orgId, 'coordinator', 'active', { password: TEST_PASSWORD });
+    await expectError(await patch(await signIn(coordinator), { phone: '+34 600 000 016' }), 403, 'FORBIDDEN');
+  });
+});

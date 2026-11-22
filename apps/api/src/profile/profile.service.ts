@@ -1,16 +1,28 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { maskDocument, type OperationOutput } from '@onway/contracts';
+import { maskDocument, normalizeDocument, type OperationOutput } from '@onway/contracts';
 import { and, eq } from 'drizzle-orm';
+import { AuditWriter, type ProfileBlock } from '../audit/audit.writer.js';
+import { CLOCK, type Clock } from '../clock/clock.js';
 import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import type { Tx } from '../db/database.service.js';
+import { pgErrorOf } from '../db/errors.js';
 import { rescuerContact, rescuerProfiles, rescuerSensitive, skills, teamMembers, teams, users } from '../db/schema.js';
+import { DocumentFingerprint } from '../sensitive/document-fingerprint.js';
 import { SensitiveCipher } from '../sensitive/sensitive-cipher.js';
 
 type MyProfile = OperationOutput<'getMyProfile'>;
 type MySensitive = OperationOutput<'getMySensitive'>;
 export type Address = NonNullable<MySensitive['address']>;
 type MissingField = MyProfile['missingFields'][number];
+type DocumentInput = Decrypted['document'];
+
+export interface ProfileChanges {
+  fullName?: string;
+  phone?: string;
+  document?: DocumentInput;
+  address?: Address;
+}
 
 export interface ProfileRow {
   id: string;
@@ -35,7 +47,88 @@ export const addressSummary = (address: Address) => `•••••, ${address.
  */
 @Injectable()
 export class ProfileService {
-  constructor(@Inject(SensitiveCipher) private readonly cipher: SensitiveCipher) {}
+  constructor(
+    @Inject(SensitiveCipher) private readonly cipher: SensitiveCipher,
+    @Inject(DocumentFingerprint) private readonly fingerprint: DocumentFingerprint,
+    @Inject(AuditWriter) private readonly audit: AuditWriter,
+    @Inject(CLOCK) private readonly clock: Clock,
+  ) {}
+
+  /**
+   * RF-807 and RF-812 (correct): a partial update in the request's transaction. Each block goes to its own table (INV-32); document
+   * and address are encrypted before they reach the database and the document's fingerprint is what INV-24 compares. The profile
+   * becomes `complete` as soon as nothing is missing (the database refuses it otherwise, `rescuer_profiles_guard`).
+   */
+  async update(tx: Tx, principal: Principal, changes: ProfileChanges): Promise<MyProfile> {
+    const profile = await this.ownProfile(tx, principal);
+    const blocks: ProfileBlock[] = [];
+
+    if (changes.fullName !== undefined) {
+      await tx.update(rescuerProfiles).set({ fullName: changes.fullName }).where(eq(rescuerProfiles.id, profile.id));
+      blocks.push('fullName');
+    }
+    if (changes.phone !== undefined) {
+      await tx
+        .insert(rescuerContact)
+        .values({ profileId: profile.id, organizationId: profile.organizationId, phone: changes.phone })
+        .onConflictDoUpdate({ target: rescuerContact.profileId, set: { phone: changes.phone, updatedAt: this.clock.now() } });
+      blocks.push('phone');
+    }
+    if (changes.document || changes.address) {
+      await this.writeSensitive(tx, profile, changes.document, changes.address);
+      if (changes.document) blocks.push('document');
+      if (changes.address) blocks.push('address');
+    }
+
+    const completes = profile.status === 'incomplete' && (await this.nothingMissing(tx, profile.id));
+    if (completes) {
+      await tx.update(rescuerProfiles).set({ status: 'complete', completedAt: this.clock.now() }).where(eq(rescuerProfiles.id, profile.id));
+    }
+    await this.audit.recordProfile({ orgId: profile.organizationId, profileId: profile.id, userId: principal.userId, action: completes ? 'profile_completed' : 'profile_updated', blocks });
+    return this.describe(tx, principal);
+  }
+
+  /** The row holds both pieces (`NOT NULL`): the first time, document and address come together; afterwards either one alone. */
+  private async writeSensitive(tx: Tx, profile: ProfileRow, document: DocumentInput | undefined, address: Address | undefined): Promise<void> {
+    const [existing] = await tx.select({ keyId: rescuerSensitive.keyId }).from(rescuerSensitive).where(eq(rescuerSensitive.profileId, profile.id)).limit(1);
+    if (!existing && (!document || !address)) {
+      const missing = document ? 'address' : 'document';
+      throw new DomainError('VALIDATION_FAILED', 'Request validation failed', {
+        issues: [{ path: missing, code: 'required', message: 'document and address are stored together: the first time both are needed' }],
+      });
+    }
+    const documentColumns = document
+      ? { documentType: document.type, documentEnc: this.cipher.encrypt(profile.id, 'document', normalizeDocument(document.number)), documentHash: this.fingerprint.of(document.type, document.number) }
+      : {};
+    const addressColumns = address ? { addressEnc: this.cipher.encrypt(profile.id, 'address', JSON.stringify(address)) } : {};
+    try {
+      if (existing) {
+        await tx
+          .update(rescuerSensitive)
+          .set({ ...documentColumns, ...addressColumns, updatedAt: this.clock.now() })
+          .where(eq(rescuerSensitive.profileId, profile.id));
+      } else {
+        await tx.insert(rescuerSensitive).values({
+          profileId: profile.id,
+          organizationId: profile.organizationId,
+          ...(documentColumns as Required<typeof documentColumns>),
+          ...(addressColumns as Required<typeof addressColumns>),
+          keyId: this.cipher.keyId,
+        });
+      }
+    } catch (error) {
+      // INV-24: `UNIQUE (organization_id, document_hash)`. The person cannot read other rows (`sensitive_own`), so the database is the one
+      // that knows; the answer says nothing of whose it is (D-P2).
+      if (pgErrorOf(error)?.code === '23505') throw new DomainError('DOCUMENT_ALREADY_REGISTERED', 'This document is already registered');
+      throw error;
+    }
+  }
+
+  private async nothingMissing(tx: Tx, profileId: string): Promise<boolean> {
+    const [contact] = await tx.select({ id: rescuerContact.profileId }).from(rescuerContact).where(eq(rescuerContact.profileId, profileId)).limit(1);
+    const [sensitive] = await tx.select({ id: rescuerSensitive.profileId }).from(rescuerSensitive).where(eq(rescuerSensitive.profileId, profileId)).limit(1);
+    return Boolean(contact && sensitive);
+  }
 
   async ownProfile(tx: Tx, principal: Principal): Promise<ProfileRow> {
     const [row] = await tx
