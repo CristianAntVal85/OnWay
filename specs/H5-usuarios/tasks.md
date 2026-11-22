@@ -1,0 +1,138 @@
+# H5-usuarios · Tareas
+
+Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada una lleva su commit: `<tipo>(H5-usuarios): Tn <resumen>`.
+
+- [ ] **T1. El reparto de H5, las decisiones y las notas del contrato.** Cubre el cambio de alcance, Q-12, Q-36, el adelanto de `listRescuers` (lo construye `H5-equipos`) y las notas de `listUsers`, `getUser` y `updateUser`.
+  - **Qué se hace:**
+    - **Doc 07 §3, H5.** La tabla de las partes pasa a tener `H5-usuarios` (3 operaciones, 74 montadas) y `H5-equipos` (las 6 de equipos y `listRescuers`, más D-34, el alias y el selector de RF-805, con 81 montadas). Se añade una línea al registro de cambios.
+    - **Doc 01.** Q-12 queda resuelta (gestionan administrador y coordinador). Q-36 queda decidida (plan §1: generado y fijo, tres letras del nombre y de cada apellido y el código de la localidad del primer equipo, sufijo numérico si hay colisión; el rescatista lo ve en lugar del nombre y el personal ve ambos; se construye en `H5-equipos`). Se añade una línea al registro de cambios.
+    - **`docs/backlog-post-mvp.md`:** B-02 recoge la decisión.
+    - **Contrato:** las notas de las tres operaciones (plan §3). Después se regeneran el OpenAPI y el doc 06, con su línea en el registro de cambios.
+  - **Archivos:** `docs/07-plan-de-implementacion.md`, `docs/01-vision-y-requisitos.md`, `docs/backlog-post-mvp.md`, `packages/contracts/src/endpoints.ts`, `docs/06-contratos-de-api.md`.
+  - **Comprobación:** `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc gen/ && pnpm check @onway/contracts`.
+  - **Hecho cuando:** pasan `registry` y `schema-guards`, y el doc 06 enseña las notas nuevas.
+
+- [ ] **T2. Migración 0014: `admin_reassign_missions`.** Cubre D-U1, RN-11, INV-03, INV-11 y Q-14.
+  - **Qué se hace:**
+    - La función de plan §3, con su `GRANT` y su `REVOKE`, y la entrada en el diario de migraciones.
+    - Las pruebas, con SQL directo como `onway_app`:
+      - un administrador reasigna solo las misiones no cerradas y deja una línea `mission_updated` por misión;
+      - un coordinador o un rescatista que llama a la función recibe un error;
+      - el destino no vale si es un rescatista, un coordinador desactivado, la misma persona u otra organización;
+      - un coordinador no puede ejecutar `UPDATE memberships SET role` (INV-29).
+    - El nombre de la función se añade a las comprobaciones de `db/tests`, si allí se listan las funciones.
+  - **Archivos:**
+    - Nuevos: `db/migrations/0014_admin_reassign_missions.sql` y `apps/api/test/db/admin-reassign.test.ts`.
+    - Se tocan: `db/migrations/meta/_journal.json` y `db/tests/run_tests.sql` (solo si enumera las funciones).
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:db admin-reassign schema && db/tests/run-postgis.sh`.
+  - **Hecho cuando:** las pruebas pasan sobre una base vacía con PostGIS y `run-postgis.sh` sigue en verde.
+
+- [ ] **T3. `listUsers` y `getUser`.** Cubre RF-813 (ver), el doc 06 §7.1, la regla 1, la regla 3 y D-U6.
+  - **Qué se hace:**
+    - `UsersService.list` y `UsersService.detail`, y `UsersController` (plan §3).
+    - Se montan las dos operaciones. `app.test.ts` pasa a 73 montadas.
+  - **Archivos:**
+    - Nuevos: `apps/api/src/admin/users.service.ts`, `apps/api/src/admin/users.controller.ts` y `apps/api/test/api/admin-users.test.ts`.
+    - Se tocan: `apps/api/src/admin/admin.module.ts` y `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api admin-users app`.
+  - **Hecho cuando:**
+    - **Lista:** la búsqueda (nombre y correo), los filtros de rol y estado, la paginación y el orden pasan sus pruebas. Pendientes y rechazados no aparecen. `hasMissionsAsResponsible` cuenta solo las misiones no cerradas. `profileStatus` vale `null` salvo en los rescatistas.
+    - **Ficha:** trae `phone`, `skills` (iguales que `listSkillsOf`) y `teams`, y no trae documento ni dirección.
+    - **Accesos:** otra organización da 404; un coordinador o un rescatista, 403; una cuenta pendiente no entra.
+
+- [ ] **T4. `updateUser`.** Cubre RF-813 (cambiar el rol, desactivar y reactivar), RN-11, INV-25, INV-29, D-U2 a D-U5 y `LAST_ADMIN`.
+  - **Qué se hace:**
+    - `UsersService.update` (plan §3), con un cerrojo consultivo por organización.
+    - `recordRoleChanged`.
+    - Se traducen los errores de la función: un destino no válido da `VALIDATION_FAILED` con `path = reassignMissionsTo`.
+    - Se monta la operación: 74.
+  - **Archivos:** `apps/api/src/admin/users.service.ts`, `apps/api/src/admin/users.controller.ts`, `apps/api/src/audit/audit.writer.ts`, `apps/api/test/api/admin-users.test.ts` y `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api admin-users app`.
+  - **Hecho cuando:**
+    - **Rol:** de rescatista a coordinador, sin que cambie su perfil; de coordinador a rescatista, que crea un perfil incompleto; y a administrador. Cada cambio deja `role_changed` con `{from, to}`, y la siguiente petición de esa persona ya usa el rol nuevo.
+    - **Desactivar:** la sesión de la persona da 401 y deja `account_disabled`. Reactivarla deja `account_active`. Reactivar una cuenta activa o enviar un cambio que no cambia nada da `INVALID_STATE_TRANSITION`.
+    - **`COORDINATOR_HAS_MISSIONS`:** sale con los `missionIds` al desactivar o al cambiar el rol de un coordinador con misiones abiertas. Con `reassignMissionsTo` todo pasa en una sola transacción y las misiones cerradas no cambian. Un destino no válido da `VALIDATION_FAILED`.
+    - **`LAST_ADMIN`:** sale al quitarle el rol o desactivar al único administrador activo, y con dos administradores, sí se puede.
+    - **En `app.test.ts`:** 74 montadas, y solo las 6 de equipos responden 404.
+
+- [ ] **T5. Web: la lista de usuarios en Administración.** Cubre el doc 02 §3.10 (la lista) y D-U6.
+  - **Qué se hace:**
+    - `useUsers` en `queries.ts`.
+    - `UsersSection` (plan §3), con su estado en la dirección.
+    - En `admin-page.tsx`, la sección va entre la bandeja y el código de invitación.
+    - Los textos en español y francés.
+  - **Archivos:**
+    - Nuevos: `apps/web/src/admin/users-section.tsx` y `apps/web/test/admin-users.test.tsx`.
+    - Se tocan: `apps/web/src/admin/queries.ts`, `apps/web/src/pages/admin-page.tsx`, `apps/web/src/styles.css` (si hace falta), `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts` y `packages/i18n/src/types.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`, y una comprobación a 375 px con Chrome DevTools sobre `pnpm --filter @onway/web dev`, si hay una API a mano; si no, se dice.
+  - **Hecho cuando:**
+    - las pruebas cubren carga, vacío, error y reintento, la búsqueda y los filtros en la dirección, la paginación y el enlace a la ficha;
+    - pasan `no-fixed-text`, `layout-widths` y `a11y-styles`.
+
+- [ ] **T6. Web: la ficha del usuario.** Cubre D-U7, el doc 06 §7.1 y RF-808 (el administrador abre el certificado).
+  - **Qué se hace:**
+    - La ruta `/admin/users/:userId` bajo `RoleGate`, con `useUser`.
+    - La ficha muestra nombre, correo, teléfono, rol, estado, último acceso y alta.
+    - Cursos y habilidades: «Abrir certificado» lleva el aviso «La apertura queda registrada» y reutiliza `useOpenCertificate`.
+    - Equipos en solo lectura.
+    - Estados de carga, error y 404 («Esta persona no existe o no es de tu organización»), y un enlace de vuelta a la lista que conserva sus filtros.
+  - **Archivos:**
+    - Nuevo: `apps/web/src/admin/user-page.tsx`.
+    - Se tocan: `apps/web/src/app/routes.tsx`, `apps/web/src/admin/queries.ts`, `apps/web/test/admin-users.test.tsx`, `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts` y `packages/i18n/src/types.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:**
+    - las pruebas cubren la ficha con y sin teléfono, habilidades y equipos, que abrir el certificado llama a `getCertificateLink`, el 404 y que un coordinador no llega a la ruta;
+    - a 375 px no hay desplazamiento horizontal.
+
+- [ ] **T7. Web: cambiar el rol, desactivar y reactivar.** Cubre RN-11 en la interfaz, `LAST_ADMIN` y el doc 02 §3.10 (las acciones).
+  - **Qué se hace:**
+    - `useUpdateUser` y los diálogos de plan §3:
+      - **cambiar el rol**, sin opción previa y con el aviso de permisos;
+      - **desactivar**, con confirmación y la reasignación (`listCoordinators` sin la propia persona, y cuántas misiones se mueven);
+      - **reactivar**.
+    - Los errores `LAST_ADMIN`, `COORDINATOR_HAS_MISSIONS` (abre la reasignación) e `INVALID_STATE_TRANSITION`, cada uno en su diálogo.
+    - El foco va a «Cancelar» al abrir y vuelve al botón al cerrar.
+  - **Archivos:**
+    - Nuevo: `apps/web/src/admin/user-dialogs.tsx`.
+    - Se tocan: `apps/web/src/admin/user-page.tsx`, `apps/web/src/admin/queries.ts`, `apps/web/test/admin-users.test.tsx`, `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts` y `packages/i18n/src/types.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:** las pruebas cubren:
+    - cambiar el rol, que envía `{role}`;
+    - desactivar sin misiones, que envía `{accountStatus: 'disabled'}`;
+    - desactivar con misiones, que pide el responsable y envía `reassignMissionsTo`;
+    - la respuesta `COORDINATOR_HAS_MISSIONS`, que abre la reasignación;
+    - `LAST_ADMIN`, que se explica sin cambiar nada;
+    - reactivar;
+    - y el teclado y el foco en los tres diálogos.
+
+- [ ] **T8. Smoke y demostración de extremo a extremo.** La historia de §1 del plan.
+  - **Qué se hace:**
+    - **`smoke.sh`** (plan §3).
+    - **`stack.ts`:**
+      - `createApprovedAccount(email, nombre, contraseña, rol)`, que generaliza `createApprovedRescuer` (esta se mantiene y usa la nueva);
+      - el apoyo que crea por API una misión «E2E …» abierta de la que es responsable un coordinador de la prueba;
+      - la lectura del responsable de una misión.
+    - **`h5-usuarios-demo.spec.ts`**, en escritorio y a 375 px, con una pasada solo con teclado y en francés. Usa solo cuentas `e2e-…`; al acabar, las cuentas quedan desactivadas y las misiones cerradas.
+    - Una línea en el README del E2E.
+  - **Archivos:**
+    - Nuevo: `apps/web/e2e/h5-usuarios-demo.spec.ts`.
+    - Se tocan: `apps/web/e2e/support/stack.ts`, `apps/web/e2e/playwright.config.ts` (proyecto `mobile`), `apps/web/e2e/README.md` e `infra/scripts/smoke.sh`.
+  - **Comprobación:**
+    - Se levanta la pila: `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d`.
+    - Después, con las mismas variables y `E2E_BASE_URL=http://localhost:18080`: `pnpm --filter @onway/web exec playwright test -c e2e h5-usuarios-demo.spec.ts`.
+    - Por último, `COMPOSE_PROJECT_NAME=onway-e2e infra/scripts/smoke.sh http://localhost:18080`, con `SMOKE_SKIP_ROUTING=1` si hace falta.
+  - **Hecho cuando:**
+    - la demostración pasa en escritorio y en móvil;
+    - el smoke pasa;
+    - la auditoría tiene `role_changed`, `account_disabled`, `account_active`, el `mission_updated` de la reasignación y el `certificate_opened`.
+
+- [ ] **T9. Documentos y verificación completa.**
+  - **Qué se hace:**
+    - «Tal como se construyó (`H5-usuarios`)» en el doc 07 §3 y en el doc 02 §3.10.
+    - El doc 05: la 0014, la función y la tabla de migraciones.
+    - `CLAUDE.md` (las líneas de `smoke.sh` y `test:db`), `docs/estado.md` (como mucho 30 líneas) y `docs/historial.md`.
+    - Cada documento con su línea en el registro de cambios.
+    - La verificación completa y el E2E entero con `CI=1` en `onway-e2e`. Después, `down -v`.
+  - **Archivos:** `docs/02-flujo-coordinador-y-vistas.md`, `docs/05-modelo-de-datos.md`, `docs/07-plan-de-implementacion.md`, `CLAUDE.md`, `docs/estado.md` y `docs/historial.md`.
+  - **Comprobación:** `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test && pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`, y el E2E con `CI=1` en `onway-e2e`.
+  - **Hecho cuando:** todo pasa y los documentos dicen lo construido y sus desviaciones.
