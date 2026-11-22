@@ -21,8 +21,11 @@ Una sola organización («Servicio de Rescate Valle Demo»). Todos los correos s
 | `admin@example.org` | administrador | es | inicio |
 | `coordinador@example.org` | coordinador | es | inicio |
 | `coordinatrice@example.org` | coordinador | fr | inicio |
-| `rescatista1@example.org` … `rescatista6@example.org` | rescatista | es | completar perfil (perfil incompleto, sin documento ni dirección) |
+| `rescatista1@example.org` … `rescatista5@example.org` | rescatista | es | Mis misiones (perfil completo con datos inventados, H5-perfil) |
+| `rescatista6@example.org` | rescatista | es | completar perfil (perfil incompleto, sin teléfono, documento ni dirección) |
 | `pendiente@example.org` | cuenta pendiente de aprobación | es | pantalla de espera |
+
+**Perfiles (H5-perfil).** Los de `rescatista1` a `rescatista5` vienen completos: teléfono de la serie `+34 600 000 101` a `105`, DNI de numeración evidentemente inventada (`00000001R` a `00000005M`, con su letra de control válida) y una dirección inventada en un pueblo del Pirineo. El comando `seed` los cifra con las mismas claves que la API (volumen `secrets`, `sensitive/key` y `fingerprint/key`), así que en `demo.json` solo hay texto en claro inventado y en la base solo bytes cifrados. Una pila sembrada antes de H5 los recibe en el siguiente `up`; un perfil que alguien ya rellenó no se toca. `rescatista6` se queda incompleto para enseñar el alta obligatoria. Como el documento no se puede repetir en la organización (INV-24), **no uses esos DNI al rellenar otro perfil**: darán «Documento ya registrado».
 
 Equipos: Valle de Tena (Biescas), Ribagorza (Benasque), Ordesa (Torla) y Alto Gállego (Sabiñánigo). Los rescatistas están en 0 (`rescatista1`), 1 y 2 equipos (`rescatista4` y `rescatista5`).
 

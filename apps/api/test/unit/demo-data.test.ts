@@ -48,6 +48,27 @@ describe('data/seed/demo.json (D-H0-18, R-10)', () => {
     expect(Demo.safeParse({ ...raw(), surprise: true }).success).toBe(false);
   });
 
+  it('completes rescatista1 to rescatista5 with invented data and leaves rescatista6 incomplete (H5-perfil P1)', () => {
+    const rescuers = demo.members.filter((m) => m.role === 'rescuer');
+    expect(rescuers.filter((m) => m.profile).map((m) => m.key)).toEqual(['rescuer-1', 'rescuer-2', 'rescuer-3', 'rescuer-4', 'rescuer-5']);
+    expect(rescuers.find((m) => m.key === 'rescuer-6')!.profile).toBeUndefined();
+    // DNI de numeración evidentemente inventada (00000001 a 00000005), con su letra de control válida; teléfonos de la serie 600 000 1xx.
+    for (const member of rescuers.filter((m) => m.profile)) {
+      expect(member.profile!.document).toMatchObject({ type: 'dni', number: expect.stringMatching(/^0000000[1-5][A-Z]$/) });
+      expect(member.profile!.phone).toMatch(/^\+34 600 000 1\d\d$/);
+    }
+  });
+
+  it('rejects a profile on a non-rescuer, a wrong control letter and two profiles with the same document (INV-24)', () => {
+    const members = raw().members as Record<string, unknown>[];
+    const profile = members.find((m) => m.key === 'rescuer-1')!.profile as Record<string, unknown>;
+    const replace = (key: string, change: Record<string, unknown>) => ({ ...raw(), members: members.map((m) => (m.key === key ? { ...m, ...change } : m)) });
+    expect(Demo.safeParse(replace('admin', { profile })).success).toBe(false);
+    expect(Demo.safeParse(replace('rescuer-6', { profile: { ...profile, document: { type: 'dni', number: '00000006A' } } })).success).toBe(false);
+    expect(Demo.safeParse(replace('rescuer-6', { profile })).success).toBe(false);
+    expect(Demo.safeParse(replace('rescuer-6', { profile: { ...profile, document: { type: 'dni', number: '00000006Y' } } })).success).toBe(true);
+  });
+
   it('has three made-up missions, one per state, the active one with an origin, an intermediate and a rendezvous point (P4 b)', () => {
     expect(demo.missions.map((m) => m.status).sort()).toEqual(['active', 'closed', 'planning']);
     expect(

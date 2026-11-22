@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.8 (borrador) · Fecha: 2026-11-21 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.9 (borrador) · Fecha: 2026-11-22 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -509,7 +509,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - ~~**Q-33** Recuperar contraseña~~ **Cerrada:** por correo transaccional (Resend tras el puerto `Mailer`), enlace de un solo uso que caduca en 1 h. Pendiente solo el dominio para enviar a terceros (Q-28)
 - **Q-34** Solicitudes de alta sin «equipo indicado» ni «datos completos»: el registro solo recoge correo, nombre, contraseña y código, y el perfil nace al aprobar **Cerrada:** confirmada (documento 06 §5)
 - ~~**Q-35** Días de validación antigua (RF-519)~~ **Cerrada:** 90, configurable por organización
-- **Q-36** Alias de coordinadores y rescatistas, del estilo `criantval ALC` (tres letras del nombre y de cada apellido, y un código de la localidad del equipo): ¿se genera o lo elige la persona?, ¿qué pasa con varios equipos o ninguno?, ¿qué lo ve y dónde? Aplazada hasta después del MVP; el alcance se decide al planificar H5. Detalle en `docs/backlog-post-mvp.md` (B-02) *(nueva)*
+- **Q-36** Alias de coordinadores y rescatistas, del estilo `criantval ALC` (tres letras del nombre y de cada apellido, y un código de la localidad del equipo): ¿se genera o lo elige la persona?, ¿qué pasa con varios equipos o ninguno?, ¿qué lo ve y dónde? Se decide y construye en `H5-equipos` (decisión del usuario, 2026-11-22), porque depende del equipo y su localidad. Detalle en `docs/backlog-post-mvp.md` (B-02) *(nueva)*
 
 Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 
@@ -555,6 +555,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.9 (2026-11-22)**
+- Q-36 (alias de personas): deja de estar aplazada hasta después del MVP y se decide en `H5-equipos`, la tercera parte del resto de H5 (documento 07).
 
 **1.8 (2026-11-21)**
 - Pintar ruta y continuar a mano (`specs/issue-pintar-ruta/`): RF-505 añade el interruptor «Pintar ruta» y «Continuar a mano» (versión nueva que conserva la ruta hasta un corte y sigue en línea recta); RF-503 cuenta el tramo a mano como «sin camino»; RF-513 permite pintar desde la misión.

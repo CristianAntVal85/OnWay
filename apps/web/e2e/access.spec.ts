@@ -79,10 +79,17 @@ test('switching to French translates the interface, survives the login and a rel
   await expect(page.getByRole('navigation', { name: fr.nav.label })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
 
-  // Y de vuelta al español desde Cuenta.
+  // Y de vuelta al español desde Cuenta. Desde H5-perfil el idioma de Cuenta se guarda también en la cuenta (D-P6): se deja otra vez en
+  // francés, que es el de `coordinatrice` en la semilla (la demostración de H3 en francés cuenta con ello).
   await page.getByRole('link', { name: fr.nav.account }).click();
+  const toSpanish = page.waitForResponse((r) => r.url().endsWith('/api/v1/auth/me') && r.request().method() === 'PATCH');
   await page.getByLabel(fr.account.languageEs).check();
+  expect((await toSpanish).status()).toBe(200);
   await expect(heading(page, es.account.title)).toBeVisible();
+  const backToFrench = page.waitForResponse((r) => r.url().endsWith('/api/v1/auth/me') && r.request().method() === 'PATCH');
+  await page.getByLabel(es.account.languageFr).check();
+  expect((await backToFrench).status()).toBe(200);
+  await expect(heading(page, fr.account.title)).toBeVisible();
 });
 
 test('the whole access (log in, move around, switch language, log out) works with the keyboard only', async ({ page }) => {

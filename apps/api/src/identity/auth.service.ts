@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { OperationOutput } from '@onway/contracts';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
+import { AuditWriter } from '../audit/audit.writer.js';
 import { CLOCK, type Clock } from '../clock/clock.js';
 import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
@@ -10,7 +11,7 @@ import { pgErrorOf } from '../db/errors.js';
 import { passwordResetLink } from '../mail/links.js';
 import { MAIL_PUBLIC_BASE_URL } from '../mail/mail.module.js';
 import { MAILER, type Mailer } from '../mail/mailer.js';
-import { organizations, rescuerProfiles, users } from '../db/schema.js';
+import { organizations, rescuerProfiles, sessions, users } from '../db/schema.js';
 import { findAccount, standingOf, type Account } from './accounts.js';
 import { dummyHash, hashPassword, verifyPassword } from './password.js';
 import { sessionCookie } from './cookies.js';
@@ -39,6 +40,7 @@ export class AuthService {
     @Inject(CLOCK) private readonly clock: Clock,
     @Inject(MAILER) private readonly mailer: Mailer,
     @Inject(MAIL_PUBLIC_BASE_URL) private readonly publicBaseUrl: string,
+    @Inject(AuditWriter) private readonly audit: AuditWriter,
   ) {}
 
   /**
@@ -132,9 +134,42 @@ export class AuthService {
     if (rows[0]?.consumed !== true) throw new DomainError('INVALID_RESET_TOKEN');
   }
 
-  /** Counts the failure; the attempt that reaches the limit already answers 423, with the time left. */
+  /** `updateMe`: the visible name and the language of the account (the one of its mails, D-P6). Role and email are not in the body. */
+  async updateMe(tx: Tx, principal: Principal, changes: { displayName?: string; locale?: 'es' | 'fr' }): Promise<SessionUser> {
+    await tx.update(users).set(changes).where(eq(users.id, principal.userId));
+    return this.describe(tx, principal);
+  }
+
+  /**
+   * D-P5. The current password is checked like a login: a locked account answers 423 before any work, and a wrong one counts as a failed
+   * attempt (in its own transaction, so it stays counted when this request rolls back) and answers `INVALID_CREDENTIALS`. When it is right
+   * the hash changes, every other session of the person is closed and the current one stays, so nobody holding an old session goes on.
+   */
+  async changePassword(tx: Tx, principal: Principal, currentPassword: string, newPassword: string): Promise<void> {
+    const [user] = await tx.select({ email: users.email }).from(users).where(eq(users.id, principal.userId)).limit(1);
+    const account = user ? await findAccount(tx, user.email) : undefined;
+    if (!account) throw new DomainError('UNAUTHENTICATED');
+    const now = this.clock.now();
+    if (account.lockedUntil && account.lockedUntil.getTime() > now.getTime()) throw lockedError(account.lockedUntil, now);
+
+    if (!(await verifyPassword(currentPassword, account.passwordHash))) {
+      await this.recordFailure(account, user!.email);
+      throw new DomainError('INVALID_CREDENTIALS');
+    }
+
+    const hash = await hashPassword(newPassword);
+    await tx.update(users).set({ passwordHash: hash }).where(eq(users.id, principal.userId));
+    const closed = await tx
+      .delete(sessions)
+      .where(and(eq(sessions.userId, principal.userId), ne(sessions.id, principal.sessionId)))
+      .returning({ id: sessions.id });
+    await tx.execute(sql`SELECT auth_record_attempt(${principal.userId}::uuid, true, ${MAX_FAILURES}, ${LOCK_MINUTES})`);
+    await this.audit.recordPasswordChanged({ orgId: principal.orgId!, userId: principal.userId, closedSessions: closed.length });
+  }
+
+  /** Counts the failure; the attempt that reaches the limit already answers 423, with the time left. Inside a request, in its own transaction. */
   private async recordFailure(account: Account, email: string): Promise<void> {
-    const lockedUntil = await this.database.withAnonymous(async (tx) => {
+    const lockedUntil = await this.database.independent(async (tx) => {
       await tx.execute(sql`SELECT auth_record_attempt(${account.id}::uuid, false, ${MAX_FAILURES}, ${LOCK_MINUTES})`);
       return (await findAccount(tx, email))?.lockedUntil ?? null;
     });

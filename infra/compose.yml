@@ -188,8 +188,13 @@ services:
       <<: *db-env
       DB_OWNER_PASSWORD_FILE: /run/onway/owner/password
       ELEVATION_DEM_DIR: /geodata/dem
+      # La semilla cifra los perfiles de demostración con las mismas claves que la API (H5-perfil).
+      SENSITIVE_KEY_FILE: /run/onway/sensitive/key
+      DOCUMENT_HASH_KEY_FILE: /run/onway/fingerprint/key
     volumes:
       - { type: volume, source: secrets, target: /run/onway/owner, read_only: true, volume: { subpath: owner } }
+      - { type: volume, source: secrets, target: /run/onway/sensitive, read_only: true, volume: { subpath: sensitive } }
+      - { type: volume, source: secrets, target: /run/onway/fingerprint, read_only: true, volume: { subpath: fingerprint } }
       - geodata:/geodata:ro
     depends_on:
       migrate:
@@ -213,6 +218,9 @@ services:
       NODE_OPTIONS: --max-old-space-size=384
       DB_APP_PASSWORD_FILE: /run/onway/app/password
       CSRF_SECRET_FILE: /run/onway/csrf/secret
+      # Documento y dirección, cifrados (H5-perfil). Las claves no están en la base ni en sus copias (doc 04 §6.3).
+      SENSITIVE_KEY_FILE: /run/onway/sensitive/key
+      DOCUMENT_HASH_KEY_FILE: /run/onway/fingerprint/key
       # Altitud: teselas GLO-30 locales y, fuera de ellas, Open-Meteo. Dirección: Nominatim. Las URL y el contacto se pueden cambiar (D-H1-15).
       ELEVATION_DEM_DIR: /geodata/dem
       OPEN_METEO_ELEVATION_URL: ${OPEN_METEO_ELEVATION_URL:-https://api.open-meteo.com/v1/elevation}
@@ -224,6 +232,8 @@ services:
     volumes:
       - { type: volume, source: secrets, target: /run/onway/app, read_only: true, volume: { subpath: app } }
       - { type: volume, source: secrets, target: /run/onway/csrf, read_only: true, volume: { subpath: csrf } }
+      - { type: volume, source: secrets, target: /run/onway/sensitive, read_only: true, volume: { subpath: sensitive } }
+      - { type: volume, source: secrets, target: /run/onway/fingerprint, read_only: true, volume: { subpath: fingerprint } }
       - geodata:/geodata:ro
       # Archivos subidos (GPX/KML para importar rutas, H2). La API es la única que escribe; `down -v` los borra con la pila.
       - files:/files

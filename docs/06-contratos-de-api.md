@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.12 · **Estado:** borrador para revisión · **Fecha:** 21 de noviembre de 2026
+**Versión:** 1.13 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -131,7 +131,7 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | `logout` · **H0**<br>Cerrar sesión | `POST /auth/logout` | Todos con sesión | — | 204 | — |
 | `getMe` · **H0**<br>Usuario de la sesión actual y a dónde debe ir la web | `GET /auth/me` | Todos con sesión | — | 200: user, csrfToken | `SESSION_EXPIRED` |
 | `updateMe` · **H5**<br>Cambiar nombre visible o idioma | `PATCH /auth/me` | Rescatista, Coordinador, Admin | cuerpo: displayName?, locale? | 200: user, csrfToken | — |
-| `changePassword` · **H5**<br>Cambiar la contraseña (cierra las demás sesiones) | `POST /auth/password/change` | Rescatista, Coordinador, Admin | cuerpo: currentPassword, newPassword | 204 | `INVALID_CREDENTIALS` |
+| `changePassword` · **H5**<br>Cambiar la contraseña (cierra las demás sesiones) *(auditado)* | `POST /auth/password/change` | Rescatista, Coordinador, Admin | cuerpo: currentPassword, newPassword | 204 | `INVALID_CREDENTIALS` `ACCOUNT_LOCKED` |
 | `forgotPassword` · **H5**<br>Pedir enlace para restablecer contraseña | `POST /auth/password/forgot` | Público | cuerpo: email | 202: ok | — |
 | `resetPassword` · **H5**<br>Restablecer la contraseña con el token recibido *(auditado)* | `POST /auth/password/reset` | Público | cuerpo: token, newPassword | 204 | `INVALID_RESET_TOKEN` |
 
@@ -862,6 +862,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.13 | 2026-11-22 | `H5-perfil` (T1, `specs/H5-perfil/`). Notas de `getMyProfile` (formato del enmascarado, INV-32), `updateMyProfile` (actualización parcial cifrada, documento y dirección juntos la primera vez, paso a `complete`, auditoría sin valores), `updateMe` (`locale` es el idioma de la cuenta) y `changePassword`: pasa a **auditada**, mantiene la sesión actual y cierra las demás, y la contraseña actual errónea cuenta para el bloqueo (`ACCOUNT_LOCKED`, que se añade a sus errores). 98 operaciones; sin esquemas ni códigos de error nuevos |
 | 1.12 | 2026-11-21 | Pintar ruta y continuar a mano (`specs/issue-pintar-ruta/`). `createRouteVersion` admite `continueFrom { cutPoint, points (1 a 200) }` en lugar de `geometry` (exactamente uno de los dos; sin `calculationJobId`): el servidor conserva la versión base hasta el vértice más cercano al corte, con sus tipos de vía, y une en línea recta los puntos a mano, que cuentan como `offtrail`. Corte a más de 200 m de la ruta o en su inicio: `VALIDATION_FAILED`. 98 operaciones; sin operaciones ni códigos de error nuevos |
 | 1.11 | 2026-11-21 | Nombre de las rutas y desvincular (`specs/issue-rutas-nombre-y-desvincular/`). Operación nueva `updateRoute` (`PATCH /routes/{routeId}`, cuerpo `{ name }`, 200 `RouteDetail`, coordinador, auditada, `INVALID_STATE_TRANSITION` con la ruta archivada, `x-milestone: H2`): cambia el nombre de la ruta sin crear versión (RN-12). `generateRoutes`: `namePrefix` pasa a **obligatorio** (antes, sin él, «Ruta generada N»). `getRoute`: cada elemento de `usedIn` lleva `missionRouteId`, para quitar la ruta de la misión desde el detalle con `removeMissionRoute`. 98 operaciones (H2 pasa a 15; la tabla de operaciones por hito de §6 seguía en 12 desde antes y se corrige); sin códigos de error nuevos |
 | 1.10 | 2026-11-13 | Issue #17 (T1). Operación nueva `deleteRoute` (`DELETE /routes/{routeId}`, 204, coordinador, auditada, `x-milestone: H2`): elimina definitivamente una ruta **archivada y sin misión** (`INVALID_STATE_TRANSITION` si no está archivada, `ROUTE_IN_USE` con las misiones si figura en alguna, también cerrada); sin códigos de error ni esquemas nuevos. 97 operaciones (H2 pasa a 14). AC-18 revisado: sigue sin `DELETE` de misiones y el único de rutas es `deleteRoute`. Nota de `archiveRoute` sin la frase «no existe DELETE de rutas». 90 pruebas del paquete |

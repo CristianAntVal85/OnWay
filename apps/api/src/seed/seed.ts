@@ -8,6 +8,10 @@ import type { DbConnection } from '../db/config.js';
 import type { ElevationProvider } from '../geo/elevation.js';
 import { hashPassword } from '../identity/password.js';
 import { RouteMeasurement, type MeasuredPath } from '../routes/route-measurement.js';
+import { normalizeDocument } from '@onway/contracts';
+import type { SensitiveKeys } from '../sensitive/config.js';
+import { DocumentFingerprint } from '../sensitive/document-fingerprint.js';
+import { SensitiveCipher } from '../sensitive/sensitive-cipher.js';
 import { gpxDirOf, type Demo } from './demo.js';
 
 export interface SeedResult {
@@ -20,11 +24,15 @@ export interface SeedResult {
   routes: number;
   /** Routes put in the demo missions in this run (H4-T7): 0 once they are there. */
   missionRoutes: number;
+  /** Demo profiles completed in this run (H5-perfil): 0 once they are complete. */
+  profiles: number;
 }
 
 export interface SeedOptions {
   /** Altitude source for the demo missions and routes, the same port the API uses (RN-07). */
   elevation: ElevationProvider;
+  /** The API's keys of the sensitive data (D-P8): the seed encrypts the demo profiles exactly as `updateMyProfile` would. */
+  sensitive: SensitiveKeys;
   /** Folder of the invented GPX files of the demo routes; `gpx/` next to the seed file by default. */
   gpxDir?: string;
   warn?: (message: string) => void;
@@ -35,6 +43,7 @@ const SEED_LOCK = 7_301_001;
 const MISSIONS_LOCK = 7_301_002;
 const ROUTES_LOCK = 7_301_003;
 const MISSION_ROUTES_LOCK = 7_301_004;
+const PROFILES_LOCK = 7_301_005;
 
 async function findOrganization(client: pg.Pool | pg.PoolClient, demo: Demo): Promise<string | undefined> {
   const { rows } = await client.query<{ id: string }>(`SELECT id FROM organizations WHERE name = $1 AND country = $2`, [demo.organization.name, demo.organization.country]);
@@ -44,8 +53,8 @@ async function findOrganization(client: pg.Pool | pg.PoolClient, demo: Demo): Pr
 /**
  * Loads the demonstration data as `onway_owner` (doc 05 §10), the way the platform would, never through the API.
  * Idempotent: if the organization exists its people and teams are left alone, and each demo mission is created only if its name is
- * not there yet (see `seedMissions`). Rescuers get an `incomplete` profile with no contact and no
- * sensitive data (D-H0-19: filling those in needs encryption, H5). The invite code is random each time and not printed.
+ * not there yet (see `seedMissions`). Rescuers get an `incomplete` profile; those with a `profile` in the file then have it completed
+ * (`seedProfiles`, H5-perfil), the others stay incomplete. The invite code is random each time and not printed.
  */
 export async function seedDemo(owner: DbConnection, demo: Demo, options: SeedOptions): Promise<SeedResult> {
   const pool = new pg.Pool({ ...owner, max: 1 });
@@ -54,10 +63,66 @@ export async function seedDemo(owner: DbConnection, demo: Demo, options: SeedOpt
     const missions = await seedMissions(pool, organization.organizationId, demo, options);
     const routes = await seedRoutes(pool, organization.organizationId, demo, options);
     const missionRoutes = await seedMissionRoutes(pool, organization.organizationId, demo, options);
-    return { ...organization, missions, routes, missionRoutes };
+    const profiles = await seedProfiles(pool, organization.organizationId, demo, options);
+    return { ...organization, missions, routes, missionRoutes, profiles };
   } finally {
     await pool.end();
   }
+}
+
+/**
+ * Completes the demo profiles that are still `incomplete` and have no sensitive data (H5-perfil, D-P8), so a stack seeded before H5 gets
+ * them on its next `up` and a profile somebody already filled in is left alone. Same rows and audit line as `updateMyProfile`: contact,
+ * encrypted document and address with the document's fingerprint, then `complete`.
+ */
+async function seedProfiles(pool: pg.Pool, orgId: string, demo: Demo, options: SeedOptions): Promise<number> {
+  const cipher = new SensitiveCipher(options.sensitive);
+  const fingerprint = new DocumentFingerprint(options.sensitive);
+  let completed = 0;
+  for (const member of demo.members) {
+    if (!member.profile) continue;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock($1)', [PROFILES_LOCK]);
+      const { rows } = await client.query<{ id: string; user_id: string }>(
+        `SELECT p.id, p.user_id FROM rescuer_profiles p JOIN users u ON u.id = p.user_id
+          WHERE p.organization_id = $1 AND u.email = $2 AND p.status = 'incomplete'
+            AND NOT EXISTS (SELECT 1 FROM rescuer_sensitive s WHERE s.profile_id = p.id)`,
+        [orgId, member.email],
+      );
+      const profile = rows[0];
+      if (!profile) {
+        await client.query('ROLLBACK');
+        continue;
+      }
+      const { phone, document, address } = member.profile;
+      // A phone the person already saved stays: the seed only fills what is missing (reviewer-db, H5-perfil).
+      await client.query(`INSERT INTO rescuer_contact (profile_id, organization_id, phone) VALUES ($1, $2, $3) ON CONFLICT (profile_id) DO NOTHING`, [profile.id, orgId, phone]);
+      await client.query(`INSERT INTO rescuer_sensitive (profile_id, organization_id, document_type, document_enc, document_hash, address_enc, key_id) VALUES ($1, $2, $3, $4, $5, $6, $7)`, [
+        profile.id,
+        orgId,
+        document.type,
+        cipher.encrypt(profile.id, 'document', normalizeDocument(document.number)),
+        fingerprint.of(document.type, document.number),
+        cipher.encrypt(profile.id, 'address', JSON.stringify(address)),
+        cipher.keyId,
+      ]);
+      await client.query(`UPDATE rescuer_profiles SET status = 'complete', completed_at = now() WHERE id = $1`, [profile.id]);
+      await client.query(
+        `INSERT INTO audit_log (organization_id, entity_type, entity_id, action, actor_user_id, subject_user_id, detail) VALUES ($1, 'rescuer_profile', $2, 'profile_completed', $3, $3, $4)`,
+        [orgId, profile.id, profile.user_id, JSON.stringify({ blocks: ['phone', 'document', 'address'] })],
+      );
+      await client.query('COMMIT');
+      completed += 1;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  return completed;
 }
 
 async function seedOrganization(pool: pg.Pool, demo: Demo): Promise<{ seeded: boolean; organizationId: string }> {

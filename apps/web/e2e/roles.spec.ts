@@ -37,8 +37,8 @@ test('each role lands on its own first screen and sees its organization and role
 
 test('a rescuer who opens /admin sees "no access" and the administration link is not offered', async ({ page }) => {
   await login(page, ACCOUNTS.rescuer);
-  // El rescatista con perfil incompleto entra por «Mi perfil» (nextStep complete-profile).
-  await expect(page).toHaveURL(/\/profile$/);
+  // rescatista1 tiene el perfil completo desde H5-perfil: entra por Mis misiones (el caso incompleto es rescatista6).
+  await expect(page).toHaveURL(/\/missions$/);
   expect(await navLabels(page)).not.toContain(nav.administration);
 
   await page.goto('/admin');
@@ -51,6 +51,15 @@ test('a rescuer who opens /admin sees "no access" and the administration link is
     await page.goto(path);
     await expect(heading(page, es.forbidden.title)).toBeVisible();
   }
+});
+
+test('the rescuer with an incomplete profile only has My profile and Account until the signup is done (H5-perfil P1)', async ({ page }) => {
+  await login(page, ACCOUNTS.rescuerIncomplete);
+  await expect(page).toHaveURL(/\/profile$/);
+  await expect(heading(page, es.profile.completeTitle)).toBeVisible();
+  expect(await navLabels(page)).toEqual([nav.myProfile, nav.account]);
+  await page.goto('/missions');
+  await expect(page).toHaveURL(/\/profile$/);
 });
 
 test('a coordinator cannot open /admin either, but can open the staff views', async ({ page }) => {

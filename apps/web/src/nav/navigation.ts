@@ -83,8 +83,15 @@ export function canAccess(role: MemberRole, route: RouteId): boolean {
   return ROUTE_ROLES[route].includes(role);
 }
 
-export function navItemsFor(role: MemberRole): NavItem[] {
-  return NAV_ITEMS.filter((item) => canAccess(role, item.id));
+/** Con el perfil incompleto el alta es obligatoria (RF-101, doc 02 §3.9): solo quedan estas vistas, el resto lleva a «Mi perfil». */
+export const UNTIL_PROFILE_COMPLETE: readonly RouteId[] = ['profile', 'account'];
+
+export function allowedWhileIncomplete(path: string): boolean {
+  return routeIdForPath(path) !== null && UNTIL_PROFILE_COMPLETE.includes(routeIdForPath(path)!);
+}
+
+export function navItemsFor(role: MemberRole, nextStep: NextStep = 'home'): NavItem[] {
+  return NAV_ITEMS.filter((item) => canAccess(role, item.id) && (nextStep !== 'complete-profile' || UNTIL_PROFILE_COMPLETE.includes(item.id)));
 }
 
 /** Ruta a la que pertenece una dirección, o `null` si no es ninguna de la barra. */
@@ -109,7 +116,7 @@ export function landingPath({ role, nextStep }: Landing): string {
 export function postLoginPath(user: Landing, from?: string | null): string {
   if (user.nextStep === 'awaiting-approval' || !user.role) return PATHS.waiting;
   const id = from ? routeIdForPath(from) : null;
-  if (from && id && canAccess(user.role, id)) return from;
+  if (from && id && canAccess(user.role, id) && (user.nextStep !== 'complete-profile' || UNTIL_PROFILE_COMPLETE.includes(id))) return from;
   return landingPath(user);
 }
 

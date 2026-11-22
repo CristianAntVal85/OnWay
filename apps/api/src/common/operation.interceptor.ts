@@ -1,11 +1,25 @@
 import { Inject, Injectable, Logger, type CallHandler, type ExecutionContext, type NestInterceptor } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { MAX_FILE_BYTES, type Endpoint } from '@onway/contracts';
+import { MAX_FILE_BYTES, type Endpoint, type ErrorCode } from '@onway/contracts';
 import { from, lastValueFrom, of, type Observable } from 'rxjs';
 import type { ZodError } from 'zod';
 import { DatabaseService } from '../db/database.service.js';
 import { DomainError } from './domain-error.js';
 import { operationOf, type OnwayRequest, type OperationInput } from './operation.js';
+
+/**
+ * A refinement of the contract may name, as its message, an error code that the operation declares (`DocumentInput` says
+ * `INVALID_DOCUMENT`, doc 06): when every issue is of that kind the answer is that code, with the same `issues`; otherwise the usual
+ * `VALIDATION_FAILED`.
+ */
+export function inputError(error: ZodError, declared: readonly ErrorCode[] = []): DomainError {
+  const codes = new Set(error.issues.map((i) => i.message));
+  const [only] = [...codes];
+  if (codes.size === 1 && declared.includes(only as ErrorCode)) {
+    return new DomainError(only as ErrorCode, 'Request validation failed', { issues: error.issues.map((i) => ({ path: i.path.join('.'), code: i.code, message: i.message })) });
+  }
+  return validationFailed(error);
+}
 
 export function validationFailed(error: ZodError): DomainError {
   return new DomainError('VALIDATION_FAILED', 'Request validation failed', {
@@ -51,7 +65,7 @@ export class OperationInterceptor implements NestInterceptor {
     const parse = (schema: Endpoint['params'] | Endpoint['body'], value: unknown): unknown => {
       if (!schema) return undefined;
       const result = schema.safeParse(value);
-      if (!result.success) throw validationFailed(result.error);
+      if (!result.success) throw inputError(result.error, endpoint.errors ?? []);
       return result.data;
     };
     return {

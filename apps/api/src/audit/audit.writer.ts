@@ -52,6 +52,17 @@ export interface InviteCodeAuditEntry {
   actorUserId: string;
 }
 
+/** Which blocks of the profile changed (D-P4): the names only, never a value, because the log is append-only. */
+export type ProfileBlock = 'fullName' | 'phone' | 'document' | 'address';
+
+export interface ProfileAuditEntry {
+  orgId: string;
+  profileId: string;
+  userId: string;
+  action: 'profile_completed' | 'profile_updated';
+  blocks: ProfileBlock[];
+}
+
 /**
  * Writes `audit_log` (INV-16, RN-05) inside the transaction of the request: if the operation fails the row is
  * rolled back with it, and a change cannot commit without its row. By convention every action of a mission is
@@ -114,6 +125,38 @@ export class AuditWriter {
         action: 'generate_requested',
         actorUserId: entry.actorUserId,
         detail: entry.detail ?? {},
+      });
+  }
+
+  /** The person acts on their own profile: actor and subject are the same user. */
+  async recordProfile(entry: ProfileAuditEntry): Promise<void> {
+    await this.database
+      .current()
+      .insert(auditLog)
+      .values({
+        organizationId: entry.orgId,
+        entityType: 'rescuer_profile',
+        entityId: entry.profileId,
+        action: entry.action,
+        actorUserId: entry.userId,
+        subjectUserId: entry.userId,
+        detail: { blocks: entry.blocks },
+      });
+  }
+
+  /** Neither password, old nor new, nor its hash: only that it changed and how many other sessions were closed. */
+  async recordPasswordChanged(entry: { orgId: string; userId: string; closedSessions: number }): Promise<void> {
+    await this.database
+      .current()
+      .insert(auditLog)
+      .values({
+        organizationId: entry.orgId,
+        entityType: 'user',
+        entityId: entry.userId,
+        action: 'password_changed',
+        actorUserId: entry.userId,
+        subjectUserId: entry.userId,
+        detail: { closedSessions: entry.closedSessions },
       });
   }
 

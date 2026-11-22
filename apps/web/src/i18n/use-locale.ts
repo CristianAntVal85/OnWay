@@ -11,7 +11,7 @@ export function browserStorage(): Storage | null {
   }
 }
 
-/** Idioma activo y cambio. Lo elegido se guarda solo en este navegador (D-H0-21; en el servidor sería `updateMe`, H5). */
+/** Idioma activo y cambio en este navegador. En Cuenta, el selector lo guarda además en la cuenta con `updateMe` (H5-perfil, D-P6; antes D-H0-21). */
 export function useLocale() {
   const { i18n } = useTranslation();
   const locale: Locale = isLocale(i18n.resolvedLanguage) ? i18n.resolvedLanguage : 'es';

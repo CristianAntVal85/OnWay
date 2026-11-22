@@ -86,7 +86,50 @@ export interface Messages {
   forbidden: { title: string; body: string; goHome: string };
   notFound: { title: string; body: string; goHome: string };
   later: { title: string; body: string };
-  profile: { completeTitle: string; completeBody: string };
+  /** Alta y Mi perfil del rescatista (H5-perfil, doc 02 §3.9). */
+  profile: {
+    completeTitle: string;
+    completeBody: string;
+    title: string;
+    whoSees: string;
+    loadError: string;
+    save: string;
+    saving: string;
+    saved: string;
+    cancel: string;
+    edit: string;
+    editTitle: string;
+    fields: {
+      fullName: string;
+      email: string;
+      emailHint: string;
+      phone: string;
+      documentType: string;
+      documentNumber: string;
+      street: string;
+      number: string;
+      floor: string;
+      postalCode: string;
+      locality: string;
+      province: string;
+      country: string;
+    };
+    documentTypes: { dni: string; nie: string; passport: string; other: string };
+    blocks: { personal: string; contact: string; address: string; sensitive: string; teams: string };
+    errors: { required: string; invalid: string; tooLong: string; invalidDocument: string; documentTaken: string; phone: string };
+    view: {
+      document: string;
+      address: string;
+      show: string;
+      hide: string;
+      showing: string;
+      maskedDocument: string;
+      maskedAddress: string;
+      sensitiveError: string;
+      noTeams: string;
+      teamLine: string;
+    };
+  };
   home: {
     title: string;
     stats: { active: string; volunteers: string; noRoute: string };
@@ -230,6 +273,23 @@ export interface Messages {
     roleAdmin: string;
     roleCoordinator: string;
     roleRescuer: string;
+    displayName: string;
+    saveName: string;
+    nameSaved: string;
+    languageSaved: string;
+    languageNotSaved: string;
+    password: {
+      title: string;
+      current: string;
+      next: string;
+      confirm: string;
+      submit: string;
+      saving: string;
+      done: string;
+      currentRequired: string;
+      wrongCurrent: string;
+      sameAsCurrent: string;
+    };
   };
   /** Administración, primer trozo de `H5-acceso` (doc 02 §3.10): solicitudes de alta y código de invitación. */
   admin: {

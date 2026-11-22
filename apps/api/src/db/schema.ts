@@ -1,6 +1,6 @@
 // Drizzle schema of the tables the API reads and writes (H0, plus the mission tables from H1 and `files` from H2). The SQL migrations (db/migrations) are the source of truth;
 // test/api/schema.test.ts compares this file with information_schema so they cannot drift apart.
-import { bigint, boolean, char, customType, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import { bigint, boolean, char, customType, date, integer, jsonb, pgEnum, pgTable, primaryKey, smallint, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 
 const citext = customType<{ data: string }>({ dataType: () => 'citext' });
 const bytea = customType<{ data: Buffer }>({ dataType: () => 'bytea' });
@@ -82,6 +82,42 @@ export const rescuerProfiles = pgTable('rescuer_profiles', {
   updatedAt: timestamptz('updated_at').notNull().defaultNow(),
 });
 
+// The two other entities of the rescuer profile (INV-32): each table has its own policy, so they are read one by one, never joined.
+export const documentType = pgEnum('document_type', ['dni', 'nie', 'passport', 'other']);
+export const skillKind = pgEnum('skill_kind', ['course', 'skill']);
+
+export const rescuerContact = pgTable('rescuer_contact', {
+  profileId: uuid('profile_id').primaryKey(),
+  organizationId: uuid('organization_id').notNull(),
+  phone: text('phone').notNull(),
+  updatedAt: timestamptz('updated_at').notNull().defaultNow(),
+});
+
+/** Encrypted by the application (`SensitiveCipher`): the database only ever holds ciphertext and the fingerprint (INV-18, INV-24). */
+export const rescuerSensitive = pgTable('rescuer_sensitive', {
+  profileId: uuid('profile_id').primaryKey(),
+  organizationId: uuid('organization_id').notNull(),
+  documentType: documentType('document_type').notNull(),
+  documentEnc: bytea('document_enc').notNull(),
+  documentHash: bytea('document_hash').notNull(),
+  addressEnc: bytea('address_enc').notNull(),
+  keyId: smallint('key_id').notNull(),
+  updatedAt: timestamptz('updated_at').notNull().defaultNow(),
+});
+
+export const skills = pgTable('skills', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').notNull(),
+  profileId: uuid('profile_id').notNull(),
+  name: text('name').notNull(),
+  kind: skillKind('kind').notNull(),
+  issuer: text('issuer'),
+  issuedOn: date('issued_on', { mode: 'string' }),
+  expiresOn: date('expires_on', { mode: 'string' }),
+  certificateFileId: uuid('certificate_file_id'),
+  createdAt: timestamptz('created_at').notNull().defaultNow(),
+});
+
 export const teams = pgTable('teams', {
   id: uuid('id').primaryKey().defaultRandom(),
   organizationId: uuid('organization_id').notNull(),
@@ -158,6 +194,6 @@ export const auditLog = pgTable('audit_log', {
   detail: jsonb('detail').notNull().default({}),
 });
 
-export const enums = { accountStatus, memberRole, memberStatus, profileStatus, teamStatus, missionStatus, pointKind, targetSource, filePurpose };
+export const enums = { accountStatus, memberRole, memberStatus, profileStatus, documentType, skillKind, teamStatus, missionStatus, pointKind, targetSource, filePurpose };
 
-export const schema = { organizations, users, sessions, memberships, rescuerProfiles, teams, teamMembers, missions, missionPoints, files, auditLog };
+export const schema = { organizations, users, sessions, memberships, rescuerProfiles, rescuerContact, rescuerSensitive, skills, teams, teamMembers, missions, missionPoints, files, auditLog };

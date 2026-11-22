@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Address, DocumentInput, Phone } from '@onway/contracts';
 import { z } from 'zod';
 
 const EXAMPLE_ORG = /^[^@\s]+@example\.org$/i;
@@ -9,12 +10,20 @@ const Email = z.string().max(254).regex(EXAMPLE_ORG, 'demo emails must be on exa
 const Key = z.string().min(1).max(40);
 const Locale = z.enum(['es', 'fr']);
 
+/**
+ * A completed signup (H5-perfil, D-P8): phone, an invented identity document with a valid control letter and an invented address, checked
+ * with the same contract schemas as `updateMyProfile`. The seed encrypts them with the API's keys; the file never holds ciphertext.
+ */
+const DemoProfile = z.strictObject({ phone: Phone, document: DocumentInput, address: Address });
+
 const DemoMember = z.strictObject({
   key: Key,
   email: Email,
   displayName: z.string().trim().min(1).max(120),
   locale: Locale,
   role: z.enum(['admin', 'coordinator', 'rescuer']),
+  /** Only rescuers. Without it the rescuer keeps an incomplete profile (the «complete your profile» case). */
+  profile: DemoProfile.optional(),
 });
 
 const DemoApplicant = z.strictObject({ key: Key, email: Email, displayName: z.string().trim().min(1).max(120), locale: Locale });
@@ -105,6 +114,11 @@ export const Demo = z
       keys.add(person.key);
       emails.add(person.email.toLowerCase());
     }
+    for (const [index, member] of demo.members.entries()) {
+      if (member.profile && member.role !== 'rescuer') ctx.addIssue({ code: 'custom', message: `only a rescuer has a profile (${member.key})`, path: ['members', index, 'profile'] });
+    }
+    const documents = demo.members.flatMap((m) => (m.profile ? [`${m.profile.document.type}:${m.profile.document.number.toUpperCase()}`] : []));
+    if (new Set(documents).size !== documents.length) ctx.addIssue({ code: 'custom', message: 'two demo profiles share a document (INV-24)', path: ['members'] });
     const rescuers = new Set(demo.members.filter((m) => m.role === 'rescuer').map((m) => m.key));
     for (const [index, team] of demo.teams.entries()) {
       for (const member of team.members) {

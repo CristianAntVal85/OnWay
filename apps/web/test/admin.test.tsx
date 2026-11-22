@@ -500,7 +500,7 @@ describe.each(LANGUAGES)('administración: código de invitación (%s)', (langua
 describe('administración: solo para el administrador', () => {
   it.each([
     ['coordinador', () => sessionUser()],
-    ['rescatista', () => rescuer()],
+    ['rescatista', () => rescuer({ profileStatus: 'complete', nextStep: 'home' })],
   ])('el %s no ve la sección ni el enlace, y la web no pide nada de administración', async (_name, make) => {
     const { api } = sessionServer({ user: make() });
     renderApp({ route: '/admin', fetch: api.fetch });
