@@ -1,0 +1,157 @@
+# H5-habilidades · Tareas
+
+Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por tarea: `<tipo>(H5-habilidades): Tn <resumen>`.
+
+- [ ] **T1. Contrato: `openCertificate` y las notas.** Cubre D-S1, AC-14 y las firmas de §2. Doc 07: 6 operaciones y 69 montadas.
+  - **Qué se hace:**
+    - `openCertificate`, con sus parámetros, en `endpoints.ts`, y `openCertificate: 'H5'` en `milestones.ts`.
+    - Las notas de `getCertificateLink`, `uploadFile`, `createMySkill` y `updateMySkill` (plan §3).
+    - Regenerar el OpenAPI y el doc 06 (v1.14).
+    - En el doc 07, la fila de `H5-habilidades` pasa a 6 operaciones y 69 montadas, con la nota de D-S1 y la línea en su registro de cambios (v0.19).
+    - Las pruebas del registro cuentan una operación más.
+  - **Archivos:** `packages/contracts/src/endpoints.ts`, `packages/contracts/src/milestones.ts`, `packages/contracts/test/registry.test.ts`, `packages/contracts/openapi.json`, `docs/06-contratos-de-api.md`, `docs/07-plan-de-implementacion.md`.
+  - **Comprobación:** `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc gen/ && pnpm check @onway/contracts`.
+  - **Hecho cuando:** pasan `registry` y `schema-guards`, y el doc 06 enseña `openCertificate` con `x-milestone` H5, roles de todos y respuesta de archivo.
+
+- [ ] **T2. Subir un certificado.** Cubre D-29 y doc 02 («tipo o tamaño no admitido»).
+  - **Qué se hace:**
+    - `certificateContentType(buffer)`, que reconoce PDF, JPEG y PNG por sus bytes iniciales.
+    - `FilesService.upload` acepta `certificate` solo del rescatista: guarda el archivo con `owner_user_id` y lo inserta en `files`.
+    - Un coordinador o un administrador con `certificate` recibe `FORBIDDEN`. Se conserva el camino de `route_import`.
+  - **Archivos:**
+    - nuevos: `apps/api/src/files/certificate-file.ts`, `apps/api/test/unit/certificate-file.test.ts`;
+    - se tocan: `apps/api/src/files/files.service.ts`, `apps/api/test/api/files.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api files`.
+  - **Hecho cuando:**
+    - un PDF, un JPEG y un PNG mínimos dan 201 con su tipo;
+    - un texto renombrado a `.pdf` da `UNSUPPORTED_FILE_TYPE`, uno vacío `INVALID_FILE_CONTENT` y uno de más de 10 MB `FILE_TOO_LARGE`;
+    - la fila lleva `owner_user_id` y `purpose = certificate`;
+    - las pruebas de `route_import` siguen en verde.
+
+- [ ] **T3. `afterCommit` y las cuatro operaciones de mis cursos y habilidades.** Cubre RF-808, RF-806 (los cursos propios), D-S4, D-S5 e INV-25.
+  - **Qué se hace:**
+    - `DatabaseService.afterCommit(fn)` (plan §3).
+    - `SkillsService` y `SkillsController`: `listMySkills`, `createMySkill`, `updateMySkill` y `deleteMySkill`.
+    - Las comprobaciones del archivo adjunto, las reglas de `SkillInput` sobre la fila resultante, el límite de 50 y el orden de la lista.
+    - Al retirar un certificado, `deleted_at` y el borrado de los bytes con `afterCommit`.
+    - Una entrada de otra persona da 404.
+    - Se montan las cuatro y suben a 67 en `app.test.ts`.
+  - **Archivos:**
+    - nuevos: `apps/api/src/profile/skills.service.ts`, `apps/api/src/profile/skills.controller.ts`, `apps/api/test/api/skills.test.ts`;
+    - se tocan: `apps/api/src/db/database.service.ts`, `apps/api/src/profile/profile.module.ts`, `apps/api/test/api/database.test.ts`, `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api skills database app`.
+  - **Hecho cuando:**
+    - las cuatro operaciones pasan sus pruebas: crear con y sin certificado, editar, quitar el certificado con `null` y eliminar;
+    - pasar a `skill` con certificado, la caducidad anterior a la fecha, el archivo de otra persona, uno ya adjunto, uno borrado y la entrada 51 dan `VALIDATION_FAILED` con `path`;
+    - la entrada de otro rescatista da 404, y las cuentas pendiente y desactivada no acceden;
+    - `afterCommit` corre tras el `COMMIT` y no tras un `ROLLBACK`; los bytes retirados desaparecen del `InMemoryFileStorage`;
+    - `getMyProfile.skills` coincide con `listMySkills`.
+
+- [ ] **T4. `getCertificateLink` y `openCertificate`.** Cubre INV-26, INV-28 (el certificado), RN-24, D-S2, D-S3 y D-S7.
+  - **Qué se hace:**
+    - Las reglas de quién abre qué:
+      - el propietario, sin auditoría;
+      - el administrador, cualquiera de la organización, con auditoría;
+      - el coordinador, solo con una participación `pending` o `accepted` de ese rescatista en una misión de la organización, con auditoría;
+      - el resto, 404.
+    - `recordCertificateOpened` en la misma transacción.
+    - El firmante HMAC con la clave aleatoria del proceso y 5 minutos de vida medidos con el `Clock`.
+    - `openCertificate` (plan §3), con sus cabeceras.
+    - Se montan las dos: 69.
+  - **Archivos:**
+    - nuevos: `apps/api/src/files/certificate-links.ts`, `apps/api/src/files/certificates.controller.ts`, `apps/api/test/api/certificates.test.ts`, `apps/api/test/unit/certificate-links.test.ts`;
+    - se tocan: `apps/api/src/files/files.module.ts`, `apps/api/src/audit/audit.writer.ts`, `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api certificates app`.
+  - **Hecho cuando:**
+    - **INV-26:** con el administrador y con un coordinador con participación, una fila `certificate_opened` con `{fileId}` y sin el nombre del curso; con el propietario, ninguna.
+    - **INV-28:** coordinador sin participación, con participación `withdrawn`, otro rescatista y otra organización, todos 404.
+    - **El enlace:** el válido da 200 con su `Content-Type`, `inline`, `nosniff` y `no-store`; caducado, alterado, de otra sesión o de un archivo borrado, 404.
+    - En `app.test.ts`, 69 montadas y solo las 9 de `H5-equipos` responden 404.
+
+- [ ] **T5. Pruebas de la base, CSP del certificado, semilla y smoke.** Cubre el doc 05 (`skills_guard`, políticas) y D-S3.
+  - **Qué se hace:**
+    - **Prueba `test:db`**, con SQL directo como `onway_app`:
+      - políticas de `skills` y `files` (plan §7);
+      - `skills_guard` con el archivo de otro y con un `route_import`;
+      - `CHECK` de la habilidad con certificado.
+    - **`Caddyfile`:** `handle /api/v1/certificates/*` con su CSP.
+    - **Compose:** la `seed` monta `files` y lleva `FILES_DIR`.
+    - **Semilla:** las entradas de `rescatista1` a `5` y el certificado PDF inventado de `rescatista1`, de forma idempotente.
+    - **`smoke.sh`:** `rescatista1` lista sus habilidades y abre su certificado, que da 200 `application/pdf`.
+    - **Comprobación a mano** en una pila `onway-review` (puerto 18081) con Chrome DevTools: el PDF y una imagen se ven en la pestaña. Si no, se aplica la salida de D-S3 y se anota.
+  - **Archivos:**
+    - nuevo: `apps/api/test/db/skills-policy.test.ts`;
+    - se tocan: `infra/Caddyfile`, `infra/compose.yml`, `apps/api/src/seed/seed.ts`, `apps/api/src/seed/demo.ts`, `data/seed/demo.json`, `apps/api/test/api/seed.test.ts`, `apps/api/test/unit/demo-data.test.ts`, `infra/scripts/smoke.sh`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:db skills-policy && pnpm --filter @onway/api test:api seed`, y después `COMPOSE_PROJECT_NAME=onway-review ONWAY_HTTP_PORT=18081 docker compose up --build --wait -d && COMPOSE_PROJECT_NAME=onway-review infra/scripts/smoke.sh http://localhost:18081`. La pila se retira con `down -v` al acabar.
+  - **Hecho cuando:**
+    - pasan las pruebas de la base;
+    - sembrar dos veces deja las mismas entradas y un solo archivo;
+    - el smoke pasa en la pila de revisión;
+    - el PDF y el PNG se ven en Chromium con la CSP nueva, o la desviación está anotada.
+
+- [ ] **T6. Web: la lista de cursos y habilidades en Mi perfil.** Cubre RF-808 (ver y eliminar) y el doc 02 §3.9 (columna de certificado).
+  - **Qué se hace:**
+    - Las consultas de `skills.ts`.
+    - `SkillsSection`:
+      - estados de carga, vacío («Aún no has añadido cursos ni habilidades») y error;
+      - por entrada, nombre, tipo, entidad, fecha y caducidad, y «📎 adjunto» o «Adjuntar»;
+      - eliminar con confirmación, y el foco vuelve a la sección.
+    - En `profile-page.tsx`, la sección va en Mi perfil y bajo el formulario del alta.
+    - Textos en es y fr.
+  - **Archivos:**
+    - nuevos: `apps/web/src/profile/skills.ts`, `apps/web/src/profile/skills-section.tsx`, `apps/web/test/skills.test.tsx`;
+    - se tocan: `apps/web/src/pages/profile-page.tsx`, `apps/web/src/profile/profile-view.tsx`, `apps/web/test/support.tsx` (`GET /my/skills` en `sessionServer`), `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`, más una comprobación a 375 px con Chrome DevTools sobre `pnpm --filter @onway/web dev`.
+  - **Hecho cuando:**
+    - las pruebas cubren los tres estados, la marca del certificado y eliminar con su confirmación y el foco;
+    - pasan `no-fixed-text`, `layout-widths` y `a11y-styles`;
+    - a 375 px no hay desplazamiento horizontal.
+
+- [ ] **T7. Web: añadir, editar y certificado.** Cubre RF-808 (añadir y editar), D-29 y D-S3 (abrir).
+  - **Qué se hace:**
+    - `SkillDialog`:
+      - validación con `SkillInput` en el cliente;
+      - archivo solo para un curso;
+      - primero se sube y después se guarda;
+      - errores de archivo en su campo;
+      - «Quitar certificado»;
+      - el foco vuelve al botón que lo abrió.
+    - «Abrir certificado»: la pestaña vacía en el gesto, luego navega al enlace; si falla, se cierra y se avisa.
+  - **Archivos:**
+    - nuevos: `apps/web/src/profile/skill-dialog.tsx`;
+    - se tocan: `apps/web/src/profile/skills-section.tsx`, `apps/web/src/profile/skills.ts`, `apps/web/test/skills.test.tsx`, `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:**
+    - las pruebas cubren:
+      - crear un curso con certificado: `uploadFile` y después `createMySkill` con el `certificateFileId`;
+      - el tipo no admitido: no se llama a `createMySkill` y el error sale en el campo;
+      - editar y quitar el certificado (`certificateFileId: null`);
+      - que una habilidad no ofrece el archivo;
+      - abrir el certificado, que llama a `getCertificateLink` y navega la pestaña;
+      - que el diálogo se maneja con teclado.
+
+- [ ] **T8. Demostración extremo a extremo.** La historia de §1 del plan.
+  - **Qué se hace:** `h5-habilidades-demo.spec.ts`, en escritorio y a 375 px:
+    - una cuenta de rescatista completa y aprobada, creada en la base con `createApprovedRescuer`, a la que se le completa el perfil por API;
+    - añade un curso con un PDF inventado que genera la prueba y una habilidad;
+    - abre el certificado: la pestaña nueva recibe `application/pdf`;
+    - edita el curso y cambia el certificado por un PNG;
+    - elimina la habilidad;
+    - una pasada solo con teclado y en francés;
+    - el administrador pide el enlace por API y `stack.ts` comprueba una fila `certificate_opened`, y ninguna de las aperturas del propio rescatista.
+  - **Archivos:**
+    - nuevo: `apps/web/e2e/h5-habilidades-demo.spec.ts`;
+    - se tocan: `apps/web/e2e/support/stack.ts` (leer `audit_log` por acción y entidad), `apps/web/e2e/playwright.config.ts` (si el proyecto móvil necesita listarlo), `apps/web/e2e/README.md`.
+  - **Comprobación:** `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d`, y después, con las mismas variables y `E2E_BASE_URL=http://localhost:18080`, `pnpm --filter @onway/web exec playwright test -c e2e h5-habilidades-demo.spec.ts`.
+  - **Hecho cuando:** la demostración pasa en escritorio y en móvil, y el README del E2E dice qué crea y qué deja.
+
+- [ ] **T9. Documentos y verificación completa.**
+  - **Qué se hace:**
+    - «Tal como se construyó (`H5-habilidades`)» en el doc 07 §3 y en el doc 02 §3.9.
+    - Doc 04 §5.1 y §6.
+    - Doc 05, si se confirma la nota de `skills_guard`.
+    - `infra/README.md`, el `smoke.sh` de `CLAUDE.md`, `docs/estado.md` (como máximo 30 líneas) y `docs/historial.md`, cada uno con su registro de cambios.
+    - Se ejecuta la verificación completa del plan §7 y el E2E entero con `CI=1` en `onway-e2e`.
+  - **Archivos:** `docs/02-flujo-coordinador-y-vistas.md`, `docs/04-arquitectura-y-stack.md`, `docs/05-modelo-de-datos.md`, `docs/07-plan-de-implementacion.md`, `infra/README.md`, `CLAUDE.md`, `docs/estado.md`, `docs/historial.md`.
+  - **Comprobación:** `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test && pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`, y el E2E con `CI=1` en `onway-e2e`, que después se retira con `down -v`.
+  - **Hecho cuando:** todo pasa, y los documentos dicen lo construido y sus desviaciones.
