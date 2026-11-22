@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { InviteCodeSection } from '../admin/invite-code-section';
 import { SignupInbox } from '../admin/signup-inbox';
+import { UsersSection } from '../admin/users-section';
 import { usePageTitle } from '../components/use-page-title';
 
 /**
- * Administración (boceto 13, doc 02 §3.10), primer trozo de `H5-acceso`: solicitudes de alta y código de invitación.
- * La lista de usuarios y los datos sensibles llegan con el resto de H5. Solo el administrador la abre (`RoleGate`); el servidor decide igualmente.
+ * Administración (boceto 13, doc 02 §3.10), solicitudes de alta (`H5-acceso`), usuarios (`H5-usuarios`) y código de invitación.
+ * Los datos sensibles llegan con el resto de H5. Solo el administrador la abre (`RoleGate`); el servidor decide igualmente.
  */
 export function AdminPage() {
   const { t } = useTranslation();
@@ -16,6 +17,7 @@ export function AdminPage() {
         <h1>{t('nav.administration')}</h1>
       </div>
       <SignupInbox />
+      <UsersSection />
       <InviteCodeSection />
     </>
   );

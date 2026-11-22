@@ -87,7 +87,13 @@ const PROFILE_BUILT: string[] = ['getMyProfile', 'getMySensitive', 'updateMyProf
  */
 const SKILLS_OPERATIONS = ['listMySkills', 'createMySkill', 'updateMySkill', 'deleteMySkill', 'getCertificateLink', 'openCertificate'];
 const SKILLS_BUILT: string[] = ['listMySkills', 'createMySkill', 'updateMySkill', 'deleteMySkill', 'getCertificateLink', 'openCertificate']; // T3 and T4
-const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT, ...SKILLS_BUILT];
+
+/**
+ * The 3 operations of H5-usuarios, the third part. T3 mounts the two reads, T4 `updateUser`. The 6 of teams stay unmounted.
+ */
+const USERS_OPERATIONS = ['listUsers', 'getUser', 'updateUser'];
+const USERS_BUILT: string[] = ['listUsers', 'getUser', 'updateUser'];
+const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT, ...SKILLS_BUILT, ...USERS_BUILT];
 
 const MOUNTED_IDS = [...BUILT, ...BUILT_IN_H5];
 const routeOf = (e: { method: string; path: string }) => `${e.method} /api/v1${nestPath(e.path)}`;
@@ -135,7 +141,9 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(PROFILE_BUILT.filter((id) => !PROFILE_OPERATIONS.includes(id))).toEqual([]);
     expect(SKILLS_OPERATIONS.filter((id) => !ofH5.includes(id))).toEqual([]);
     expect(SKILLS_BUILT.filter((id) => !SKILLS_OPERATIONS.includes(id))).toEqual([]);
-    expect(MOUNTED_IDS).toHaveLength(53 + ACCESS_BUILT.length + PROFILE_BUILT.length + SKILLS_BUILT.length);
+    expect(USERS_OPERATIONS.filter((id) => !ofH5.includes(id))).toEqual([]);
+    expect(USERS_BUILT.filter((id) => !USERS_OPERATIONS.includes(id))).toEqual([]);
+    expect(MOUNTED_IDS).toHaveLength(53 + ACCESS_BUILT.length + PROFILE_BUILT.length + SKILLS_BUILT.length + USERS_BUILT.length);
     expect(new Set(MOUNTED_IDS).size).toBe(MOUNTED_IDS.length);
   });
 
@@ -145,12 +153,17 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing of H5 beyond the access, profile and skills scopes, nor of a later milestone, test controllers included', () => {
+  it('mounts nothing of H5 beyond the access, profile, skills and users scopes, nor of a later milestone, test controllers included', () => {
     const outside = ENDPOINTS.filter(
-      (e) => MILESTONES.indexOf(e.milestone) >= MILESTONES.indexOf('H5') && !ACCESS_OPERATIONS.includes(e.id) && !PROFILE_OPERATIONS.includes(e.id) && !SKILLS_OPERATIONS.includes(e.id),
+      (e) =>
+        MILESTONES.indexOf(e.milestone) >= MILESTONES.indexOf('H5') &&
+        !ACCESS_OPERATIONS.includes(e.id) &&
+        !PROFILE_OPERATIONS.includes(e.id) &&
+        !SKILLS_OPERATIONS.includes(e.id) &&
+        !USERS_OPERATIONS.includes(e.id),
     );
-    expect(outside.filter((e) => e.milestone === 'H5')).toHaveLength(9);
-    expect(outside).toHaveLength(28);
+    expect(outside.filter((e) => e.milestone === 'H5')).toHaveLength(6);
+    expect(outside).toHaveLength(25);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
     expect(outside.map(routeOf).filter((route) => mounted.has(route))).toEqual([]);
   });

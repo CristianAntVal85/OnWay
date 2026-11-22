@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { ROLE_LABEL } from '../admin/users-section';
 import { landingPath, navItemsFor } from '../nav/navigation';
 import { useCurrentUser } from '../session/session';
 import { Blaze } from './blaze';
@@ -14,7 +15,8 @@ const NAV_ID = 'primary-nav';
 export function Shell() {
   const { t } = useTranslation();
   const user = useCurrentUser();
-  const { pathname, key } = useLocation();
+  const { pathname, key, state } = useLocation();
+  const flashRole = (state as { flash?: { roleChangedSelf?: keyof typeof ROLE_LABEL } } | null)?.flash?.roleChangedSelf;
   const [open, setOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const main = useRef<HTMLElement>(null);
@@ -67,6 +69,9 @@ export function Shell() {
         <ThemeToggle />
       </header>
       <main id={MAIN_ID} tabIndex={-1} ref={main} className="content">
+        <div role="status" className="notice-slot">
+          {flashRole && ROLE_LABEL[flashRole] && <p className="notice">{t('admin.user.done.roleChangedSelf', { role: t(ROLE_LABEL[flashRole]) })}</p>}
+        </div>
         <Outlet />
       </main>
     </div>

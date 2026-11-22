@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.9 (borrador) · Fecha: 2026-11-22 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.10 (borrador) · Fecha: 2026-11-22 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -353,7 +353,7 @@ Formato: ID, descripción, criterios de aceptación. Prioridad MoSCoW entre par�
 
 ### E8 · Equipos, voluntarios, perfil del rescatista y administración
 
-**RF-801 (Must) Gestionar equipos**: crear, nombrar, indicar su **localidad** obligatoria, añadir y quitar miembros, archivar. Quién puede hacerlo está pendiente (Q-12).
+**RF-801 (Must) Gestionar equipos**: crear, nombrar, indicar su **localidad** obligatoria, añadir y quitar miembros, archivar. Lo gestionan el administrador y el coordinador (Q-12).
 
 **RF-802 (Must) Asignar equipos a una misión**, desde el detalle de la misión (RF-205).
 - Los miembros del equipo quedan como participantes *Aceptados* *(propuesto)*.
@@ -495,10 +495,10 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - **Q-04** ¿Los puntos de reunión necesitan atributos propios (capacidad, tipo de acceso, contacto), o basta con nombre, ubicación y notas?
 - **Q-06** ¿Hay un nombre definitivo para "puntos de reunión"? (Punto de encuentro, base avanzada, punto de relevo...)
 - **Q-10** ¿Pueden editar una misión todos los coordinadores de la organización, o solo su coordinador responsable?
-- **Q-12** ¿Quién puede crear y gestionar equipos y sus miembros: los coordinadores, el administrador de organización, el propio rescatista al elegir su equipo, o varios?
 - **Q-13** ¿Qué prioridad tiene cada elemento del inicio? ¿Aceptas Open-Meteo como proveedor meteorológico principal con Meteoblue como alternativa (D-18)?
 - ~~**Q-05** ¿Quién fija las zonas a evitar y las ve el rescatista? ¿Se guardan en la misión o en la biblioteca? (RF-507)~~ **Resuelta (2026-11-01, H3): se guardan en la organización, con una misión opcional (`avoid_zones.mission_id` admite nulo, migración 0005).** Sin misión, la zona sirve a toda la organización; con ella, solo a esa misión. Las dibuja y borra el coordinador, las lee el personal y el rescatista no las ve. Una zona de una misión cerrada no se crea ni se borra (`MISSION_CLOSED`).
 - ~~**Q-14** ¿Puede el administrador de organización ver y editar misiones, o solo gestionar usuarios, equipos y datos sensibles?~~ **Resuelta (2026-10-31): no.** El administrador lee las misiones pero no las escribe (ni crea, ni edita, ni activa, ni cierra); gestiona usuarios, equipos y datos sensibles. Lo escribe solo el coordinador (`MISSION_WRITERS`, y también las políticas de la base de datos: migración 0011).
+- ~~**Q-12** ¿Quién puede crear y gestionar equipos y sus miembros?~~ **Resuelta (2026-11-22): el administrador y el coordinador (`TEAM_MANAGERS`); el rescatista no.** Se construye en `H5-equipos`.
 - **Q-15** Para informar a otras organizaciones (D-08), ¿qué formato necesitas: ficha en PDF, enlace de solo lectura, o basta con exportar las rutas?
 - **Q-16** Una misión *En planificación*, ¿solo la ven los coordinadores? ¿Los rescatistas solo pueden ofrecerse cuando está *Activa*?
 - ~~**Q-17** ¿Pueden los rescatistas consultar la biblioteca de rutas, o solo ven las rutas de las misiones activas?~~ **Resuelta (2026-11-02, H4): no consultan la biblioteca.** Ven las rutas de las misiones que pueden ver (activas y cerradas), solo la versión validada y fijada (RN-03, INV-05); la *no disponible* se ve señalada. Lo deciden el servidor y las políticas de la base (`listMyMissionRoutes`).
@@ -509,7 +509,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - ~~**Q-33** Recuperar contraseña~~ **Cerrada:** por correo transaccional (Resend tras el puerto `Mailer`), enlace de un solo uso que caduca en 1 h. Pendiente solo el dominio para enviar a terceros (Q-28)
 - **Q-34** Solicitudes de alta sin «equipo indicado» ni «datos completos»: el registro solo recoge correo, nombre, contraseña y código, y el perfil nace al aprobar **Cerrada:** confirmada (documento 06 §5)
 - ~~**Q-35** Días de validación antigua (RF-519)~~ **Cerrada:** 90, configurable por organización
-- **Q-36** Alias de coordinadores y rescatistas, del estilo `criantval ALC` (tres letras del nombre y de cada apellido, y un código de la localidad del equipo): ¿se genera o lo elige la persona?, ¿qué pasa con varios equipos o ninguno?, ¿qué lo ve y dónde? Se decide y construye en `H5-equipos` (decisión del usuario, 2026-11-22), porque depende del equipo y su localidad. Detalle en `docs/backlog-post-mvp.md` (B-02) *(nueva)*
+- ~~**Q-36** Alias de coordinadores y rescatistas, del estilo `criantval ALC`~~ **Decidida (2026-11-22): generado y fijo.** Tres letras del nombre y de cada apellido, más el código de tres letras de la localidad del primer equipo (sin equipo, sin código); una colisión lleva sufijo numérico. El rescatista lo ve en lugar del nombre en las listas y el personal ve ambos. Se construye en `H5-equipos`. Detalle en `docs/backlog-post-mvp.md` (B-02)
 
 Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 
@@ -555,6 +555,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.10 (2026-11-22)**
+- Q-12 resuelta: crean y gestionan los equipos y sus miembros el administrador y el coordinador (`TEAM_MANAGERS`); el rescatista no. Q-36 decidida: el alias es generado y fijo (tres letras del nombre y de cada apellido y el código de la localidad del primer equipo, sin código si no tiene equipo; sufijo numérico si hay colisión); el rescatista lo ve en lugar del nombre y el personal ve ambos. Se construye en `H5-equipos`. `listRescuers` pasa de H6 a H5 (selector de miembros).
 
 **1.9 (2026-11-22)**
 - Q-36 (alias de personas): deja de estar aplazada hasta después del MVP y se decide en `H5-equipos`, la tercera parte del resto de H5 (documento 07).

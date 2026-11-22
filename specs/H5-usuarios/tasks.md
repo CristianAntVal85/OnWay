@@ -1,0 +1,179 @@
+# H5-usuarios · Tareas
+
+Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada una lleva su commit: `<tipo>(H5-usuarios): Tn <resumen>`.
+
+- [x] **T1. El reparto de H5, las decisiones y las notas del contrato.** Cubre el cambio de alcance, Q-12, Q-36, el adelanto de `listRescuers` (lo construye `H5-equipos`) y las notas de `listUsers`, `getUser` y `updateUser`.
+  - **Qué se hace:**
+    - **Doc 07 §3, H5.** La tabla de las partes pasa a tener `H5-usuarios` (3 operaciones, 74 montadas) y `H5-equipos` (las 6 de equipos y `listRescuers`, más D-34, el alias y el selector de RF-805, con 81 montadas). Se añade una línea al registro de cambios.
+    - **Doc 01.** Q-12 queda resuelta (gestionan administrador y coordinador). Q-36 queda decidida (plan §1: generado y fijo, tres letras del nombre y de cada apellido y el código de la localidad del primer equipo, sufijo numérico si hay colisión; el rescatista lo ve en lugar del nombre y el personal ve ambos; se construye en `H5-equipos`). Se añade una línea al registro de cambios.
+    - **`docs/backlog-post-mvp.md`:** B-02 recoge la decisión.
+    - **Contrato:** las notas de las tres operaciones (plan §3). Después se regeneran el OpenAPI y el doc 06, con su línea en el registro de cambios.
+  - **Archivos:** `docs/07-plan-de-implementacion.md`, `docs/01-vision-y-requisitos.md`, `docs/backlog-post-mvp.md`, `packages/contracts/src/endpoints.ts`, `docs/06-contratos-de-api.md`.
+  - **Comprobación:** `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc gen/ && pnpm check @onway/contracts`.
+  - **Hecho cuando:** pasan `registry` y `schema-guards`, y el doc 06 enseña las notas nuevas.
+
+- [x] **T2. Migración 0014: `admin_reassign_missions`.** Cubre D-U1, RN-11, INV-03, INV-11 y Q-14.
+  - **Qué se hace:**
+    - La función de plan §3, con su `GRANT` y su `REVOKE`, y la entrada en el diario de migraciones.
+    - Las pruebas, con SQL directo como `onway_app`:
+      - un administrador reasigna solo las misiones no cerradas y deja una línea `mission_updated` por misión;
+      - un coordinador o un rescatista que llama a la función recibe un error;
+      - el destino no vale si es un rescatista, un coordinador desactivado, la misma persona u otra organización;
+      - un coordinador no puede ejecutar `UPDATE memberships SET role` (INV-29).
+    - El nombre de la función se añade a las comprobaciones de `db/tests`, si allí se listan las funciones.
+  - **Archivos:**
+    - Nuevos: `db/migrations/0014_admin_reassign_missions.sql` y `apps/api/test/db/admin-reassign.test.ts`.
+    - Se tocan: `db/migrations/meta/_journal.json` y `db/tests/run_tests.sql` (solo si enumera las funciones).
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:db admin-reassign schema && db/tests/run-postgis.sh`.
+  - **Hecho cuando:** las pruebas pasan sobre una base vacía con PostGIS y `run-postgis.sh` sigue en verde.
+
+- [x] **T3. `listUsers` y `getUser`.** Cubre RF-813 (ver), el doc 06 §7.1, la regla 1, la regla 3 y D-U6.
+  - **Qué se hace:**
+    - `UsersService.list` y `UsersService.detail`, y `UsersController` (plan §3).
+    - Se montan las dos operaciones. `app.test.ts` pasa a 73 montadas.
+  - **Archivos:**
+    - Nuevos: `apps/api/src/admin/users.service.ts`, `apps/api/src/admin/users.controller.ts` y `apps/api/test/api/admin-users.test.ts`.
+    - Se tocan: `apps/api/src/admin/admin.module.ts` y `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api admin-users app`.
+  - **Hecho cuando:**
+    - **Lista:** la búsqueda (nombre y correo), los filtros de rol y estado, la paginación y el orden pasan sus pruebas. Pendientes y rechazados no aparecen. `hasMissionsAsResponsible` cuenta solo las misiones no cerradas. `profileStatus` vale `null` salvo en los rescatistas.
+    - **Ficha:** trae `phone`, `skills` (iguales que `listSkillsOf`) y `teams`, y no trae documento ni dirección.
+    - **Accesos:** otra organización da 404; un coordinador o un rescatista, 403; una cuenta pendiente no entra.
+
+- [x] **T4. `updateUser`.** Cubre RF-813 (cambiar el rol, desactivar y reactivar), RN-11, INV-25, INV-29, D-U2 a D-U5 y `LAST_ADMIN`.
+  - **Qué se hace:**
+    - `UsersService.update` (plan §3), con un cerrojo consultivo por organización.
+    - `recordRoleChanged`.
+    - Se traducen los errores de la función: un destino no válido da `VALIDATION_FAILED` con `path = reassignMissionsTo`.
+    - Se monta la operación: 74.
+  - **Archivos:** `apps/api/src/admin/users.service.ts`, `apps/api/src/admin/users.controller.ts`, `apps/api/src/audit/audit.writer.ts`, `apps/api/test/api/admin-users.test.ts` y `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api admin-users app`.
+  - **Hecho cuando:**
+    - **Rol:** de rescatista a coordinador, sin que cambie su perfil; de coordinador a rescatista, que crea un perfil incompleto; y a administrador. Cada cambio deja `role_changed` con `{from, to}`, y la siguiente petición de esa persona ya usa el rol nuevo.
+    - **Desactivar:** la sesión de la persona da 401 y deja `account_disabled`. Reactivarla deja `account_active`. Reactivar una cuenta activa o enviar un cambio que no cambia nada da `INVALID_STATE_TRANSITION`.
+    - **`COORDINATOR_HAS_MISSIONS`:** sale con los `missionIds` al desactivar o al cambiar el rol de un coordinador con misiones abiertas. Con `reassignMissionsTo` todo pasa en una sola transacción y las misiones cerradas no cambian. Un destino no válido da `VALIDATION_FAILED`.
+    - **`LAST_ADMIN`:** sale al quitarle el rol o desactivar al único administrador activo, y con dos administradores, sí se puede.
+    - **En `app.test.ts`:** 74 montadas, y solo las 6 de equipos responden 404.
+
+- [x] **T5. Web: la lista de usuarios en Administración.** Cubre el doc 02 §3.10 (la lista) y D-U6.
+  - **Qué se hace:**
+    - `useUsers` en `queries.ts`.
+    - `UsersSection` (plan §3), con su estado en la dirección.
+    - En `admin-page.tsx`, la sección va entre la bandeja y el código de invitación.
+    - Los textos en español y francés.
+  - **Archivos:**
+    - Nuevos: `apps/web/src/admin/users-section.tsx` y `apps/web/test/admin-users.test.tsx`.
+    - Se tocan: `apps/web/src/admin/queries.ts`, `apps/web/src/pages/admin-page.tsx`, `apps/web/src/styles.css` (si hace falta), `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts` y `packages/i18n/src/types.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`, y una comprobación a 375 px con Chrome DevTools sobre `pnpm --filter @onway/web dev`, si hay una API a mano; si no, se dice.
+  - **Hecho cuando:**
+    - las pruebas cubren carga, vacío, error y reintento, la búsqueda y los filtros en la dirección, la paginación y el enlace a la ficha;
+    - pasan `no-fixed-text`, `layout-widths` y `a11y-styles`.
+
+- [x] **T6. Web: la ficha del usuario.** Cubre D-U7, el doc 06 §7.1 y RF-808 (el administrador abre el certificado).
+  - **Qué se hace:**
+    - La ruta `/admin/users/:userId` bajo `RoleGate`, con `useUser`.
+    - La ficha muestra nombre, correo, teléfono, rol, estado, último acceso y alta.
+    - Cursos y habilidades: «Abrir certificado» lleva el aviso «La apertura queda registrada» y reutiliza `useOpenCertificate`.
+    - Equipos en solo lectura.
+    - Estados de carga, error y 404 («Esta persona no existe o no es de tu organización»), y un enlace de vuelta a la lista que conserva sus filtros.
+  - **Archivos:**
+    - Nuevo: `apps/web/src/admin/user-page.tsx`.
+    - Se tocan: `apps/web/src/app/routes.tsx`, `apps/web/src/admin/queries.ts`, `apps/web/test/admin-users.test.tsx`, `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts` y `packages/i18n/src/types.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:**
+    - las pruebas cubren la ficha con y sin teléfono, habilidades y equipos, que abrir el certificado llama a `getCertificateLink`, el 404 y que un coordinador no llega a la ruta;
+    - a 375 px no hay desplazamiento horizontal.
+
+- [x] **T7. Web: cambiar el rol, desactivar y reactivar.** Cubre RN-11 en la interfaz, `LAST_ADMIN` y el doc 02 §3.10 (las acciones).
+  - **Qué se hace:**
+    - `useUpdateUser` y los diálogos de plan §3:
+      - **cambiar el rol**, sin opción previa y con el aviso de permisos;
+      - **desactivar**, con confirmación y la reasignación (`listCoordinators` sin la propia persona, y cuántas misiones se mueven);
+      - **reactivar**.
+    - Los errores `LAST_ADMIN`, `COORDINATOR_HAS_MISSIONS` (abre la reasignación) e `INVALID_STATE_TRANSITION`, cada uno en su diálogo.
+    - El foco va a «Cancelar» al abrir y vuelve al botón al cerrar.
+  - **Archivos:**
+    - Nuevo: `apps/web/src/admin/user-dialogs.tsx`.
+    - Se tocan: `apps/web/src/admin/user-page.tsx`, `apps/web/src/admin/queries.ts`, `apps/web/test/admin-users.test.tsx`, `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts` y `packages/i18n/src/types.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:** las pruebas cubren:
+    - cambiar el rol, que envía `{role}`;
+    - desactivar sin misiones, que envía `{accountStatus: 'disabled'}`;
+    - desactivar con misiones, que pide el responsable y envía `reassignMissionsTo`;
+    - la respuesta `COORDINATOR_HAS_MISSIONS`, que abre la reasignación;
+    - `LAST_ADMIN`, que se explica sin cambiar nada;
+    - reactivar;
+    - y el teclado y el foco en los tres diálogos.
+
+- [x] **T8. Smoke y demostración de extremo a extremo.** La historia de §1 del plan.
+  - **Qué se hace:**
+    - **`smoke.sh`** (plan §3).
+    - **`stack.ts`:**
+      - `createApprovedAccount(email, nombre, contraseña, rol)`, que generaliza `createApprovedRescuer` (esta se mantiene y usa la nueva);
+      - el apoyo que crea por API una misión «E2E …» abierta de la que es responsable un coordinador de la prueba;
+      - la lectura del responsable de una misión.
+    - **`h5-usuarios-demo.spec.ts`**, en escritorio y a 375 px, con una pasada solo con teclado y en francés. Usa solo cuentas `e2e-…`; al acabar, las cuentas quedan desactivadas y las misiones cerradas.
+    - Una línea en el README del E2E.
+  - **Archivos:**
+    - Nuevo: `apps/web/e2e/h5-usuarios-demo.spec.ts`.
+    - Se tocan: `apps/web/e2e/support/stack.ts`, `apps/web/e2e/playwright.config.ts` (proyecto `mobile`), `apps/web/e2e/README.md` e `infra/scripts/smoke.sh`.
+  - **Comprobación:**
+    - Se levanta la pila: `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d`.
+    - Después, con las mismas variables y `E2E_BASE_URL=http://localhost:18080`: `pnpm --filter @onway/web exec playwright test -c e2e h5-usuarios-demo.spec.ts`.
+    - Por último, `COMPOSE_PROJECT_NAME=onway-e2e infra/scripts/smoke.sh http://localhost:18080`, con `SMOKE_SKIP_ROUTING=1` si hace falta.
+  - **Hecho cuando:**
+    - la demostración pasa en escritorio y en móvil;
+    - el smoke pasa;
+    - la auditoría tiene `role_changed`, `account_disabled`, `account_active`, el `mission_updated` de la reasignación y el `certificate_opened`.
+
+- [x] **T9. Documentos y verificación completa.**
+  - **Qué se hace:**
+    - «Tal como se construyó (`H5-usuarios`)» en el doc 07 §3 y en el doc 02 §3.10.
+    - El doc 05: la 0014, la función y la tabla de migraciones.
+    - `CLAUDE.md` (las líneas de `smoke.sh` y `test:db`), `docs/estado.md` (como mucho 30 líneas) y `docs/historial.md`.
+    - Cada documento con su línea en el registro de cambios.
+    - La verificación completa y el E2E entero con `CI=1` en `onway-e2e`. Después, `down -v`.
+  - **Archivos:** `docs/02-flujo-coordinador-y-vistas.md`, `docs/05-modelo-de-datos.md`, `docs/07-plan-de-implementacion.md`, `CLAUDE.md`, `docs/estado.md` y `docs/historial.md`.
+  - **Comprobación:** `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test && pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`, y el E2E con `CI=1` en `onway-e2e`.
+  - **Hecho cuando:** todo pasa y los documentos dicen lo construido y sus desviaciones.
+
+## Desviaciones y notas de la implementación
+
+- **T3.** `getUser.teams` solo lista equipos activos, por nombre (`TeamRef` no lleva estado). Un rescatista sin fila de `rescuer_profiles` sale con `profileStatus: 'incomplete'`, como `auth.service.ts`. `listUsers` incluye miembros desactivados y anonimizados (para el filtro de estado); la bandeja de solicitudes excluye a los anonimizados. `users.service.ts` tiene `detailIn` para reutilizarlo en la respuesta de `updateUser`.
+- **T2.** `admin_reassign_missions(p_from, p_to)` da `insufficient_privilege` si no es administrador e `invalid_parameter_value` si el destino no vale; `updateUser` lo traduce a `VALIDATION_FAILED` con `path = reassignMissionsTo` (también `integrity_constraint_violation` de `missions_guard`).
+- **T4.** En `app.test.ts` solo se añade `updateUser` a `USERS_BUILT` (74). `updateUser` es estricto por campo: un `role` igual al actual o un `accountStatus` igual al actual dan `INVALID_STATE_TRANSITION`, aunque el otro campo sí cambie (D-U4). Si `reassignMissionsTo` no hace falta, se ignora sin validarlo. Cerrojo consultivo `user-updates:<org>`. Al pasar a rescatista, el perfil se inserta solo si no existe ninguno (D-U3).
+- **T5.** La sección usa parámetros propios de la dirección (`users.q`, `users.role`, `users.status`, `users.page`) y no `useListState`, porque la bandeja de altas, en la misma página, usa `tab`, `q` y `page`. Las etiquetas de búsqueda llevan «usuarios» para no repetir las de la bandeja (los lectores de pantalla y las pruebas las distinguen). La lista enseña rol y estado como insignias; el enlace a la ficha lleva `state.from` (la búsqueda de la dirección) para que la vuelta conserve los filtros. Se añade `userPath` en `navigation.ts`; las claves `admin.user.*` de la ficha entran ya en T5 con el resto de `i18n`. `admin.test.tsx` cuenta ahora tres secciones y simula `GET /admin/users`. Prettier reformó `admin-users.test.tsx` de la API (de T4) en este commit.
+- **T6.** La ficha no repite todo `SkillItem` del perfil propio: solo enseña la entrada y «Abrir certificado» (sin editar, adjuntar ni eliminar). El 404 es un `h1` con «Esta persona no existe o no es de tu organización» y el enlace de vuelta; cualquier otro error, `ErrorState` con reintento. `useUser` no reintenta. La vuelta usa `location.state.from`: si se abre la ficha por enlace directo, vuelve a `/admin` sin filtros. `ROLE_LABEL` se exporta desde `users-section.tsx` y lo usa la ficha. La ruta es `/admin/users/:userId` (sin `PATHS`, como la ficha de ruta: `userPath` en `navigation.ts`). El diálogo de acciones sobre la persona es T7.
+- **T7.** Los tres diálogos viven en `apps/web/src/admin/user-dialogs.tsx` (`ChangeRoleDialog`, `DisableDialog`, `ReactivateDialog`) y se abren desde una sección «Acciones sobre la cuenta» de la ficha. Solo se envía lo que cambia. El diálogo de cambiar rol ofrece los otros dos roles (sin el actual) y añade el rol de administrador con su aviso de permisos (`admin.user.roleDialog.adminWarning`). La reasignación aparece de antemano si la persona es coordinadora con misiones abiertas (`hasMissionsAsResponsible`) y, si no, cuando el servidor responde `COORDINATOR_HAS_MISSIONS` (cuenta con `missionIds`). `LAST_ADMIN` e `INVALID_STATE_TRANSITION` usan textos propios (`admin.user.lastAdmin`, `staleState`). Tras desactivar o reactivar el botón que abrió el diálogo desaparece: el foco pasa al aviso del resultado; tras cambiar el rol vuelve al botón. `useCoordinators` comparte clave con el selector de misiones. La comprobación a 375 px con Chrome DevTools no se hizo aquí (no hay API a mano): la cubre el E2E móvil de T8.
+- **T8.** `createApprovedAccount` solo admite `rescuer` y `coordinator`: un administrador de la prueba haría que el intento de `LAST_ADMIN` cambiase de verdad la cuenta de la semilla. Además de lo previsto se añaden `missionUpdates` (lee los `mission_updated` de una misión «E2E …») y `missionResponsible`; la misión se crea por la API con la sesión del propio coordinador de la prueba (`createE2eMission`) y la sesión que deja abierta comprueba el 401 tras desactivarla. El francés se elige en el acceso, con teclado, como `h5-acceso-demo` (es un ajuste del navegador: no toca el idioma de `admin@example.org`). `smoke.sh` comprueba también que `listUsers` no trae a la solicitud pendiente. En el proyecto `mobile` de `playwright.config.ts` entra `h5-usuarios-demo`. El estado de la pila `onway-e2e` tras la demostración: seis cuentas `e2e-…` desactivadas y las dos misiones cerradas.
+- **T9.** El doc 05 sube a 1.4 (función en §3, fila de la 0014 y su registro de cambios; el recuento de Vitest del doc ya estaba desfasado y se sustituye por «se obtiene ejecutándolo»), el doc 02 a 1.11 y el doc 07 a 0.23. Primera pasada del E2E: falló `h5-usuarios-demo` (móvil, primera prueba) porque esperaba ver a `admin@example.org` en la primera página de la lista, que con las cuentas «E2E …» de ejecuciones anteriores ya no cabe en 20 filas; ahora solo comprueba que hay filas. Segunda pasada completa con `CI=1`: 181 de 181 sin reintentos, y ni `hgt.test.ts` ni `h2-demo.spec.ts:352` fallaron. Bajos sin corregir que quedan para «Pendiente del usuario»: la comprobación a 375 px con Chrome DevTools de T5 a T7 se cubre con el E2E móvil (no se hizo a mano); la ficha propia: cambiarse el rol deja la ficha en «No tienes permiso» (la sesión sigue, con el rol nuevo) y desactivarse cierra la sesión (D-U5), ambos sin aviso previo (corregido en la vuelta 1).
+
+## Validación (vuelta 1)
+
+- **Cambiarse el propio rol:** el diálogo avisa antes de que se pierde Administración; tras el cambio se vuelve a leer la sesión (`getMe`), se navega a la pantalla de inicio del nuevo rol y el marco muestra el aviso («Tu rol es ahora…»).
+- **Desactivarse a uno mismo:** el diálogo avisa antes de que se cerrará la sesión; tras confirmar se va al inicio de sesión con el aviso `ACCOUNT_DISABLED` ya existente.
+- **Contrato:** `updateUser` declara `INVALID_STATE_TRANSITION` (OpenAPI y doc 06 regenerados; doc 06 1.16).
+- **Cuentas anonimizadas (INV-22):** fuera de `listUsers` y 404 en `getUser` y `updateUser`; prueba contra base real.
+- **Bajos:** «0002-0014» en doc 05 e `infra/compose.yml`; aviso de resultado siempre presente y vacío (se limpia al abrir otro diálogo); un id que no es UUID es «no existe» sin pedirlo al servidor.
+
+## Validación (2026-11-22)
+
+- **Veredictos.** `reviewer`, `reviewer-db` y `reviewer-ui` aprueban. `reviewer-security` pidió cambios por tres hallazgos medios: el aviso al cambiarse el propio rol, `INVALID_STATE_TRANSITION` sin declarar y las cuentas anonimizadas. Los tres se corrigieron en la vuelta 1, junto con los bajos 1, 3, 8 y 9.
+- **Verificación.** Se ejecutó una vez, la del `reviewer`, antes de la vuelta: completa y con el E2E en `CI=1` (181 de 181). Tras la vuelta se pasaron `pnpm check` de los paquetes tocados, `test:api admin-users app` y la demostración.
+
+**Bajos que siguen abiertos:**
+- **`smoke.sh:138`,** de un hito anterior: depende de que «Camino antiguo» salga en la primera página de rutas archivadas, y tras un E2E en la misma pila no sale.
+- **Carrera al degradar o desactivar a un coordinador mientras crea una misión.** La misión podría quedar con un responsable que ya no es coordinador. Se arreglaría con `FOR UPDATE` sobre su membresía.
+- **El cerrojo de `LAST_ADMIN`** solo ordena entre sí las llamadas a `updateUser`. No cubre `decideSignupRequests` ni el borrado de los datos propios.
+- **`translate`** pasa a `reassignMissionsTo` los errores `22023` y `23000` de cualquier procedimiento.
+- **`admin_reassign_missions`** no comprueba que `p_from` sea de la organización. No se puede explotar: el `UPDATE` filtra por `app_org_id()`.
+- **Interfaz:**
+  - a 375 px, «Volver a la lista» mide 21 px de alto y los filtros 40 px;
+  - en francés, «Active» sale igual sea cual sea el género;
+  - las insignias de rol y estado bajan siempre a una segunda línea.
+- **Sin revisar en la interfaz:**
+  - el teclado completo a mano (lo cubre el E2E);
+  - los anchos de 768 y 1280 px;
+  - los diálogos con efecto real a mano;
+  - un lector de pantalla real;
+  - el tamaño del bundle.

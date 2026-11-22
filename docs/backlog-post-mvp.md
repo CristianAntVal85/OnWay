@@ -11,7 +11,7 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 | ID | Título | Cuándo |
 |---|---|---|
 | B-01 | El rescatista ve nombre y localidad de todos los equipos | H5 (equipos) |
-| B-02 | Alias de coordinadores y rescatistas (`criantval ALC`) | Se decide y construye en `H5-equipos` (decisión del usuario, 2026-11-22) |
+| B-02 | Alias de coordinadores y rescatistas (`criantval ALC`) | Decidido el 2026-11-22: generado y fijo (ver B-02); se construye en `H5-equipos` |
 | B-03 | `forgotPassword` permite agotar los enlaces de recuperación de otra cuenta | Antes del despliegue (H7) |
 | B-04 | `ResetPasswordRequest.token` sin longitud máxima propia | Antes del despliegue (H7) |
 | B-05 | El aviso de «motor de rutas no disponible» tarda de 4,5 a 5,5 s con el motor parado | Con el despliegue (H7) |
@@ -33,7 +33,8 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 - **Idea (usuario, 2026-11-02):** cada coordinador y rescatista tendrá un **alias** corto, del estilo de cómo le apodan a veces: *Cristian Antón Valdés, Alicante* → **`criantval ALC`** (tres letras del nombre, tres del primer apellido, tres del segundo, y un código de la localidad del equipo).
 - **Por qué interesa:** en las listas (voluntarios, participantes, rutas) mostraría una identificación útil para el equipo sin exponer el nombre completo (regla 3: datos personales mínimos). Podría resolver además el pendiente de que `coordinatorName` llega `null` al rescatista (`docs/estado.md`, pendiente (a)).
 - **Por qué se aplaza:** es una decisión de producto que toca el modelo de datos (usuarios o perfiles), el contrato (`PersonRef` y los nombres que hoy salen en las listas) y los documentos 01, 02, 03, 05 y 06. No bloquea el MVP.
-- **Preguntas abiertas (Q-36 del documento 01):**
+- **Decisión (usuario, 2026-11-22), que construye `H5-equipos`:** el alias es **generado y fijo**: tres letras del nombre y de cada apellido, más un código de tres letras de la localidad del primer equipo (sin equipo, sin código); una colisión lleva sufijo numérico; el rescatista lo ve en lugar del nombre en las listas y el personal ve ambos.
+- **Preguntas que planteaba (Q-36 del documento 01):**
   1. ¿Se **genera** a partir del nombre y la localidad, o lo **elige** la persona (con unicidad dentro de la organización)?
   2. ¿De dónde sale el código de localidad si la persona está en varios equipos, o en ninguno?
   3. ¿Qué colisiones se admiten (dos personas con las mismas iniciales y localidad)?

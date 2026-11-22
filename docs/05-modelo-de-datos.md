@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 1.3 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
+Versión: 1.4 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -436,6 +436,7 @@ Además del filtro de organización, que se aplica siempre. C = lectura, E = esc
 | `auth_register(email, hash, nombre, código, idioma)` | Crea usuario pendiente y su solicitud | Código válido y correo nuevo. Error genérico si no (RF-104) |
 | `admin_decide_signup(user, aprobar, rol)` | Aprueba o rechaza, crea la membresía y el perfil incompleto, audita | Rol `admin`, misma organización, solicitud pendiente |
 | `admin_set_account_status(user, estado)` | Activa o desactiva una cuenta y su membresía, cierra sesiones, audita | Rol `admin`, misma organización |
+| `admin_reassign_missions(de, a)` | Pasa al coordinador `a` las misiones no cerradas de `de`, con una línea `mission_updated` por misión; devuelve sus ids. `a` debe ser un coordinador activo de la organización y distinto de `de` (0014) | Rol `admin`, misma organización |
 | `read_rescuer_sensitive(perfil)` | Devuelve documento y dirección cifrados y **audita en la misma transacción** | Rol `admin`, misma organización |
 | `delete_own_rescuer_data()` | Elimina y anonimiza los datos propios, devuelve las claves de los certificados a borrar del disco | El propio usuario |
 | `version_is_validated(version)` | Auxiliar de política, evita recursión entre políticas | — |
@@ -598,10 +599,11 @@ Las migraciones son aditivas y se ejecutan en orden. Cada entrega solo estrena l
 | 0011 | 1 (H1) | Q-14 = no: función `app_is_coordinator()`; en las nueve tablas de misión y ruta, lectura para el personal y escritura solo para el coordinador (§6.3); `missions_guard` solo acepta a un coordinador como responsable (INV-03) | `db/tests/run_tests.sql` (sección Q-14) y `apps/api/test/db/mission-writers-policy.test.ts` |
 | 0012 | 1 (H2) | Tipo de vía `unknown` («sin clasificar») en `road_type`: las rutas importadas, dibujadas o editadas a mano no tienen clasificación hasta que exista el motor (H3, RF-503). `files_insert`: los archivos `route_import` solo los inserta el coordinador (defensa en profundidad de Q-14) | `apps/api/test/db/routes-h2-policy.test.ts` |
 | 0013 | 1 (issue #17) | `route_versions_guard` (INV-04): una versión validada se borra solo si su ruta está archivada y no figura en ninguna misión (cerradas incluidas); editarla sigue prohibido. Función `SECURITY DEFINER` con `search_path` fijo | `route-delete-guard.test.ts` (15 con `onway_app`) |
-| 0014+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
+| 0014 | 1 (H5-usuarios) | `admin_reassign_missions(p_from, p_to)` `SECURITY DEFINER` (D-U1, RN-11, INV-03, INV-11, Q-14): solo el administrador reasigna las misiones no cerradas de una persona a otro coordinador activo de su organización, con una línea `mission_updated` por misión; `onway_app` no gana permisos sobre `missions` ni `memberships` | `apps/api/test/db/admin-reassign.test.ts` |
+| 0015+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
 
 Orden de ejecución y responsabilidades:
-- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0013** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
+- **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0014** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
 - Las contraseñas de `onway_owner`, `onway_app` y `onway_platform` se fijan en el despliegue con `ALTER ROLE ... PASSWORD`, leídas de archivos de secretos, nunca del repositorio. En local las genera al azar el servicio `secrets` de `docker compose`.
 - Las tablas internas de la cola (pg-boss 12) las crea la propia biblioteca en su esquema `pgboss`, **no una migración SQL**: el migrador (`apps/api/src/jobs/install-queue.ts`, como `onway_owner`, tras las migraciones) instala el esquema y la cola `calculate` y da a `onway_app` solo USAGE del esquema y SELECT/INSERT/UPDATE/DELETE, secuencias y EXECUTE, con privilegios por defecto para lo que cree una migración futura de pg-boss; `onway_app` no crea nada (hay una prueba). Los procesos en marcha arrancan con `createSchema: false, migrate: false`. La cola solo guarda identificadores (trabajo, organización, usuario). El envío es transaccional con la fila de `calculation_jobs`. H3 no añade ninguna migración SQL.
 - Cada migración debe poder aplicarse sobre una base vacía en CI con la imagen de PostGIS, y las pruebas de la sección 11 deben pasar después de la última.
@@ -628,7 +630,7 @@ Parte del proyecto (`data/seed/demo.json`, comando `pnpm --filter @onway/api see
 
 La base de datos tiene su propio juego de pruebas, independiente de la API, porque las invariantes viven aquí. En el repositorio están en `apps/api/test/db/`: una prueba de Vitest levanta PostGIS con Testcontainers (`postgis/postgis:16-3.4`), aplica las migraciones con el migrador de Drizzle y ejecuta los SQL de `db/tests/` (`seed_and_tests.sql` y `run_tests.sql`, que no se editan) (documento 04, sección 12).
 
-**Cobertura actual: 194 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** De ellas, 76 son de Q-14 (migración 0011) y 21 de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 49: las 4 del migrador y los roles, la que lanza las 194, las 8 de la política de la migración 0010 en `audit-policy.test.ts`, las 6 de la 0011 en `mission-writers-policy.test.ts`, las 6 de la 0012, las 9 de lo que lee el rescatista en las rutas de la misión y las 15 de la 0013 en `route-delete-guard.test.ts` —INV-04 e INV-07 al borrar una ruta archivada y sin misión—, con el inicio de sesión real de `onway_app`).
+**Cobertura actual: 194 comprobaciones SQL, todas correctas, sobre PostgreSQL 16 con PostGIS real.** De ellas, 76 son de Q-14 (migración 0011) y 21 de la recuperación de contraseña (0009). A ellas se suman las pruebas de Vitest de la base (`pnpm --filter @onway/api test:db` ejecuta 49: las 4 del migrador y los roles, la que lanza las 194, las 8 de la política de la migración 0010 en `audit-policy.test.ts`, las 6 de la 0011 en `mission-writers-policy.test.ts`, las 6 de la 0012, las 9 de lo que lee el rescatista en las rutas de la misión y las 15 de la 0013 en `route-delete-guard.test.ts` —INV-04 e INV-07 al borrar una ruta archivada y sin misión—, con el inicio de sesión real de `onway_app`), y las de la 0014 en `admin-reassign.test.ts` (quién puede reasignar, qué misiones y a quién, y que un coordinador no cambia roles —INV-29—). El total de Vitest se obtiene ejecutándolo.
 
 | Grupo | Qué se comprueba |
 |---|---|
@@ -683,6 +685,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**1.4 (2026-11-22)** `H5-usuarios`. **Migración 0014** (`0014_admin_reassign_missions.sql`): función `admin_reassign_missions(p_from, p_to)`, `SECURITY DEFINER` con `search_path` fijo, `GRANT` a `onway_app` y `REVOKE` a `PUBLIC`. §3 (funciones) y la tabla de migraciones. Probada en `test/db/admin-reassign.test.ts`.
 
 **1.3 (2026-11-22)** `H5-habilidades`. Sin migración. §INV-26: nota de que `skills_guard` no mira `deleted_at` y `files_insert` no comprueba el rol (lo hace el servicio); probado en `test/db/skills-policy.test.ts`.
 

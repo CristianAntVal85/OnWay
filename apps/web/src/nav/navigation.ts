@@ -16,6 +16,9 @@ export const weatherPath = (missionId?: string | null) => (missionId ? `${'/weat
 /** Dirección del detalle de una ruta de la biblioteca. */
 export const routePath = (routeId: string) => `${'/routes'}/${routeId}`;
 
+/** Dirección de la ficha de un usuario (Administración, H5-usuarios). */
+export const userPath = (userId: string) => `${'/admin/users'}/${userId}`;
+
 export const PATHS = {
   login: '/login',
   register: '/register',
