@@ -127,6 +127,23 @@ export async function archiveLeftoverE2eRoutes(like = 'E2E %'): Promise<void> {
 }
 
 /**
+ * Los equipos que crea la demostración de `H5-equipos` se llaman «E2E …» y los deja archivados (no se pueden borrar: la auditoría y los
+ * alias los referencian). Un equipo archivado conserva su código y el código es único en la organización, así que además se le cambia por
+ * uno que no puede chocar con el siguiente `E2E` (`Z` y dos cifras hexadecimales del id): sin esto, la segunda ejecución no podría usar `ALC`.
+ * Solo toca equipos cuyo nombre empieza por «E2E »; los alias ya fijados en las personas no cambian (D-E6). Idempotente.
+ */
+export async function archiveLeftoverE2eTeams(like = 'E2E %'): Promise<void> {
+  assertSafeLike(like);
+  await psqlAsOwner(`UPDATE teams SET status = 'archived', code = 'Z' || upper(substr(md5(id::text), 1, 2)) WHERE name LIKE '${like}' AND (status <> 'archived' OR code !~ '^Z[0-9A-F]{2}$');`);
+}
+
+/** El alias fijo de una cuenta «E2E …» (`memberships.alias`, Q-36), leído de la base: la web de los rescatistas no lo enseña de sí mismos. */
+export async function memberAlias(email: string): Promise<string> {
+  if (!/^e2e-[a-z0-9-]+@example\.org$/.test(email)) throw new Error('unsafe E2E account');
+  return (await psqlAsOwner(`SELECT m.alias FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.email = '${email}';`)).trim();
+}
+
+/**
  * Las cuentas que crea la demostración de `H5-acceso` tienen el correo `e2e-…@example.org` y el nombre «E2E …». No se pueden borrar
  * (la auditoría es de solo añadir y las filas la referencian), así que se dejan inocuas: las pendientes, RECHAZADAS (sin sesión ni
  * acceso) y las aprobadas, DESACTIVADAS (cuenta y membresía) y sin sesiones. Solo toca cuentas con ese correo y ese nombre; `emailLike`
