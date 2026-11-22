@@ -1,6 +1,6 @@
 # OnWay — Backlog tras el MVP
 
-Cosas que se han decidido o detectado y que **no** se hacen ahora. Al cerrar el MVP (H4) se convierten en *issues* de GitHub, una por entrada, y se van cogiendo en orden. Última actualización: 2026-11-06.
+Cosas que se han decidido o detectado y que **no** se hacen ahora. Al cerrar el MVP (H4) se convierten en *issues* de GitHub, una por entrada, y se van cogiendo en orden. Última actualización: 2026-11-22.
 
 ## Qué entra aquí y qué no
 
@@ -10,8 +10,8 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 
 | ID | Título | Cuándo |
 |---|---|---|
-| B-01 | El rescatista ve nombre y localidad de todos los equipos | H5 (equipos) |
-| B-02 | Alias de coordinadores y rescatistas (`criantval ALC`) | Decidido el 2026-11-22: generado y fijo (ver B-02); se construye en `H5-equipos` |
+| B-01 | El rescatista ve nombre y localidad de todos los equipos | **Construido** en `H5-equipos` (migración 0015) |
+| B-02 | Alias de coordinadores y rescatistas (`criantval ALC`) | **Construido** en `H5-equipos`: generado y fijo (ver B-02); falta mostrarlo en las listas del personal y de voluntarios (H6) |
 | B-03 | `forgotPassword` permite agotar los enlaces de recuperación de otra cuenta | Antes del despliegue (H7) |
 | B-04 | `ResetPasswordRequest.token` sin longitud máxima propia | Antes del despliegue (H7) |
 | B-05 | El aviso de «motor de rutas no disponible» tarda de 4,5 a 5,5 s con el motor parado | Con el despliegue (H7) |
@@ -21,6 +21,8 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 
 ## B-01 · El rescatista ve nombre y localidad de todos los equipos
 
+- **Construido (`H5-equipos`, 2026-11-22):** la migración 0015 abre `teams_select` a todos los roles de la organización; `team_members` no cambia. `listMyMissionRoutes.team` llega relleno aunque el rescatista no sea miembro. Probado en `teams-alias.test.ts` y `mission-routes-rescuer.test.ts`.
+
 - **Decisión (usuario, 2026-11-02):** un rescatista debe poder ver el **nombre y la localidad** de su equipo **y de los demás equipos** de su organización. Registrada como D-34 en el documento 01.
 - **Qué falla hoy:** la política `teams_select` (migración 0008) solo deja a un rescatista leer los equipos de los que es miembro. Por eso, en `listMyMissionRoutes`, el campo `team` de una ruta llega `null` si la persona no es del equipo asignado a esa ruta (H4-T3, desviación C3 del plan).
 - **Por qué se aplaza:** hasta H5 no existe `listTeams` ni forma de crear equipos desde la interfaz, así que hoy no hay equipos que mostrar (la semilla no asigna ninguno a rutas). Construirlo ahora no se podría probar con una pantalla real.
@@ -29,6 +31,8 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 - **Contexto:** `docs/01` D-34; `specs/H4-rutas-en-la-mision/plan.md` §9 C3; `db/migrations/0008_rls_grants.sql` (`teams_select`).
 
 ## B-02 · Alias de coordinadores y rescatistas
+
+- **Construido (`H5-equipos`, 2026-11-22):** `memberships.alias`, fijado por `set_member_alias` al completar el perfil, aprobar la cuenta o cambiar el rol, con el código del primer equipo (`teams.code`) añadido una sola vez; el rescatista ve el alias del coordinador responsable en Mis misiones y en el detalle (`coordinatorAlias`, `mission_coordinator_alias`). **Pendiente:** enseñar el alias en las listas del personal y de voluntarios (H6) y cambiarlo a mano (fuera de alcance).
 
 - **Idea (usuario, 2026-11-02):** cada coordinador y rescatista tendrá un **alias** corto, del estilo de cómo le apodan a veces: *Cristian Antón Valdés, Alicante* → **`criantval ALC`** (tres letras del nombre, tres del primer apellido, tres del segundo, y un código de la localidad del equipo).
 - **Por qué interesa:** en las listas (voluntarios, participantes, rutas) mostraría una identificación útil para el equipo sin exponer el nombre completo (regla 3: datos personales mínimos). Podría resolver además el pendiente de que `coordinatorName` llega `null` al rescatista (`docs/estado.md`, pendiente (a)).
@@ -79,4 +83,4 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 
 ## Otros pendientes ya anotados en `docs/estado.md`
 
-No se han movido aquí para no duplicarlos. Al cerrar el MVP se pasan a *issues*: (a) `coordinatorName` nulo para el rescatista (ligado a B-02), (c) límite por usuario de `getEnvironment` (R-09), (e) R-06 contraste con AEMET, (f) auditoría de lector de pantalla y botones de zoom de 29 px (H7; el contraste lo hizo `UI-rediseno`), (g) línea clara en el borde de las ortofotos francesas, (j) mover `distanceToSegment`, `nearestSegment` y `simplifyVertices` a `packages/geo`, (k) operación de «desarchivar» una ruta. (Resuelto en el arreglo de H4: borrar un origen del que sale una ruta responde 400 `VALIDATION_FAILED` con `point_in_use`.)
+No se han movido aquí para no duplicarlos. Al cerrar el MVP se pasan a *issues*: (a) `coordinatorName` nulo para el rescatista (resuelto en `H5-equipos`: ve el alias, `coordinatorAlias`), (c) límite por usuario de `getEnvironment` (R-09), (e) R-06 contraste con AEMET, (f) auditoría de lector de pantalla y botones de zoom de 29 px (H7; el contraste lo hizo `UI-rediseno`), (g) línea clara en el borde de las ortofotos francesas, (j) mover `distanceToSegment`, `nearestSegment` y `simplifyVertices` a `packages/geo`, (k) operación de «desarchivar» una ruta. (Resuelto en el arreglo de H4: borrar un origen del que sale una ruta responde 400 `VALIDATION_FAILED` con `point_in_use`.)

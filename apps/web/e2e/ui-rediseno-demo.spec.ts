@@ -181,7 +181,7 @@ const VIEWS = {
     at('Dibujar ruta', 'map', '/routes/draw'),
     at('Importar ruta', 'map', '/routes/import'),
     at('Generar rutas', 'map', '/routes/generate'),
-    at('Equipos', 'reading', '/teams'),
+    at('Equipos', 'list', '/teams'),
     at('Cuenta', 'reading', '/account'),
   ],
   admin: [
@@ -189,7 +189,7 @@ const VIEWS = {
     at('Misiones', 'list', '/missions'),
     detailOf('Detalle de misión', 'map', '/missions', ORDESA),
     at('Rutas', 'map', '/routes'),
-    at('Equipos', 'reading', '/teams'),
+    at('Equipos', 'list', '/teams'),
     at('Administración', 'reading', '/admin'),
     at('Cuenta', 'reading', '/account'),
   ],
