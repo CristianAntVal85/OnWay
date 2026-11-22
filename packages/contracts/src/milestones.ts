@@ -89,6 +89,7 @@ export const MILESTONE_OF: Record<string, Milestone> = {
   updateMySkill: 'H5',
   deleteMySkill: 'H5',
   getCertificateLink: 'H5',
+  openCertificate: 'H5',
   listTeams: 'H5',
   createTeam: 'H5',
   getTeam: 'H5',

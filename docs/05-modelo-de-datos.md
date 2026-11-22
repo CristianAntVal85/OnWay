@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 1.2 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
+Versión: 1.3 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -365,7 +365,7 @@ Las 32 invariantes del documento 03, sección 7. "Restricción" es una restricci
 | INV-23 | Restricción | `teams.locality NOT NULL CHECK (...)` |
 | INV-24 | Restricción | `UNIQUE (organization_id, document_hash)` |
 | INV-25 | Restricción + función | `users.account_status` solo cambia por funciones (DB-13). Una cuenta sin membresía no pasa ninguna política |
-| INV-26 | Aplicación + auditoría | La apertura de un certificado ajeno la registra el servicio al firmar el enlace. La base solo garantiza que el archivo sea del propio rescatista (`skills_guard`) |
+| INV-26 | Aplicación + auditoría | La apertura de un certificado ajeno la registra el servicio al firmar el enlace. La base solo garantiza que el archivo sea del propio rescatista (`skills_guard`). Dos límites conocidos (`test:db`, `H5-habilidades`): `skills_guard` no mira `deleted_at` del archivo y `files_insert` pide dueño y finalidad pero no el rol; ambos los comprueba el servicio |
 | INV-27 | Restricción + disparador | `CHECK (participated IS NULL OR status = 'accepted')`; `participations_guard` lo limpia al dejar de estar aceptado |
 | INV-28 | **Estructura + RLS** | `contact_select`: propio, administrador o coordinador con participación pendiente o aceptada |
 | INV-29 | RLS + función | Solo `admin_decide_signup()` crea membresías; solo el administrador puede cambiar un rol (`memberships_admin`) |
@@ -683,6 +683,8 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**1.3 (2026-11-22)** `H5-habilidades`. Sin migración. §INV-26: nota de que `skills_guard` no mira `deleted_at` y `files_insert` no comprueba el rol (lo hace el servicio); probado en `test/db/skills-policy.test.ts`.
 
 **1.2 (2026-11-22)** `H5-perfil`. Sin migración: las tablas, políticas y funciones del perfil ya estaban. §12 (semilla): 5 rescatistas con el perfil completo y los datos sensibles cifrados con las claves de la API; `rescatista6` sigue incompleto. Las dos claves de §7 (cifrado y huella) son archivos del volumen `secrets` (`sensitive/key` y `fingerprint/key`), de los que la API deriva con HKDF-SHA256 las claves de 32 bytes; `key_id = 1`.
 

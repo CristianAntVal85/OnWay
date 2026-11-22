@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.13 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
+**Versión:** 1.14 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -106,11 +106,11 @@ Alternativa descartada: pedir equipo y datos en el registro. Alarga el formulari
 
 ## 6. Endpoints
 
-El registro tiene **98 operaciones**, cada una asignada a un **hito de construcción** (H0–H9, documento 07): 96 de primera entrega y 2 de segunda (`listNearRoutes` en H8 y `adaptRoute` en H9; el contrato existe y el servidor responde `501` hasta entonces). El hito aparece junto al nombre de cada operación y en el OpenAPI como `x-milestone`; una prueba exige que todas tengan hito y que ninguna dependa de otra de un hito posterior.
+El registro tiene **99 operaciones**, cada una asignada a un **hito de construcción** (H0–H9, documento 07): 97 de primera entrega y 2 de segunda (`listNearRoutes` en H8 y `adaptRoute` en H9; el contrato existe y el servidor responde `501` hasta entonces). El hito aparece junto al nombre de cada operación y en el OpenAPI como `x-milestone`; una prueba exige que todas tengan hito y que ninguna dependa de otra de un hito posterior.
 
 | Hito | H0 | H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Operaciones | 5 | 18 | 15 | 6 | 9 | 26 | 17 | 0 | 1 | 1 |
+| Operaciones | 5 | 18 | 15 | 6 | 9 | 27 | 17 | 0 | 1 | 1 |
 
 Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesión pero sin aprobar. En entrada, `campo?` es opcional. **Q-14 (resuelta, 2026-10-31: no):** las operaciones que escriben sobre misiones y rutas solo admiten *Coordinador* (constante `MISSION_WRITERS`); el administrador las lee. La base de datos lo repite en sus políticas de seguridad por filas y en INV-03 (migración 0011, doc. 05 §6.3), así que ya no basta cambiar la constante: habría que cambiar también la base.
 
@@ -200,6 +200,7 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | Operación | Petición | Quién | Entrada | Respuesta | Errores propios |
 |---|---|---|---|---|---|
 | `getCertificateLink` · **H5**<br>Enlace firmado de corta vida para abrir un certificado *(auditado)* | `POST /skills/{skillId}/certificate-link` | Rescatista, Coordinador, Admin | ruta: skillId | 200: url, expiresAt | — |
+| `openCertificate` · **H5**<br>Abrir un certificado con su enlace firmado | `GET /certificates/{token}` | Rescatista, Coordinador, Admin | ruta: token | 200 archivo | — |
 | `getMyProfile` · **H5**<br>Mi perfil (documento y dirección enmascarados) | `GET /my/profile` | Rescatista | — | 200: status, fullName, email, phone, document, addressSummary, skills, teams, missingFields, … | — |
 | `updateMyProfile` · **H5**<br>Rellenar el alta o corregir mis datos *(auditado)* | `PATCH /my/profile` | Rescatista | cuerpo: fullName?, phone?, document?, address? | 200: status, fullName, email, phone, document, addressSummary, skills, teams, missingFields, … | `INVALID_DOCUMENT` `DOCUMENT_ALREADY_REGISTERED` |
 | `getMySensitive` · **H5**<br>Ver mi documento y dirección sin enmascarar | `GET /my/profile/sensitive` | Rescatista | — | 200: document, address | — |
@@ -862,6 +863,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.14 | 2026-11-22 | `H5-habilidades` (T1, `specs/H5-habilidades/`). Operación nueva `openCertificate` (`GET /certificates/{token}`, todos los roles, respuesta de archivo `application/pdf | image/jpeg | image/png`, `x-milestone: H5`, sin auditoría, AC-14): sirve el certificado con el enlace firmado de `getCertificateLink`, que caduca a los 5 minutos, vale solo para quien lo pidió y da `404 NOT_FOUND` en cualquier otro caso. Notas de `getCertificateLink` (quién abre qué, INV-28; auditoría solo de la apertura ajena, INV-26), `uploadFile` (`certificate` queda abierto al rescatista y al coordinador o administrador les da `FORBIDDEN`), `createMySkill` y `updateMySkill` (certificado propio y sin adjuntar, `certificateFileId: null` lo quita, reglas de `SkillInput` sobre el resultado, máximo 50 entradas). `SignedLink.url` pasa de URL absoluta a ruta del mismo origen (`/api/v1/certificates/<token>`; T4): el servidor no necesita conocer su dirección pública. 99 operaciones (H5 pasa a 27); sin esquemas ni códigos de error nuevos |
 | 1.13 | 2026-11-22 | `H5-perfil` (T1, `specs/H5-perfil/`). Notas de `getMyProfile` (formato del enmascarado, INV-32), `updateMyProfile` (actualización parcial cifrada, documento y dirección juntos la primera vez, paso a `complete`, auditoría sin valores), `updateMe` (`locale` es el idioma de la cuenta) y `changePassword`: pasa a **auditada**, mantiene la sesión actual y cierra las demás, y la contraseña actual errónea cuenta para el bloqueo (`ACCOUNT_LOCKED`, que se añade a sus errores). 98 operaciones; sin esquemas ni códigos de error nuevos |
 | 1.12 | 2026-11-21 | Pintar ruta y continuar a mano (`specs/issue-pintar-ruta/`). `createRouteVersion` admite `continueFrom { cutPoint, points (1 a 200) }` en lugar de `geometry` (exactamente uno de los dos; sin `calculationJobId`): el servidor conserva la versión base hasta el vértice más cercano al corte, con sus tipos de vía, y une en línea recta los puntos a mano, que cuentan como `offtrail`. Corte a más de 200 m de la ruta o en su inicio: `VALIDATION_FAILED`. 98 operaciones; sin operaciones ni códigos de error nuevos |
 | 1.11 | 2026-11-21 | Nombre de las rutas y desvincular (`specs/issue-rutas-nombre-y-desvincular/`). Operación nueva `updateRoute` (`PATCH /routes/{routeId}`, cuerpo `{ name }`, 200 `RouteDetail`, coordinador, auditada, `INVALID_STATE_TRANSITION` con la ruta archivada, `x-milestone: H2`): cambia el nombre de la ruta sin crear versión (RN-12). `generateRoutes`: `namePrefix` pasa a **obligatorio** (antes, sin él, «Ruta generada N»). `getRoute`: cada elemento de `usedIn` lleva `missionRouteId`, para quitar la ruta de la misión desde el detalle con `removeMissionRoute`. 98 operaciones (H2 pasa a 15; la tabla de operaciones por hito de §6 seguía en 12 desde antes y se corrige); sin códigos de error nuevos |

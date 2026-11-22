@@ -7,7 +7,8 @@ import { DomainError } from '../common/domain-error.js';
 import type { Principal } from '../common/operation.js';
 import type { Tx } from '../db/database.service.js';
 import { pgErrorOf } from '../db/errors.js';
-import { rescuerContact, rescuerProfiles, rescuerSensitive, skills, teamMembers, teams, users } from '../db/schema.js';
+import { rescuerContact, rescuerProfiles, rescuerSensitive, teamMembers, teams, users } from '../db/schema.js';
+import { listSkillsOf } from './skill-rows.js';
 import { DocumentFingerprint } from '../sensitive/document-fingerprint.js';
 import { SensitiveCipher } from '../sensitive/sensitive-cipher.js';
 
@@ -150,7 +151,7 @@ export class ProfileService {
     const [account] = await tx.select({ email: users.email }).from(users).where(eq(users.id, principal.userId)).limit(1);
     const [contact] = await tx.select({ phone: rescuerContact.phone }).from(rescuerContact).where(eq(rescuerContact.profileId, profile.id)).limit(1);
     const sensitive = await this.decrypted(tx, profile.id);
-    const ownSkills = await tx.select().from(skills).where(eq(skills.profileId, profile.id)).orderBy(skills.createdAt);
+    const ownSkills = await listSkillsOf(tx, profile.id);
     const ownTeams = await tx
       .select({ id: teams.id, name: teams.name, locality: teams.locality })
       .from(teamMembers)
@@ -169,15 +170,7 @@ export class ProfileService {
       phone: contact?.phone ?? null,
       document: sensitive ? { type: sensitive.document.type, masked: maskDocument(sensitive.document.number) } : null,
       addressSummary: sensitive ? addressSummary(sensitive.address) : null,
-      skills: ownSkills.map((s) => ({
-        id: s.id,
-        name: s.name,
-        kind: s.kind,
-        issuer: s.issuer,
-        issuedOn: s.issuedOn,
-        expiresOn: s.expiresOn,
-        hasCertificate: s.certificateFileId !== null,
-      })),
+      skills: ownSkills,
       teams: ownTeams,
       missingFields,
       completedAt: profile.completedAt ? profile.completedAt.toISOString() : null,

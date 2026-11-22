@@ -1,10 +1,11 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseTrack } from '@onway/geo';
 import pg from 'pg';
 import { DomainError } from '../common/domain-error.js';
 import type { DbConnection } from '../db/config.js';
+import type { FileStorage } from '../files/file-storage.js';
 import type { ElevationProvider } from '../geo/elevation.js';
 import { hashPassword } from '../identity/password.js';
 import { RouteMeasurement, type MeasuredPath } from '../routes/route-measurement.js';
@@ -12,6 +13,7 @@ import { normalizeDocument } from '@onway/contracts';
 import type { SensitiveKeys } from '../sensitive/config.js';
 import { DocumentFingerprint } from '../sensitive/document-fingerprint.js';
 import { SensitiveCipher } from '../sensitive/sensitive-cipher.js';
+import { demoCertificatePdf } from './demo-certificate.js';
 import { gpxDirOf, type Demo } from './demo.js';
 
 export interface SeedResult {
@@ -26,6 +28,8 @@ export interface SeedResult {
   missionRoutes: number;
   /** Demo profiles completed in this run (H5-perfil): 0 once they are complete. */
   profiles: number;
+  /** Demo courses and skills created in this run (H5-habilidades): 0 once they exist. */
+  skills: number;
 }
 
 export interface SeedOptions {
@@ -35,6 +39,8 @@ export interface SeedOptions {
   sensitive: SensitiveKeys;
   /** Folder of the invented GPX files of the demo routes; `gpx/` next to the seed file by default. */
   gpxDir?: string;
+  /** Where the bytes of the demo certificate go: the same `FileStorage` the API reads (`FILES_DIR`). Without it the entries are created but the certificate is skipped, with a warning. */
+  storage?: FileStorage;
   warn?: (message: string) => void;
 }
 
@@ -44,6 +50,7 @@ const MISSIONS_LOCK = 7_301_002;
 const ROUTES_LOCK = 7_301_003;
 const MISSION_ROUTES_LOCK = 7_301_004;
 const PROFILES_LOCK = 7_301_005;
+const SKILLS_LOCK = 7_301_006;
 
 async function findOrganization(client: pg.Pool | pg.PoolClient, demo: Demo): Promise<string | undefined> {
   const { rows } = await client.query<{ id: string }>(`SELECT id FROM organizations WHERE name = $1 AND country = $2`, [demo.organization.name, demo.organization.country]);
@@ -64,7 +71,8 @@ export async function seedDemo(owner: DbConnection, demo: Demo, options: SeedOpt
     const routes = await seedRoutes(pool, organization.organizationId, demo, options);
     const missionRoutes = await seedMissionRoutes(pool, organization.organizationId, demo, options);
     const profiles = await seedProfiles(pool, organization.organizationId, demo, options);
-    return { ...organization, missions, routes, missionRoutes, profiles };
+    const skills = await seedSkills(pool, organization.organizationId, demo, options);
+    return { ...organization, missions, routes, missionRoutes, profiles, skills };
   } finally {
     await pool.end();
   }
@@ -123,6 +131,71 @@ async function seedProfiles(pool: pg.Pool, orgId: string, demo: Demo, options: S
     }
   }
   return completed;
+}
+
+/**
+ * The demo courses and skills (H5-habilidades, RF-808): each entry is created only if the profile has none with that name, so a stack seeded
+ * before H5 gains them on its next `up` and one somebody edited is left alone. The entry that asks for a certificate gets the invented PDF,
+ * attached at creation only: if the rescuer later removes it, the seed does not bring it back. The bytes go first and are removed if the rows fail.
+ */
+async function seedSkills(pool: pg.Pool, orgId: string, demo: Demo, options: SeedOptions): Promise<number> {
+  const warn = options.warn ?? (() => undefined);
+  let created = 0;
+  for (const member of demo.members) {
+    if (member.skills.length === 0) continue;
+    const client = await pool.connect();
+    let key: string | null = null;
+    try {
+      await client.query('BEGIN');
+      await client.query('SELECT pg_advisory_xact_lock($1)', [SKILLS_LOCK]);
+      const { rows } = await client.query<{ id: string; user_id: string }>(
+        `SELECT p.id, p.user_id FROM rescuer_profiles p JOIN users u ON u.id = p.user_id WHERE p.organization_id = $1 AND u.email = $2 AND p.status <> 'deleted'`,
+        [orgId, member.email],
+      );
+      const profile = rows[0];
+      if (!profile) {
+        await client.query('ROLLBACK');
+        continue;
+      }
+      for (const skill of member.skills) {
+        const exists = await client.query(`SELECT 1 FROM skills WHERE profile_id = $1 AND lower(name) = lower($2)`, [profile.id, skill.name]);
+        if (exists.rowCount) continue;
+        let fileId: string | null = null;
+        if (skill.certificate) {
+          if (!options.storage) warn(`demo certificate of "${member.key}" skipped: the seed has no file storage (is FILES_DIR set?)`);
+          else {
+            const pdf = demoCertificatePdf();
+            key = await options.storage.put(pdf);
+            const file = await client.query<{ id: string }>(
+              `INSERT INTO files (organization_id, owner_user_id, purpose, content_type, size_bytes, storage_key, sha256, created_by) VALUES ($1, $2, 'certificate', 'application/pdf', $3, $4, $5, $2) RETURNING id`,
+              [orgId, profile.user_id, pdf.length, key, createHash('sha256').update(pdf).digest()],
+            );
+            fileId = file.rows[0]!.id;
+          }
+        }
+        await client.query(`INSERT INTO skills (organization_id, profile_id, name, kind, issuer, issued_on, expires_on, certificate_file_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, [
+          orgId,
+          profile.id,
+          skill.name,
+          skill.kind,
+          skill.issuer ?? null,
+          skill.issuedOn ?? null,
+          skill.expiresOn ?? null,
+          fileId,
+        ]);
+        created += 1;
+      }
+      await client.query('COMMIT');
+      key = null;
+    } catch (error) {
+      await client.query('ROLLBACK').catch(() => undefined);
+      if (key && options.storage) await options.storage.delete(key);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  return created;
 }
 
 async function seedOrganization(pool: pg.Pool, demo: Demo): Promise<{ seeded: boolean; organizationId: string }> {

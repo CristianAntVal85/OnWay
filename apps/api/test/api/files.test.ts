@@ -222,11 +222,9 @@ describe('uploadFile: who may upload (rule 2, INV-25)', () => {
     });
   });
 
-  it('certificate answers VALIDATION_FAILED to the rescuer until H5, and 403 to everyone else', async () => {
+  it('certificate: the coordinator and the administrator get 403 and nothing is kept', async () => {
     await expectNothingKept(async () => {
       const content = Buffer.from('%PDF-1.7 fictitious');
-      const error = await expectError(await upload(a.rescuer, { purpose: 'certificate', content, filename: 'c.pdf', type: 'application/pdf' }), 'VALIDATION_FAILED');
-      expect(error.details).toMatchObject({ issues: [{ path: 'purpose' }] });
       await expectError(await upload(a.coordinator, { purpose: 'certificate', content, filename: 'c.pdf', type: 'application/pdf' }), 'FORBIDDEN');
       await expectError(await upload(a.admin, { purpose: 'certificate', content, filename: 'c.pdf', type: 'application/pdf' }), 'FORBIDDEN');
     });
@@ -252,5 +250,65 @@ describe('uploadFile: isolation by organization (INV-01)', () => {
     expect(await seenBy(a.coordinator, fromA.id)).toBe(1);
     expect(await seenBy(b.coordinator, fromB.id)).toBe(1);
     expect(await seenBy(a.coordinator, fromB.id)).toBe(0);
+  });
+});
+
+describe('uploadFile: a certificate from the rescuer (RF-808, D-29)', () => {
+  const pdf = Buffer.concat([Buffer.from('%PDF-1.7\n'), Buffer.from('fictitious certificate')]);
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00]);
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+
+  it.each([
+    ['a PDF', pdf, 'application/pdf'],
+    ['a JPEG', jpeg, 'image/jpeg'],
+    ['a PNG', png, 'image/png'],
+  ])('%s answers 201 with its type, and the row is the rescuer’s', async (_label, content, contentType) => {
+    const response = await upload(a.rescuer, { purpose: 'certificate', content, filename: 'certificado.bin', type: 'application/octet-stream' });
+    expect(response.status).toBe(201);
+    const ref = FileRef.parse(await response.json());
+    expect(ref).toMatchObject({ purpose: 'certificate', contentType, sizeBytes: content.length });
+    const [row] = await fixtures.query<{ organization_id: string; owner_user_id: string; created_by: string; purpose: string; storage_key: string; deleted_at: Date | null }>(
+      `SELECT organization_id, owner_user_id, created_by, purpose, storage_key, deleted_at FROM files WHERE id = $1`,
+      [ref.id],
+    );
+    expect(row).toMatchObject({ organization_id: a.orgId, owner_user_id: a.rescuer.userId, created_by: a.rescuer.userId, purpose: 'certificate', deleted_at: null });
+    expect((await storage.get(row!.storage_key)).equals(content)).toBe(true);
+    expect(row!.storage_key).not.toMatch(new RegExp(`${a.orgId}|${a.rescuer.userId}|pdf|jpeg|png|certificado`, 'i'));
+  });
+
+  it('decides by content: a text called .pdf is UNSUPPORTED_FILE_TYPE, and a PDF sent as .png is accepted as a PDF', async () => {
+    await expectNothingKept(async () => {
+      await expectError(await upload(a.rescuer, { purpose: 'certificate', content: 'plain text', filename: 'c.pdf', type: 'application/pdf' }), 'UNSUPPORTED_FILE_TYPE');
+      await expectError(await upload(a.rescuer, { purpose: 'certificate', content: await fixture('ficticio-sendero.gpx'), filename: 'c.pdf', type: 'application/pdf' }), 'UNSUPPORTED_FILE_TYPE');
+    });
+    const ok = await upload(a.rescuer, { purpose: 'certificate', content: pdf, filename: 'c.png', type: 'image/png' });
+    expect(FileRef.parse(await ok.json()).contentType).toBe('application/pdf');
+  });
+
+  it('INVALID_FILE_CONTENT for an empty file, FILE_TOO_LARGE above 10 MB and VALIDATION_FAILED without a file; nothing is kept', async () => {
+    await expectNothingKept(async () => {
+      await expectError(await upload(a.rescuer, { purpose: 'certificate', content: '' }), 'INVALID_FILE_CONTENT');
+      await expectError(await upload(a.rescuer, { purpose: 'certificate', content: Buffer.concat([pdf, Buffer.alloc(11 * 1024 * 1024)]) }), 'FILE_TOO_LARGE');
+      const noFile = await expectError(await upload(a.rescuer, { purpose: 'certificate', content: null }), 'VALIDATION_FAILED');
+      expect(noFile.details).toMatchObject({ issues: [{ path: 'file' }] });
+    });
+  });
+
+  it('a rescuer cannot import a route: route_import stays the coordinator’s', async () => {
+    await expectNothingKept(async () => {
+      await expectError(await upload(a.rescuer, { content: await fixture('ficticio-sendero.gpx') }), 'FORBIDDEN');
+    });
+  });
+
+  it('a pending account has no access (INV-25) and the file of A is invisible to B at the database (INV-01)', async () => {
+    await expectNothingKept(async () => {
+      await expectError(await upload(applicant, { purpose: 'certificate', content: pdf }), 'ACCOUNT_PENDING');
+    });
+    const ref = FileRef.parse(await (await upload(a.rescuer, { purpose: 'certificate', content: pdf })).json());
+    const seenBy = (member: Member, role: 'rescuer' | 'coordinator' | 'admin') =>
+      database.withContext({ orgId: member.orgId, userId: member.userId, role }, async (tx) => (await tx.execute(sql`SELECT id FROM files WHERE id = ${ref.id}`)).rows.length);
+    expect(await seenBy(a.rescuer, 'rescuer')).toBe(1);
+    expect(await seenBy(b.rescuer, 'rescuer')).toBe(0);
+    expect(await seenBy(b.admin, 'admin')).toBe(0);
   });
 });

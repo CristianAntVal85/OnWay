@@ -14,6 +14,8 @@ export interface Call {
   query: URLSearchParams;
   headers: Headers;
   body: unknown;
+  /** El cuerpo `multipart/form-data` (subida de archivos), si lo hubo. */
+  form?: FormData;
 }
 
 type Handler = (call: Call) => Response | Promise<Response>;
@@ -36,6 +38,7 @@ export function fakeApi(handlers: Record<string, Handler>) {
       query: url.searchParams,
       headers: new Headers(init?.headers),
       body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
+      form: init?.body instanceof FormData ? init.body : undefined,
     };
     calls.push(call);
     const handler = handlers[`${method} ${call.path}`];
@@ -115,6 +118,8 @@ export function sessionServer(initial: { user?: SessionUser | null; expired?: bo
     },
     // Mi perfil (H5-perfil): el del rescatista de la sesión, incompleto o completo según `profileStatus`.
     'GET /my/profile': () => (state.user?.role === 'rescuer' ? json(200, myProfileOf(state.user)) : apiError(403, 'FORBIDDEN')),
+    // Cursos y habilidades (H5-habilidades): vacío por defecto; las pruebas que los necesitan lo sustituyen en `extra`.
+    'GET /my/skills': () => (state.user?.role === 'rescuer' ? json(200, { items: [] }) : apiError(403, 'FORBIDDEN')),
     ...extra,
   });
   return { state, api };

@@ -90,6 +90,7 @@ const SHARED_WITH_RESCUER = new Set([
   'getEnvironment',
   'uploadFile',
   'getCertificateLink',
+  'openCertificate',
 ]);
 
 test('los endpoints /my/ son solo del rescatista y el resto del API no los incluye', () => {

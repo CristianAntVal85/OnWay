@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Address, DocumentInput, Phone } from '@onway/contracts';
+import { Address, DocumentInput, Phone, SkillFields } from '@onway/contracts';
 import { z } from 'zod';
 
 const EXAMPLE_ORG = /^[^@\s]+@example\.org$/i;
@@ -16,6 +16,17 @@ const Locale = z.enum(['es', 'fr']);
  */
 const DemoProfile = z.strictObject({ phone: Phone, document: DocumentInput, address: Address });
 
+/**
+ * A course or skill of a rescuer (H5-habilidades, RF-808): the fields of `createMySkill`, checked with the same schema, and `certificate`,
+ * which asks the seed to attach the invented demonstration PDF (only a course has one, D-29).
+ */
+const DemoSkill = SkillFields.omit({ certificateFileId: true })
+  .extend({ certificate: z.boolean().default(false) })
+  .superRefine((skill, ctx) => {
+    if (skill.certificate && skill.kind !== 'course') ctx.addIssue({ code: 'custom', path: ['certificate'], message: 'only a course has a certificate' });
+    if (skill.issuedOn && skill.expiresOn && skill.expiresOn < skill.issuedOn) ctx.addIssue({ code: 'custom', path: ['expiresOn'], message: 'the expiry precedes the date' });
+  });
+
 const DemoMember = z.strictObject({
   key: Key,
   email: Email,
@@ -24,6 +35,8 @@ const DemoMember = z.strictObject({
   role: z.enum(['admin', 'coordinator', 'rescuer']),
   /** Only rescuers. Without it the rescuer keeps an incomplete profile (the «complete your profile» case). */
   profile: DemoProfile.optional(),
+  /** Only rescuers: up to 3 entries, each name once (the seed is idempotent by name). */
+  skills: z.array(DemoSkill).max(3).default([]),
 });
 
 const DemoApplicant = z.strictObject({ key: Key, email: Email, displayName: z.string().trim().min(1).max(120), locale: Locale });
@@ -115,6 +128,9 @@ export const Demo = z
       emails.add(person.email.toLowerCase());
     }
     for (const [index, member] of demo.members.entries()) {
+      if (member.skills.length > 0 && member.role !== 'rescuer') ctx.addIssue({ code: 'custom', message: `only a rescuer has courses and skills (${member.key})`, path: ['members', index, 'skills'] });
+      if (new Set(member.skills.map((k) => k.name.toLowerCase())).size !== member.skills.length)
+        ctx.addIssue({ code: 'custom', message: `a skill is repeated (${member.key})`, path: ['members', index, 'skills'] });
       if (member.profile && member.role !== 'rescuer') ctx.addIssue({ code: 'custom', message: `only a rescuer has a profile (${member.key})`, path: ['members', index, 'profile'] });
     }
     const documents = demo.members.flatMap((m) => (m.profile ? [`${m.profile.document.type}:${m.profile.document.number.toUpperCase()}`] : []));

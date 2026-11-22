@@ -21,5 +21,8 @@ export const FileRef = z.strictObject({
   createdAt: Timestamp,
 });
 
-/** Enlace firmado y de vida corta para abrir un certificado. Cada petición ajena queda auditada (RN-24). */
-export const SignedLink = z.strictObject({ url: z.url(), expiresAt: Timestamp });
+/**
+ * Enlace firmado y de vida corta para abrir un certificado. Cada petición ajena queda auditada (RN-24). La `url` es una ruta del mismo origen
+ * (`/api/v1/certificates/<token>`, la operación `openCertificate`), no una dirección absoluta: el servidor no necesita conocer su dirección pública.
+ */
+export const SignedLink = z.strictObject({ url: z.string().regex(/^\/api\/v1\/certificates\/[A-Za-z0-9._~-]+$/), expiresAt: Timestamp });

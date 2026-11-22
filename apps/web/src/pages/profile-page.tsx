@@ -9,6 +9,7 @@ import { valuesFrom } from '../profile/form';
 import { ProfileForm } from '../profile/profile-form';
 import { ProfileView } from '../profile/profile-view';
 import { useMyProfile, useMySensitive } from '../profile/queries';
+import { SkillsSection } from '../profile/skills-section';
 
 /**
  * Alta y Mi perfil del rescatista (RF-806, RF-807, RF-810, doc 02 §3.9). Con el perfil incompleto es el formulario de alta obligatorio
@@ -57,6 +58,8 @@ export function ProfilePage() {
           // Al completarse, la vista lleva a Mis misiones por sí misma (arriba).
           onSaved={() => undefined}
         />
+        {/* «Se puede completar después» (doc 02 §3.9), pero se puede ya: cursos y habilidades no son obligatorios en el alta. */}
+        <SkillsSection />
       </>
     );
 

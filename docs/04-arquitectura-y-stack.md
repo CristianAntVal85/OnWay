@@ -1,6 +1,6 @@
 # OnWay — Documento 04: Arquitectura y stack
 
-Versión: 1.5 (borrador) · Fecha: 2026-11-13 · Depende de: documentos 01 (v1.6), 02 (v1.4) y 03 (v0.9)
+Versión: 1.7 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.6), 02 (v1.4) y 03 (v0.9)
 
 Este documento decide **con qué y cómo** se construye OnWay: lenguaje, frameworks, base de datos, despliegue, proveedores externos, seguridad y estrategia para la futura app móvil. Parte de las restricciones de un proyecto didáctico (documento 03, sección 14).
 
@@ -159,7 +159,7 @@ Cada módulo del dominio (documento 03, sección 2) es un módulo de NestJS con 
 | `calculation` | Trabajos de cálculo, progreso, resultados |
 | `weather` | Pronóstico a la altitud del punto, caché, luz y luna |
 | `audit` | Registro de auditoría, consulta para el administrador |
-| `files` | Almacenamiento privado de GPX y certificados. **H2:** subida (`uploadFile`) con tipo por contenido y tope de 10 MB, `FileStorage` y apertura de un archivo por su id (`ImportedTracks`); los certificados llegan en H5 |
+| `files` | Almacenamiento privado de GPX y certificados. **H2:** subida (`uploadFile`) con tipo por contenido y tope de 10 MB, `FileStorage` y apertura de un archivo por su id (`ImportedTracks`); **H5-habilidades:** `uploadFile` admite `certificate` del rescatista (tipo por los bytes iniciales) y el archivo se abre con un enlace firmado (`getCertificateLink` + `openCertificate`: token HMAC-SHA256 sin estado, clave por proceso, 5 minutos, solo para quien lo pidió); los bytes de un certificado retirado se borran tras el `COMMIT` (`DatabaseService.afterCommit`) |
 
 ### 5.2 Puertos (interfaces hacia lo externo)
 
@@ -382,7 +382,7 @@ La pantalla de inicio consulta el tiempo en la ubicación del dispositivo y, al 
 | Alta de cuentas | La persona se registra y queda en espera. Un administrador aprueba y asigna el rol. El rol de coordinador nunca lo concede el registro *(propuesto)*. Un código de invitación asocia la solicitud a su organización *(propuesto)* |
 | Datos sensibles | Cifrado por campo, acceso solo del propio rescatista y el administrador, auditoría (sección 6.3) |
 | Datos de contacto | Teléfono y correo obligatorios, visibles para coordinador y administrador. El correo de contacto es el de inicio de sesión |
-| Archivos subidos | Tipo y tamaño validados, almacenados fuera del directorio público, servidos con enlace firmado |
+| Archivos subidos | Tipo y tamaño validados, almacenados fuera del directorio público, servidos con enlace firmado de 5 minutos. Caddy da a `/api/v1/certificates/*` su propia CSP (`default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; object-src 'self'; frame-ancestors 'none'; sandbox`), y la general se aplica con un matcher que excluye esa ruta |
 | Transporte y cabeceras | HTTPS siempre (Caddy), cabeceras de seguridad, CORS restringido |
 | Secretos | Variables de entorno y archivo de secretos fuera del repositorio. Nunca en el código |
 | Dependencias | Revisión automática de vulnerabilidades en integración continua |
@@ -496,6 +496,7 @@ La elección entre envolver la web (Capacitor, rápido) o hacer una app nativa e
 
 | Versión | Fecha | Cambios |
 |---|---|---|
+| 1.7 | 2026-11-22 | Cierre de `H5-habilidades`. §5.1 fila `files`: certificados y enlace firmado. §10 fila «Archivos subidos»: enlace de 5 minutos y la CSP propia de la ruta del certificado. Sin cambios de decisión de arquitectura |
 | 1.6 | 2026-11-15 | Cambio de alcance `UI-simplificacion`. §3 fila «Interfaz»: controles de **40 px con puntero fino y 48 px con puntero táctil** (`--control-h`, `@media (pointer: coarse)`), escalas de espaciado, radios y tipografía en `tokens.css`, una sola familia tipográfica del sistema, iconos SVG propios en línea (`src/components/icon.tsx`) y menú desplegable propio (`Menu`, patrón de menú de WAI-ARIA), sin dependencias nuevas. Paleta del boceto (azul pizarra y naranja de acción) en lugar del rojo de rescate de `UI-rediseno` |
 | 1.5 | 2026-11-13 | Cambio de alcance `issue-18-tiempo-simple` (issue #18). §3 fila «Interfaz»: iconos del tiempo como SVG propios en línea (sin librería ni emojis) con tokens de color `--wx-*` para los dos temas. La derivación del símbolo y de los tramos del día (`weatherSymbol`, `dayPartSymbols`) vive en `packages/geo`, no en componentes (regla 9). Sin cambios en el contrato, el proveedor, la caché ni la base de datos |
 | 1.4 | 2026-11-05 | Cambio de alcance `UI-rediseno` (issue #14), aprobación. §3 fila «Interfaz»: tokens semánticos con dos temas, oscuro sin elección guardada y selector de tres opciones, arranque sin destello, preferencia en el navegador y `--font-mono`. §8.1 fila «Carreteras»: estilo y sprites según el tema (satélite y topográfico no cambian). §9.0 fila de fuentes y sprites: se usan los `dark`. Sin cambios de decisión de arquitectura ni de CSP |

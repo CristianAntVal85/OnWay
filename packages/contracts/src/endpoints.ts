@@ -65,6 +65,7 @@ const p = {
   team: z.strictObject({ teamId: Id }),
   teamMember: z.strictObject({ teamId: Id, userId: Id }),
   skill: z.strictObject({ skillId: Id }),
+  certificateToken: z.strictObject({ token: z.string().min(1).max(512) }),
   user: z.strictObject({ userId: Id }),
   job: z.strictObject({ jobId: Id }),
   zone: z.strictObject({ zoneId: Id }),
@@ -187,12 +188,15 @@ const RAW = [
   // ================= Certificados =================
   { id: 'getCertificateLink', method: 'POST', path: '/skills/{skillId}/certificate-link', tag: 'Perfil', summary: 'Enlace firmado de corta vida para abrir un certificado', roles: ALL,
     params: p.skill, response: { status: 200, schema: F.SignedLink }, delivery: 1, audited: true,
-    notes: 'El rescatista, solo el suyo. Coordinador: solo de quien tiene participación Pendiente o Aceptada en sus misiones. Administrador: de su organización. Toda apertura ajena queda en audit_log (RN-24). 404 si no corresponde.' },
+    notes: 'El rescatista, solo el suyo (sin auditoría). Coordinador: solo de quien tiene participación Pendiente o Aceptada en sus misiones. Administrador: de su organización. Toda apertura ajena queda en audit_log (`certificate_opened`, INV-26, RN-24), escrita al firmar el enlace; la propia no. 404 si no corresponde, también para quien no tiene relación. El enlace caduca a los 5 minutos y solo vale para quien lo pidió; se abre con `openCertificate`.' },
+  { id: 'openCertificate', method: 'GET', path: '/certificates/{token}', tag: 'Perfil', summary: 'Abrir un certificado con su enlace firmado', roles: ALL,
+    params: p.certificateToken, response: { status: 200, file: 'application/pdf | image/jpeg | image/png' }, delivery: 1,
+    notes: 'El enlace es de quien lo pidió y caduca a los 5 minutos; si no es válido, ha caducado, es de otra persona o el certificado ya no existe, 404 `NOT_FOUND`. Se entrega `inline`, con `nosniff` y sin caché. No audita: el registro se escribe al firmar el enlace con `getCertificateLink`.' },
 
   // ================= Archivos =================
   { id: 'uploadFile', method: 'POST', path: '/files', tag: 'Archivos', summary: 'Subir un certificado (PDF/JPG/PNG) o un GPX/KML', roles: ALL,
     multipart: F.UploadFileFields, response: { status: 201, schema: F.FileRef }, errors: ['FILE_TOO_LARGE', 'UNSUPPORTED_FILE_TYPE', 'INVALID_FILE_CONTENT'], delivery: 1,
-    notes: 'purpose = certificate: solo rescatista (llega en H5; hasta entonces responde VALIDATION_FAILED). purpose = route_import: quien puede crear rutas o puntos. Máx. 10 MB; el tipo se comprueba por contenido.' },
+    notes: 'purpose = certificate: solo rescatista (el coordinador y el administrador reciben FORBIDDEN); el archivo queda a nombre de quien lo sube y no se puede ver más que con `getCertificateLink`. purpose = route_import: quien puede crear rutas o puntos. Máx. 10 MB; el tipo se comprueba por contenido.' },
 
   // ================= Equipos =================
   { id: 'listTeams', method: 'GET', path: '/teams', tag: 'Equipos', summary: 'Equipos de la organización', roles: STAFF,
@@ -324,9 +328,11 @@ const RAW = [
   { id: 'listMySkills', method: 'GET', path: '/my/skills', tag: 'Perfil', summary: 'Mis cursos y habilidades', roles: ['rescuer'],
     response: { status: 200, schema: Items(P.Skill) }, delivery: 1 },
   { id: 'createMySkill', method: 'POST', path: '/my/skills', tag: 'Perfil', summary: 'Añadir curso o habilidad', roles: ['rescuer'],
-    body: P.SkillInput, response: { status: 201, schema: P.Skill }, delivery: 1 },
+    body: P.SkillInput, response: { status: 201, schema: P.Skill }, delivery: 1,
+    notes: 'El certificado (solo en un curso) debe ser un archivo propio subido con `uploadFile` (purpose = certificate), no borrado y sin adjuntar a otra entrada; si no, VALIDATION_FAILED con details.issues[path = certificateFileId]. Máximo 50 entradas por perfil (VALIDATION_FAILED).' },
   { id: 'updateMySkill', method: 'PATCH', path: '/my/skills/{skillId}', tag: 'Perfil', summary: 'Editar curso o habilidad', roles: ['rescuer'],
-    params: p.skill, body: P.SkillFields.partial().extend({ certificateFileId: Id.nullable().optional() }), response: { status: 200, schema: P.Skill }, delivery: 1 },
+    params: p.skill, body: P.SkillFields.partial().extend({ certificateFileId: Id.nullable().optional() }), response: { status: 200, schema: P.Skill }, delivery: 1,
+    notes: 'certificateFileId: null quita el certificado (el archivo anterior se retira). Las reglas de SkillInput se comprueban sobre el resultado: una habilidad no lleva certificado y la caducidad no puede ser anterior a la fecha. El certificado nuevo, con las mismas condiciones que en createMySkill.' },
   { id: 'deleteMySkill', method: 'DELETE', path: '/my/skills/{skillId}', tag: 'Perfil', summary: 'Eliminar curso o habilidad', roles: ['rescuer'],
     params: p.skill, response: { status: 204 }, delivery: 1 },
   { id: 'listMyHistory', method: 'GET', path: '/my/history', tag: 'Perfil', summary: 'Mi historial de misiones (solo las confirmadas al cerrar)', roles: ['rescuer'],

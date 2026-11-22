@@ -13,11 +13,15 @@
 		Referrer-Policy strict-origin-when-cross-origin
 		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
 		Cross-Origin-Opener-Policy same-origin
-		# MapLibre (H1) necesita workers y texturas `blob:`/`data:`. El mapa base (PMTiles, fuentes y sprites) es del mismo origen
-		# (`/tiles/`). Los ÚNICOS anfitriones de terceros son los WMTS de IGN España (www.ign.es) y Francia (data.geopf.fr) para el
-		# satélite y el topográfico (H1, D-H1-08); `apps/web/test/no-external-resources.test.ts` exige que coincidan con `src/map/ign.ts`.
-		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.ign.es https://data.geopf.fr; font-src 'self'; connect-src 'self' https://www.ign.es https://data.geopf.fr; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 	}
+
+	# La CSP general vale para todo menos para la ruta de los certificados, que lleva la suya (más abajo): dos `header` que fijan la misma cabecera no se
+	# sustituyen entre sí (el de fuera, con `-Server`, se aplica el último), así que la general excluye esa ruta.
+	@general not path /api/v1/certificates/*
+	# MapLibre (H1) necesita workers y texturas `blob:`/`data:`. El mapa base (PMTiles, fuentes y sprites) es del mismo origen
+	# (`/tiles/`). Los ÚNICOS anfitriones de terceros son los WMTS de IGN España (www.ign.es) y Francia (data.geopf.fr) para el
+	# satélite y el topográfico (H1, D-H1-08); `apps/web/test/no-external-resources.test.ts` exige que coincidan con `src/map/ign.ts`.
+	header @general Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.ign.es https://data.geopf.fr; font-src 'self'; connect-src 'self' https://www.ign.es https://data.geopf.fr; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 	# Mapa base propio: extracto PMTiles, fuentes y sprites del volumen `geodata` (solo lectura). Caddy atiende las peticiones por
 	# rango (`Range`) que usa PMTiles; sin `encode`: el archivo ya va comprimido y un rango comprimido no sirve.
@@ -25,6 +29,15 @@
 		root * /geodata/basemap
 		header Cache-Control "public, max-age=3600"
 		file_server
+	}
+
+	# Certificados de curso (H5-habilidades, D-S3): se abren en una pestaña aparte, `inline`, y un PDF o una imagen subidos por una persona no deben poder
+	# ejecutar nada ni cargar nada: CSP propia en lugar de la general (que `@general` deja fuera de esta ruta).
+	# `object-src 'self'` e `img-src 'self'` bastan para el visor de PDF y la imagen; `sandbox` se queda: el visor de PDF de Chromium 155 lo tolera (comprobado en T5, PDF e imagen).
+	handle /api/v1/certificates/* {
+		header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; object-src 'self'; frame-ancestors 'none'; sandbox"
+		header ?Cache-Control "no-store"
+		reverse_proxy api:3000
 	}
 
 	handle /api/* {

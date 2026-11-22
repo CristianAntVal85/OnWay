@@ -34,7 +34,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DatabaseService.name);
   private readonly pool: pg.Pool;
   private readonly db: Db;
-  private readonly store = new AsyncLocalStorage<Tx>();
+  private readonly store = new AsyncLocalStorage<{ tx: Tx; afterCommit: Array<() => void | Promise<void>> }>();
 
   constructor(@Inject(DB_CONNECTION) connection: DbConnection) {
     this.pool = new pg.Pool({ ...connection, max: 10, connectionTimeoutMillis: 5_000 });
@@ -108,16 +108,36 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   /** The transaction of the request being served. Throws outside `withContext`/`withAnonymous`. */
   current(): Tx {
-    const tx = this.store.getStore();
+    const tx = this.store.getStore()?.tx;
     if (!tx) throw new Error('no database transaction in progress: use withContext() or withAnonymous()');
     return tx;
   }
 
+  /**
+   * Runs `task` once the transaction of the request has committed; if it rolls back, the task is dropped. For what cannot be undone
+   * (deleting the bytes of a file, D-S5) and so must wait until the rows say so. A task that fails is logged and does not touch the
+   * answer: the commit already happened.
+   */
+  afterCommit(task: () => void | Promise<void>): void {
+    const scope = this.store.getStore();
+    if (!scope) throw new Error('no database transaction in progress: use withContext() or withAnonymous()');
+    scope.afterCommit.push(task);
+  }
+
   private async run<T>(fn: (tx: Tx) => Promise<T>, setup: (tx: Tx) => Promise<void>): Promise<T> {
     if (this.store.getStore()) throw new Error('a database transaction is already in progress');
-    return this.db.transaction(async (tx) => {
+    const afterCommit: Array<() => void | Promise<void>> = [];
+    const result = await this.db.transaction(async (tx) => {
       await setup(tx);
-      return this.store.run(tx, () => fn(tx));
+      return this.store.run({ tx, afterCommit }, () => fn(tx));
     });
+    for (const task of afterCommit) {
+      try {
+        await task();
+      } catch (error) {
+        this.logger.error(`after-commit task failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+    return result;
   }
 }

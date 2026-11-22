@@ -191,11 +191,14 @@ services:
       # La semilla cifra los perfiles de demostración con las mismas claves que la API (H5-perfil).
       SENSITIVE_KEY_FILE: /run/onway/sensitive/key
       DOCUMENT_HASH_KEY_FILE: /run/onway/fingerprint/key
+      FILES_DIR: /files
     volumes:
       - { type: volume, source: secrets, target: /run/onway/owner, read_only: true, volume: { subpath: owner } }
       - { type: volume, source: secrets, target: /run/onway/sensitive, read_only: true, volume: { subpath: sensitive } }
       - { type: volume, source: secrets, target: /run/onway/fingerprint, read_only: true, volume: { subpath: fingerprint } }
       - geodata:/geodata:ro
+      # La semilla guarda el certificado PDF inventado de rescatista1 donde lo lee la API (H5-habilidades).
+      - files:/files
     depends_on:
       migrate:
         condition: service_completed_successfully

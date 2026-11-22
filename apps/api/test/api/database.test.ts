@@ -93,6 +93,71 @@ describe('transaction context (D-H0-02, doc 05 §6.1)', () => {
   });
 });
 
+describe('afterCommit (D-S5)', () => {
+  it('runs its tasks after the COMMIT, in order, and a task sees the committed rows', async () => {
+    const name = `Committed ${Date.now()}`;
+    const seen: string[] = [];
+    await db.withContext(ctx(a, a.coordinator), async (tx) => {
+      await tx.insert(teams).values({ organizationId: a.orgId, name, locality: 'Nowhere' });
+      db.afterCommit(async () => {
+        seen.push(`first:${(await fixtures.query(`SELECT 1 FROM teams WHERE name = $1`, [name])).length}`);
+      });
+      db.afterCommit(() => {
+        seen.push('second');
+      });
+      expect(seen).toEqual([]);
+    });
+    expect(seen).toEqual(['first:1', 'second']);
+  });
+
+  it('drops its tasks when the transaction rolls back', async () => {
+    let ran = false;
+    await expect(
+      db.withContext(ctx(a, a.coordinator), async () => {
+        db.afterCommit(() => {
+          ran = true;
+        });
+        throw new Error('boom');
+      }),
+    ).rejects.toThrow('boom');
+    expect(ran).toBe(false);
+  });
+
+  it('a task that fails does not break the answer nor the later tasks', async () => {
+    let later = false;
+    const result = await db.withContext(ctx(a, a.coordinator), async () => {
+      db.afterCommit(() => {
+        throw new Error('disk is gone');
+      });
+      db.afterCommit(() => {
+        later = true;
+      });
+      return 'answer';
+    });
+    expect(result).toBe('answer');
+    expect(later).toBe(true);
+  });
+
+  it('is refused outside a transaction, and an independent transaction keeps its own tasks', async () => {
+    expect(() => db.afterCommit(() => {})).toThrow(/no database transaction in progress/);
+    const order: string[] = [];
+    await expect(
+      db.withContext(ctx(a, a.coordinator), async () => {
+        db.afterCommit(() => {
+          order.push('request');
+        });
+        await db.independent(async () => {
+          db.afterCommit(() => {
+            order.push('independent');
+          });
+        });
+        throw new Error('request fails');
+      }),
+    ).rejects.toThrow('request fails');
+    expect(order).toEqual(['independent']);
+  });
+});
+
 describe('INV-01 through the API connection', () => {
   const userIdsOfA = () => [a.admin.userId, a.coordinator.userId, a.rescuer.userId];
 
