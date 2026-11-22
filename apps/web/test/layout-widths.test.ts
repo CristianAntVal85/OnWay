@@ -79,16 +79,16 @@ describe('anchos de página (T6)', () => {
 
 describe('cada página lleva la clase de su tipo', () => {
   const WIDE = ['create-mission-page', 'mission-detail-page', 'my-mission-detail-page', 'routes-page', 'route-detail-page', 'route-editor-page', 'generate-routes-page', 'import-route-page'];
-  const FLOW = ['home-page', 'my-missions-page', 'missions-page'];
+  const FLOW = ['home-page', 'my-missions-page', 'missions-page', 'teams/teams-page'];
   // Lectura y formularios (sin clase, 64rem): Administración, Cuenta, Mi perfil, 403, 404 y «más adelante».
-  const READING = ['admin-page', 'account-page', 'profile-page', 'forbidden-page', 'not-found-page', 'later-page'];
+  const READING = ['admin-page', 'account-page', 'profile-page', 'forbidden-page', 'not-found-page'];
 
   it.each(WIDE)('%s es una página con mapa (page-wide)', (page) => {
     expect(read(`src/pages/${page}.tsx`)).toMatch(/className="[^"]*\bpage-wide\b(?!-)[^"]*"/);
   });
 
   it.each(FLOW)('%s es una lista (page-wide-flow)', (page) => {
-    expect(read(`src/pages/${page}.tsx`)).toMatch(/className="[^"]*\bpage-wide-flow\b[^"]*"/);
+    expect(read(page.includes('/') ? `src/${page}.tsx` : `src/pages/${page}.tsx`)).toMatch(/className="[^"]*\bpage-wide-flow\b[^"]*"/);
   });
 
   it.each(READING)('%s es de lectura (ni page-wide ni page-wide-flow)', (page) => {

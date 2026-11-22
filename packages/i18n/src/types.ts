@@ -85,6 +85,36 @@ export interface Messages {
   common: { more: string; export: string };
   forbidden: { title: string; body: string; goHome: string };
   notFound: { title: string; body: string; goHome: string };
+  /** Equipos (H5-equipos, RF-801, doc 02 §3.8): la lista, crear y editar. */
+  teams: {
+    title: string;
+    createCta: string;
+    tabsLabel: string;
+    tabs: { active: string; archived: string };
+    searchLabel: string;
+    searchSubmit: string;
+    clearSearch: string;
+    summary: string;
+    empty: { active: string; archived: string };
+    emptySearch: string;
+    row: { locality: string; members: string; edit: string; editLabel: string };
+    form: {
+      createTitle: string;
+      editTitle: string;
+      name: string;
+      locality: string;
+      code: string;
+      nameRequired: string;
+      localityRequired: string;
+      codeInvalid: string;
+      duplicateName: string;
+      duplicateCode: string;
+      saveCreate: string;
+      saveEdit: string;
+      saving: string;
+      cancel: string;
+    };
+  };
   later: { title: string; body: string };
   /** Alta y Mi perfil del rescatista (H5-perfil, doc 02 §3.9). */
   profile: {
