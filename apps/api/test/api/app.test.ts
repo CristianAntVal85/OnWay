@@ -79,7 +79,7 @@ const ACCESS_BUILT: string[] = ['register', 'forgotPassword', 'resetPassword', '
  * each task (T3 to T5) appends the ids it mounts to `PROFILE_BUILT`.
  */
 const PROFILE_OPERATIONS = ['getMyProfile', 'updateMyProfile', 'getMySensitive', 'updateMe', 'changePassword'];
-const PROFILE_BUILT: string[] = ['getMyProfile', 'getMySensitive', 'updateMyProfile']; // T3 to T5
+const PROFILE_BUILT: string[] = ['getMyProfile', 'getMySensitive', 'updateMyProfile', 'updateMe', 'changePassword']; // T3 to T5
 const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT];
 
 const MOUNTED_IDS = [...BUILT, ...BUILT_IN_H5];

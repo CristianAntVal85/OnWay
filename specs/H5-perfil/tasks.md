@@ -55,7 +55,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - en la base, los bytes cifrados no contienen el texto en claro;
     - AC-02 cuenta 61.
 
-- [ ] **T5. `updateMe` y `changePassword`.** Cubre RF-102, D-P5 y D-P6.
+- [x] **T5. `updateMe` y `changePassword`.** Cubre RF-102, D-P5 y D-P6.
   - **Qué se hace:**
     - `updateMe` actualiza `display_name` y `locale` y devuelve `MeResponse`.
     - `changePassword` verifica la contraseña actual con `verifyPassword`; si es errónea, registra el intento con `auth_record_attempt(…, false, …)` y responde `INVALID_CREDENTIALS`.

@@ -64,6 +64,21 @@ export class IdentityController {
     noStore(response);
   }
 
+  @Operation('updateMe')
+  async updateMe(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'updateMe'>> {
+    const principal = request.principal!;
+    noStore(response);
+    const user = await this.auth.updateMe(this.database.current(), principal, input.body as { displayName?: string; locale?: 'es' | 'fr' });
+    return { user, csrfToken: principal.csrfToken };
+  }
+
+  @Operation('changePassword')
+  async changePassword(@Input() input: OperationInput, @Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<void> {
+    const { currentPassword, newPassword } = input.body as { currentPassword: string; newPassword: string };
+    await this.auth.changePassword(this.database.current(), request.principal!, currentPassword, newPassword);
+    noStore(response);
+  }
+
   @Operation('getMe')
   async getMe(@Req() request: OnwayRequest, @Res({ passthrough: true }) response: Response): Promise<OperationOutput<'getMe'>> {
     const principal = request.principal!;

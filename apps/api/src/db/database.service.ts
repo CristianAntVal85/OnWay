@@ -98,6 +98,14 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     return this.run(fn, async () => {});
   }
 
+  /**
+   * An anonymous transaction of its own, outside the one of the request: it commits even when the request then fails and rolls back.
+   * Only for what must stay counted whatever happens next (a failed password check, D-P5); it must not touch rows the request has locked.
+   */
+  async independent<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+    return this.store.exit(() => this.withAnonymous(fn));
+  }
+
   /** The transaction of the request being served. Throws outside `withContext`/`withAnonymous`. */
   current(): Tx {
     const tx = this.store.getStore();
