@@ -6,18 +6,19 @@ Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya n
 
 ## Dónde estamos
 - En `main`: MVP (H0 a H4), `H5-acceso`, `UI-rediseno`, issues #17 y #18 (PR #21), `UI-simplificacion` con el fondo topográfico (PR #23, #24, #25 y #27), nombre de las rutas y desvincular (PR #26) pintar ruta y continuar a mano (PR #29), todo validado por sus revisores, y tres ajustes de interfaz (PR #31: nombre de ruta de la misión a su detalle con vuelta, historial plegado, sin botón «Tiempo» en Mis misiones; doc 02 v1.8).
-- `H5-perfil` construido en `hito/H5-perfil` (T1 a T10, `specs/H5-perfil/`), sin validar todavía. Sin pull requests abiertas.
+- `H5-perfil` construido y validado por sus cuatro revisores tras una vuelta de correcciones (`specs/H5-perfil/`); pull request abierta desde `hito/H5-perfil`.
 - El CI de GitHub Actions no arranca por la facturación de la cuenta: la verificación completa se hace en local.
 
 ## Siguiente paso
-- `/sdd-validate H5-perfil` (con `reviewer-security`, `reviewer-db` y `reviewer-ui`) y la pull request.
-- Después, `H5-habilidades` (cursos y certificados) y `H5-equipos` (usuarios, equipos y alias, Q-36), con `/sdd-plan`.
+- Fusionar la pull request de `H5-perfil` y `docker compose up --build` (genera las claves nuevas y completa los perfiles de la semilla).
+- Después, `/sdd-plan H5-habilidades` (cursos y certificados) y luego `H5-equipos` (usuarios, equipos y alias, Q-36).
 
 ## Pendiente del usuario
 - Ver el pintado real del mapa de carreteras en oscuro y en claro con la pila `onway` reconstruida.
 - Ver `forced-colors` en Windows real.
 - Revisar los pesos del perfil de montaña (H3, `specs/H3-generacion-rutas/revision-pesos.md`).
 - Decisiones abiertas (a) a (k): están en `docs/historial.md`.
+- Bajos de la validación de `H5-perfil` sin corregir: `specs/H5-perfil/tasks.md` (final).
 
 ## Hechos que conviene recordar
 - Tras cambiar de rama o fusionar: `docker compose up --build` en la pila `onway`.
