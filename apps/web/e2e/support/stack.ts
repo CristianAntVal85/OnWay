@@ -6,6 +6,7 @@ import { argon2, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import type { Page } from '@playwright/test';
 import { lastResetMailTo, type ResetMail } from './mail-log';
 
 export const ROOT = path.resolve(import.meta.dirname, '../../../..');
@@ -145,13 +146,15 @@ COMMIT;`);
 }
 
 /**
- * Una cuenta de rescatista recién aprobada, con el perfil incompleto, como la deja `admin_decide_signup` (H5-perfil). La demostración de
- * `H5-acceso` ya registra y aprueba por la web; esta no repite el registro porque el código de invitación es de toda la organización y
- * aquella lo regenera en paralelo, y el registro tiene límite por IP. Correo `e2e-…@example.org` y nombre «E2E …»: `retireE2eAccounts`
- * la desactiva al terminar.
+ * Una cuenta recién aprobada (rescatista o coordinador), como la deja `admin_decide_signup`. Un rescatista nace con el perfil incompleto
+ * (H5-perfil); un coordinador, sin perfil. La demostración de `H5-acceso` ya registra y aprueba por la web; esta no repite el registro
+ * porque el código de invitación es de toda la organización y aquella lo regenera en paralelo, y el registro tiene límite por IP. Correo
+ * `e2e-…@example.org` y nombre «E2E …»: `retireE2eAccounts` la desactiva al terminar. Nunca crea administradores: con dos activos, el
+ * intento de `LAST_ADMIN` de `h5-usuarios-demo` cambiaría de verdad la cuenta de la semilla.
  */
-export async function createApprovedRescuer(email: string, displayName: string, password: string): Promise<void> {
+export async function createApprovedAccount(email: string, displayName: string, password: string, role: 'rescuer' | 'coordinator'): Promise<void> {
   if (!/^e2e-[a-z0-9-]+@example\.org$/.test(email) || !/^E2E [A-Za-z0-9 ]+$/.test(displayName)) throw new Error('unsafe E2E account');
+  if (role !== 'rescuer' && role !== 'coordinator') throw new Error('unsafe E2E role');
   const hash = await hashPassword(password);
   const admin = demo.members.find((m) => m.role === 'admin')!.email;
   await psqlAsOwner(`
@@ -160,13 +163,47 @@ WITH org AS (SELECT id FROM organizations WHERE name = '${ORG_A_NAME.replace(/'/
 usr AS (
   INSERT INTO users (email, password_hash, display_name, locale, account_status) VALUES ('${email}', '${hash}', '${displayName}', 'es', 'active') RETURNING id
 ), mem AS (
-  INSERT INTO memberships (organization_id, user_id, role, status) SELECT org.id, usr.id, 'rescuer', 'active' FROM org, usr RETURNING organization_id, user_id
+  INSERT INTO memberships (organization_id, user_id, role, status) SELECT org.id, usr.id, '${role}', 'active' FROM org, usr RETURNING organization_id, user_id
 ), req AS (
   INSERT INTO signup_requests (organization_id, user_id, status, decided_by, decided_at, granted_role)
-  SELECT mem.organization_id, mem.user_id, 'approved', (SELECT id FROM users WHERE email = '${admin}'), now(), 'rescuer' FROM mem RETURNING user_id
+  SELECT mem.organization_id, mem.user_id, 'approved', (SELECT id FROM users WHERE email = '${admin}'), now(), '${role}' FROM mem RETURNING user_id
 )
-INSERT INTO rescuer_profiles (organization_id, user_id, full_name) SELECT mem.organization_id, mem.user_id, '${displayName}' FROM mem;
+${role === 'rescuer' ? `INSERT INTO rescuer_profiles (organization_id, user_id, full_name) SELECT mem.organization_id, mem.user_id, '${displayName}' FROM mem;` : 'SELECT 1;'}
 COMMIT;`);
+}
+
+/** Una cuenta de rescatista recién aprobada, con el perfil incompleto (H5-perfil). */
+export const createApprovedRescuer = (email: string, displayName: string, password: string) => createApprovedAccount(email, displayName, password, 'rescuer');
+
+/**
+ * Crea por la API una misión «E2E …» (en planificación, es decir, abierta) con la sesión de la página: quien la crea es su responsable
+ * (RN-11). Se cierra al terminar con `closeLeftoverE2eMissions`.
+ */
+export async function createE2eMission(page: Page, name: string): Promise<string> {
+  if (!/^E2E [A-Za-z0-9 ]+$/.test(name)) throw new Error('unsafe E2E mission name');
+  const me = (await (await page.request.get('/api/v1/auth/me')).json()) as { csrfToken: string };
+  const response = await page.request.post('/api/v1/missions', {
+    data: { name, target: { source: 'coordinates', lat: 42.6, lon: 0.1 } },
+    headers: { 'X-CSRF-Token': me.csrfToken },
+  });
+  if (response.status() >= 300) throw new Error(`createMission failed (${response.status()}): ${await response.text()}`);
+  return ((await response.json()) as { id: string }).id;
+}
+
+/** El correo del coordinador responsable de una misión «E2E …» (RN-11), leído de la base. */
+export async function missionResponsible(name: string): Promise<string> {
+  if (!/^E2E [A-Za-z0-9 ]+$/.test(name)) throw new Error('unsafe E2E mission name');
+  return (await psqlAsOwner(`SELECT u.email FROM missions m JOIN users u ON u.id = m.coordinator_id WHERE m.name = '${name}';`)).trim();
+}
+
+/** Los detalles de las filas `mission_updated` de una misión «E2E …», de la más antigua a la más reciente (la reasignación deja una por misión). */
+export async function missionUpdates(name: string): Promise<Record<string, unknown>[]> {
+  if (!/^E2E [A-Za-z0-9 ]+$/.test(name)) throw new Error('unsafe E2E mission name');
+  const out = await psqlAsOwner(`SELECT detail::text FROM audit_log WHERE action = 'mission_updated' AND entity_id = (SELECT id FROM missions WHERE name = '${name}') ORDER BY id;`);
+  return out
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
 }
 
 /**

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Comprobación de humo de la pila de `docker compose up`: salud, página de acceso y el ciclo
 # login -> getMe -> logout con cookie y CSRF, para un administrador, un coordinador y dos rescatistas (uno con el perfil incompleto). Comprueba también el acceso de H5:
-# el administrador lee el código de invitación y los demás reciben 403, `register` con un código inválido da REGISTRATION_FAILED,
+# el administrador lee el código de invitación y los demás reciben 403, lista a los usuarios (H5-usuarios; un coordinador recibe 403 y la ficha no trae documento ni dirección), `register` con un código inválido da REGISTRATION_FAILED,
 # `forgotPassword` responde 202 y la bandeja del administrador trae la solicitud de `pendiente@example.org`. No registra ninguna cuenta ni
 # envía ningún correo (el correo del `forgotPassword` no existe), así que no deja nada en la pila.
 # Uso (desde la raíz del repositorio): infra/scripts/smoke.sh [URL]   (por defecto http://localhost:8080)
@@ -183,6 +183,23 @@ signups="$(login_as admin@example.org; curl -s -b "$jar" "$base/api/v1/admin/sig
 echo "$signups" | grep -q '"email":"pendiente@example.org"' || fail "listSignupRequests does not list the pending request of pendiente@example.org: $signups"
 echo "$signups" | grep -q "$invite_code" && fail "listSignupRequests carries the invite code"
 echo "ok  admin: getInviteCode 200 with a code (coordinator and rescuer 403); the inbox lists the pending request of pendiente@example.org"
+
+# Usuarios (H5-usuarios): el administrador lista a los miembros (la semilla trae 9: 1 administrador, 2 coordinadores y 6 rescatistas, y la
+# solicitud pendiente no cuenta), un coordinador recibe 403, y la ficha de rescatista1 trae sus habilidades y ni documento ni dirección.
+login_as admin@example.org
+users="$(curl -s -b "$jar" "$base/api/v1/admin/users?pageSize=50")"
+[ "$(echo "$users" | grep -o '"userId"' | wc -l)" -ge 9 ] || fail "listUsers must list at least 9 users: $users"
+echo "$users" | grep -q '"email":"pendiente@example.org"' && fail "listUsers lists the pending request of pendiente@example.org"
+found="$(curl -s -b "$jar" "$base/api/v1/admin/users?q=rescatista1&pageSize=50")"
+user_id="$(echo "$found" | sed -n 's/.*"userId":"\([^"]*\)","displayName":"[^"]*","email":"rescatista1@example.org".*/\1/p')"
+[ -n "$user_id" ] || fail "cannot find rescatista1 in listUsers: $found"
+detail="$(curl -s -b "$jar" "$base/api/v1/admin/users/$user_id")"
+echo "$detail" | grep -q '"skills":\[{' || fail "getUser for rescatista1 carries no skills: $detail"
+echo "$detail" | grep -Eq '"(document|address)"' && fail "getUser carries a document or an address: $detail"
+echo "$detail" | grep -q '00000001R' && fail "getUser carries the document number"
+login_as coordinador@example.org
+[ "$(status -b "$jar" "$base/api/v1/admin/users?pageSize=50")" = 403 ] || fail "listUsers as the coordinator must be 403"
+echo "ok  users: the administrator lists 9 or more members (not the pending one), getUser of rescatista1 has skills and no document or address, the coordinator gets 403"
 
 register_body="{\"email\":\"smoke-register@example.org\",\"password\":\"$password\",\"passwordConfirm\":\"$password\",\"displayName\":\"Smoke ficticio\",\"inviteCode\":\"INVALID-CODE-0000\",\"locale\":\"es\"}"
 register_out="$(curl -s -w ' %{http_code}' -H 'Content-Type: application/json' -d "$register_body" "$base/api/v1/auth/register")"
