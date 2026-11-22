@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.16 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
+**Versión:** 1.17 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -110,7 +110,7 @@ El registro tiene **99 operaciones**, cada una asignada a un **hito de construcc
 
 | Hito | H0 | H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8 | H9 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Operaciones | 5 | 18 | 15 | 6 | 9 | 27 | 17 | 0 | 1 | 1 |
+| Operaciones | 5 | 18 | 15 | 6 | 9 | 28 | 16 | 0 | 1 | 1 |
 
 Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesión pero sin aprobar. En entrada, `campo?` es opcional. **Q-14 (resuelta, 2026-10-31: no):** las operaciones que escriben sobre misiones y rutas solo admiten *Coordinador* (constante `MISSION_WRITERS`); el administrador las lee. La base de datos lo repite en sus políticas de seguridad por filas y en INV-03 (migración 0011, doc. 05 §6.3), así que ya no basta cambiar la constante: habría que cambiar también la base.
 
@@ -224,12 +224,12 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | Operación | Petición | Quién | Entrada | Respuesta | Errores propios |
 |---|---|---|---|---|---|
 | `listTeams` · **H5**<br>Equipos de la organización | `GET /teams` | Coordinador, Admin | consulta: page?, pageSize?, status?, q? | 200: items, page, pageSize, total | — |
-| `createTeam` · **H5**<br>Crear equipo (nombre y localidad obligatorios) *(auditado)* | `POST /teams` | Coordinador, Admin | cuerpo: name, locality | 201: id, name, locality, status, memberCount, members, createdAt | `DUPLICATE_NAME` |
-| `getTeam` · **H5**<br>Detalle de equipo con sus miembros (solo nombres) | `GET /teams/{teamId}` | Coordinador, Admin | ruta: teamId | 200: id, name, locality, status, memberCount, members, createdAt | — |
-| `updateTeam` · **H5**<br>Editar o archivar un equipo *(auditado)* | `PATCH /teams/{teamId}` | Coordinador, Admin | ruta: teamId<br>cuerpo: name?, locality?, status? | 200: id, name, locality, status, memberCount, members, createdAt | `DUPLICATE_NAME` |
-| `addTeamMembers` · **H5**<br>Añadir miembros *(auditado)* | `POST /teams/{teamId}/members` | Coordinador, Admin | ruta: teamId<br>cuerpo: userIds | 200: id, name, locality, status, memberCount, members, createdAt | — |
+| `createTeam` · **H5**<br>Crear equipo (nombre y localidad obligatorios) *(auditado)* | `POST /teams` | Coordinador, Admin | cuerpo: name, locality, code | 201: id, name, locality, code, status, memberCount, members, createdAt | `DUPLICATE_NAME` |
+| `getTeam` · **H5**<br>Detalle de equipo con sus miembros (solo nombres) | `GET /teams/{teamId}` | Coordinador, Admin | ruta: teamId | 200: id, name, locality, code, status, memberCount, members, createdAt | — |
+| `updateTeam` · **H5**<br>Editar o archivar un equipo *(auditado)* | `PATCH /teams/{teamId}` | Coordinador, Admin | ruta: teamId<br>cuerpo: name?, locality?, code?, status? | 200: id, name, locality, code, status, memberCount, members, createdAt | `DUPLICATE_NAME` |
+| `addTeamMembers` · **H5**<br>Añadir miembros *(auditado)* | `POST /teams/{teamId}/members` | Coordinador, Admin | ruta: teamId<br>cuerpo: userIds | 200: id, name, locality, code, status, memberCount, members, createdAt | `INVALID_STATE_TRANSITION` |
 | `removeTeamMember` · **H5**<br>Quitar un miembro *(auditado)* | `DELETE /teams/{teamId}/members/{userId}` | Coordinador, Admin | ruta: teamId, userId | 204 | — |
-| `listRescuers` · **H6**<br>Selector de rescatistas con perfil completo | `GET /rescuers` | Coordinador, Admin | consulta: page?, pageSize?, q?, teamId?, profileComplete? | 200: items, page, pageSize, total | — |
+| `listRescuers` · **H5**<br>Selector de rescatistas con perfil completo | `GET /rescuers` | Coordinador, Admin | consulta: page?, pageSize?, q?, teamId?, profileComplete? | 200: items, page, pageSize, total | — |
 
 ### Rutas
 
@@ -279,7 +279,7 @@ Roles: *Rescatista*, *Coordinador*, *Admin*; *Pendiente* es una cuenta con sesi�
 | Operación | Petición | Quién | Entrada | Respuesta | Errores propios |
 |---|---|---|---|---|---|
 | `listMyMissions` · **H1**<br>Misiones activas y cerradas, con el estado de mi oferta | `GET /my/missions` | Rescatista | consulta: page?, pageSize?, status?, q? | 200: items, page, pageSize, total | — |
-| `getMyMission` · **H1**<br>Detalle de misión en solo lectura | `GET /my/missions/{missionId}` | Rescatista | ruta: missionId | 200: id, name, description, status, target, coordinatorName, points, myParticipation, canOffer, … | — |
+| `getMyMission` · **H1**<br>Detalle de misión en solo lectura | `GET /my/missions/{missionId}` | Rescatista | ruta: missionId | 200: id, name, description, status, target, coordinatorName, coordinatorAlias, points, myParticipation, … | — |
 | `offerToMission` · **H6**<br>Me ofrezco como voluntario *(auditado)* | `POST /my/missions/{missionId}/offer` | Rescatista | ruta: missionId | 201: status, offeredAt, decidedAt | `PROFILE_INCOMPLETE` `MISSION_NOT_ACTIVE` `ALREADY_OFFERED` |
 | `withdrawOffer` · **H6**<br>Retirar mi oferta *(auditado)* | `DELETE /my/missions/{missionId}/offer` | Rescatista | ruta: missionId | 200: status, offeredAt, decidedAt | `MISSION_NOT_ACTIVE` `INVALID_STATE_TRANSITION` |
 | `listMyMissionRoutes` · **H4**<br>Rutas validadas de la misión | `GET /my/missions/{missionId}/routes` | Rescatista | ruta: missionId | 200: items | — |
@@ -472,6 +472,7 @@ Estas tablas son las que hacen cumplir RN-18 y RN-21. Lo que no aparece aquí **
 | `id` | uuid |  |
 | `name` | texto |  |
 | `locality` | texto |  |
+| `code` | texto | `^[A-Z0-9]{3}$` |
 | `status` | active \| archived |  |
 | `memberCount` | entero | ≥0 |
 
@@ -552,6 +553,7 @@ Estas tablas son las que hacen cumplir RN-18 y RN-21. Lo que no aparece aquí **
 | `target.country` | texto \| null |  |
 | `target.source` | coordinates \| map \| address |  |
 | `coordinatorName` | texto \| null |  |
+| `coordinatorAlias` | texto \| null |  |
 | `validatedRoutes` | entero | ≥0 |
 | `myParticipation` | objeto \| null |  |
 | `myParticipation.status` | pending \| accepted \| not_selected \| withdrawn \| removed |  |
@@ -576,6 +578,7 @@ Estas tablas son las que hacen cumplir RN-18 y RN-21. Lo que no aparece aquí **
 | `target.country` | texto \| null |  |
 | `target.source` | coordinates \| map \| address |  |
 | `coordinatorName` | texto \| null |  |
+| `coordinatorAlias` | texto \| null |  |
 | `points` | lista de objeto |  |
 | `points[].id` | uuid |  |
 | `points[].kind` | origin \| waypoint \| rendezvous |  |
@@ -863,6 +866,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.17 | 2026-11-22 | `H5-equipos` (T1, `specs/H5-equipos/`). `listRescuers` pasa de H6 a H5 (H5 pasa a 28 operaciones y H6 a 16): es el selector de miembros del equipo. `TeamItem` y `TeamDetail` ganan `code` (tres caracteres, único en la organización, Q-36); `CreateTeamRequest` lo exige y `UpdateTeamRequest` lo admite (no toca los alias ya fijados, D-E6). `DUPLICATE_NAME` en equipos lleva `details.field`: `name` o `code`. `addTeamMembers` declara `INVALID_STATE_TRANSITION` (equipo archivado, D-E5). `MyMissionListItem` y `MyMissionDetail` ganan `coordinatorAlias` (D-E3); `listMyMissionRoutes.team` sale también si la persona no es miembro (D-34). Notas de los equipos y de `listRescuers`. 99 operaciones; sin códigos de error nuevos |
 | 1.15 | 2026-11-22 | `H5-usuarios` (T1, `specs/H5-usuarios/`). Solo notas, sin cambios de esquema: `listUsers` (solo miembros, D-U6; orden por nombre), `getUser` (sin documento ni dirección; el certificado se abre con `getCertificateLink`) y `updateUser` (reasignación de misiones con `reassignMissionsTo`, `COORDINATOR_HAS_MISSIONS` con `missionIds`, `LAST_ADMIN`, perfil incompleto al pasar a rescatista, `INVALID_STATE_TRANSITION`, auditoría). `listRescuers` pasa de H6 a H5 en `H5-equipos` (T1 de esa parte cambia su `x-milestone`) |
 | 1.16 | 2026-11-22 | `H5-usuarios`, vuelta 1 de la validación. `updateUser` declara `INVALID_STATE_TRANSITION` en su lista de errores (ya lo devolvía y lo anotaba). `listUsers`, `getUser` y `updateUser` tratan las cuentas anonimizadas (INV-22) como inexistentes: fuera de la lista y `NOT_FOUND` |
 | 1.14 | 2026-11-22 | `H5-habilidades` (T1, `specs/H5-habilidades/`). Operación nueva `openCertificate` (`GET /certificates/{token}`, todos los roles, respuesta de archivo `application/pdf | image/jpeg | image/png`, `x-milestone: H5`, sin auditoría, AC-14): sirve el certificado con el enlace firmado de `getCertificateLink`, que caduca a los 5 minutos, vale solo para quien lo pidió y da `404 NOT_FOUND` en cualquier otro caso. Notas de `getCertificateLink` (quién abre qué, INV-28; auditoría solo de la apertura ajena, INV-26), `uploadFile` (`certificate` queda abierto al rescatista y al coordinador o administrador les da `FORBIDDEN`), `createMySkill` y `updateMySkill` (certificado propio y sin adjuntar, `certificateFileId: null` lo quita, reglas de `SkillInput` sobre el resultado, máximo 50 entradas). `SignedLink.url` pasa de URL absoluta a ruta del mismo origen (`/api/v1/certificates/<token>`; T4): el servidor no necesita conocer su dirección pública. 99 operaciones (H5 pasa a 27); sin esquemas ni códigos de error nuevos |

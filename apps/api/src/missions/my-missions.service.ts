@@ -76,6 +76,7 @@ export class MyMissionsService {
       status: row.status,
       target: target(row),
       coordinatorName: row.coordinator_name,
+      coordinatorAlias: null, // provisional (H5-equipos T1): mission_coordinator_alias llega en T4
       validatedRoutes: row.validated_routes,
       myParticipation: participation(row),
     }));
@@ -116,6 +117,7 @@ export class MyMissionsService {
       status: row.status,
       target: target(row),
       coordinatorName: row.coordinator_name,
+      coordinatorAlias: null, // provisional (H5-equipos T1): mission_coordinator_alias llega en T4
       points: points.map((p) => ({ id: p.id, kind: p.kind, name: p.name, note: p.note, lat: p.lat, lon: p.lon, elevationM: p.elevation_m, position: p.position })),
       myParticipation: mine,
       canOffer: offerBlockedReason === null,

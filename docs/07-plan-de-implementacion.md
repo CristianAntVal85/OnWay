@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.24 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
+**Versión:** 0.25 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -145,7 +145,7 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 > | **`H5-perfil`** (`specs/H5-perfil/`) | `getMyProfile`, `updateMyProfile`, `getMySensitive`, `updateMe`, `changePassword`. Alta obligatoria en la web, datos sensibles cifrados (AES-256-GCM, huella HMAC), INV-18, 24, 31 y 32 | 65 |
 > | **`H5-habilidades`** (`specs/H5-habilidades/`) | `listMySkills`, `createMySkill`, `updateMySkill`, `deleteMySkill`, `getCertificateLink` y `openCertificate` (nueva, D-S1: sirve el archivo con el enlace firmado; antes no había forma de entregar los bytes dentro del contrato) | 71 |
 > | **`H5-usuarios`** (`specs/H5-usuarios/`) | `listUsers`, `getUser`, `updateUser`. Administración de usuarios (RF-813): cambiar el rol, desactivar y reactivar, con la reasignación de misiones (RN-11, migración 0014). INV-25 y 29 | 74 |
-> | **`H5-equipos`** | `listTeams`, `createTeam`, `getTeam`, `updateTeam`, `addTeamMembers`, `removeTeamMember` y `listRescuers` (adelantada de H6 a H5: es el selector de miembros del coordinador), más D-34, el alias de personas (Q-36, B-02) y el selector de RF-805. INV-23 | 81 |
+> | **`H5-equipos`** | `listTeams`, `createTeam`, `getTeam`, `updateTeam`, `addTeamMembers`, `removeTeamMember` y `listRescuers` (adelantada de H6 a H5: es el selector de miembros del coordinador), más D-34, el alias de personas (Q-36, B-02: código del equipo, alias del coordinador responsable para el rescatista) y el selector de RF-805. INV-23 | 81 |
 >
 > **Tal como se construyó (`H5-perfil`, 2026-11-22).** Las 5 operaciones montadas y probadas (65 con las 60 anteriores; las 15 de `H5-habilidades` y `H5-equipos` responden 404; la cuenta original, 63, se contó mal), **sin migración**. **API:** módulo `src/sensitive/` (AES-256-GCM por campo con `profile_id ‖ campo` como datos autenticados, huella HMAC-SHA256 con otra clave, claves derivadas con HKDF de dos archivos del volumen `secrets`; sin ellas la API no arranca); `src/profile/` (cada entidad del perfil se lee de su tabla, INV-32; `DOCUMENT_ALREADY_REGISTERED` sale de la restricción única, INV-24; auditoría con los bloques tocados, nunca valores); `updateMe` y `changePassword` (mantiene la sesión actual, cierra las demás y cuenta la contraseña errónea como intento fallido, en una transacción propia: `DatabaseService.independent`). Un refinamiento del contrato cuyo mensaje es un código que la operación declara responde ese código (`INVALID_DOCUMENT`). **Web:** alta obligatoria (guardia en `RequireActive`, barra con Mi perfil y Cuenta), formulario con los esquemas del contrato, Mi perfil con «Mostrar» y «Ocultar», Cuenta con nombre visible, idioma guardado en la cuenta (cambia D-H0-21) y cambiar contraseña. **Semilla:** `rescatista1` a `5` completos (DNI `00000001R` a `00000005M`), `rescatista6` incompleto. **Demostración:** `h5-perfil-demo.spec.ts` (escritorio y 375 px); la cuenta se crea ya aprobada en la base, porque el registro ya lo enseña `h5-acceso-demo.spec.ts` y aquella regenera el código de invitación en paralelo. **Desviaciones:** `changePassword` pasa a auditada y añade `ACCOUNT_LOCKED` (doc 06 v1.13); `access.spec.ts` deja a `coordinatrice` en francés al acabar, porque el idioma de Cuenta ya se guarda en la cuenta. Dependencias nuevas: ninguna. **Validación (2026-11-22):** `reviewer`, `reviewer-security` y `reviewer-db` aprueban; `reviewer-ui` pidió dos cambios medios de foco (el primer error en el orden de la pantalla y la vuelta a «Corregir mis datos» al cerrarlo), corregidos en una vuelta junto con tres bajos (dos primeras altas simultáneas ya no dan un «documento ya registrado» falso: se hace *upsert* y solo la restricción de INV-24 da ese error; la semilla no pisa un teléfono ya guardado; «Mostrar»/«Ocultar» sin `aria-pressed` y los datos ocultos se leen como frase). Los demás bajos quedan en `docs/estado.md`.
 
@@ -249,7 +249,7 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 |---|---|
 | **Demostración** | Un rescatista se ofrece a una misión activa. El coordinador acepta varios a la vez, añade un equipo entero y un rescatista suelto. Cierra la misión marcando quién participó. El historial del rescatista muestra solo los confirmados. El administrador lee un dato sensible y la lectura queda registrada. El rescatista ve quién consultó sus datos y borra los suyos: el historial se anonimiza |
 | **Alcance** | RF-208 (completo), 605, 802, 803, 804, 809, 810, 812. Bocetos 7 y 8 completos |
-| **Operaciones (17)** | `listRescuers`, `addMissionTeams`, `removeMissionTeam`, `listParticipations`, `getParticipationCard`, `addParticipants`, `bulkParticipations`, `listAttendanceCandidates`, `offerToMission`, `withdrawOffer`, `listMyHistory`, `listMyAccessLog`, `deleteMyData`, `exportMyData`, `readUserSensitive`, `listUserHistory`, `listAuditLog` |
+| **Operaciones (16)** | `addMissionTeams`, `removeMissionTeam`, `listParticipations`, `getParticipationCard`, `addParticipants`, `bulkParticipations`, `listAttendanceCandidates`, `offerToMission`, `withdrawOffer`, `listMyHistory`, `listMyAccessLog`, `deleteMyData`, `exportMyData`, `readUserSensitive`, `listUserHistory`, `listAuditLog` |
 | **Salida** | INV-09, 10, 12, 19, 20, 21, 22, 26, 27, 28. RN-21: la lista de voluntarios solo lleva nombre, equipo y localidad. "Quitar" exige confirmar con el número de afectados. Una acción en bloque sobre una selección grande es atómica |
 | **Riesgos** | Reglas de visibilidad con muchos matices (INV-28): cada una con su prueba |
 
@@ -344,6 +344,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.25 | 2026-11-22 | `H5-equipos` (T1): la fila de `H5-equipos` recoge el código del equipo y el alias del responsable (`coordinatorAlias`); H5 pasa a 28 operaciones y H6 a 16 (`listRescuers` ya no está en la lista de H6) |
 | 0.24 | 2026-11-22 | `H5-usuarios`: validación y vuelta de tres medios y cuatro bajos |
 | 0.23 | 2026-11-22 | `H5-usuarios` (sección 3) al día tras construirlo (T9): «Tal como se construyó» con las 3 operaciones y la migración 0014 |
 | 0.22 | 2026-11-22 | Cambio de alcance: la antigua `H5-equipos` se parte en `H5-usuarios` (`listUsers`, `getUser`, `updateUser`; 74 montadas) y `H5-equipos` (las 6 de equipos y `listRescuers`, que pasa de H6 a H5; 81 montadas). Plan y tareas de la primera en `specs/H5-usuarios/` |

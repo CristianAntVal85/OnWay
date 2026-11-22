@@ -286,9 +286,11 @@ test('subida: solo dos finalidades', () => {
 });
 
 test('equipo: la localidad es obligatoria (INV-23)', () => {
-  bad(C.CreateTeamRequest, { name: 'Rescate Huesca' });
-  bad(C.CreateTeamRequest, { name: 'Rescate Huesca', locality: '  ' });
-  ok(C.CreateTeamRequest, { name: 'Rescate Huesca', locality: 'Huesca' });
+  bad(C.CreateTeamRequest, { name: 'Rescate Huesca', code: 'HSC' });
+  bad(C.CreateTeamRequest, { name: 'Rescate Huesca', locality: '  ', code: 'HSC' });
+  bad(C.CreateTeamRequest, { name: 'Rescate Huesca', locality: 'Huesca' });
+  bad(C.CreateTeamRequest, { name: 'Rescate Huesca', locality: 'Huesca', code: 'hsc' });
+  ok(C.CreateTeamRequest, { name: 'Rescate Huesca', locality: 'Huesca', code: 'HSC' });
 });
 
 test('error: forma única', () => {

@@ -96,9 +96,9 @@ export const MILESTONE_OF: Record<string, Milestone> = {
   updateTeam: 'H5',
   addTeamMembers: 'H5',
   removeTeamMember: 'H5',
+  listRescuers: 'H5', // adelantada de H6: es el selector de miembros del equipo
 
   // H6 · Voluntariado, cierre con asistencia, historial y privacidad
-  listRescuers: 'H6',
   addMissionTeams: 'H6',
   removeMissionTeam: 'H6',
   listParticipations: 'H6',

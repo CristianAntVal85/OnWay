@@ -358,3 +358,20 @@ test('openCertificate: GET con el token firmado, todos los roles, respuesta de a
   assert.equal(link.method, 'POST');
   assert.equal(link.audited, true);
 });
+
+test('listRescuers pasa a H5 (selector de miembros) y los equipos llevan código (Q-36, D-34)', () => {
+  const endpoint = C.ENDPOINTS.find((e) => e.id === 'listRescuers')!;
+  assert.equal(endpoint.milestone, 'H5');
+  assert.deepEqual([...endpoint.roles], ['coordinator', 'admin']);
+  assert.equal(C.ENDPOINTS.filter((e) => e.milestone === 'H5').length, 28);
+  assert.equal(C.ENDPOINTS.filter((e) => e.milestone === 'H6').length, 16);
+  assert.ok(C.TeamItem.shape.code.safeParse('ALC').success);
+  assert.ok(!C.TeamItem.shape.code.safeParse('alc').success);
+  assert.ok(!C.CreateTeamRequest.safeParse({ name: 'Rescate', locality: 'Huesca' }).success);
+  assert.ok(C.CreateTeamRequest.safeParse({ name: 'Rescate', locality: 'Huesca', code: 'HSC' }).success);
+  assert.ok(C.UpdateTeamRequest.safeParse({ code: 'HSC' }).success);
+  assert.ok(!C.UpdateTeamRequest.safeParse({ code: 'HS' }).success);
+  assert.ok('coordinatorAlias' in C.MyMissionDetail.shape && 'coordinatorAlias' in C.MyMissionListItem.shape);
+  for (const id of ['createTeam', 'updateTeam']) assert.ok(C.ENDPOINTS.find((e) => e.id === id)!.errors!.includes('DUPLICATE_NAME'));
+  assert.ok(C.ENDPOINTS.find((e) => e.id === 'addTeamMembers')!.errors!.includes('INVALID_STATE_TRANSITION'));
+});

@@ -199,6 +199,8 @@ export const MyMissionListItem = z.strictObject({
   status: z.enum(['active', 'closed']), // nunca planning (RN-16)
   target: Target,
   coordinatorName: z.string().nullable(),
+  /** Alias del responsable (Q-36, D-E3): lo que el rescatista ve en lugar del nombre. */
+  coordinatorAlias: z.string().nullable(),
   validatedRoutes: z.number().int().min(0),
   myParticipation: MyParticipation.nullable(),
 });
@@ -213,6 +215,8 @@ export const MyMissionDetail = z.strictObject({
   status: z.enum(['active', 'closed']),
   target: Target,
   coordinatorName: z.string().nullable(),
+  /** Alias del responsable (Q-36, D-E3): lo que el rescatista ve en lugar del nombre. */
+  coordinatorAlias: z.string().nullable(),
   points: z.array(MissionPoint),
   myParticipation: MyParticipation.nullable(),
   canOffer: z.boolean(),

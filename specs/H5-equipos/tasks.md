@@ -2,7 +2,7 @@
 
 Plan: `specs/H5-equipos/plan.md`. Las tareas van en orden de dependencia, con un commit por tarea: `<tipo>(H5-equipos): Tn <resumen>`.
 
-- [ ] **T1. Contrato y decisiones del alias.** Cubre Q-36 (detalle), D-34 y RF-801, adelanta `listRescuers` a H5 y añade `code` y `coordinatorAlias`.
+- [x] **T1. Contrato y decisiones del alias.** Cubre Q-36 (detalle), D-34 y RF-801, adelanta `listRescuers` a H5 y añade `code` y `coordinatorAlias`.
   - **Qué se hace:**
     - **`alias.ts`:** las funciones `normalizeWord`, `aliasBase` y `localityCode`, con sus pruebas unitarias.
     - **Contrato:** los cambios de `teams.ts`, `missions.ts` y `milestones.ts` y las notas de `endpoints.ts`, tal como los describe el plan §3. Se regeneran el OpenAPI y el doc 06, con su registro de cambios.
@@ -162,3 +162,8 @@ Plan: `specs/H5-equipos/plan.md`. Las tareas van en orden de dependencia, con un
   - **Archivos:** `docs/02-flujo-coordinador-y-vistas.md`, `docs/03-modelo-de-dominio.md`, `docs/05-modelo-de-datos.md`, `docs/07-plan-de-implementacion.md`, `docs/backlog-post-mvp.md`, `CLAUDE.md`, `docs/estado.md` y `docs/historial.md`.
   - **Comprobación:** `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test && pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`, y el E2E con `CI=1` en `onway-e2e`.
   - **Hecho cuando:** todo pasa y los documentos recogen lo construido y sus desviaciones.
+
+## Desviaciones y notas de la implementación
+
+- **T1.** `aliasBase` devuelve `user` si el nombre no tiene letras (el plan no lo cubría). `localityCode` rellena con `X` si la localidad tiene menos de tres letras. Las letras de relleno van detrás de las consonantes (Jaca → `JCA`). Las partículas saltadas son de, del, la, las, los, y, e.
+- **T1.** `my-missions.service.ts` lleva `coordinatorAlias: null` provisional hasta T4. Las pruebas del contrato nuevas (`registry`, `behavior`) cubren H5 = 28 y H6 = 16 operaciones. Doc 06 pasa a 1.17, doc 01 a 1.11 y doc 07 a 0.25 (la fila de `H5-equipos` ya existía desde la 0.22).
