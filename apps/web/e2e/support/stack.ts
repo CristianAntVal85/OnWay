@@ -169,6 +169,25 @@ INSERT INTO rescuer_profiles (organization_id, user_id, full_name) SELECT mem.or
 COMMIT;`);
 }
 
+/**
+ * Las filas de `audit_log` de una acción sobre los datos de una persona (`subject_user_id`), de la más antigua a la más reciente: quién la hizo
+ * (correo), el tipo de entidad y el detalle. La auditoría es de solo añadir: la demostración solo lee. Sirve a `h5-habilidades-demo`
+ * para comprobar INV-26 (una apertura ajena deja fila, la propia no).
+ */
+export async function auditRowsAbout(subjectEmail: string, action: string): Promise<{ actor: string | null; entityType: string; detail: Record<string, unknown> }[]> {
+  if (!/^[a-z0-9@.-]+$/.test(subjectEmail) || !/^[a-z_]+$/.test(action)) throw new Error('unsafe audit query');
+  const out = await psqlAsOwner(`SELECT coalesce(a.email, ''), l.entity_type, l.detail::text FROM audit_log l
+  LEFT JOIN users a ON a.id = l.actor_user_id
+  WHERE l.action = '${action}' AND l.subject_user_id = (SELECT id FROM users WHERE email = '${subjectEmail}') ORDER BY l.id;`);
+  return out
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [actor, entityType, ...rest] = line.split('|');
+      return { actor: actor || null, entityType: entityType!, detail: JSON.parse(rest.join('|')) as Record<string, unknown> };
+    });
+}
+
 function compose(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn('docker', ['compose', ...args], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });

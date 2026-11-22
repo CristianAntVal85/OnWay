@@ -130,7 +130,7 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
       - abrir el certificado, que llama a `getCertificateLink` y navega la pestaña;
       - que el diálogo se maneja con teclado.
 
-- [ ] **T8. Demostración extremo a extremo.** La historia de §1 del plan.
+- [x] **T8. Demostración extremo a extremo.** La historia de §1 del plan.
   - **Qué se hace:** `h5-habilidades-demo.spec.ts`, en escritorio y a 375 px:
     - una cuenta de rescatista completa y aprobada, creada en la base con `createApprovedRescuer`, a la que se le completa el perfil por API;
     - añade un curso con un PDF inventado que genera la prueba y una habilidad;
@@ -173,3 +173,5 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
 - **T7, no se pueden vaciar las fechas guardadas:** `updateMySkill` no admite `null` en `issuedOn` ni `expiresOn`, así que el diálogo solo envía una fecha que tenga valor; vaciar la entidad sí funciona (se envía `''`). El tipo (curso o habilidad) no se cambia al editar (el selector queda desactivado): pasar un curso con certificado a habilidad se resuelve quitando antes el certificado y creando otra entrada.
 - **T7, archivo ya subido:** si la subida sale bien y guardar la entrada falla, el diálogo recuerda el id del archivo y, al reintentar con el mismo archivo, no lo vuelve a subir. Si se cierra el diálogo, el archivo subido queda huérfano (ya anotado como riesgo del plan).
 - **T7, foco:** el foco de la sección tras eliminar pasa de un efecto sobre el número de entradas a un contador (`focusTick`), que sirve también tras «Adjuntar» (su botón desaparece al guardar). `test/support.tsx` guarda el `FormData` de la petición en `Call.form`; `uploadCertificate` y `useOpenCertificate` (con `PopupBlockedError`) están en `skills.ts`. Hoja `.skill-*`: dos reglas más.
+- **T8, el PDF queda retirado:** al cambiar el certificado por el PNG el servidor da `deleted_at` al PDF y borra sus bytes; la cuenta se queda con el PNG. La demostración corre en `desktop` y en `mobile` (se añadió a su `testMatch`); no necesita proyecto aparte porque no toca el código de invitación. Apoyo nuevo en `stack.ts`: `auditRowsAbout(correo, acción)`.
+- **T8, formato:** el commit de T7 dejó `skill-dialog.tsx` sin pasar Prettier; se formateó aquí junto con `playwright.config.ts`.

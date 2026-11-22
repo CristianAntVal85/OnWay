@@ -190,10 +190,38 @@ export function SkillDialog({ skill, focusFile = false, onClose, onSaved }: Prop
             <option value="skill">{t('profile.skills.kind.skill')}</option>
           </select>
         </div>
-        <TextField id="skill-issuer" name="issuer" type="text" label={t('profile.skills.fields.issuer')} inputRef={ref('issuer')} value={values.issuer} onChange={set('issuer')} error={problems.issuer} autoComplete="off" />
+        <TextField
+          id="skill-issuer"
+          name="issuer"
+          type="text"
+          label={t('profile.skills.fields.issuer')}
+          inputRef={ref('issuer')}
+          value={values.issuer}
+          onChange={set('issuer')}
+          error={problems.issuer}
+          autoComplete="off"
+        />
         <div className="field-row">
-          <TextField id="skill-issued-on" name="issuedOn" type="date" label={t('profile.skills.fields.issuedOn')} inputRef={ref('issuedOn')} value={values.issuedOn} onChange={set('issuedOn')} error={problems.issuedOn} />
-          <TextField id="skill-expires-on" name="expiresOn" type="date" label={t('profile.skills.fields.expiresOn')} inputRef={ref('expiresOn')} value={values.expiresOn} onChange={set('expiresOn')} error={problems.expiresOn} />
+          <TextField
+            id="skill-issued-on"
+            name="issuedOn"
+            type="date"
+            label={t('profile.skills.fields.issuedOn')}
+            inputRef={ref('issuedOn')}
+            value={values.issuedOn}
+            onChange={set('issuedOn')}
+            error={problems.issuedOn}
+          />
+          <TextField
+            id="skill-expires-on"
+            name="expiresOn"
+            type="date"
+            label={t('profile.skills.fields.expiresOn')}
+            inputRef={ref('expiresOn')}
+            value={values.expiresOn}
+            onChange={set('expiresOn')}
+            error={problems.expiresOn}
+          />
         </div>
         {isCourse && (
           <div className="field">
