@@ -19,6 +19,8 @@ import { MissionsModule } from './missions/missions.module.js';
 import { AvoidZonesModule } from './avoid-zones/avoid-zones.module.js';
 import { MissionRoutesModule } from './mission-routes/mission-routes.module.js';
 import { RoutesModule } from './routes/routes.module.js';
+import type { SensitiveKeys } from './sensitive/config.js';
+import { SensitiveModule } from './sensitive/sensitive.module.js';
 import { WeatherModule, type WeatherOptions } from './weather/weather.module.js';
 
 export interface AppOptions {
@@ -38,6 +40,8 @@ export interface AppOptions {
   weather?: WeatherOptions;
   /** The `Mailer` port and the origin of its links. Without it the console adapter answers; `main.ts` and the worker pass the ones read from the environment. */
   mail?: Partial<MailOptions>;
+  /** Keys of the sensitive data (doc 04 §6.3). Without them each app makes random ones in memory (tests); `main.ts` passes the secret files. */
+  sensitive?: SensitiveKeys;
   /** Only for tests: controllers of synthetic endpoints (outside the registry) that exercise the guards. */
   extraControllers?: Type<unknown>[];
 }
@@ -54,6 +58,7 @@ export class AppModule {
         RoutingModule.register(options.routing),
         JobsModule.register(options.jobs),
         DatabaseModule.register(options.database),
+        SensitiveModule.register(options.sensitive),
         AuditModule,
         IdentityModule.register(options.identity),
         FilesModule.register(options.files),

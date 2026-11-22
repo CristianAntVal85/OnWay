@@ -9,6 +9,7 @@ import { identityOptionsFromEnv } from './identity/config.js';
 import { mailOptionsFromEnv } from './mail/config.js';
 import { PgBossQueue } from './jobs/pg-boss-queue.js';
 import { createRoutingProvider } from './routing/config.js';
+import { sensitiveKeysFromEnv } from './sensitive/config.js';
 import { createWeatherProvider } from './weather/config.js';
 
 // The real adapters, always: tests inject their own through `createApp`, the running image never swaps in fakes (D-H1-15).
@@ -20,6 +21,7 @@ await queue.start();
 const app = await createApp({
   database,
   identity: identityOptionsFromEnv(),
+  sensitive: sensitiveKeysFromEnv(),
   clock,
   mail: mailOptionsFromEnv(),
   geo: { elevation: createElevationProvider(process.env), geocoding: createGeocodingProvider(clock, process.env) },

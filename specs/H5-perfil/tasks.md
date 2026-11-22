@@ -12,7 +12,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
   - **Comprobación:** `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc gen/ && pnpm check @onway/contracts`.
   - **Hecho cuando:** las pruebas del registro y de `schema-guards` pasan, y el doc 06 enseña las notas nuevas.
 
-- [ ] **T2. Cifrado y huella de los datos sensibles, con sus claves.** Doc 04 §6.3 y doc 05 §7.
+- [x] **T2. Cifrado y huella de los datos sensibles, con sus claves.** Doc 04 §6.3 y doc 05 §7.
   - **Qué se hace:**
     - `SensitiveCipher.encrypt(profileId, field, plaintext)` y `decrypt`, con el formato `nonce ‖ texto ‖ etiqueta`, AAD `profileId ‖ field` y `keyId`.
     - `DocumentFingerprint.of(type, number)`: HMAC sobre `type ‖ normalizeDocument(number)`.
