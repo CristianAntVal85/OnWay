@@ -6,11 +6,11 @@ Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya n
 
 ## Dónde estamos
 - En `main`: MVP (H0 a H4), `H5-acceso`, `UI-rediseno`, issues #17 y #18 (PR #21), `UI-simplificacion` con el fondo topográfico (PR #23, #24, #25 y #27), nombre de las rutas y desvincular (PR #26) pintar ruta y continuar a mano (PR #29), todo validado por sus revisores, y tres ajustes de interfaz (PR #31: nombre de ruta de la misión a su detalle con vuelta, historial plegado, sin botón «Tiempo» en Mis misiones; doc 02 v1.8).
-- `H5-perfil` y `H5-habilidades` fusionados (PR #32 y #33). `H5-usuarios` (lista, ficha, cambiar rol, desactivar con reasignación de misiones y reactivar; migración 0014) construido en 9 tareas en `hito/H5-usuarios`, pendiente de validar (`specs/H5-usuarios/`).
+- `H5-perfil` y `H5-habilidades` fusionados (PR #32 y #33). `H5-usuarios` (lista, ficha, cambiar rol, desactivar con reasignación de misiones y reactivar; migración 0014) validado por sus cuatro revisores tras una vuelta de correcciones (`specs/H5-usuarios/`); pull request abierta desde `hito/H5-usuarios`.
 - El CI de GitHub Actions no arranca por la facturación de la cuenta: la verificación completa se hace en local.
 
 ## Siguiente paso
-- Validar `H5-usuarios` (`/sdd-validate H5-usuarios`), abrir la pull request y `docker compose up --build` en la pila `onway`.
+- Fusionar la pull request de `H5-usuarios` y `docker compose up --build` en la pila `onway` (aplica la migración 0014).
 - Luego `/sdd-plan H5-equipos`: 7 operaciones con `listRescuers`, D-34, el alias (Q-36, B-02) y el selector de RF-805.
 
 ## Pendiente del usuario
@@ -18,7 +18,7 @@ Memoria entre sesiones. **Máximo 30 líneas, una idea por línea.** Lo que ya n
 - Ver `forced-colors` en Windows real.
 - Revisar los pesos del perfil de montaña (H3, `specs/H3-generacion-rutas/revision-pesos.md`).
 - Decisiones abiertas (a) a (k): están en `docs/historial.md`.
-- Bajos sin corregir de `H5-perfil` (`specs/H5-perfil/tasks.md`) y de `H5-habilidades` (límite de 50 sin bloqueo, `files_insert` sin comprobar el rol, `skills_guard` sin mirar `deleted_at`, certificados huérfanos, clave del enlace por proceso, un certificado en dos entradas, lectura del personal; `specs/H5-habilidades/tasks.md`) y los que salgan de la validación de `H5-usuarios` (`specs/H5-usuarios/tasks.md`).
+- Bajos sin corregir de `H5-perfil` (`specs/H5-perfil/tasks.md`) y de `H5-habilidades` (límite de 50 sin bloqueo, `files_insert` sin comprobar el rol, `skills_guard` sin mirar `deleted_at`, certificados huérfanos, clave del enlace por proceso, un certificado en dos entradas, lectura del personal; `specs/H5-habilidades/tasks.md`) y de `H5-usuarios` (smoke con paginación de archivadas, carrera al degradar un coordinador, cerrojo de `LAST_ADMIN`, tamaños táctiles; `specs/H5-usuarios/tasks.md`).
 
 ## Hechos que conviene recordar
 - Tras cambiar de rama o fusionar: `docker compose up --build` en la pila `onway`.

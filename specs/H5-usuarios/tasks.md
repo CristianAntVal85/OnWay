@@ -155,3 +155,25 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
 - **Contrato:** `updateUser` declara `INVALID_STATE_TRANSITION` (OpenAPI y doc 06 regenerados; doc 06 1.16).
 - **Cuentas anonimizadas (INV-22):** fuera de `listUsers` y 404 en `getUser` y `updateUser`; prueba contra base real.
 - **Bajos:** «0002-0014» en doc 05 e `infra/compose.yml`; aviso de resultado siempre presente y vacío (se limpia al abrir otro diálogo); un id que no es UUID es «no existe» sin pedirlo al servidor.
+
+## Validación (2026-11-22)
+
+- **Veredictos.** `reviewer`, `reviewer-db` y `reviewer-ui` aprueban. `reviewer-security` pidió cambios por tres hallazgos medios: el aviso al cambiarse el propio rol, `INVALID_STATE_TRANSITION` sin declarar y las cuentas anonimizadas. Los tres se corrigieron en la vuelta 1, junto con los bajos 1, 3, 8 y 9.
+- **Verificación.** Se ejecutó una vez, la del `reviewer`, antes de la vuelta: completa y con el E2E en `CI=1` (181 de 181). Tras la vuelta se pasaron `pnpm check` de los paquetes tocados, `test:api admin-users app` y la demostración.
+
+**Bajos que siguen abiertos:**
+- **`smoke.sh:138`,** de un hito anterior: depende de que «Camino antiguo» salga en la primera página de rutas archivadas, y tras un E2E en la misma pila no sale.
+- **Carrera al degradar o desactivar a un coordinador mientras crea una misión.** La misión podría quedar con un responsable que ya no es coordinador. Se arreglaría con `FOR UPDATE` sobre su membresía.
+- **El cerrojo de `LAST_ADMIN`** solo ordena entre sí las llamadas a `updateUser`. No cubre `decideSignupRequests` ni el borrado de los datos propios.
+- **`translate`** pasa a `reassignMissionsTo` los errores `22023` y `23000` de cualquier procedimiento.
+- **`admin_reassign_missions`** no comprueba que `p_from` sea de la organización. No se puede explotar: el `UPDATE` filtra por `app_org_id()`.
+- **Interfaz:**
+  - a 375 px, «Volver a la lista» mide 21 px de alto y los filtros 40 px;
+  - en francés, «Active» sale igual sea cual sea el género;
+  - las insignias de rol y estado bajan siempre a una segunda línea.
+- **Sin revisar en la interfaz:**
+  - el teclado completo a mano (lo cubre el E2E);
+  - los anchos de 768 y 1280 px;
+  - los diálogos con efecto real a mano;
+  - un lector de pantalla real;
+  - el tamaño del bundle.
