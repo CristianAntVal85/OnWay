@@ -89,7 +89,7 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
     - el smoke pasa en la pila de revisión;
     - el PDF y el PNG se ven en Chromium con la CSP nueva, o la desviación está anotada.
 
-- [ ] **T6. Web: la lista de cursos y habilidades en Mi perfil.** Cubre RF-808 (ver y eliminar) y el doc 02 §3.9 (columna de certificado).
+- [x] **T6. Web: la lista de cursos y habilidades en Mi perfil.** Cubre RF-808 (ver y eliminar) y el doc 02 §3.9 (columna de certificado).
   - **Qué se hace:**
     - Las consultas de `skills.ts`.
     - `SkillsSection`:
@@ -167,3 +167,6 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
 - **T5, `smoke.sh` en la pila de revisión:** se pasó con `SMOKE_SKIP_ROUTING=1` (la superposición E2E de esa pila no levantó `routing`/`worker` para la comprobación). El bloque de habilidades sí se ejecutó.
 - **T5, semilla:** la entrada de demostración se crea solo al crear la entrada (si el rescatista quita el certificado, la semilla no lo repone); `seed` pasa a exigir `FILES_DIR` (la imagen ya lo trae, y `compose.yml` lo declara y monta `files`). `SeedOptions.storage` es opcional: sin él se crean las entradas y se omite el certificado con un aviso.
 - **T5, `test:db`:** `files_insert` pide dueño y finalidad, no el rol: un coordinador o administrador podría insertar un `certificate` a su nombre en la base; que solo lo suba un rescatista (`FORBIDDEN`) es regla del servicio (T2).
+- **T6, «Adjuntar»:** en esta tarea no hay diálogo todavía, así que un curso sin certificado dice «Sin certificado» (texto, no botón) y la habilidad no dice nada; T7 lo cambia por el botón «Adjuntar» que abre el diálogo de edición. `skills.ts` lleva solo `useMySkills`, `useDeleteSkill` y `useInvalidateSkills`; T7 añade el resto.
+- **T6, hoja de estilos:** se añadió un bloque `.skill-*` a `apps/web/src/styles.css` (no estaba en la lista de archivos); el foco programático de la sección usa la regla global `[tabindex='-1']:focus`.
+- **T6, comprobación a 375 px:** `pnpm --filter @onway/web dev` con `API_URL` apuntando a la pila `onway-review` (Caddy, puerto 18081; ya retirada con `down -v`): sin desplazamiento horizontal (`scrollWidth = clientWidth = 375`), la lista y «Eliminar» se ven bien. En el Chromium sin fuentes de emoji, «📎» sale como un cuadrado; se mantiene el texto pedido por el doc 02 (con `aria-hidden`, y «adjunto» va en texto aparte).

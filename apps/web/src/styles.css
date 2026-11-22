@@ -4123,3 +4123,56 @@ label.signup-info {
   gap: var(--space-3);
   max-width: var(--measure);
 }
+
+/* ---------- cursos y habilidades (Mi perfil, H5-habilidades) ---------- */
+
+.skill-list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skill-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.skill-item:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.skill-main {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.skill-main p {
+  margin: 0;
+}
+
+.skill-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.skill-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.skill-certificate {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}

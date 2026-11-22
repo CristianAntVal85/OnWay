@@ -129,6 +129,26 @@ export interface Messages {
       noTeams: string;
       teamLine: string;
     };
+    /** Cursos y habilidades del rescatista (H5-habilidades, RF-808, doc 02 §3.9). */
+    skills: {
+      title: string;
+      empty: string;
+      kind: { course: string; skill: string };
+      issuer: string;
+      issuedOn: string;
+      expiresOn: string;
+      attached: string;
+      noCertificate: string;
+      remove: string;
+      removeFor: string;
+      removeTitle: string;
+      removeWithCertificate: string;
+      removeWithoutCertificate: string;
+      removeConfirm: string;
+      removing: string;
+      removeCancel: string;
+      removed: string;
+    };
   };
   home: {
     title: string;

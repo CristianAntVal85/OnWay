@@ -115,6 +115,8 @@ export function sessionServer(initial: { user?: SessionUser | null; expired?: bo
     },
     // Mi perfil (H5-perfil): el del rescatista de la sesión, incompleto o completo según `profileStatus`.
     'GET /my/profile': () => (state.user?.role === 'rescuer' ? json(200, myProfileOf(state.user)) : apiError(403, 'FORBIDDEN')),
+    // Cursos y habilidades (H5-habilidades): vacío por defecto; las pruebas que los necesitan lo sustituyen en `extra`.
+    'GET /my/skills': () => (state.user?.role === 'rescuer' ? json(200, { items: [] }) : apiError(403, 'FORBIDDEN')),
     ...extra,
   });
   return { state, api };

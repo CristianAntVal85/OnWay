@@ -5,6 +5,7 @@ import { SectionCard } from '../components/section-card';
 import { ErrorState, LoadingState } from '../components/states';
 import { countryName } from '../i18n/country-name';
 import { useMySensitive } from './queries';
+import { SkillsSection } from './skills-section';
 
 type MyProfile = OperationOutput<'getMyProfile'>;
 
@@ -44,6 +45,7 @@ export function ProfileView({ profile }: { profile: MyProfile }) {
           </ul>
         )}
       </SectionCard>
+      <SkillsSection />
     </>
   );
 }
