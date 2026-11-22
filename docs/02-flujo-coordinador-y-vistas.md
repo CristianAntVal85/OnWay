@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.9 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.9)
+Versión: 1.10 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.9)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -381,7 +381,9 @@ Secciones:
 - Certificado de tipo o tamaño no admitido: error claro, el curso no se guarda con el archivo.
 - Cualquier dato sensible se muestra enmascarado por defecto (por ejemplo, el número de documento con los primeros dígitos ocultos) hasta que el propio usuario lo pide *(propuesto)*.
 
-**Tal como se construyó (`H5-perfil`).** Con el perfil incompleto, cualquier vista lleva a «Completa tu perfil» y la barra solo tiene «Mi perfil» y «Cuenta» (el servidor no bloquea lecturas; RN-20 impide ofrecerse). El formulario lleva el correo de la cuenta en solo lectura, el aviso de quién ve qué, tipo de documento (DNI, NIE, pasaporte, otro) y número, teléfono y la dirección con el país (España, Francia, Andorra o Portugal); se comprueba en el cliente con los mismos esquemas que el servidor, y el documento ya registrado se dice en su campo sin decir de quién es. Al completarse, la app abre Mis misiones. En Mi perfil, el documento sale como `•••••••8Z` y la dirección como `•••••, 22600 Sabiñánigo (ES)`; «Mostrar» los enseña enteros (`getMySensitive`, sin guardarlos) y «Ocultar» los retira. «Corregir mis datos» abre el mismo formulario con lo guardado y envía solo los bloques que cambiaron. Cursos y habilidades llegan en `H5-habilidades`; historial y privacidad, en H6.
+**Tal como se construyó (`H5-perfil`).** Con el perfil incompleto, cualquier vista lleva a «Completa tu perfil» y la barra solo tiene «Mi perfil» y «Cuenta» (el servidor no bloquea lecturas; RN-20 impide ofrecerse). El formulario lleva el correo de la cuenta en solo lectura, el aviso de quién ve qué, tipo de documento (DNI, NIE, pasaporte, otro) y número, teléfono y la dirección con el país (España, Francia, Andorra o Portugal); se comprueba en el cliente con los mismos esquemas que el servidor, y el documento ya registrado se dice en su campo sin decir de quién es. Al completarse, la app abre Mis misiones. En Mi perfil, el documento sale como `•••••••8Z` y la dirección como `•••••, 22600 Sabiñánigo (ES)`; «Mostrar» los enseña enteros (`getMySensitive`, sin guardarlos) y «Ocultar» los retira. «Corregir mis datos» abre el mismo formulario con lo guardado y envía solo los bloques que cambiaron. Cursos y habilidades llegan en `H5-habilidades` (abajo); historial y privacidad, en H6.
+
+**Tal como se construyó (`H5-habilidades`).** «Cursos y habilidades» es una sección de Mi perfil y también va bajo el formulario del alta. Cada entrada enseña nombre, tipo, entidad, fecha y caducidad; un curso con certificado lleva «adjunto» y «Abrir certificado» (pestaña nueva, `inline`), y uno sin él, el botón «Adjuntar», que abre el diálogo de edición con el foco en el archivo. «Añadir» y «Editar» abren un diálogo que valida con el esquema del contrato; el archivo (PDF, JPG o PNG, hasta 10 MB) solo se ofrece en un curso, se sube primero y, si el tipo o el tamaño no valen, el error sale en su campo y la entrada no se guarda; «Quitar certificado» lo retira al guardar. El tipo no se cambia al editar y una fecha ya guardada no se puede vaciar (el contrato no admite `null`). Eliminar pide confirmación y el foco vuelve a la sección. Máximo 50 entradas. Coordinador y administrador abren el certificado por la ficha del voluntario (H6) y `getUser` (`H5-equipos`): en este hito la regla del servidor está hecha y probada, sin pantalla.
 
 ### 3.10 Administración
 
@@ -690,6 +692,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.10 (2026-11-22)**
+- Cierre de `H5-habilidades` (`specs/H5-habilidades/`): §3.9 «Tal como se construyó (`H5-habilidades`)»: lista, añadir, editar, «Adjuntar», abrir y eliminar. Sin cambios de permisos.
 
 **1.9 (2026-11-22)**
 - Cierre de `H5-perfil` (`specs/H5-perfil/`): §2 Cuenta con nombre visible, idioma guardado en la cuenta (antes solo en el navegador, D-H0-21) y cambiar la contraseña; §3.9 «Tal como se construyó»: alta obligatoria, formulario, enmascarado con «Mostrar» y «Ocultar», corregir solo lo cambiado. Sin cambios de permisos.

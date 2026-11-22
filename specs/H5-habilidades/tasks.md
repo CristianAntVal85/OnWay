@@ -145,7 +145,7 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
   - **Comprobación:** `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d`, y después, con las mismas variables y `E2E_BASE_URL=http://localhost:18080`, `pnpm --filter @onway/web exec playwright test -c e2e h5-habilidades-demo.spec.ts`.
   - **Hecho cuando:** la demostración pasa en escritorio y en móvil, y el README del E2E dice qué crea y qué deja.
 
-- [ ] **T9. Documentos y verificación completa.**
+- [x] **T9. Documentos y verificación completa.**
   - **Qué se hace:**
     - «Tal como se construyó (`H5-habilidades`)» en el doc 07 §3 y en el doc 02 §3.9.
     - Doc 04 §5.1 y §6.
@@ -175,3 +175,5 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
 - **T7, foco:** el foco de la sección tras eliminar pasa de un efecto sobre el número de entradas a un contador (`focusTick`), que sirve también tras «Adjuntar» (su botón desaparece al guardar). `test/support.tsx` guarda el `FormData` de la petición en `Call.form`; `uploadCertificate` y `useOpenCertificate` (con `PopupBlockedError`) están en `skills.ts`. Hoja `.skill-*`: dos reglas más.
 - **T8, el PDF queda retirado:** al cambiar el certificado por el PNG el servidor da `deleted_at` al PDF y borra sus bytes; la cuenta se queda con el PNG. La demostración corre en `desktop` y en `mobile` (se añadió a su `testMatch`); no necesita proyecto aparte porque no toca el código de invitación. Apoyo nuevo en `stack.ts`: `auditRowsAbout(correo, acción)`.
 - **T8, formato:** el commit de T7 dejó `skill-dialog.tsx` sin pasar Prettier; se formateó aquí junto con `playwright.config.ts`.
+- **T9, verificación completa (2026-11-22):** `lint`, `format:check`, `typecheck`, `build`, `test` (contratos 59, api 219, geo 158, i18n 8, web 983), `test:db`, `test:api` y `db/tests/run-postgis.sh` en verde a la primera; E2E con `CI=1` en `onway-e2e`: 169 de 169 (12 de `h5-habilidades-demo.spec.ts`), sin reintentos. La pila se retiró con `down -v`.
+- **Bajos sin corregir (a `docs/estado.md`):** el límite de 50 no bloquea la fila del perfil (dos altas simultáneas podrían pasarlo); `files_insert` no comprueba el rol; `skills_guard` no mira `deleted_at`; un certificado subido cuya entrada no llega a guardarse queda huérfano (barrido en H7).

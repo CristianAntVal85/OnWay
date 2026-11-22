@@ -16,6 +16,10 @@ Los tres endpoints públicos (`register`, `forgotPassword`, `resetPassword`) tie
 
 Lo que ocurre con la solicitud de alta: la cuenta queda *pendiente* (puede iniciar sesión y ve la espera) hasta que el administrador la decide en `/admin`; el código de invitación (16 caracteres en grupos de 4) lo ve y regenera solo el administrador, y regenerarlo invalida el anterior en el acto. `forgotPassword` responde 202 igual exista o no el correo y no espera al `Mailer`.
 
+## Certificados (H5-habilidades)
+
+Los certificados de los cursos son archivos privados del volumen `files` (`FILES_DIR`), que montan `api`, `worker` y también `seed`: la semilla crea las entradas de `rescatista1` a `5` y un PDF inventado de `rescatista1` («Certificado de demostración · datos ficticios»), de forma idempotente (sin `FILES_DIR` falla, no en silencio). Se abren con un enlace firmado de 5 minutos (`/api/v1/certificates/<token>`), que Caddy sirve con su propia CSP, distinta de la general (`handle /api/v1/certificates/*`). `smoke.sh` lista las habilidades de `rescatista1` y abre su certificado (200 `application/pdf`).
+
 ## Claves de los datos sensibles (H5-perfil)
 
 Documento y dirección del rescatista se guardan cifrados con AES-256-GCM, y el documento lleva una huella HMAC-SHA256 para detectar duplicados (doc 04 §6.3, doc 05 §7). Las dos claves son archivos del volumen `secrets`, que el servicio `secrets` genera la primera vez (`sensitive/key` y `fingerprint/key`, 48 bytes al azar en hexadecimal) y que montan **solo** `api` y `seed` (`SENSITIVE_KEY_FILE`, `DOCUMENT_HASH_KEY_FILE`). La API deriva de cada una, con HKDF-SHA256, la clave de 32 bytes que usa; sin los archivos no arranca. No están en la base ni en sus copias.
