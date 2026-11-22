@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { DecideSignupRequest, ListSignupRequestsQuery, OperationOutput, SignupFilter } from '@onway/contracts';
+import { aliasBase, type DecideSignupRequest, type ListSignupRequestsQuery, type OperationOutput, type SignupFilter } from '@onway/contracts';
 import { sql, type SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 import { DomainError } from '../common/domain-error.js';
@@ -7,6 +7,7 @@ import type { Principal } from '../common/operation.js';
 import { DatabaseService, type Tx } from '../db/database.service.js';
 import { pgErrorOf } from '../db/errors.js';
 import { isoUtc, viewerOf } from '../missions/mission-support.js';
+import { assignMemberAlias } from '../teams/member-alias.js';
 
 type Filter = z.infer<typeof SignupFilter>;
 
@@ -82,6 +83,11 @@ export class SignupRequests {
         await this.tx.execute(sql`SELECT admin_decide_signup(${target.user_id}::uuid, ${approve}::boolean, ${body.role ?? null}::member_role)`);
       } catch (error) {
         throw translate(error);
+      }
+      // Q-36: staff get their alias, from the visible name, the moment the account is approved (a rescuer's comes with the complete profile)
+      if (approve && body.role !== undefined && body.role !== 'rescuer') {
+        const { rows } = await this.tx.execute(sql`SELECT display_name FROM users WHERE id = ${target.user_id}::uuid`);
+        await assignMemberAlias(this.tx, orgId, target.user_id, aliasBase((rows as unknown as { display_name: string }[])[0]!.display_name));
       }
     }
     return { affected: targets.length, skipped: [] };

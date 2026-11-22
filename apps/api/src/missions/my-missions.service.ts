@@ -24,6 +24,7 @@ interface Row {
   target_country: string | null;
   target_source: MyMission['target']['source'];
   coordinator_name: string | null;
+  coordinator_alias: string | null;
   validated_routes: number;
   participation_status: Participation['status'] | null;
   offered_at: string | null;
@@ -33,13 +34,13 @@ interface Row {
 // RN-16, INV-08: a rescuer sees active and closed missions of the organization, never a mission in planning. Row level
 // security already hides those (`missions_select`); the filter on status and organization is the second defence (rule 1).
 // The only personal thing here is the rescuer's own offer (RF-601); other people's participations are not readable for
-// a rescuer. `coordinatorName` comes from `users`, which the policy `users_select` shows to the staff only: until a
-// decision lets a rescuer read the name of the responsible, it is `null` for them (contract: string | null).
+// a rescuer. `coordinatorName` comes from `users`, which the policy `users_select` shows to the staff only: it is `null` for a rescuer (contract: string | null).
+// What the rescuer sees of the responsible is the alias (Q-36, D-E3), read with `mission_coordinator_alias`, which only answers for missions they can see.
 const SELECT = sql.raw(`
   m.id, m.name, m.description, m.status::text AS status,
   ST_Y(m.target) AS lat, ST_X(m.target) AS lon, ST_Z(m.target) AS elevation_m,
   m.target_label, m.target_country::text AS target_country, m.target_source::text AS target_source,
-  cu.display_name AS coordinator_name,
+  cu.display_name AS coordinator_name, mission_coordinator_alias(m.id) AS coordinator_alias,
   (SELECT count(*)::int FROM mission_routes mr JOIN route_versions v ON v.id = mr.pinned_version_id
     WHERE mr.mission_id = m.id AND v.status = 'validated') AS validated_routes,
   pa.status::text AS participation_status, ${isoUtc('pa.offered_at')} AS offered_at, ${isoUtc('pa.decided_at')} AS decided_at`);
@@ -76,7 +77,7 @@ export class MyMissionsService {
       status: row.status,
       target: target(row),
       coordinatorName: row.coordinator_name,
-      coordinatorAlias: null, // provisional (H5-equipos T1): mission_coordinator_alias llega en T4
+      coordinatorAlias: row.coordinator_alias,
       validatedRoutes: row.validated_routes,
       myParticipation: participation(row),
     }));
@@ -117,7 +118,7 @@ export class MyMissionsService {
       status: row.status,
       target: target(row),
       coordinatorName: row.coordinator_name,
-      coordinatorAlias: null, // provisional (H5-equipos T1): mission_coordinator_alias llega en T4
+      coordinatorAlias: row.coordinator_alias,
       points: points.map((p) => ({ id: p.id, kind: p.kind, name: p.name, note: p.note, lat: p.lat, lon: p.lon, elevationM: p.elevation_m, position: p.position })),
       myParticipation: mine,
       canOffer: offerBlockedReason === null,

@@ -98,7 +98,7 @@ const USERS_BUILT: string[] = ['listUsers', 'getUser', 'updateUser'];
  * The 7 operations of H5-equipos, the last part (`listRescuers` moved from H6 to H5). T3 mounts the 6 of teams, T4 `listRescuers`.
  */
 const TEAMS_OPERATIONS = ['listTeams', 'createTeam', 'getTeam', 'updateTeam', 'addTeamMembers', 'removeTeamMember', 'listRescuers'];
-const TEAMS_BUILT: string[] = ['listTeams', 'createTeam', 'getTeam', 'updateTeam', 'addTeamMembers', 'removeTeamMember']; // T3; T4 adds listRescuers
+const TEAMS_BUILT: string[] = ['listTeams', 'createTeam', 'getTeam', 'updateTeam', 'addTeamMembers', 'removeTeamMember', 'listRescuers'];
 const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT, ...SKILLS_BUILT, ...USERS_BUILT, ...TEAMS_BUILT];
 
 const MOUNTED_IDS = [...BUILT, ...BUILT_IN_H5];

@@ -297,6 +297,19 @@ describe('updateUser: the role (RF-813, INV-29, D-U3)', () => {
     org = await organization('UsersRole');
   });
 
+  it('Q-36: whoever becomes coordinator without an alias gets one from the visible name; one that already has it keeps it', async () => {
+    const aliasOf = async (m: Member) => (await fixtures.query<{ alias: string | null }>(`SELECT alias FROM memberships WHERE user_id = $1`, [m.userId]))[0]!.alias;
+    const fresh = await fixtures.member(org.orgId, 'rescuer', 'active', { password: TEST_PASSWORD, profile: 'complete' });
+    await rename(fresh, 'Lucía Gómez');
+    await patch(org.session, fresh.userId, { role: 'coordinator' });
+    expect(await aliasOf(fresh)).toBe('lucgom');
+    const kept = await fixtures.member(org.orgId, 'rescuer', 'active', { password: TEST_PASSWORD, profile: 'complete' });
+    await fixtures.query(`UPDATE memberships SET alias = 'viejo' WHERE user_id = $1`, [kept.userId]);
+    await rename(kept, 'Nombre Nuevo');
+    await patch(org.session, kept.userId, { role: 'admin' });
+    expect(await aliasOf(kept)).toBe('viejo');
+  });
+
   it('rescuer to coordinator: the profile stays, the audit has {from, to} and the next request already uses the new role', async () => {
     const person = await fixtures.member(org.orgId, 'rescuer', 'active', { password: TEST_PASSWORD, profile: 'complete' });
     const session = await mustLogin(app, person.email, TEST_PASSWORD);
