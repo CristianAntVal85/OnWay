@@ -152,7 +152,6 @@ export interface Messages {
       cancel: string;
     };
   };
-  later: { title: string; body: string };
   /** Alta y Mi perfil del rescatista (H5-perfil, doc 02 §3.9). */
   profile: {
     completeTitle: string;

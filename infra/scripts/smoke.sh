@@ -201,11 +201,12 @@ login_as coordinador@example.org
 [ "$(status -b "$jar" "$base/api/v1/admin/users?pageSize=50")" = 403 ] || fail "listUsers as the coordinator must be 403"
 echo "ok  users: the administrator lists 9 or more members (not the pending one), getUser of rescatista1 has skills and no document or address, the coordinator gets 403"
 
-# Equipos (H5-equipos): el coordinador lista los 4 equipos de la semilla, cada uno con su código; rescatista1 recibe 403; el selector de
+# Equipos (H5-equipos): el coordinador lista los equipos activos, entre ellos los 4 de la semilla con su código (una pila con datos del E2E
+# o de una revisión puede tener más); rescatista1 recibe 403; el selector de
 # rescatistas no trae contacto; y Mis misiones de rescatista1 trae el alias del responsable (nunca su nombre).
 login_as coordinador@example.org
-teams="$(curl -s -b "$jar" "$base/api/v1/teams?pageSize=50")"
-[ "$(echo "$teams" | grep -o '"memberCount"' | wc -l)" = 4 ] || fail "listTeams must list the 4 demo teams: $teams"
+teams="$(curl -s -b "$jar" "$base/api/v1/teams?status=active&pageSize=100")"
+[ "$(echo "$teams" | grep -o '"memberCount"' | wc -l)" -ge 4 ] || fail "listTeams must list at least the 4 demo teams: $teams"
 for team_code in BSC BNS TRL SBN; do echo "$teams" | grep -q "\"code\":\"$team_code\"" || fail "listTeams has no team with the code $team_code: $teams"; done
 rescuers="$(curl -s -b "$jar" "$base/api/v1/rescuers?pageSize=50")"
 [ "$(echo "$rescuers" | grep -o '"userId"' | wc -l)" = 5 ] || fail "listRescuers must offer the 5 rescuers with a complete profile: $rescuers"
@@ -216,7 +217,7 @@ login_as rescatista1@example.org
 my_missions="$(curl -s -b "$jar" "$base/api/v1/my/missions?pageSize=50")"
 echo "$my_missions" | grep -Eq '"coordinatorAlias":"[a-z]' || fail "listMyMissions of rescatista1 carries no coordinatorAlias: $my_missions"
 echo "$my_missions" | grep -q '"coordinatorName":"' && fail "listMyMissions of rescatista1 carries the name of the coordinator: $my_missions"
-echo "ok  teams: the coordinator lists the 4 demo teams with their code, the rescuer picker has 5 people and no contact, rescatista1 gets 403 and sees the alias of the responsible, not the name"
+echo "ok  teams: the coordinator lists the active teams, the 4 demo ones with their code, the rescuer picker has 5 people and no contact, rescatista1 gets 403 and sees the alias of the responsible, not the name"
 
 register_body="{\"email\":\"smoke-register@example.org\",\"password\":\"$password\",\"passwordConfirm\":\"$password\",\"displayName\":\"Smoke ficticio\",\"inviteCode\":\"INVALID-CODE-0000\",\"locale\":\"es\"}"
 register_out="$(curl -s -w ' %{http_code}' -H 'Content-Type: application/json' -d "$register_body" "$base/api/v1/auth/register")"

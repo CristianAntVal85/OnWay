@@ -177,10 +177,6 @@ export const es: Messages = {
       cancel: 'Cancelar',
     },
   },
-  later: {
-    title: 'Llega en un hito posterior',
-    body: 'Esta parte de OnWay todavía no está disponible.',
-  },
   profile: {
     completeTitle: 'Completa tu perfil',
     completeBody: 'Antes de usar OnWay, rellena tus datos. Puedes corregirlos después en Mi perfil.',

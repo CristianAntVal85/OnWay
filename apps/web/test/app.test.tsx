@@ -237,7 +237,6 @@ describe('marco y barra por rol (RF-702)', () => {
       expect(await screen.findByRole('heading', { level: 1, name: es.forbidden.title }), route).toBeTruthy();
       expect(screen.getByText(es.forbidden.body)).toBeTruthy();
       expect(path()).toBe(route);
-      expect(screen.queryByText(es.later.title)).toBeNull();
       expect(api.calls.some((c) => c.path === '/org')).toBe(false);
       view.unmount();
     }

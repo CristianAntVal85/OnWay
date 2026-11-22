@@ -113,7 +113,6 @@ describe.each(LANGUAGES)('administración: solicitudes de alta (%s)', (language,
     expect(document.title).toBe(`${text.nav.administration} · OnWay`);
     expect(screen.getByRole('heading', { level: 2, name: S.title })).toBeTruthy();
     expect(screen.getByRole('heading', { level: 2, name: text.admin.inviteCode.title })).toBeTruthy();
-    expect(screen.queryByText(text.later.title)).toBeNull();
     expect(screen.getByRole('heading', { level: 2, name: text.admin.users.title })).toBeTruthy();
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(3);
   });

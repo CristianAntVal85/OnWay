@@ -179,3 +179,29 @@ Plan: `specs/H5-equipos/plan.md`. Las tareas van en orden de dependencia, con un
 - **T8.** El selector (`mission-routes-section.tsx`) pide `listTeams` activos de una vez (`pageSize` 200, `useActiveTeams` en `teams/queries.ts`) y solo si `canManage`; así, con la misión cerrada o sin permiso, la celda sigue siendo texto y no hay petición. Si el equipo actual de la fila ya no está entre los activos (archivado), se añade como opción para que el valor tenga dónde caer. Mientras guarda enseña lo elegido y queda desactivado; si falla, vuelve al valor anterior y el error sale en el `alert` de la fila. Las pruebas de Mis misiones están en `home.test.tsx` (no en `missions.test.tsx`), y `my-mission-routes.test.tsx` solo gana el campo `coordinatorAlias` en su fixture. Claves nuevas: `missionRoutes.team.{selectLabel,done}`. La comprobación a 375 px de la tabla la hace la demostración de T9 (móvil).
 - **T9.** Los dos formatos corren a la vez y el código del equipo es único en la organización, así que cada uno usa su localidad (`ALC`/`TRB` en escritorio, `SLL`/`LRD` en móvil), y el alias del miembro termina en el código de su formato (en escritorio, ` ALC`). Un equipo archivado conserva su código: `archiveLeftoverE2eTeams` (en `stack.ts`, en el `afterAll` de la demostración y en `global-setup` y `global-teardown`) archiva y cambia el código a `Z` más dos cifras hexadecimales para que la siguiente ejecución pueda reutilizarlo; no toca los alias fijados (D-E6). El selector de Equipo, el alias del responsable y el archivado se prueban con la ruta sembrada «Pradera a la Brecha (ficticia)» (validada) en una misión «E2E …» creada y activada por la API. La parte del administrador es de interfaz (ve el equipo en Archivados, lo reactiva) y de API (lo vuelve a archivar); el 403 del rescatista en `listTeams` y `createTeam` se comprueba en la demostración. `h4-demo.spec.ts` no esperaba ningún `team` vacío: no hizo falta tocarla (pasa en los dos formatos). Se añadió `h5-equipos-demo` a la lista del proyecto `mobile` en `playwright.config.ts`. Ejecutado: `h5-equipos-demo.spec.ts` y `h4-demo.spec.ts` en los proyectos `desktop` y `mobile` (22 pruebas, en verde), también repetida una segunda vez sobre la misma pila. Pila `onway-e2e` levantada.
 - **T10.** Los documentos 02, 03, 05 y 07, `backlog-post-mvp.md`, `CLAUDE.md`, `estado.md` e `historial.md` recogen lo construido, cada uno con su línea de registro (doc 02 1.12, doc 03 0.12, doc 05 1.6, doc 07 0.26). El doc 01 no cambia (T1 ya cerró Q-36). `user-dialogs.tsx` se formateó en un commit `style` aparte. El E2E entero encontró una regresión de T6: `ui-rediseno-demo.spec.ts` esperaba `/teams` como página de lectura (64rem) y ahora es una lista (80rem); se cambió a `list` en la demostración (3 pruebas y 7 sin correr en la primera pasada; después 11 de 11). `hgt.test.ts` y `h2-demo.spec.ts:352` no fallaron.
+
+## Validación (vuelta 1, 2026-11-22)
+
+- **Veredictos.** `reviewer`, `reviewer-security` y `reviewer-db` aprueban. `reviewer-ui` pidió un cambio medio. La verificación completa y el E2E entero con `CI=1` dieron 193 de 193 antes de la vuelta.
+
+**Corregido en la vuelta, a petición del usuario:**
+- **Medio.** El selector de equipo de la ruta (RF-805, `.mission-route-team`) era el control nativo del navegador, de 19 px. Ahora tiene el estilo de los campos y el blanco táctil (`min-height: var(--tap)`).
+- **Bajo 1.** `smoke.sh` cuenta solo los equipos activos y exige al menos los 4 de la semilla, con sus códigos. Pasa también en una pila donde ya se ha ejecutado el E2E.
+- **Bajo 4.** El enlace con el nombre del equipo (`.team-link`) y «Volver a …» (`.page-back`) llevan también el blanco táctil.
+- **Bajo 8.** Las claves `later.*` de i18n, de la antigua `LaterPage`, se quitan junto con sus dos aserciones en las pruebas.
+- **Prueba nueva.** En `a11y-styles.test.ts`, los tres selectores miden al menos `var(--tap)`.
+
+**Comprobado tras la vuelta:**
+- `pnpm check @onway/web @onway/i18n` en verde.
+- En `onway-e2e`:
+  - `h5-equipos-demo`, `ui-rediseno-demo` y `h4-demo`, en escritorio y móvil: 33 de 33;
+  - `smoke.sh` en verde, antes y después del E2E.
+
+**Bajos que siguen abiertos:**
+- **Tabla de rutas a 375 px.** El selector queda cortado en el borde de la tabla, que se desplaza en horizontal. Es un patrón anterior.
+- **`useActiveTeams`.** Pide 200 equipos como máximo y no avisa si hay más.
+- **`seedAliases`.**
+  - Asigna los alias sin el cerrojo de `set_member_alias`: si la API fija uno a la vez, la semilla falla, y al relanzarla se arregla sola.
+  - Para quien está en dos equipos usa el primero según `demo.json`, no según `added_at`.
+- **`set_member_alias`.** No comprueba que el código sea de un equipo de la persona ni que su membresía esté activa. La API sí lo hace.
+- **`mission_coordinator_alias`.** Se llama una vez por fila. No es un N+1 real, porque la página está acotada.
