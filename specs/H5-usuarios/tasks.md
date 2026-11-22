@@ -2,7 +2,7 @@
 
 Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada una lleva su commit: `<tipo>(H5-usuarios): Tn <resumen>`.
 
-- [ ] **T1. El reparto de H5, las decisiones y las notas del contrato.** Cubre el cambio de alcance, Q-12, Q-36, el adelanto de `listRescuers` (lo construye `H5-equipos`) y las notas de `listUsers`, `getUser` y `updateUser`.
+- [x] **T1. El reparto de H5, las decisiones y las notas del contrato.** Cubre el cambio de alcance, Q-12, Q-36, el adelanto de `listRescuers` (lo construye `H5-equipos`) y las notas de `listUsers`, `getUser` y `updateUser`.
   - **Qué se hace:**
     - **Doc 07 §3, H5.** La tabla de las partes pasa a tener `H5-usuarios` (3 operaciones, 74 montadas) y `H5-equipos` (las 6 de equipos y `listRescuers`, más D-34, el alias y el selector de RF-805, con 81 montadas). Se añade una línea al registro de cambios.
     - **Doc 01.** Q-12 queda resuelta (gestionan administrador y coordinador). Q-36 queda decidida (plan §1: generado y fijo, tres letras del nombre y de cada apellido y el código de la localidad del primer equipo, sufijo numérico si hay colisión; el rescatista lo ve en lugar del nombre y el personal ve ambos; se construye en `H5-equipos`). Se añade una línea al registro de cambios.

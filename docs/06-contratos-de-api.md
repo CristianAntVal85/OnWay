@@ -1,6 +1,6 @@
 # OnWay — Documento 06: Contratos de API
 
-**Versión:** 1.14 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
+**Versión:** 1.15 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
 **Depende de:** 01 (requisitos), 02 (vistas y permisos), 03 (dominio), 04 (arquitectura), 05 (datos)
 **Código que lo acompaña:** `packages/contracts/` (esquemas Zod, registro de endpoints, pruebas y generadores)
 
@@ -793,7 +793,7 @@ Una prueba **encontró un fallo real** mientras se escribía el contrato: las co
 | `forgotPassword` | `auth_request_password_reset`: devuelve a quién escribir o ninguna fila; guarda solo el hash del token; máx. 3 por hora y cuenta |
 | `resetPassword` | `auth_consume_password_reset`: un solo uso, cierra todas las sesiones, quita el bloqueo, audita |
 | `decideSignupRequests` | `admin_decide_signup(user, aprobar, rol)` por cada usuario, en una transacción (y con un cerrojo consultivo por organización para que dos decisiones no se crucen) |
-| `updateUser` | `admin_set_account_status` y actualización de `memberships.role`; `LAST_ADMIN` y `COORDINATOR_HAS_MISSIONS` se comprueban en el servicio antes |
+| `updateUser` | `admin_set_account_status` y actualización de `memberships.role`; `LAST_ADMIN` y `COORDINATOR_HAS_MISSIONS` se comprueban en el servicio antes. Las misiones no cerradas del coordinador se reasignan con `admin_reassign_missions` (migración 0014, D-U1) en la misma transacción; con `reassignMissionsTo` no válido responde `VALIDATION_FAILED` (`path = reassignMissionsTo`) |
 | `readUserSensitive` | `read_rescuer_sensitive(perfil)`: audita en la misma transacción (INV-19) |
 | `deleteMyData` | `delete_own_rescuer_data()`; el worker borra después los archivos de las claves devueltas |
 | `getCertificateLink` | El servicio comprueba rol y relación (INV-28), escribe en `audit_log` (INV-26) y firma el enlace |
@@ -863,6 +863,7 @@ Dependencias sin resolver: Resend exige **verificar un dominio** para enviar a c
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 1.15 | 2026-11-22 | `H5-usuarios` (T1, `specs/H5-usuarios/`). Solo notas, sin cambios de esquema: `listUsers` (solo miembros, D-U6; orden por nombre), `getUser` (sin documento ni dirección; el certificado se abre con `getCertificateLink`) y `updateUser` (reasignación de misiones con `reassignMissionsTo`, `COORDINATOR_HAS_MISSIONS` con `missionIds`, `LAST_ADMIN`, perfil incompleto al pasar a rescatista, `INVALID_STATE_TRANSITION`, auditoría). `listRescuers` pasa de H6 a H5 en `H5-equipos` (T1 de esa parte cambia su `x-milestone`) |
 | 1.14 | 2026-11-22 | `H5-habilidades` (T1, `specs/H5-habilidades/`). Operación nueva `openCertificate` (`GET /certificates/{token}`, todos los roles, respuesta de archivo `application/pdf | image/jpeg | image/png`, `x-milestone: H5`, sin auditoría, AC-14): sirve el certificado con el enlace firmado de `getCertificateLink`, que caduca a los 5 minutos, vale solo para quien lo pidió y da `404 NOT_FOUND` en cualquier otro caso. Notas de `getCertificateLink` (quién abre qué, INV-28; auditoría solo de la apertura ajena, INV-26), `uploadFile` (`certificate` queda abierto al rescatista y al coordinador o administrador les da `FORBIDDEN`), `createMySkill` y `updateMySkill` (certificado propio y sin adjuntar, `certificateFileId: null` lo quita, reglas de `SkillInput` sobre el resultado, máximo 50 entradas). `SignedLink.url` pasa de URL absoluta a ruta del mismo origen (`/api/v1/certificates/<token>`; T4): el servidor no necesita conocer su dirección pública. 99 operaciones (H5 pasa a 27); sin esquemas ni códigos de error nuevos |
 | 1.13 | 2026-11-22 | `H5-perfil` (T1, `specs/H5-perfil/`). Notas de `getMyProfile` (formato del enmascarado, INV-32), `updateMyProfile` (actualización parcial cifrada, documento y dirección juntos la primera vez, paso a `complete`, auditoría sin valores), `updateMe` (`locale` es el idioma de la cuenta) y `changePassword`: pasa a **auditada**, mantiene la sesión actual y cierra las demás, y la contraseña actual errónea cuenta para el bloqueo (`ACCOUNT_LOCKED`, que se añade a sus errores). 98 operaciones; sin esquemas ni códigos de error nuevos |
 | 1.12 | 2026-11-21 | Pintar ruta y continuar a mano (`specs/issue-pintar-ruta/`). `createRouteVersion` admite `continueFrom { cutPoint, points (1 a 200) }` en lugar de `geometry` (exactamente uno de los dos; sin `calculationJobId`): el servidor conserva la versión base hasta el vértice más cercano al corte, con sus tipos de vía, y une en línea recta los puntos a mano, que cuentan como `offtrail`. Corte a más de 200 m de la ruta o en su inicio: `VALIDATION_FAILED`. 98 operaciones; sin operaciones ni códigos de error nuevos |
