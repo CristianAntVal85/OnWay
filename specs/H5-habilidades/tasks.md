@@ -177,3 +177,19 @@ Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por
 - **T8, formato:** el commit de T7 dejó `skill-dialog.tsx` sin pasar Prettier; se formateó aquí junto con `playwright.config.ts`.
 - **T9, verificación completa (2026-11-22):** `lint`, `format:check`, `typecheck`, `build`, `test` (contratos 59, api 219, geo 158, i18n 8, web 983), `test:db`, `test:api` y `db/tests/run-postgis.sh` en verde a la primera; E2E con `CI=1` en `onway-e2e`: 169 de 169 (12 de `h5-habilidades-demo.spec.ts`), sin reintentos. La pila se retiró con `down -v`.
 - **Bajos sin corregir (a `docs/estado.md`):** el límite de 50 no bloquea la fila del perfil (dos altas simultáneas podrían pasarlo); `files_insert` no comprueba el rol; `skills_guard` no mira `deleted_at`; un certificado subido cuya entrada no llega a guardarse queda huérfano (barrido en H7).
+
+## Validación (2026-11-22)
+
+`reviewer`, `reviewer-db`, `reviewer-security` y `reviewer-ui` aprueban sin hallazgos altos ni medios. La verificación completa pasa y el E2E con `CI=1` en `onway-review` da 169 de 169.
+
+**Corregidos en la vuelta, a petición del usuario:**
+- **1 (seguridad).** El registro de accesos y el 404 de ruta escribían el token del enlace firmado. Ahora `loggablePath` (`apps/api/src/common/access-log.ts`) lo sustituye por `:token`; tiene prueba unitaria en `test/unit/access-log.test.ts`.
+- **6 (interfaz).** Los botones de cada entrada (abrir, adjuntar, editar y eliminar) miden 3rem de alto mínimo (`.skill-item .point-row-actions .button`).
+- **7 (interfaz).** La nota «se quitará» y «certificado actual» del diálogo es una región `role="status"`, para que el lector de pantalla anuncie el cambio.
+
+**Bajos que siguen abiertos:**
+- **Clave por proceso.** La clave del enlace es aleatoria en cada proceso (D-S2): con varias réplicas de la API, el enlace daría 404 aleatorios. Hoy hay una sola réplica.
+- **Un certificado, una entrada.** Solo lo comprueba el servicio y no hay índice único en `skills.certificate_file_id`. Dos peticiones simultáneas pueden adjuntar el mismo archivo a dos entradas, y al retirarlo de una, la otra queda con el enlace roto.
+- **Lectura del coordinador.** `skills_select` y `files_select` dejan leer al personal de toda la organización. La regla del coordinador (INV-28) solo la aplica el servicio. Para valorar en H6.
+- **Botón de guardar.** Usa `aria-disabled` y no `disabled`, a diferencia del resto. El doble envío ya lo evita `submit`.
+- **Los cuatro de la implementación,** en la sección anterior.
