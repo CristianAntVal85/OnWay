@@ -124,3 +124,19 @@ export function useResetPassword() {
     },
   });
 }
+
+/** `updateMe` (H5-perfil, D-P6): nombre visible e idioma de la cuenta. La sesión de la caché pasa a ser la que devuelve el servidor. */
+export function useUpdateMe() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: OperationInput<'updateMe'>['body']) => api.updateMe({ body }),
+    onSuccess: ({ user }) => queryClient.setQueryData(SESSION_KEY, authenticated(user)),
+  });
+}
+
+/** `changePassword` (D-P5): la sesión actual sigue; el servidor cierra las demás. */
+export function useChangePassword() {
+  const api = useApi();
+  return useMutation({ mutationFn: (body: OperationInput<'changePassword'>['body']) => api.changePassword({ body }) });
+}

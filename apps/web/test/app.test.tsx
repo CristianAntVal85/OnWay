@@ -356,7 +356,8 @@ describe('cuenta e idioma (D-H0-21)', () => {
     const fetchImpl: typeof fetch = async (input, init) => (String(input).endsWith('/auth/logout') ? apiError(500, 'INTERNAL') : api.fetch(input, init));
     const { user } = renderApp({ route: '/account', fetch: fetchImpl });
     await user.click(await screen.findByRole('button', { name: es.account.logout }));
-    expect((await screen.findByRole('alert')).textContent).toContain(es.errors.INTERNAL);
+    // Cuenta tiene más avisos (los de sus formularios, vacíos): el error del cierre sale en el suyo.
+    expect((await screen.findByText(es.errors.INTERNAL)).closest('[role="alert"]')).toBeTruthy();
     expect(path()).toBe('/account');
   });
 

@@ -4090,7 +4090,7 @@ label.signup-info {
 .profile-form {
   display: grid;
   gap: var(--space-4);
-  max-width: 44rem;
+  max-width: var(--measure);
 }
 
 .profile-form .field-row > .field {
@@ -4115,4 +4115,11 @@ label.signup-info {
 /* El número de documento y la dirección no deben desbordar en 375 px. */
 .sensitive-value {
   overflow-wrap: anywhere;
+}
+
+/* Formularios de Cuenta: nombre visible y cambiar la contraseña (H5-perfil). */
+.account-form {
+  display: grid;
+  gap: var(--space-3);
+  max-width: var(--measure);
 }

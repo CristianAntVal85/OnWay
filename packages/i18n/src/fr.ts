@@ -332,6 +332,23 @@ export const fr: Messages = {
     roleAdmin: 'Administrateur',
     roleCoordinator: 'Coordinateur',
     roleRescuer: 'Secouriste',
+    displayName: 'Nom affiché',
+    saveName: 'Enregistrer le nom',
+    nameSaved: 'Nom enregistré.',
+    languageSaved: 'Langue enregistrée dans votre compte.',
+    languageNotSaved: 'La langue a été changée dans ce navigateur, mais n’a pas pu être enregistrée dans votre compte.',
+    password: {
+      title: 'Changer le mot de passe',
+      current: 'Mot de passe actuel',
+      next: 'Nouveau mot de passe',
+      confirm: 'Répétez le nouveau mot de passe',
+      submit: 'Changer le mot de passe',
+      saving: 'Changement…',
+      done: 'Mot de passe changé. Vos autres sessions ouvertes ont été fermées.',
+      currentRequired: 'Saisissez votre mot de passe actuel.',
+      wrongCurrent: 'Le mot de passe actuel n’est pas correct.',
+      sameAsCurrent: 'Le nouveau mot de passe doit être différent de l’actuel.',
+    },
   },
   admin: {
     signups: {

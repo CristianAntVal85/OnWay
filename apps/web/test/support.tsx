@@ -107,6 +107,12 @@ export function sessionServer(initial: { user?: SessionUser | null; expired?: bo
       return json(204, null);
     },
     'GET /org': () => (state.user?.role ? json(200, org()) : apiError(403, 'ACCOUNT_PENDING')),
+    // updateMe (H5-perfil): cambia el nombre visible o el idioma de quien está dentro.
+    'PATCH /auth/me': ({ body }) => {
+      if (!state.user) return apiError(401, 'UNAUTHENTICATED');
+      state.user = { ...state.user, ...(body as Partial<SessionUser>) };
+      return json(200, { user: state.user, csrfToken: 'csrf-token-1' });
+    },
     // Mi perfil (H5-perfil): el del rescatista de la sesión, incompleto o completo según `profileStatus`.
     'GET /my/profile': () => (state.user?.role === 'rescuer' ? json(200, myProfileOf(state.user)) : apiError(403, 'FORBIDDEN')),
     ...extra,

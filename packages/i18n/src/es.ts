@@ -332,6 +332,23 @@ export const es: Messages = {
     roleAdmin: 'Administrador',
     roleCoordinator: 'Coordinador',
     roleRescuer: 'Rescatista',
+    displayName: 'Nombre visible',
+    saveName: 'Guardar el nombre',
+    nameSaved: 'Nombre guardado.',
+    languageSaved: 'Idioma guardado en tu cuenta.',
+    languageNotSaved: 'El idioma se ha cambiado en este navegador, pero no se ha podido guardar en tu cuenta.',
+    password: {
+      title: 'Cambiar la contraseña',
+      current: 'Contraseña actual',
+      next: 'Contraseña nueva',
+      confirm: 'Repite la contraseña nueva',
+      submit: 'Cambiar la contraseña',
+      saving: 'Cambiando…',
+      done: 'Contraseña cambiada. Se han cerrado tus demás sesiones abiertas.',
+      currentRequired: 'Escribe tu contraseña actual.',
+      wrongCurrent: 'La contraseña actual no es correcta.',
+      sameAsCurrent: 'La contraseña nueva debe ser distinta de la actual.',
+    },
   },
   admin: {
     signups: {

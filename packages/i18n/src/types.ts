@@ -262,6 +262,23 @@ export interface Messages {
     roleAdmin: string;
     roleCoordinator: string;
     roleRescuer: string;
+    displayName: string;
+    saveName: string;
+    nameSaved: string;
+    languageSaved: string;
+    languageNotSaved: string;
+    password: {
+      title: string;
+      current: string;
+      next: string;
+      confirm: string;
+      submit: string;
+      saving: string;
+      done: string;
+      currentRequired: string;
+      wrongCurrent: string;
+      sameAsCurrent: string;
+    };
   };
   /** Administración, primer trozo de `H5-acceso` (doc 02 §3.10): solicitudes de alta y código de invitación. */
   admin: {

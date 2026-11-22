@@ -111,7 +111,7 @@ Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `
     - el francés;
     - que no queda texto fijo (`no-fixed-text`).
 
-- [ ] **T8. Web: Cuenta con nombre visible, idioma en la cuenta y cambiar contraseña.** Cubre D-P5 y D-P6.
+- [x] **T8. Web: Cuenta con nombre visible, idioma en la cuenta y cambiar contraseña.** Cubre D-P5 y D-P6.
   - **Qué se hace:**
     - **Nombre visible** con guardar y su error.
     - **Idioma:** `useLocale` llama a `updateMe({locale})` además de guardar en el navegador; si falla, avisa sin deshacer el cambio local.
