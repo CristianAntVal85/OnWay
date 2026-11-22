@@ -371,6 +371,10 @@ test('the history reflects every change in order, and the mission is left closed
   const history = page.getByRole('region', { name: es.missionDetail.history.title, exact: true });
   const actions = history.locator('.history-item');
   await expect(actions.first()).toHaveAttribute('data-action', 'mission_reopened');
+  // Plegado solo se ve la última; «Ver más» despliega el resto.
+  await expect(actions).toHaveCount(1);
+  await history.getByRole('button', { name: es.missionDetail.history.showMore, exact: true }).click();
+  await expect(actions.nth(1)).toBeVisible();
   const seen = await actions.evaluateAll((items) => items.map((item) => item.getAttribute('data-action')));
   // De más nuevo a más antiguo: reabrir, cerrar, activar, los dos puntos añadidos después y, al final, la creación.
   expect(seen.slice(0, 5)).toEqual(['mission_reopened', 'mission_closed', 'mission_activated', 'point_added', 'point_added']);

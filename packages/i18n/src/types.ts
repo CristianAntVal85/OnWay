@@ -421,6 +421,8 @@ export interface Messages {
     };
     history: {
       title: string;
+      showMore: string;
+      showLess: string;
       empty: string;
       system: string;
       by: string;

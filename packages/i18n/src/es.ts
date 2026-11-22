@@ -558,6 +558,8 @@ export const es: Messages = {
     },
     history: {
       title: 'Historial',
+      showMore: 'Ver más',
+      showLess: 'Ver menos',
       empty: 'Todavía no hay cambios registrados.',
       system: 'el sistema',
       by: 'por {{actor}}',

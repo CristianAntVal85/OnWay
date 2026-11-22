@@ -674,6 +674,7 @@ describe('historial de la misión (RN-05)', () => {
       server,
     );
     const region = await screen.findByRole('region', { name: H.title });
+    await userEventClick(await within(region).findByRole('button', { name: H.showMore }));
     const items = await within(region).findAllByRole('listitem');
     expect(items).toHaveLength(3);
     expect(items[0]!.textContent).toContain(`${H.actions.mission_updated}: ${H.fields.name}, ${H.fields.target}`);
@@ -683,6 +684,39 @@ describe('historial de la misión (RN-05)', () => {
     expect(items[2]!.textContent).toContain(H.by.replace('{{actor}}', H.system));
     expect(items[0]!.querySelector('time')?.getAttribute('datetime')).toBe('2026-10-31T03:00:00+00:00');
     expect(items.map((item) => item.textContent).join(' ')).not.toMatch(/mission_|point_/); // nunca el nombre técnico
+  });
+
+  it('plegado enseña solo la entrada más reciente; «Ver más» despliega todo y «Ver menos» lo vuelve a plegar', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    const { user } = await openDetail(
+      {
+        [`GET ${PATH}/history`]: () =>
+          json(200, { items: [entry(3, 'mission_activated'), entry(2, 'point_added', { summary: 'Refugio' }), entry(1, 'mission_created')], page: 1, pageSize: 20, total: 3 }),
+      },
+      server,
+    );
+    const region = await screen.findByRole('region', { name: H.title });
+    const more = await within(region).findByRole('button', { name: H.showMore });
+    expect(more.getAttribute('aria-expanded')).toBe('false');
+    expect(
+      within(region)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([expect.stringContaining(H.actions.mission_activated)]);
+    await user.click(more);
+    expect(within(region).getAllByRole('listitem')).toHaveLength(3);
+    const less = within(region).getByRole('button', { name: H.showLess });
+    expect(less.getAttribute('aria-expanded')).toBe('true');
+    await user.click(less);
+    expect(within(region).getAllByRole('listitem')).toHaveLength(1);
+  });
+
+  it('con una sola entrada no hay «Ver más»', async () => {
+    const server = lifecycleServer(detail({ actions: planningActions }));
+    await openDetail({}, server);
+    const region = await screen.findByRole('region', { name: H.title });
+    expect(await within(region).findByText(H.actions.mission_created)).toBeTruthy();
+    expect(within(region).queryByRole('button', { name: H.showMore })).toBeNull();
   });
 
   it('estados de carga, vacío y error con reintento', async () => {
@@ -726,6 +760,8 @@ describe('historial de la misión (RN-05)', () => {
       server,
     );
     expect(await screen.findByText('Punto 1', { exact: false })).toBeTruthy();
+    expect(screen.queryByRole('navigation', { name: es.missions.pagination.label })).toBeNull(); // plegado, sin paginación
+    await user.click(screen.getByRole('button', { name: H.showMore }));
     const nav = screen.getByRole('navigation', { name: es.missions.pagination.label });
     expect(within(nav).getByText('Página 1 de 3')).toBeTruthy();
     await user.click(within(nav).getByRole('button', { name: es.missions.pagination.next }));

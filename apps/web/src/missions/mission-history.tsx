@@ -15,12 +15,15 @@ const isField = (value: string): value is FieldKey => (FIELD_KEYS as readonly st
 
 /**
  * Historial de la misión (RN-05, RF-205): quién hizo qué y cuándo, de más reciente a más antiguo (el orden lo pone el servidor).
- * Cada acción se muestra con su texto traducido; nunca el nombre técnico de la acción.
+ * Cada acción se muestra con su texto traducido; nunca el nombre técnico de la acción. Empieza plegado con la última entrada y
+ * «Ver más» despliega el historial completo, paginado.
  */
 export function MissionHistory({ missionId, locale }: { missionId: string; locale: string }) {
   const { t } = useTranslation();
   const api = useApi();
   const [page, setPage] = useState(1);
+  // Plegado, solo la entrada más reciente: el historial completo alargaría la vista sin medida.
+  const [expanded, setExpanded] = useState(false);
   const history = useQuery({
     queryKey: ['missions', 'history', missionId, page],
     queryFn: ({ signal }) => api.listMissionHistory({ params: { missionId }, query: { page, pageSize: PAGE_SIZE } }, { signal }),
@@ -29,6 +32,11 @@ export function MissionHistory({ missionId, locale }: { missionId: string; local
 
   const data = history.data;
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
+  const shown = data ? (expanded ? data.items : data.items.slice(0, 1)) : [];
+  const toggle = () => {
+    if (expanded) setPage(1);
+    setExpanded(!expanded);
+  };
 
   const summaryOf = (entry: Entry): string | null => {
     if (!entry.summary) return null;
@@ -48,8 +56,8 @@ export function MissionHistory({ missionId, locale }: { missionId: string; local
       {data && data.items.length === 0 && <p className="form-note">{t('missionDetail.history.empty')}</p>}
       {data && data.items.length > 0 && (
         <>
-          <ol className="history-list" aria-busy={history.isFetching}>
-            {data.items.map((entry) => {
+          <ol id="history-list" className="history-list" aria-busy={history.isFetching}>
+            {shown.map((entry) => {
               const summary = summaryOf(entry);
               return (
                 <li key={entry.id} className="history-item" data-action={entry.action}>
@@ -66,7 +74,7 @@ export function MissionHistory({ missionId, locale }: { missionId: string; local
             })}
           </ol>
           {history.isError && <ErrorState error={history.error} onRetry={() => void history.refetch()} />}
-          {pages > 1 && (
+          {expanded && pages > 1 && (
             <nav className="pager" aria-label={t('missions.pagination.label')}>
               <button type="button" className="button button-secondary" aria-disabled={page <= 1} onClick={() => page > 1 && setPage(page - 1)}>
                 {t('missions.pagination.previous')}
@@ -76,6 +84,11 @@ export function MissionHistory({ missionId, locale }: { missionId: string; local
                 {t('missions.pagination.next')}
               </button>
             </nav>
+          )}
+          {data.total > 1 && (
+            <button type="button" className="button button-secondary history-toggle" aria-expanded={expanded} aria-controls="history-list" onClick={toggle}>
+              {t(expanded ? 'missionDetail.history.showLess' : 'missionDetail.history.showMore')}
+            </button>
           )}
         </>
       )}

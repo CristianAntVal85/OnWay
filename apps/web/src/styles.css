@@ -1756,6 +1756,10 @@ body.dialog-open {
   margin: 0;
 }
 
+.history-toggle {
+  margin-top: 0.5rem;
+}
+
 .history-action {
   font-weight: 700;
   overflow-wrap: anywhere;
