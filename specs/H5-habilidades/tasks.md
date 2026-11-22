@@ -2,7 +2,7 @@
 
 Plan: `specs/H5-habilidades/plan.md`. Van en orden de dependencia. Un commit por tarea: `<tipo>(H5-habilidades): Tn <resumen>`.
 
-- [ ] **T1. Contrato: `openCertificate` y las notas.** Cubre D-S1, AC-14 y las firmas de §2. Doc 07: 6 operaciones y 69 montadas.
+- [x] **T1. Contrato: `openCertificate` y las notas.** Cubre D-S1, AC-14 y las firmas de §2. Doc 07: 6 operaciones y 69 montadas.
   - **Qué se hace:**
     - `openCertificate`, con sus parámetros, en `endpoints.ts`, y `openCertificate: 'H5'` en `milestones.ts`.
     - Las notas de `getCertificateLink`, `uploadFile`, `createMySkill` y `updateMySkill` (plan §3).

@@ -315,7 +315,7 @@ test('updateRoute: PATCH del nombre de una ruta, solo el coordinador, 200 con el
   assert.equal(endpoint.response.status, 200);
   assert.equal(endpoint.audited, true);
   assert.deepEqual([...(endpoint.errors ?? [])], ['INVALID_STATE_TRANSITION']);
-  assert.equal(C.ENDPOINTS.length, 98);
+  assert.equal(C.ENDPOINTS.length, 99);
 });
 
 test('updateRoute: el nombre es obligatorio, se recorta, tiene como mucho 160 caracteres y no admite otros campos', () => {
@@ -341,4 +341,20 @@ test('deleteRoute: DELETE de una ruta, solo el coordinador, 204, auditada y sin 
   assert.equal(endpoint.response.status, 204);
   assert.equal(endpoint.audited, true);
   assert.deepEqual([...(endpoint.errors ?? [])].sort(), ['INVALID_STATE_TRANSITION', 'ROUTE_IN_USE']);
+});
+
+test('openCertificate: GET con el token firmado, todos los roles, respuesta de archivo y sin auditoría (D-S1, AC-14)', () => {
+  const endpoint = C.ENDPOINTS.find((e) => e.id === 'openCertificate')!;
+  assert.equal(endpoint.method, 'GET');
+  assert.equal(endpoint.path, '/certificates/{token}');
+  assert.equal(endpoint.milestone, 'H5');
+  assert.deepEqual([...endpoint.roles], ['rescuer', 'coordinator', 'admin']);
+  assert.equal(endpoint.response.file, 'application/pdf | image/jpeg | image/png');
+  assert.equal(endpoint.audited, undefined);
+  assert.ok(!endpoint.params!.safeParse({ token: '' }).success);
+  assert.ok(!endpoint.params!.safeParse({ token: 'x'.repeat(513) }).success);
+  assert.ok(endpoint.params!.safeParse({ token: 'x'.repeat(512) }).success);
+  const link = C.ENDPOINTS.find((e) => e.id === 'getCertificateLink')!;
+  assert.equal(link.method, 'POST');
+  assert.equal(link.audited, true);
 });

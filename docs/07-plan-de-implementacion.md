@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.18 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
+**Versión:** 0.19 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -143,7 +143,7 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 > | Parte | Operaciones | Montadas al acabar |
 > |---|---|---|
 > | **`H5-perfil`** (`specs/H5-perfil/`) | `getMyProfile`, `updateMyProfile`, `getMySensitive`, `updateMe`, `changePassword`. Alta obligatoria en la web, datos sensibles cifrados (AES-256-GCM, huella HMAC), INV-18, 24, 31 y 32 | 63 |
-> | **`H5-habilidades`** | `listMySkills`, `createMySkill`, `updateMySkill`, `deleteMySkill`, `getCertificateLink` | 68 |
+> | **`H5-habilidades`** (`specs/H5-habilidades/`) | `listMySkills`, `createMySkill`, `updateMySkill`, `deleteMySkill`, `getCertificateLink` y `openCertificate` (nueva, D-S1: sirve el archivo con el enlace firmado; antes no había forma de entregar los bytes dentro del contrato) | 69 |
 > | **`H5-equipos`** | `listUsers`, `getUser`, `updateUser`, `listTeams`, `createTeam`, `getTeam`, `updateTeam`, `addTeamMembers`, `removeTeamMember`, y el alias de personas (Q-36, B-02). INV-23 y 29 | 77 |
 >
 > **Tal como se construyó (`H5-perfil`, 2026-11-22).** Las 5 operaciones montadas y probadas (63 con las 58 anteriores; las 14 de `H5-habilidades` y `H5-equipos` responden 404), **sin migración**. **API:** módulo `src/sensitive/` (AES-256-GCM por campo con `profile_id ‖ campo` como datos autenticados, huella HMAC-SHA256 con otra clave, claves derivadas con HKDF de dos archivos del volumen `secrets`; sin ellas la API no arranca); `src/profile/` (cada entidad del perfil se lee de su tabla, INV-32; `DOCUMENT_ALREADY_REGISTERED` sale de la restricción única, INV-24; auditoría con los bloques tocados, nunca valores); `updateMe` y `changePassword` (mantiene la sesión actual, cierra las demás y cuenta la contraseña errónea como intento fallido, en una transacción propia: `DatabaseService.independent`). Un refinamiento del contrato cuyo mensaje es un código que la operación declara responde ese código (`INVALID_DOCUMENT`). **Web:** alta obligatoria (guardia en `RequireActive`, barra con Mi perfil y Cuenta), formulario con los esquemas del contrato, Mi perfil con «Mostrar» y «Ocultar», Cuenta con nombre visible, idioma guardado en la cuenta (cambia D-H0-21) y cambiar contraseña. **Semilla:** `rescatista1` a `5` completos (DNI `00000001R` a `00000005M`), `rescatista6` incompleto. **Demostración:** `h5-perfil-demo.spec.ts` (escritorio y 375 px); la cuenta se crea ya aprobada en la base, porque el registro ya lo enseña `h5-acceso-demo.spec.ts` y aquella regenera el código de invitación en paralelo. **Desviaciones:** `changePassword` pasa a auditada y añade `ACCOUNT_LOCKED` (doc 06 v1.13); `access.spec.ts` deja a `coordinatrice` en francés al acabar, porque el idioma de Cuenta ya se guarda en la cuenta. Dependencias nuevas: ninguna. **Validación (2026-11-22):** `reviewer`, `reviewer-security` y `reviewer-db` aprueban; `reviewer-ui` pidió dos cambios medios de foco (el primer error en el orden de la pantalla y la vuelta a «Corregir mis datos» al cerrarlo), corregidos en una vuelta junto con tres bajos (dos primeras altas simultáneas ya no dan un «documento ya registrado» falso: se hace *upsert* y solo la restricción de INV-24 da ese error; la semilla no pisa un teléfono ya guardado; «Mostrar»/«Ocultar» sin `aria-pressed` y los datos ocultos se leen como frase). Los demás bajos quedan en `docs/estado.md`.
@@ -339,6 +339,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.19 | 2026-11-22 | Cambio de alcance de `H5-habilidades`: operación nueva `openCertificate` (`GET /certificates/{token}`, `x-milestone: H5`), que sirve el certificado con el enlace firmado; son 6 operaciones y 69 montadas (no 68). El registro pasa a 99 operaciones y H5 a 27 (doc 06 v1.14) |
 | 0.18 | 2026-11-22 | `H5-perfil` validado: la fila «Tal como se construyó» recoge la vuelta de correcciones de la validación (foco, alta simultánea, teléfono de la semilla y lectura de los datos ocultos) |
 | 0.17 | 2026-11-22 | `H5-perfil` (sección 3) al día tras construirlo (T10): «Tal como se construyó» con las 5 operaciones (63 montadas), el cifrado, la alta obligatoria, la semilla, la demostración y las desviaciones |
 | 0.16 | 2026-11-22 | Cambio de alcance: el resto de H5 se parte en tres (`H5-perfil`, `H5-habilidades`, `H5-equipos`), por demostración y sin cambiar `x-milestone`. El alias de personas (Q-36) se decide en `H5-equipos`. Plan y tareas de la primera en `specs/H5-perfil/` |
