@@ -12,7 +12,7 @@ Plan: `specs/H5-usuarios/plan.md`. Las tareas van en orden de dependencia. Cada 
   - **Comprobación:** `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc gen/ && pnpm check @onway/contracts`.
   - **Hecho cuando:** pasan `registry` y `schema-guards`, y el doc 06 enseña las notas nuevas.
 
-- [ ] **T2. Migración 0014: `admin_reassign_missions`.** Cubre D-U1, RN-11, INV-03, INV-11 y Q-14.
+- [x] **T2. Migración 0014: `admin_reassign_missions`.** Cubre D-U1, RN-11, INV-03, INV-11 y Q-14.
   - **Qué se hace:**
     - La función de plan §3, con su `GRANT` y su `REVOKE`, y la entrada en el diario de migraciones.
     - Las pruebas, con SQL directo como `onway_app`:
