@@ -27,7 +27,9 @@ Una sola organización («Servicio de Rescate Valle Demo»). Todos los correos s
 
 **Perfiles (H5-perfil).** Los de `rescatista1` a `rescatista5` vienen completos: teléfono de la serie `+34 600 000 101` a `105`, DNI de numeración evidentemente inventada (`00000001R` a `00000005M`, con su letra de control válida) y una dirección inventada en un pueblo del Pirineo. El comando `seed` los cifra con las mismas claves que la API (volumen `secrets`, `sensitive/key` y `fingerprint/key`), así que en `demo.json` solo hay texto en claro inventado y en la base solo bytes cifrados. Una pila sembrada antes de H5 los recibe en el siguiente `up`; un perfil que alguien ya rellenó no se toca. `rescatista6` se queda incompleto para enseñar el alta obligatoria. Como el documento no se puede repetir en la organización (INV-24), **no uses esos DNI al rellenar otro perfil**: darán «Documento ya registrado».
 
-Equipos: Valle de Tena (Biescas), Ribagorza (Benasque), Ordesa (Torla) y Alto Gállego (Sabiñánigo). Los rescatistas están en 0 (`rescatista1`), 1 y 2 equipos (`rescatista4` y `rescatista5`).
+Equipos, con su código de tres letras (H5-equipos): Valle de Tena (Biescas, `BSC`), Ribagorza (Benasque, `BNS`), Ordesa (Torla, `TRL`) y Alto Gállego (Sabiñánigo, `SBN`). Los rescatistas están en 0 (`rescatista1`), 1 y 2 equipos (`rescatista4` y `rescatista5`).
+
+**Alias (H5-equipos, Q-36).** Cada miembro lleva un alias fijo: las tres primeras letras de cada una de las tres primeras palabras de su nombre, en minúscula, más el código de su primer equipo si lo tiene. El del rescatista sale del nombre de su perfil (así que `rescatista6`, con el perfil incompleto, no lo tiene aún) y el del personal, de su nombre visible. Por ejemplo, `rescatista1` (sin equipo) es `aitlasgil`, `rescatista2` es `pilezqmur BSC` y `rescatista4` (en dos equipos) es `eleparsan BSC`; el administrador es `marsolvid`. Es lo que ve un rescatista en lugar del nombre del coordinador responsable. El comando `seed` los fija si faltan y no cambia los que existen.
 
 ## Misiones (H1)
 

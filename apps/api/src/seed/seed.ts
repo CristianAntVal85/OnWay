@@ -9,7 +9,7 @@ import type { FileStorage } from '../files/file-storage.js';
 import type { ElevationProvider } from '../geo/elevation.js';
 import { hashPassword } from '../identity/password.js';
 import { RouteMeasurement, type MeasuredPath } from '../routes/route-measurement.js';
-import { localityCode, normalizeDocument } from '@onway/contracts';
+import { aliasBase, normalizeDocument } from '@onway/contracts';
 import type { SensitiveKeys } from '../sensitive/config.js';
 import { DocumentFingerprint } from '../sensitive/document-fingerprint.js';
 import { SensitiveCipher } from '../sensitive/sensitive-cipher.js';
@@ -30,6 +30,8 @@ export interface SeedResult {
   profiles: number;
   /** Demo courses and skills created in this run (H5-habilidades): 0 once they exist. */
   skills: number;
+  /** Aliases fixed in this run (H5-equipos, Q-36): 0 once every member who can have one has it. */
+  aliases: number;
 }
 
 export interface SeedOptions {
@@ -72,7 +74,8 @@ export async function seedDemo(owner: DbConnection, demo: Demo, options: SeedOpt
     const missionRoutes = await seedMissionRoutes(pool, organization.organizationId, demo, options);
     const profiles = await seedProfiles(pool, organization.organizationId, demo, options);
     const skills = await seedSkills(pool, organization.organizationId, demo, options);
-    return { ...organization, missions, routes, missionRoutes, profiles, skills };
+    const aliases = await seedAliases(pool, organization.organizationId, demo);
+    return { ...organization, missions, routes, missionRoutes, profiles, skills, aliases };
   } finally {
     await pool.end();
   }
@@ -198,6 +201,41 @@ async function seedSkills(pool: pg.Pool, orgId: string, demo: Demo, options: See
   return created;
 }
 
+/**
+ * Fixes the alias (Q-36) of the demo members who have none yet and can have one: the staff (from the visible name) and the rescuers with the profile
+ * complete (from the full name of the profile), with the code of the first team of the demo that holds them. The same rule as `set_member_alias`
+ * (a numeric suffix on a clash) done as the owner, because the seed has no request context. An alias that exists is left as it is (fixed).
+ * Idempotent, so a stack seeded before H5-equipos receives them on its next `up`.
+ */
+async function seedAliases(pool: pg.Pool, orgId: string, demo: Demo): Promise<number> {
+  const { rows } = await pool.query<{ email: string; role: string; display_name: string; full_name: string | null; profile_status: string | null; alias: string | null; user_id: string }>(
+    `SELECT u.id user_id, u.email, m.role::text role, u.display_name, p.full_name, p.status::text profile_status, m.alias
+       FROM memberships m JOIN users u ON u.id = m.user_id LEFT JOIN rescuer_profiles p ON p.user_id = u.id AND p.organization_id = m.organization_id
+      WHERE m.organization_id = $1`,
+    [orgId],
+  );
+  const byEmail = new Map(rows.map((r) => [r.email, r]));
+  let fixed = 0;
+  for (const member of demo.members) {
+    const row = byEmail.get(member.email);
+    if (!row || row.alias !== null) continue;
+    const name = member.role === 'rescuer' ? (row.profile_status === 'complete' ? row.full_name : null) : row.display_name;
+    if (!name) continue;
+    const base = aliasBase(name);
+    const code = demo.teams.find((t) => t.members.includes(member.key))?.code ?? null;
+    const taken = new Set((await pool.query<{ alias: string }>(`SELECT lower(alias) alias FROM memberships WHERE organization_id = $1 AND alias IS NOT NULL`, [orgId])).rows.map((r) => r.alias));
+    let n = 1;
+    let alias: string;
+    do {
+      alias = `${base}${n > 1 ? n : ''}${code ? ` ${code}` : ''}`;
+      n += 1;
+    } while (taken.has(alias.toLowerCase()));
+    await pool.query(`UPDATE memberships SET alias = $3 WHERE organization_id = $1 AND user_id = $2 AND alias IS NULL`, [orgId, row.user_id, alias]);
+    fixed += 1;
+  }
+  return fixed;
+}
+
 async function seedOrganization(pool: pg.Pool, demo: Demo): Promise<{ seeded: boolean; organizationId: string }> {
   const existing = await findOrganization(pool, demo);
   if (existing) return { seeded: false, organizationId: existing };
@@ -256,8 +294,8 @@ async function seedOrganization(pool: pg.Pool, demo: Demo): Promise<{ seeded: bo
         orgId,
         team.name,
         team.locality,
-        localityCode(team.locality),
-      ]); // provisional (H5-equipos T2): T5 lleva `code` a demo.json
+        team.code,
+      ]);
       for (const key of team.members) {
         await client.query(`INSERT INTO team_members (team_id, user_id, organization_id) VALUES ($1, $2, $3)`, [rows[0]!.id, userIds.get(key), orgId]);
       }

@@ -67,12 +67,12 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
   it('loads the agreed demo and a second run changes nothing', async () => {
     const { owner } = inject('database');
     const first = await seedDemo(owner, demo, options);
-    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6, missionRoutes: 4, profiles: 5, skills: 9 });
+    expect(first).toMatchObject({ seeded: true, missions: 3, routes: 6, missionRoutes: 4, profiles: 5, skills: 9, aliases: 8 });
     orgId = first.organizationId;
     const before = await fingerprint();
 
     const second = await seedDemo(owner, demo, options);
-    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0, missionRoutes: 0, profiles: 0, skills: 0 });
+    expect(second).toEqual({ seeded: false, organizationId: orgId, missions: 0, routes: 0, missionRoutes: 0, profiles: 0, skills: 0, aliases: 0 });
     expect(await fingerprint()).toBe(before);
 
     // Two runs at once also end with a single organization.
@@ -111,6 +111,32 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
     expect(bytes.toString('latin1')).toContain('Certificado de demostraci\xf3n \xb7 datos ficticios');
     const attached = await fixtures.query<{ name: string }>(`SELECT s.name FROM skills s JOIN files f ON f.id = s.certificate_file_id WHERE s.organization_id = $1`, [result.organizationId]);
     expect(attached).toEqual([{ name: 'Primeros auxilios en montaña' }]);
+  });
+
+  it('H5-equipos: the teams carry their code and the members their fixed alias (Q-36); a second run keeps them', async () => {
+    const { owner } = inject('database');
+    const codes = await fixtures.query<{ locality: string; code: string }>(`SELECT locality, code FROM teams WHERE organization_id = $1 ORDER BY locality`, [orgId]);
+    expect(codes).toEqual([
+      { locality: 'Benasque', code: 'BNS' },
+      { locality: 'Biescas', code: 'BSC' },
+      { locality: 'Sabiñánigo', code: 'SBN' },
+      { locality: 'Torla', code: 'TRL' },
+    ]);
+    const aliases = async () =>
+      Object.fromEntries((await fixtures.query<{ email: string; alias: string | null }>(`SELECT u.email, m.alias FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = $1`, [orgId])).map((r) => [r.email, r.alias]));
+    const before = await aliases();
+    expect(before).toMatchObject({
+      'rescatista1@example.org': 'aitlasgil', // no team: no code
+      'rescatista2@example.org': 'pilezqmur BSC', // the name of the profile, with the code of its team
+      'rescatista3@example.org': 'joacasfer BNS',
+      'rescatista4@example.org': 'eleparsan BSC', // two teams: the first one only
+      'rescatista5@example.org': 'matabalac BNS',
+      'rescatista6@example.org': null, // incomplete profile: still none
+    });
+    expect(before['pendiente@example.org']).toBeUndefined();
+    for (const email of Object.keys(before).filter((e) => !e.startsWith('rescatista'))) expect(before[email]).toMatch(/^[a-z]+$/);
+    expect((await seedDemo(owner, demo, options)).aliases).toBe(0);
+    expect(await aliases()).toEqual(before);
   });
 
   it('has the agreed counts, one organization only (D-H0-18)', async () => {
@@ -326,7 +352,7 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(0);
 
       const second = await seedDemo(owner, other, options);
-      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6, missionRoutes: 4, profiles: 0, skills: 0 });
+      expect(second).toEqual({ seeded: false, organizationId: first.organizationId, missions: 3, routes: 6, missionRoutes: 4, profiles: 0, skills: 0, aliases: 0 });
       expect(await count(`SELECT count(*) n FROM missions WHERE organization_id = $1`, [first.organizationId])).toBe(3);
       expect(await count(`SELECT count(*) n FROM routes WHERE organization_id = $1`, [first.organizationId])).toBe(6);
     });
@@ -514,7 +540,7 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
         })),
       };
       const again = await seedDemo(owner, withRoutes, options);
-      expect(again).toEqual({ seeded: false, organizationId: first.organizationId, missions: 0, routes: 0, missionRoutes: 4, profiles: 0, skills: 0 });
+      expect(again).toEqual({ seeded: false, organizationId: first.organizationId, missions: 0, routes: 0, missionRoutes: 4, profiles: 0, skills: 0, aliases: 0 });
       expect(await count(`SELECT count(*) n FROM mission_routes WHERE organization_id = $1`, [first.organizationId])).toBe(4);
       expect(await count(`SELECT count(*) n FROM audit_log WHERE organization_id = $1 AND action IN ('route_added', 'route_marked_unavailable')`, [first.organizationId])).toBe(5);
       expect((await seedDemo(owner, withRoutes, options)).missionRoutes).toBe(0);

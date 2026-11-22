@@ -2,7 +2,7 @@
 # Comprobación de humo de la pila de `docker compose up`: salud, página de acceso y el ciclo
 # login -> getMe -> logout con cookie y CSRF, para un administrador, un coordinador y dos rescatistas (uno con el perfil incompleto). Comprueba también el acceso de H5:
 # el administrador lee el código de invitación y los demás reciben 403, lista a los usuarios (H5-usuarios; un coordinador recibe 403 y la ficha no trae documento ni dirección), `register` con un código inválido da REGISTRATION_FAILED,
-# `forgotPassword` responde 202 y la bandeja del administrador trae la solicitud de `pendiente@example.org`. No registra ninguna cuenta ni
+# `forgotPassword` responde 202, los equipos (H5-equipos: 4 con su código, selector de rescatistas sin contacto, 403 del rescatista y alias del responsable en Mis misiones) y la bandeja del administrador trae la solicitud de `pendiente@example.org`. No registra ninguna cuenta ni
 # envía ningún correo (el correo del `forgotPassword` no existe), así que no deja nada en la pila.
 # Uso (desde la raíz del repositorio): infra/scripts/smoke.sh [URL]   (por defecto http://localhost:8080)
 # La contraseña es la ficticia y pública de data/seed/demo.json (R-10); no hay ninguna otra.
@@ -200,6 +200,23 @@ echo "$detail" | grep -q '00000001R' && fail "getUser carries the document numbe
 login_as coordinador@example.org
 [ "$(status -b "$jar" "$base/api/v1/admin/users?pageSize=50")" = 403 ] || fail "listUsers as the coordinator must be 403"
 echo "ok  users: the administrator lists 9 or more members (not the pending one), getUser of rescatista1 has skills and no document or address, the coordinator gets 403"
+
+# Equipos (H5-equipos): el coordinador lista los 4 equipos de la semilla, cada uno con su código; rescatista1 recibe 403; el selector de
+# rescatistas no trae contacto; y Mis misiones de rescatista1 trae el alias del responsable (nunca su nombre).
+login_as coordinador@example.org
+teams="$(curl -s -b "$jar" "$base/api/v1/teams?pageSize=50")"
+[ "$(echo "$teams" | grep -o '"memberCount"' | wc -l)" = 4 ] || fail "listTeams must list the 4 demo teams: $teams"
+for team_code in BSC BNS TRL SBN; do echo "$teams" | grep -q "\"code\":\"$team_code\"" || fail "listTeams has no team with the code $team_code: $teams"; done
+rescuers="$(curl -s -b "$jar" "$base/api/v1/rescuers?pageSize=50")"
+[ "$(echo "$rescuers" | grep -o '"userId"' | wc -l)" = 5 ] || fail "listRescuers must offer the 5 rescuers with a complete profile: $rescuers"
+echo "$rescuers" | grep -Eq '@|phone|document|address|alias' && fail "listRescuers carries contact or personal data: $rescuers"
+login_as rescatista1@example.org
+[ "$(status -b "$jar" "$base/api/v1/teams")" = 403 ] || fail "listTeams as rescatista1 must be 403"
+[ "$(status -b "$jar" "$base/api/v1/rescuers")" = 403 ] || fail "listRescuers as rescatista1 must be 403"
+my_missions="$(curl -s -b "$jar" "$base/api/v1/my/missions?pageSize=50")"
+echo "$my_missions" | grep -Eq '"coordinatorAlias":"[a-z]' || fail "listMyMissions of rescatista1 carries no coordinatorAlias: $my_missions"
+echo "$my_missions" | grep -q '"coordinatorName":"' && fail "listMyMissions of rescatista1 carries the name of the coordinator: $my_missions"
+echo "ok  teams: the coordinator lists the 4 demo teams with their code, the rescuer picker has 5 people and no contact, rescatista1 gets 403 and sees the alias of the responsible, not the name"
 
 register_body="{\"email\":\"smoke-register@example.org\",\"password\":\"$password\",\"passwordConfirm\":\"$password\",\"displayName\":\"Smoke ficticio\",\"inviteCode\":\"INVALID-CODE-0000\",\"locale\":\"es\"}"
 register_out="$(curl -s -w ' %{http_code}' -H 'Content-Type: application/json' -d "$register_body" "$base/api/v1/auth/register")"
