@@ -407,6 +407,39 @@ export interface Messages {
       teams: string;
       noTeams: string;
       locality: string;
+      manage: string;
+      changeRole: string;
+      disable: string;
+      reactivate: string;
+      working: string;
+      cancel: string;
+      staleState: string;
+      lastAdmin: string;
+      done: { roleChanged: string; disabled: string; reactivated: string };
+      roleDialog: {
+        title: string;
+        description: string;
+        legend: string;
+        adminHelp: string;
+        adminWarning: string;
+        roleRequired: string;
+        summary: string;
+        confirm: string;
+      };
+      disableDialog: { title: string; description: string; confirm: string };
+      reactivateDialog: { title: string; description: string; confirm: string };
+      reassign: {
+        legend: string;
+        explain: string;
+        count: string;
+        countUnknown: string;
+        label: string;
+        placeholder: string;
+        required: string;
+        loading: string;
+        loadFailed: string;
+        none: string;
+      };
     };
     inviteCode: {
       title: string;

@@ -291,3 +291,167 @@ describe.each(LANGUAGES)('administración: ficha de usuario (%s)', (language, te
     expect(api.calls.some((c) => c.path.startsWith('/admin/users'))).toBe(false);
   });
 });
+
+describe.each(LANGUAGES)('administración: cambiar el rol, desactivar y reactivar (%s)', (language, text: Text) => {
+  const A = text.admin.user;
+  const target = idOf(2);
+  const coordinators = {
+    items: [
+      { id: idOf(2), displayName: 'Persona Ficticia 2' },
+      { id: idOf(9), displayName: 'Coordinadora Ficticia' },
+    ],
+  };
+  const patches = (api: { calls: Call[] }) => api.calls.filter((c) => c.method === 'PATCH');
+  const roleName = (label: string) => new RegExp(`^${label}`);
+  afterEach(() => vi.restoreAllMocks());
+
+  /** Una ficha con su `PATCH`; `answer` decide la respuesta de cada petición (por defecto, la ficha cambiada). */
+  function open(detail: Record<string, unknown> = {}, answer?: (call: Call, n: number) => Response) {
+    let n = 0;
+    return setup({
+      language,
+      route: `/admin/users/${target}`,
+      details: { [target]: () => json(200, detailOf(2, detail)) },
+      extra: {
+        'GET /org/coordinators': () => json(200, coordinators),
+        [`PATCH /admin/users/${target}`]: (call) => (answer ? answer(call, ++n) : json(200, detailOf(2, { ...detail, ...(call.body as object) }))),
+      },
+    });
+  }
+  const dialog = () => screen.getByRole('dialog');
+
+  it('cambiar el rol: ninguna opción marcada, sin la actual; sin elegir avisa; envía solo el rol', async () => {
+    const { user, api } = open();
+    await user.click(await screen.findByRole('button', { name: A.changeRole }));
+    const radios = within(dialog()).getAllByRole('radio');
+    expect(radios).toHaveLength(2);
+    expect(radios.some((radio) => (radio as HTMLInputElement).checked)).toBe(false);
+    expect(within(dialog()).queryByRole('radio', { name: roleName(text.account.roleRescuer) })).toBeNull();
+    await user.click(within(dialog()).getByRole('button', { name: A.roleDialog.confirm }));
+    expect(await within(dialog()).findByText(A.roleDialog.roleRequired)).toBeTruthy();
+    expect(patches(api)).toHaveLength(0);
+    await user.click(within(dialog()).getByRole('radio', { name: roleName(text.account.roleCoordinator) }));
+    expect(within(dialog()).getByText(text.admin.signups.approveDialog.coordinatorWarning)).toBeTruthy();
+    await user.click(within(dialog()).getByRole('button', { name: A.roleDialog.confirm }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(patches(api).map((c) => c.body)).toEqual([{ role: 'coordinator' }]);
+    expect(await screen.findByText(A.done.roleChanged.replace('{{role}}', text.account.roleCoordinator))).toBeTruthy();
+  });
+
+  it('cambiar a administrador avisa de los permisos', async () => {
+    const { user } = open();
+    await user.click(await screen.findByRole('button', { name: A.changeRole }));
+    await user.click(within(dialog()).getByRole('radio', { name: roleName(text.account.roleAdmin) }));
+    expect(within(dialog()).getByText(A.roleDialog.adminWarning)).toBeTruthy();
+  });
+
+  it('desactivar sin misiones envía solo el estado y no pide responsable', async () => {
+    const { user, api } = open();
+    await user.click(await screen.findByRole('button', { name: A.disable }));
+    expect(within(dialog()).queryByRole('combobox')).toBeNull();
+    await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(patches(api).map((c) => c.body)).toEqual([{ accountStatus: 'disabled' }]);
+    expect(await screen.findByText(A.done.disabled)).toBeTruthy();
+    expect(document.activeElement?.textContent).toBe(A.done.disabled);
+  });
+
+  it('desactivar a un coordinador con misiones pide el responsable (sin ella misma) y lo envía', async () => {
+    const { user, api } = open({ role: 'coordinator', hasMissionsAsResponsible: 2 });
+    await user.click(await screen.findByRole('button', { name: A.disable }));
+    expect(within(dialog()).getByText(A.reassign.count.replace('{{count}}', '2'))).toBeTruthy();
+    const select = within(dialog()).getByRole('combobox', { name: A.reassign.label });
+    await waitFor(() => expect(within(select).getAllByRole('option')).toHaveLength(2));
+    expect(within(select).queryByRole('option', { name: 'Persona Ficticia 2' })).toBeNull();
+    await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+    expect(await within(dialog()).findByText(A.reassign.required)).toBeTruthy();
+    expect(patches(api)).toHaveLength(0);
+    await user.selectOptions(select, idOf(9));
+    await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(patches(api).map((c) => c.body)).toEqual([{ accountStatus: 'disabled', reassignMissionsTo: idOf(9) }]);
+  });
+
+  it('si el servidor responde COORDINATOR_HAS_MISSIONS, abre la reasignación y reenvía con el responsable', async () => {
+    const { user, api } = open({ role: 'coordinator' }, (call, n) =>
+      n === 1 ? apiError(409, 'COORDINATOR_HAS_MISSIONS', { missionIds: [idOf(31), idOf(32), idOf(33)] }) : json(200, detailOf(2, { role: 'coordinator', accountStatus: 'disabled' })),
+    );
+    await user.click(await screen.findByRole('button', { name: A.disable }));
+    expect(within(dialog()).queryByRole('combobox')).toBeNull();
+    await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+    const select = await within(dialog()).findByRole('combobox', { name: A.reassign.label });
+    expect(within(dialog()).getByText(A.reassign.count.replace('{{count}}', '3'))).toBeTruthy();
+    expect(within(dialog()).queryByText(text.errors.COORDINATOR_HAS_MISSIONS)).toBeNull();
+    await waitFor(() => expect(within(select).getAllByRole('option')).toHaveLength(2));
+    await user.selectOptions(select, idOf(9));
+    await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(patches(api).map((c) => c.body)).toEqual([{ accountStatus: 'disabled' }, { accountStatus: 'disabled', reassignMissionsTo: idOf(9) }]);
+  });
+
+  it('cambiar el rol de un coordinador con misiones abiertas también pide el responsable', async () => {
+    const { user, api } = open({ role: 'coordinator', hasMissionsAsResponsible: 1 });
+    await user.click(await screen.findByRole('button', { name: A.changeRole }));
+    await user.click(within(dialog()).getByRole('radio', { name: roleName(text.account.roleRescuer) }));
+    const select = await within(dialog()).findByRole('combobox', { name: A.reassign.label });
+    await waitFor(() => expect(within(select).getAllByRole('option')).toHaveLength(2));
+    await user.selectOptions(select, idOf(9));
+    await user.click(within(dialog()).getByRole('button', { name: A.roleDialog.confirm }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(patches(api).map((c) => c.body)).toEqual([{ role: 'rescuer', reassignMissionsTo: idOf(9) }]);
+  });
+
+  it('LAST_ADMIN se explica en el diálogo, que sigue abierto, y no cambia nada', async () => {
+    const { user, api } = open({ role: 'admin' }, () => apiError(409, 'LAST_ADMIN'));
+    await user.click(await screen.findByRole('button', { name: A.disable }));
+    await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+    expect(await within(dialog()).findByText(A.lastAdmin)).toBeTruthy();
+    expect(patches(api)).toHaveLength(1);
+    expect(screen.queryByText(A.done.disabled)).toBeNull();
+  });
+
+  it('un cambio que ya no procede (INVALID_STATE_TRANSITION) se explica', async () => {
+    const { user } = open({}, () => apiError(409, 'INVALID_STATE_TRANSITION'));
+    await user.click(await screen.findByRole('button', { name: A.disable }));
+    await user.click(within(dialog()).getByRole('button', { name: A.disableDialog.confirm }));
+    expect(await within(dialog()).findByText(A.staleState)).toBeTruthy();
+  });
+
+  it('reactivar envía solo el estado activo y solo se ofrece a una cuenta desactivada', async () => {
+    const { user, api } = open({ accountStatus: 'disabled' });
+    expect(screen.queryByRole('button', { name: A.disable })).toBeNull();
+    await user.click(await screen.findByRole('button', { name: A.reactivate }));
+    await user.click(within(dialog()).getByRole('button', { name: A.reactivateDialog.confirm }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(patches(api).map((c) => c.body)).toEqual([{ accountStatus: 'active' }]);
+    expect(await screen.findByText(A.done.reactivated)).toBeTruthy();
+  });
+
+  it.each([
+    ['cambiar el rol', (t: Text['admin']['user']) => t.changeRole],
+    ['desactivar', (t: Text['admin']['user']) => t.disable],
+  ])('teclado y foco al %s: empieza en «Cancelar», Tab no sale y Escape devuelve el foco al botón', async (_name, label) => {
+    const { user } = open();
+    const opener = await screen.findByRole('button', { name: label(A) });
+    opener.focus();
+    await user.keyboard('{Enter}');
+    const cancel = within(dialog()).getByRole('button', { name: A.cancel });
+    expect(document.activeElement).toBe(cancel);
+    await user.tab();
+    expect(dialog().contains(document.activeElement)).toBe(true);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('teclado y foco al reactivar: empieza en «Cancelar» y Escape devuelve el foco', async () => {
+    const { user } = open({ accountStatus: 'disabled' });
+    const opener = await screen.findByRole('button', { name: A.reactivate });
+    opener.focus();
+    await user.keyboard('{Enter}');
+    expect(document.activeElement).toBe(within(dialog()).getByRole('button', { name: A.cancel }));
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(document.activeElement).toBe(opener);
+  });
+});

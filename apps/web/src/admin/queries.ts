@@ -78,3 +78,21 @@ export function useUser(userId: string) {
   const api = useApi();
   return useQuery({ queryKey: [...USERS_KEY, 'detail', userId], queryFn: ({ signal }) => api.getUser({ params: { userId } }, { signal }), retry: false });
 }
+
+/** Cambiar el rol, desactivar o reactivar (RN-11, INV-29). Solo se envía lo que cambia: el servidor rechaza un campo igual al actual. */
+export function useUpdateUser(userId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: OperationInput<'updateUser'>['body']) => api.updateUser({ params: { userId }, body }),
+    onSuccess: (next) => queryClient.setQueryData([...USERS_KEY, 'detail', userId], next),
+    // Pase lo que pase (también un 409) la lista y la ficha se vuelven a leer.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: USERS_KEY }),
+  });
+}
+
+/** Coordinadores activos, el selector del nuevo responsable (la misma consulta que usan las misiones). */
+export function useCoordinators() {
+  const api = useApi();
+  return useQuery({ queryKey: ['coordinators'], queryFn: ({ signal }) => api.listCoordinators({ signal }) });
+}

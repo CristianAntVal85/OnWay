@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useParams } from 'react-router';
 import { ApiError, type OperationOutput } from '@onway/contracts/client';
@@ -10,6 +10,7 @@ import { formatDate, formatDateTime } from '../missions/format';
 import { PATHS } from '../nav/navigation';
 import { PopupBlockedError, useOpenCertificate } from '../profile/skills';
 import { useUser } from './queries';
+import { ChangeRoleDialog, DisableDialog, ReactivateDialog, type Role } from './user-dialogs';
 import { ROLE_LABEL } from './users-section';
 
 type Skill = OperationOutput<'getUser'>['skills'][number];
@@ -33,7 +34,16 @@ export function UserPage() {
   const open = useOpenCertificate();
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
+  const [dialog, setDialog] = useState<'role' | 'disable' | 'reactivate' | null>(null);
+  const [done, setDone] = useState('');
+  const [focusDone, setFocusDone] = useState(0);
+  const doneRef = useRef<HTMLParagraphElement>(null);
   usePageTitle(person.data?.displayName ?? t('admin.users.title'));
+
+  // Desactivar o reactivar cambia el botón que abrió el diálogo y ya no existe: el foco pasa al aviso del resultado.
+  useEffect(() => {
+    if (focusDone > 0) doneRef.current?.focus();
+  }, [focusDone]);
 
   if (person.isPending) return <LoadingState label={t('admin.user.loading')} />;
   if (person.isError) {
@@ -56,6 +66,7 @@ export function UserPage() {
     );
   }
   const data = person.data;
+  const target = { id: data.userId, name: data.displayName, role: data.role, openMissions: data.hasMissionsAsResponsible };
 
   const openCertificate = (skill: Skill) => {
     setNotice('');
@@ -111,6 +122,26 @@ export function UserPage() {
           </dl>
         </SectionCard>
 
+        <SectionCard title={t('admin.user.manage')} icon="shield">
+          <p ref={doneRef} className="notice" role="status" tabIndex={-1} hidden={!done}>
+            {done}
+          </p>
+          <div className="point-row-actions">
+            <button type="button" className="button button-secondary" onClick={() => setDialog('role')}>
+              {t('admin.user.changeRole')}
+            </button>
+            {data.accountStatus === 'active' ? (
+              <button type="button" className="button button-secondary" onClick={() => setDialog('disable')}>
+                {t('admin.user.disable')}
+              </button>
+            ) : (
+              <button type="button" className="button button-secondary" onClick={() => setDialog('reactivate')}>
+                {t('admin.user.reactivate')}
+              </button>
+            )}
+          </div>
+        </SectionCard>
+
         <SectionCard title={t('admin.user.skills')} icon="document">
           <div role="status" className="notice-slot">
             {notice && <p className="notice">{notice}</p>}
@@ -164,6 +195,39 @@ export function UserPage() {
           )}
         </SectionCard>
       </div>
+
+      {dialog === 'role' && (
+        <ChangeRoleDialog
+          target={target}
+          onClose={() => setDialog(null)}
+          onDone={(role: Role) => {
+            setDialog(null);
+            setDone(t('admin.user.done.roleChanged', { role: t(ROLE_LABEL[role]) }));
+          }}
+        />
+      )}
+      {dialog === 'disable' && (
+        <DisableDialog
+          target={target}
+          onClose={() => setDialog(null)}
+          onDone={() => {
+            setDialog(null);
+            setDone(t('admin.user.done.disabled'));
+            setFocusDone((n) => n + 1);
+          }}
+        />
+      )}
+      {dialog === 'reactivate' && (
+        <ReactivateDialog
+          target={target}
+          onClose={() => setDialog(null)}
+          onDone={() => {
+            setDialog(null);
+            setDone(t('admin.user.done.reactivated'));
+            setFocusDone((n) => n + 1);
+          }}
+        />
+      )}
     </>
   );
 }
