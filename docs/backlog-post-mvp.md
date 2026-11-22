@@ -11,7 +11,7 @@ Cada entrada dice qué es, por qué se aplaza, cuándo conviene retomarla y dón
 | ID | Título | Cuándo |
 |---|---|---|
 | B-01 | El rescatista ve nombre y localidad de todos los equipos | H5 (equipos) |
-| B-02 | Alias de coordinadores y rescatistas (`criantval ALC`) | Decidir al planificar H5; construir después del MVP |
+| B-02 | Alias de coordinadores y rescatistas (`criantval ALC`) | Se decide y construye en `H5-equipos` (decisión del usuario, 2026-11-22) |
 | B-03 | `forgotPassword` permite agotar los enlaces de recuperación de otra cuenta | Antes del despliegue (H7) |
 | B-04 | `ResetPasswordRequest.token` sin longitud máxima propia | Antes del despliegue (H7) |
 | B-05 | El aviso de «motor de rutas no disponible» tarda de 4,5 a 5,5 s con el motor parado | Con el despliegue (H7) |

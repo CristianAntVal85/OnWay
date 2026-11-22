@@ -2,7 +2,7 @@
 
 Plan: `specs/H5-perfil/plan.md`. En orden de dependencia. Un commit por tarea: `<tipo>(H5-perfil): Tn <resumen>`.
 
-- [ ] **T1. Reparto de H5 y contrato de las 5 operaciones.** Cubre el doc 07 (partes de H5), Q-36, `getMyProfile`, `updateMyProfile`, `getMySensitive`, `updateMe` y `changePassword`.
+- [x] **T1. Reparto de H5 y contrato de las 5 operaciones.** Cubre el doc 07 (partes de H5), Q-36, `getMyProfile`, `updateMyProfile`, `getMySensitive`, `updateMe` y `changePassword`.
   - **Qué se hace:**
     - Doc 07 §3 H5: la tabla de las tres partes, con sus operaciones y el recuento de montadas, y el registro de cambios.
     - Doc 01: Q-36, «se decide en `H5-equipos`», y el registro de cambios.

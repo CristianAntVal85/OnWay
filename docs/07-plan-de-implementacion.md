@@ -1,6 +1,6 @@
 # OnWay — Documento 07: Plan de implementación por hitos
 
-**Versión:** 0.15 · **Estado:** borrador para revisión · **Fecha:** 21 de noviembre de 2026
+**Versión:** 0.16 · **Estado:** borrador para revisión · **Fecha:** 22 de noviembre de 2026
 **Depende de:** 01 a 06
 **Lo acompaña:** `CLAUDE.md` en la raíz del repositorio (resumen operativo, no copia de estos documentos)
 
@@ -137,6 +137,14 @@ Las operaciones de cada hito son las que llevan `x-milestone` con ese valor en e
 ### H5 · Personas y equipos · M–L
 
 > **Partido por demostración (cambio de alcance del 2026-11-05, issue #9).** Se construyó primero **`H5-acceso`** (`specs/H5-acceso/`, rama `hito/H5-acceso`): el registro con código de invitación, recuperar contraseña, el puerto `Mailer` (consola) y la parte de administración que el registro necesita (solicitudes de alta y código de invitación). Son 7 de las 26 operaciones, que conservan `x-milestone: H5`: `register`, `forgotPassword`, `resetPassword`, `listSignupRequests`, `decideSignupRequests`, `getInviteCode`, `rotateInviteCode` (58 montadas con las 51 de H0 a H4). Demostración de `H5-acceso`: una persona nueva se registra con el código, el administrador la aprueba como rescatista y ella llega a «Completa tu perfil»; y recupera su contraseña con el enlace que sale por el registro del `api`. El resto de H5 (perfil, habilidades, equipos, usuarios, `changePassword`, `updateMe`) sigue como está descrito abajo. Una cuenta aprobada llega a la página provisional «Completa tu perfil» hasta que se construya el resto.
+
+> **El resto de H5, en tres partes (decisión del usuario, 2026-11-22).** Igual que `H5-acceso`, por demostración y sin cambiar `x-milestone`:
+>
+> | Parte | Operaciones | Montadas al acabar |
+> |---|---|---|
+> | **`H5-perfil`** (`specs/H5-perfil/`) | `getMyProfile`, `updateMyProfile`, `getMySensitive`, `updateMe`, `changePassword`. Alta obligatoria en la web, datos sensibles cifrados (AES-256-GCM, huella HMAC), INV-18, 24, 31 y 32 | 63 |
+> | **`H5-habilidades`** | `listMySkills`, `createMySkill`, `updateMySkill`, `deleteMySkill`, `getCertificateLink` | 68 |
+> | **`H5-equipos`** | `listUsers`, `getUser`, `updateUser`, `listTeams`, `createTeam`, `getTeam`, `updateTeam`, `addTeamMembers`, `removeTeamMember`, y el alias de personas (Q-36, B-02). INV-23 y 29 | 77 |
 
 **Objetivo:** que las cuentas dejen de ser de demostración: alta, aprobación, perfil protegido, habilidades y equipos.
 
@@ -329,6 +337,7 @@ Una entrada tipo para el coordinador:
 
 | Versión | Fecha | Cambio |
 |---|---|---|
+| 0.16 | 2026-11-22 | Cambio de alcance: el resto de H5 se parte en tres (`H5-perfil`, `H5-habilidades`, `H5-equipos`), por demostración y sin cambiar `x-milestone`. El alias de personas (Q-36) se decide en `H5-equipos`. Plan y tareas de la primera en `specs/H5-perfil/` |
 | 0.15 | 2026-11-21 | Cambio de alcance (pintar ruta y continuar a mano): subsección nueva en la sección 3, tras la del nombre de las rutas. Interruptor «Pintar ruta» en el editor, dibujar desde la misión y «Continuar a mano» (`createRouteVersion` con `continueFrom`). Sin operaciones nuevas ni cambios en la base de datos |
 | 0.14 | 2026-11-21 | Cambio de alcance (nombre de las rutas y desvincular): subsección nueva en la sección 3, tras `UI-simplificacion`. Nombre obligatorio al generar, propuesto con el del punto de inicio; `updateRoute` para renombrar; quitar de la misión desde «Usada en» del detalle de la ruta. Sin cambios en la base de datos ni en las reglas |
 | 0.13 | 2026-11-13 | Cambio de alcance (issue #18): tarjeta del tiempo simple con vista de detalle. Nueva subsección «Issue #18» en la sección 3, tras la «Issue #17»: tres iconos por tramo del día, temperatura y viento; sin contrato ni operaciones nuevas |
