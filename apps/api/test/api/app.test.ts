@@ -89,11 +89,17 @@ const SKILLS_OPERATIONS = ['listMySkills', 'createMySkill', 'updateMySkill', 'de
 const SKILLS_BUILT: string[] = ['listMySkills', 'createMySkill', 'updateMySkill', 'deleteMySkill', 'getCertificateLink', 'openCertificate']; // T3 and T4
 
 /**
- * The 3 operations of H5-usuarios, the third part. T3 mounts the two reads, T4 `updateUser`. The 6 of teams stay unmounted.
+ * The 3 operations of H5-usuarios, the third part. T3 mounts the two reads, T4 `updateUser`.
  */
 const USERS_OPERATIONS = ['listUsers', 'getUser', 'updateUser'];
 const USERS_BUILT: string[] = ['listUsers', 'getUser', 'updateUser'];
-const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT, ...SKILLS_BUILT, ...USERS_BUILT];
+
+/**
+ * The 7 operations of H5-equipos, the last part (`listRescuers` moved from H6 to H5). T3 mounts the 6 of teams, T4 `listRescuers`.
+ */
+const TEAMS_OPERATIONS = ['listTeams', 'createTeam', 'getTeam', 'updateTeam', 'addTeamMembers', 'removeTeamMember', 'listRescuers'];
+const TEAMS_BUILT: string[] = ['listTeams', 'createTeam', 'getTeam', 'updateTeam', 'addTeamMembers', 'removeTeamMember']; // T3; T4 adds listRescuers
+const BUILT_IN_H5 = [...ACCESS_BUILT, ...PROFILE_BUILT, ...SKILLS_BUILT, ...USERS_BUILT, ...TEAMS_BUILT];
 
 const MOUNTED_IDS = [...BUILT, ...BUILT_IN_H5];
 const routeOf = (e: { method: string; path: string }) => `${e.method} /api/v1${nestPath(e.path)}`;
@@ -143,7 +149,9 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(SKILLS_BUILT.filter((id) => !SKILLS_OPERATIONS.includes(id))).toEqual([]);
     expect(USERS_OPERATIONS.filter((id) => !ofH5.includes(id))).toEqual([]);
     expect(USERS_BUILT.filter((id) => !USERS_OPERATIONS.includes(id))).toEqual([]);
-    expect(MOUNTED_IDS).toHaveLength(53 + ACCESS_BUILT.length + PROFILE_BUILT.length + SKILLS_BUILT.length + USERS_BUILT.length);
+    expect(TEAMS_OPERATIONS.filter((id) => !ofH5.includes(id))).toEqual([]);
+    expect(TEAMS_BUILT.filter((id) => !TEAMS_OPERATIONS.includes(id))).toEqual([]);
+    expect(MOUNTED_IDS).toHaveLength(53 + ACCESS_BUILT.length + PROFILE_BUILT.length + SKILLS_BUILT.length + USERS_BUILT.length + TEAMS_BUILT.length);
     expect(new Set(MOUNTED_IDS).size).toBe(MOUNTED_IDS.length);
   });
 
@@ -153,17 +161,18 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     expect(mountedRoutes(real.app)).toEqual(expected.sort());
   });
 
-  it('mounts nothing of H5 beyond the access, profile, skills and users scopes, nor of a later milestone, test controllers included', () => {
+  it('mounts nothing of H5 beyond the access, profile, skills, users and teams scopes, nor of a later milestone, test controllers included', () => {
     const outside = ENDPOINTS.filter(
       (e) =>
         MILESTONES.indexOf(e.milestone) >= MILESTONES.indexOf('H5') &&
         !ACCESS_OPERATIONS.includes(e.id) &&
         !PROFILE_OPERATIONS.includes(e.id) &&
         !SKILLS_OPERATIONS.includes(e.id) &&
-        !USERS_OPERATIONS.includes(e.id),
+        !USERS_OPERATIONS.includes(e.id) &&
+        !TEAMS_OPERATIONS.includes(e.id),
     );
-    expect(outside.filter((e) => e.milestone === 'H5')).toHaveLength(6);
-    expect(outside).toHaveLength(25);
+    expect(outside.filter((e) => e.milestone === 'H5')).toHaveLength(0);
+    expect(outside).toHaveLength(18);
     const mounted = new Set([...mountedRoutes(real.app), ...mountedRoutes(stubbed.app)]);
     expect(outside.map(routeOf).filter((route) => mounted.has(route))).toEqual([]);
   });
@@ -173,23 +182,23 @@ describe('routes come from the registry (AC-02, rule 7)', () => {
     const { Operation } = await import('../../src/common/operation.js');
     expect(() => {
       class Later {
-        listRescuers() {}
+        listParticipations() {}
       }
       Controller()(Later);
-      Operation('listRescuers')(Later.prototype, 'listRescuers', Object.getOwnPropertyDescriptor(Later.prototype, 'listRescuers')!);
+      Operation('listParticipations')(Later.prototype, 'listParticipations', Object.getOwnPropertyDescriptor(Later.prototype, 'listParticipations')!);
     }).toThrow(/belongs to H6, but the milestone in progress is H5/);
     expect(() => Operation('doesNotExist' as never)).toThrow(/not in the ENDPOINTS registry/);
   });
 
   it('answers a registry route that is not mounted yet with 404 NOT_FOUND in the error format', async () => {
-    await expectError(await fetch(`${real.baseUrl}/teams`), 'NOT_FOUND');
+    await expectError(await fetch(`${real.baseUrl}/my/history`), 'NOT_FOUND'); // listMyHistory, H6
     await expectError(await fetch(`${real.baseUrl}/nothing-here`), 'NOT_FOUND');
     await expectError(await fetch(`${real.baseUrl}/health`, { method: 'POST' }), 'NOT_FOUND');
   });
 
-  it('answers every operation of H5 that is not mounted (the 9 of H5-equipos) with 404 NOT_FOUND', async () => {
+  it('answers every operation of H5 that is not mounted (what is left of H5-equipos) with 404 NOT_FOUND', async () => {
     const unmounted = ENDPOINTS.filter((e) => e.milestone === 'H5' && !MOUNTED_IDS.includes(e.id));
-    expect(unmounted).toHaveLength(27 - BUILT_IN_H5.length);
+    expect(unmounted).toHaveLength(28 - BUILT_IN_H5.length);
     const someId = '00000000-0000-4000-8000-000000000000';
     for (const e of unmounted) {
       const url = `${real.baseUrl}${e.path.replace(/\{[^}]+\}/g, someId)}`;

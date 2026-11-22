@@ -196,14 +196,16 @@ describe('listMyMissionRoutes (RF-601, RF-602, INV-05, RN-03)', () => {
     }
   });
 
-  it('shows the origin; the team only to a member of it (the policy teams_select); rows come in the order they were added', async () => {
+  it('shows the origin and the team (name and locality) whether or not the rescuer is a member of it (D-34); rows come in the order they were added', async () => {
     const mission = await newMission(a.coordinator, true);
     const team = await fixtures.team(a.orgId, 'Seguimiento');
     const first = await validatedInMission(a.coordinator, mission.id, { originPointId: mission.originId, teamId: team });
     const second = await validatedInMission(a.coordinator, mission.id, {}, uniq('Second'), line(0.7, 42.62));
     let rows = await mine(a.rescuer, mission.id);
     expect(rows.map((r) => r.routeId)).toEqual([first.routeId, second.routeId]);
-    expect(rows[0]).toMatchObject({ origin: { id: mission.originId, name: 'Origen de prueba' }, team: null });
+    // D-34 (migration 0015): a rescuer who is not a member sees the team of the route; only its name and locality
+    expect(rows[0]).toMatchObject({ origin: { id: mission.originId, name: 'Origen de prueba' }, team: { id: team, locality: 'Locality' } });
+    expect(Object.keys(rows[0]!.team!).sort()).toEqual(['id', 'locality', 'name']);
     expect(rows[1]).toMatchObject({ origin: null, team: null });
     await fixtures.addToTeam(team, a.rescuer);
     rows = await mine(a.rescuer, mission.id);

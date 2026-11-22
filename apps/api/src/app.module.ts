@@ -22,6 +22,7 @@ import { ProfileModule } from './profile/profile.module.js';
 import { RoutesModule } from './routes/routes.module.js';
 import type { SensitiveKeys } from './sensitive/config.js';
 import { SensitiveModule } from './sensitive/sensitive.module.js';
+import { TeamsModule } from './teams/teams.module.js';
 import { WeatherModule, type WeatherOptions } from './weather/weather.module.js';
 
 export interface AppOptions {
@@ -65,6 +66,7 @@ export class AppModule {
         FilesModule.register(options.files),
         AdminModule,
         ProfileModule,
+        TeamsModule,
         MissionsModule,
         RoutesModule,
         MissionRoutesModule,

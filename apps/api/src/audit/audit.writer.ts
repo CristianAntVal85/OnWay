@@ -73,6 +73,18 @@ export interface CertificateOpenedEntry {
   subjectUserId: string;
 }
 
+/** What happened to a team or its members (H5-equipos, RF-801). */
+export type TeamAuditAction = 'team_created' | 'team_updated' | 'team_members_added' | 'team_member_removed';
+
+export interface TeamAuditEntry {
+  orgId: string;
+  teamId: string;
+  action: TeamAuditAction;
+  actorUserId: string;
+  /** Ids, names of fields and counts: never the name or the locality of a team, nor the name of a person. */
+  detail?: Record<string, unknown>;
+}
+
 /**
  * Writes `audit_log` (INV-16, RN-05) inside the transaction of the request: if the operation fails the row is
  * rolled back with it, and a change cannot commit without its row. By convention every action of a mission is
@@ -194,6 +206,13 @@ export class AuditWriter {
   }
 
   /** The role of a person changed (INV-29). Only the two roles: no name, no email. */
+  async recordTeam(entry: TeamAuditEntry): Promise<void> {
+    await this.database
+      .current()
+      .insert(auditLog)
+      .values({ organizationId: entry.orgId, entityType: 'team', entityId: entry.teamId, action: entry.action, actorUserId: entry.actorUserId, detail: entry.detail ?? {} });
+  }
+
   async recordRoleChanged(entry: { orgId: string; userId: string; actorUserId: string; from: string; to: string }): Promise<void> {
     await this.database
       .current()

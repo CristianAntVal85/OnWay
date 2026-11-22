@@ -35,7 +35,7 @@ Plan: `specs/H5-equipos/plan.md`. Las tareas van en orden de dependencia, con un
   - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:db teams-alias schema && db/tests/run-postgis.sh`.
   - **Hecho cuando:** las pruebas pasan sobre una base vacía con PostGIS y `run-postgis.sh` sigue en verde.
 
-- [ ] **T3. Las 6 operaciones de equipos.** Cubre RF-801, Q-12, INV-23, D-E4, D-E5, D-E6 y RN-21.
+- [x] **T3. Las 6 operaciones de equipos.** Cubre RF-801, Q-12, INV-23, D-E4, D-E5, D-E6 y RN-21.
   - **Qué se hace:**
     - `TeamsService`, `TeamsController` y `TeamsModule`, tal como los describe el plan §3.
     - `recordTeam` en la auditoría.
@@ -170,3 +170,5 @@ Plan: `specs/H5-equipos/plan.md`. Las tareas van en orden de dependencia, con un
 - **T2.** `onway_app` pierde `UPDATE` de toda la tabla `memberships` y conserva `UPDATE (role)`: sin eso un `REVOKE` de columna no tenía efecto (la concesión de 0008 era de tabla). `memberships.status` ya solo lo escriben funciones `SECURITY DEFINER`; la prueba lo comprueba. `memberships.alias` lleva un `CHECK` de formato (`^[a-z]+[0-9]*( [A-Z0-9]{3})?$`) que el plan no mencionaba.
 - **T2.** Tocados por el `NOT NULL` de `teams.code`: `db/tests/seed_and_tests.sql` y `run_tests.sql` (el recuento «rescatista ve su equipo» pasa de 1 a 2 por D-34 y cambia de nombre; siguen 194 comprobaciones), `test/support/fixtures.ts`, `mission-writers-policy.test.ts`, `database.test.ts` y `organization.test.ts`. `seed.ts` usa `localityCode(locality)` de forma provisional; T5 lleva `code` a `demo.json`.
 - **T2.** La prueba de la base aplica 0002-0014 a mano, inserta los equipos con choque y luego ejecuta 0015 (relleno con `AL2`, `AL3` para los choques).
+- **T3.** `memberCount` y los miembros cuentan solo membresías activas de personas no anonimizadas (INV-22), no solo las filas de `team_members`. Archivar o reactivar con el mismo estado no es error (`updateTeam` no declara `INVALID_STATE_TRANSITION`). La auditoría de `team_updated` lleva los nombres de los campos y, si cambia, el estado nuevo; `team_members_added` lleva `userIds` y `count` solo de los que entran de verdad (sin llamada que añada a nadie no se escribe línea).
+- **T3.** `app.test.ts`: grupo `TEAMS_OPERATIONS` (7) y `TEAMS_BUILT` (6, T4 añade `listRescuers`); 80 montadas. La prueba de «hito posterior» usa `listParticipations` (H6), porque `listRescuers` ya es de H5, y la del 404 de lo no montado usa `/my/history`. Se adelantaron dos retoques de T4 que T2 había roto: `mission-routes-rescuer.test.ts` (el rescatista ve el equipo sin ser miembro, D-34) y las claves de `missions-lifecycle.test.ts` (`coordinatorAlias`); T4 sigue con la lógica.
