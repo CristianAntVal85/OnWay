@@ -24,13 +24,7 @@ export class RescuersService {
 
   async list(principal: Principal, query: Query): Promise<OperationOutput<'listRescuers'>> {
     const { orgId } = viewerOf(principal);
-    const filters: SQL[] = [
-      sql`m.organization_id = ${orgId}::uuid`,
-      sql`m.role = 'rescuer'`,
-      sql`m.status = 'active'`,
-      sql`u.account_status = 'active'`,
-      sql`u.anonymized_at IS NULL`,
-    ];
+    const filters: SQL[] = [sql`m.organization_id = ${orgId}::uuid`, sql`m.role = 'rescuer'`, sql`m.status = 'active'`, sql`u.account_status = 'active'`, sql`u.anonymized_at IS NULL`];
     if (query.profileComplete) filters.push(sql`EXISTS (SELECT 1 FROM rescuer_profiles p WHERE p.user_id = u.id AND p.organization_id = m.organization_id AND p.status = 'complete')`);
     if (query.q) filters.push(sql`u.display_name ILIKE ${likePattern(query.q)}`);
     if (query.teamId) filters.push(sql`EXISTS (SELECT 1 FROM team_members tm WHERE tm.user_id = u.id AND tm.organization_id = m.organization_id AND tm.team_id = ${query.teamId}::uuid)`);

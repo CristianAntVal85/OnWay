@@ -123,7 +123,11 @@ describe('seed (T7: R-10, D-H0-17, D-H0-18)', () => {
       { locality: 'Torla', code: 'TRL' },
     ]);
     const aliases = async () =>
-      Object.fromEntries((await fixtures.query<{ email: string; alias: string | null }>(`SELECT u.email, m.alias FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = $1`, [orgId])).map((r) => [r.email, r.alias]));
+      Object.fromEntries(
+        (await fixtures.query<{ email: string; alias: string | null }>(`SELECT u.email, m.alias FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = $1`, [orgId])).map(
+          (r) => [r.email, r.alias],
+        ),
+      );
     const before = await aliases();
     expect(before).toMatchObject({
       'rescatista1@example.org': 'aitlasgil', // no team: no code

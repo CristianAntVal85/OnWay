@@ -522,6 +522,9 @@ describe('anonymized accounts (INV-22)', () => {
     await expectError(await detail(org.session, gone.userId), 'NOT_FOUND');
     await expectError(await patch(org.session, gone.userId, { accountStatus: 'active' }), 'NOT_FOUND');
     await expectError(await patch(org.session, gone.userId, { role: 'coordinator' }), 'NOT_FOUND');
-    expect((await fixtures.query(`SELECT m.role, u.account_status FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.id = $1`, [gone.userId]))[0]).toEqual({ role: 'rescuer', account_status: 'disabled' });
+    expect((await fixtures.query(`SELECT m.role, u.account_status FROM memberships m JOIN users u ON u.id = m.user_id WHERE u.id = $1`, [gone.userId]))[0]).toEqual({
+      role: 'rescuer',
+      account_status: 'disabled',
+    });
   });
 });

@@ -76,7 +76,9 @@ export class UsersService {
       query.accountStatus ? sql`AND u.account_status = ${query.accountStatus}::account_status` : sql``,
     ];
     const where = sql.join(filters, sql` `);
-    const { rows: counted } = await this.tx.execute(sql`SELECT count(*)::int AS total FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ${orgId}::uuid AND u.anonymized_at IS NULL ${where}`);
+    const { rows: counted } = await this.tx.execute(
+      sql`SELECT count(*)::int AS total FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ${orgId}::uuid AND u.anonymized_at IS NULL ${where}`,
+    );
     const { rows } = await this.tx.execute(sql`
       ${SELECT_ITEM(orgId)} ${where}
        ORDER BY lower(u.display_name), u.id
