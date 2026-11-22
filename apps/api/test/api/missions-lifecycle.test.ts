@@ -691,14 +691,38 @@ describe('getMyMission and listMyMissions (RF-601, RF-602 without routes)', () =
       ['origin', 'Base'],
       ['rendezvous', 'Meeting'],
     ]);
-    expect(Object.keys(detail).sort()).toEqual(['canOffer', 'canWithdraw', 'coordinatorName', 'description', 'id', 'myParticipation', 'name', 'offerBlockedReason', 'points', 'status', 'target']);
+    expect(Object.keys(detail).sort()).toEqual([
+      'canOffer',
+      'canWithdraw',
+      'coordinatorAlias',
+      'coordinatorName',
+      'description',
+      'id',
+      'myParticipation',
+      'name',
+      'offerBlockedReason',
+      'points',
+      'status',
+      'target',
+    ]);
     expect(text).not.toMatch(/@example\.org|phone|document|participants|teams|routes/i);
     expect(text).not.toContain(a.otherRescuer.userId);
 
     const list = MyMissionsPage.parse(await (await call(a.rescuer, 'GET', '/my/missions?pageSize=100')).json());
     const item = list.items.find((m) => m.id === mission.id)!;
     expect(item).toMatchObject({ name: mission.name, status: 'active', validatedRoutes: 0, myParticipation: null });
-    expect(Object.keys(item).sort()).toEqual(['coordinatorName', 'id', 'myParticipation', 'name', 'status', 'target', 'validatedRoutes']);
+    expect(Object.keys(item).sort()).toEqual(['coordinatorAlias', 'coordinatorName', 'id', 'myParticipation', 'name', 'status', 'target', 'validatedRoutes']);
+  });
+
+  it('Q-36, D-E3: the rescuer sees the alias of the responsible, never the name; no alias yet is null', async () => {
+    const mission = await activeMission();
+    const detail = async () => MyMissionDetail.parse(await (await call(a.rescuer, 'GET', `/my/missions/${mission.id}`)).json());
+    expect(await detail()).toMatchObject({ coordinatorName: null, coordinatorAlias: null });
+    await fixtures.query(`UPDATE memberships SET alias = 'cooalias ALC' WHERE user_id = $1`, [a.coordinator.userId]);
+    expect(await detail()).toMatchObject({ coordinatorName: null, coordinatorAlias: 'cooalias ALC' });
+    const list = MyMissionsPage.parse(await (await call(a.rescuer, 'GET', '/my/missions?pageSize=100')).json());
+    expect(list.items.find((m) => m.id === mission.id)).toMatchObject({ coordinatorName: null, coordinatorAlias: 'cooalias ALC' });
+    expect(JSON.stringify(list)).not.toContain(a.coordinator.email);
   });
 
   it("canOffer and offerBlockedReason follow the profile, the state of the mission and the rescuer's own offer", async () => {

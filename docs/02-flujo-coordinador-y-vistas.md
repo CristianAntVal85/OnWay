@@ -1,6 +1,6 @@
 # OnWay — Documento 02: Flujo del coordinador y estructura de vistas
 
-Versión: 1.11 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.9)
+Versión: 1.12 (borrador) · Fecha: 2026-11-22 · Depende de: documento 01 (v1.9)
 
 Este documento define cómo recorre la app un coordinador, qué vistas existen, qué contiene cada una y qué puede hacer cada rol en ellas. Los IDs RF, RN, D y Q remiten al documento 01. Los elementos marcados *(propuesto)* no los has definido tú y están pendientes de confirmar. Lo marcado **segunda entrega** va en la segunda fase de v1 (D-21).
 
@@ -323,7 +323,9 @@ Boceto 12. Vista de gestión de equipos de la organización (RF-801).
 - Detalle: miembros (nombre), añadir y quitar, desactivar el equipo.
 - Crear o editar un equipo pide nombre y localidad. La localidad es lo que se enseña en la lista de voluntarios.
 - "Agrupación" y "equipo" son lo mismo (D-26): no hay un nivel más.
-- Quién puede gestionarlos está pendiente (Q-12).
+- Los gestionan el administrador y el coordinador (Q-12, resuelta); el rescatista no entra en esta vista.
+
+**Tal como se construyó (`H5-equipos`).** `/teams` lista los equipos con pestañas Activos y Archivados, búsqueda por nombre o localidad y paginación (todo en la dirección); cada fila lleva el nombre (enlace al detalle), la localidad y el **código de tres caracteres**, el número de miembros y «Editar». Crear y editar piden nombre, localidad y código; el código se propone de la localidad (Alicante → `ALC`) mientras nadie lo toque y un nombre o código repetido sale en su campo (`DUPLICATE_NAME`). `/teams/:teamId` enseña los miembros solo con su nombre (sin contacto, RN-21) con «Quitar» (confirmación), «Añadir miembros» (selector con búsqueda y paginación de rescatistas con el perfil completo; los que ya son miembros salen marcados) y «Archivar» o «Reactivar» (confirmación); un equipo archivado conserva sus miembros y no admite nuevos. En la misión, la columna Equipo de «Rutas de la misión» es un selector de los equipos activos con «Sin equipo» (RF-805), solo con la misión no cerrada. El rescatista ve el nombre y la localidad del equipo de cada ruta (D-34) y el alias del coordinador responsable en lugar de su nombre (Q-36).
 
 ### 3.9 Alta y perfil del rescatista
 
@@ -694,6 +696,9 @@ Las preguntas están centralizadas en el documento 01, sección 9. Las que condi
 Resueltas desde la v0.3: Q-22 (equipo y agrupación son lo mismo), Q-23 (registro con aprobación), Q-24 (visibilidad de datos) y Q-25 (participación confirmada al cerrar).
 
 ## 12. Registro de cambios
+
+**1.12 (2026-11-22)**
+- Cierre de `H5-equipos` (`specs/H5-equipos/`): §3.8 «Tal como se construyó (`H5-equipos`)»: lista, crear y editar con el código, detalle con miembros, selector de equipo de la ruta (RF-805) y alias del responsable para el rescatista. Q-12 resuelta: gestionan el administrador y el coordinador
 
 **1.11 (2026-11-22)**
 - Cierre de `H5-usuarios` (`specs/H5-usuarios/`): §3.10 «Tal como se construyó (`H5-usuarios`)»: sección Usuarios, ficha y diálogos de rol, desactivar y reactivar con la reasignación de misiones. Sin cambios de permisos

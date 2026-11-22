@@ -169,6 +169,29 @@ describe('updateMyProfile (RF-807, RF-812, INV-24, INV-32)', () => {
     expect(MySensitive.parse(await (await get(session, '/my/profile/sensitive')).json()).document).toEqual({ type: 'dni', number });
   });
 
+  it('Q-36: completing the profile fixes the alias from the full name, with the code of the first team if there is one, and it never changes afterwards', async () => {
+    const aliasOf = async (m: Member) => (await fixtures.query<{ alias: string | null }>(`SELECT alias FROM memberships WHERE user_id = $1`, [m.userId]))[0]!.alias;
+    const complete = (session: Session, fullName: string) => patch(session, { fullName, phone: '+34 600 000 020', document: { type: 'dni', number: freshDni() }, address: ADDRESS });
+    const alone = await rescuer();
+    const aloneSession = await signIn(alone);
+    expect(await aliasOf(alone)).toBeNull();
+    await patch(aloneSession, { fullName: 'Zeta Zamora Ruiz' });
+    expect(await aliasOf(alone)).toBeNull(); // still incomplete
+    expect((await complete(aloneSession, 'Zeta Zamora Ruiz')).status).toBe(200);
+    expect(await aliasOf(alone)).toBe('zetzamrui');
+    await patch(aloneSession, { fullName: 'Otro Nombre Distinto' });
+    expect(await aliasOf(alone)).toBe('zetzamrui');
+
+    const twin = await rescuer();
+    const teamId = await fixtures.team(orgId, 'Alias team', 'ALC');
+    await fixtures.addToTeam(teamId, twin);
+    expect((await complete(await signIn(twin), 'Zeta Zamora Ruiz')).status).toBe(200);
+    expect(await aliasOf(twin)).toBe('zetzamrui ALC'); // the whole alias is what must be unique
+    const third = await rescuer();
+    expect((await complete(await signIn(third), 'Zeta Zamora Ruiz')).status).toBe(200);
+    expect(await aliasOf(third)).toBe('zetzamrui2'); // same base, no code: collision, numeric suffix
+  });
+
   it('part by part: name and phone leave it incomplete with what is missing; the first document needs the address too', async () => {
     const member = await rescuer();
     const session = await signIn(member);

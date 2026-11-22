@@ -15,10 +15,10 @@
   ],
   "applicants": [{ "key": "applicant-1", "email": "pendiente@example.org", "displayName": "Nuria Casals Roca", "locale": "es" }],
   "teams": [
-    { "name": "Equipo Valle de Tena", "locality": "Biescas", "members": ["rescuer-2", "rescuer-4"] },
-    { "name": "Grupo Ribagorza", "locality": "Benasque", "members": ["rescuer-3", "rescuer-5"] },
-    { "name": "Equipo Ordesa", "locality": "Torla", "members": ["rescuer-4", "rescuer-5"] },
-    { "name": "Grupo Alto Gállego", "locality": "Sabiñánigo", "members": ["rescuer-6"] }
+    { "name": "Equipo Valle de Tena", "locality": "Biescas", "code": "BSC", "members": ["rescuer-2", "rescuer-4"] },
+    { "name": "Grupo Ribagorza", "locality": "Benasque", "code": "BNS", "members": ["rescuer-3", "rescuer-5"] },
+    { "name": "Equipo Ordesa", "locality": "Torla", "code": "TRL", "members": ["rescuer-4", "rescuer-5"] },
+    { "name": "Grupo Alto Gállego", "locality": "Sabiñánigo", "code": "SBN", "members": ["rescuer-6"] }
   ],
   "missions": [
     {

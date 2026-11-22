@@ -72,7 +72,7 @@ describe('transaction context (D-H0-02, doc 05 §6.1)', () => {
     const name = `Rolled back ${Date.now()}`;
     await expect(
       db.withContext(ctx(a, a.coordinator), async (tx) => {
-        await tx.insert(teams).values({ organizationId: a.orgId, name, locality: 'Nowhere' });
+        await tx.insert(teams).values({ organizationId: a.orgId, name, locality: 'Nowhere', code: 'NWH' });
         throw new Error('boom');
       }),
     ).rejects.toThrow('boom');
@@ -98,7 +98,7 @@ describe('afterCommit (D-S5)', () => {
     const name = `Committed ${Date.now()}`;
     const seen: string[] = [];
     await db.withContext(ctx(a, a.coordinator), async (tx) => {
-      await tx.insert(teams).values({ organizationId: a.orgId, name, locality: 'Nowhere' });
+      await tx.insert(teams).values({ organizationId: a.orgId, name, locality: 'Nowhere', code: 'NWH' });
       db.afterCommit(async () => {
         seen.push(`first:${(await fixtures.query(`SELECT 1 FROM teams WHERE name = $1`, [name])).length}`);
       });
@@ -185,7 +185,7 @@ describe('INV-01 through the API connection', () => {
   });
 
   it('inside B, writing a row with the organization of A fails', async () => {
-    await expect(db.withContext(ctx(b, b.coordinator), (tx) => tx.insert(teams).values({ organizationId: a.orgId, name: 'Intruder', locality: 'X' }))).rejects.toThrow();
+    await expect(db.withContext(ctx(b, b.coordinator), (tx) => tx.insert(teams).values({ organizationId: a.orgId, name: 'Intruder', locality: 'X', code: 'XXX' }))).rejects.toThrow();
     expect(await fixtures.query(`SELECT 1 FROM teams WHERE name = 'Intruder'`)).toEqual([]);
   });
 

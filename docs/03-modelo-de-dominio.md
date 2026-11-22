@@ -1,6 +1,6 @@
 # OnWay — Documento 03: Modelo de dominio y flujos clave
 
-Versión: 0.11 (borrador) · Fecha: 2026-11-21 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
+Versión: 0.12 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.3) y 02 (v0.9)
 
 Este documento traduce los requisitos y las vistas en un modelo conceptual: qué cosas existen en el sistema, cómo se relacionan, qué reglas deben cumplirse siempre y cómo fluyen los datos en los procesos clave. No fija tecnologías ni tablas: la arquitectura está en el documento 04 y el modelo de datos será el documento 05. Los IDs RF, RN, D y Q remiten al documento 01.
 
@@ -97,7 +97,7 @@ Los atributos son conceptuales. Nombres, tipos y restricciones concretas se fija
 |---|---|---|
 | **Organización** | nombre, país, estado, **código de invitación** *(propuesto)* | Raíz del aislamiento. El código asocia un registro a su organización (D-25) |
 | **Usuario** | correo (único, es el de acceso y el de contacto), nombre de visualización, idioma, **estado de cuenta (Pendiente, Activa, Rechazada, Desactivada)** | Datos de acceso. No contiene datos sensibles. El correo de contacto del rescatista es este mismo campo (D-28) |
-| **Membresía** | usuario, organización, rol (coordinador, rescatista, administrador), estado | El rol vive aquí, no en el usuario. Se crea al aprobar la cuenta, con el rol que elige el administrador (RF-106). En v1 un usuario pertenece a una sola organización (RF-102), pero modelarlo así evita rehacer el modelo si cambia |
+| **Membresía** | usuario, organización, rol (coordinador, rescatista, administrador), estado, **alias** (opcional, fijo y único en la organización) | El rol vive aquí, no en el usuario. Se crea al aprobar la cuenta, con el rol que elige el administrador (RF-106). En v1 un usuario pertenece a una sola organización (RF-102), pero modelarlo así evita rehacer el modelo si cambia |
 | **Solicitud de alta** | usuario, organización, fecha, estado (Pendiente, Aprobada, Rechazada), decidida por, fecha de decisión, rol concedido | Representa el registro a la espera de aprobación (RF-104, RF-106). Una cuenta *Pendiente* no tiene membresía activa |
 | **Perfil de rescatista** | usuario, nombre completo, estado del perfil (Incompleto, Completo, Eliminado), fechas de alta y última modificación | Identidad profesional del rescatista dentro de la organización. Se crea *Incompleto* al aprobar la cuenta (RF-807). Es lo único del rescatista que ve cualquier miembro de la organización: nombre y equipo |
 | **Contacto del rescatista** | perfil, **teléfono** | Entidad aparte, uno a uno con el perfil. El correo no está aquí: es el del usuario (INV-31). La leen el propio rescatista, el administrador y, con una participación pendiente o aceptada, el coordinador (INV-28) |
@@ -109,7 +109,7 @@ Los atributos son conceptuales. Nombres, tipos y restricciones concretas se fija
 
 | Entidad | Atributos clave | Notas |
 |---|---|---|
-| **Equipo** | organización, nombre, **localidad**, estado | Grupo permanente de rescatistas. "Agrupación" y "equipo" son lo mismo (D-26). La localidad es obligatoria y es lo que se muestra en la lista de voluntarios (D-22) |
+| **Equipo** | organización, nombre, **localidad**, **código** (tres caracteres, único en la organización), estado | Grupo permanente de rescatistas. "Agrupación" y "equipo" son lo mismo (D-26). La localidad es obligatoria y es lo que se muestra en la lista de voluntarios (D-22). El código sale de la localidad (se propone al crear y se puede corregir) y alimenta el alias de las personas; cambiarlo no toca los alias ya fijados |
 | **Miembro de equipo** | equipo, usuario | Un rescatista puede estar en varios equipos o en ninguno (RF-806) |
 
 ### 4.3 Misiones
@@ -579,6 +579,9 @@ La arquitectura y el stack están en el documento 04, el modelo de datos en el 0
 Consultadas el 29 de octubre de 2026. Las condiciones y precios de terceros pueden cambiar. Hay que confirmarlas directamente con cada proveedor antes de publicar la demo.
 
 ## 19. Registro de cambios
+
+**0.12 (2026-11-22)**
+- `H5-equipos` (Q-36): el equipo gana su **código** y la membresía su **alias** (tres letras de cada una de las tres primeras palabras del nombre, más el código del primer equipo; fijo, con sufijo numérico si choca, y el rescatista ve el del coordinador responsable)
 
 **0.11 (2026-11-21)**
 - Pintar ruta y continuar a mano: la auditoría de una versión continuada a mano anota que lo es y los metros conservados (§16). Continuar crea la versión siguiente; la de partida no cambia (INV-04).

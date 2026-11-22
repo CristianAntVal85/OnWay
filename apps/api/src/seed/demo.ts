@@ -44,6 +44,8 @@ const DemoApplicant = z.strictObject({ key: Key, email: Email, displayName: z.st
 const DemoTeam = z.strictObject({
   name: z.string().trim().min(1).max(120),
   locality: z.string().trim().min(1).max(120),
+  /** Three characters, unique in the organization (D-E1): the locality code of the alias of its members (Q-36). */
+  code: z.string().regex(/^[A-Z0-9]{3}$/),
   /** Keys of rescuers (INV-23: a team has a locality; members are rescuers of the organization). */
   members: z.array(Key),
 });

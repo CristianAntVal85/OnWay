@@ -36,7 +36,7 @@ SELECT t.count_is('INV-05 rescatista ve 1 mission_route (versión validada) y no
 SELECT t.count_is('INV-05 rescatista ve solo la versión validada fijada','SELECT 1 FROM route_versions',1);
 SELECT t.count_is('rescatista ve solo la ruta fijada (1)','SELECT 1 FROM routes',1);
 SELECT t.count_is('rescatista ve los puntos de la misión activa','SELECT 1 FROM mission_points',2);
-SELECT t.count_is('rescatista ve su equipo','SELECT 1 FROM teams',1);
+SELECT t.count_is('D-34 el rescatista ve los equipos de su organización','SELECT 1 FROM teams',2);
 SELECT t.fails('rescatista no crea misiones','INSERT INTO missions (organization_id,name,coordinator_id,target,target_source,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''Mia'',''00000000-0000-0000-0000-0000000000c1'',''POINT Z (0 0 0)'',''map'',''00000000-0000-0000-0000-000000000001'')');
 SELECT t.rows_changed('rescatista no puede editar rutas (0 filas)','UPDATE routes SET name=''X''',0);
 SELECT t.fails('rescatista no puede autoaprobarse (UPDATE users.account_status)','UPDATE users SET account_status=''active'' WHERE id=''00000000-0000-0000-0000-000000000001''');
@@ -81,8 +81,8 @@ ROLLBACK;
 BEGIN; SET LOCAL ROLE onway_app;
 SELECT t.ctx(:'A','00000000-0000-0000-0000-0000000000c1','coordinator');
 SELECT t.fails('INV-03 el responsable no puede ser un rescatista','UPDATE missions SET coordinator_id=''00000000-0000-0000-0000-000000000001'' WHERE id=''e0000000-0000-0000-0000-000000000001''');
-SELECT t.fails('INV-23 equipo sin localidad','INSERT INTO teams (organization_id,name,locality) VALUES (''a0000000-0000-0000-0000-000000000001'',''Sin sitio'','' '')');
-SELECT t.fails('equipo duplicado ignorando mayúsculas','INSERT INTO teams (organization_id,name,locality) VALUES (''a0000000-0000-0000-0000-000000000001'',''equipo NORTE'',''X'')');
+SELECT t.fails('INV-23 equipo sin localidad','INSERT INTO teams (organization_id,name,locality,code) VALUES (''a0000000-0000-0000-0000-000000000001'',''Sin sitio'','' '',''SIN'')');
+SELECT t.fails('equipo duplicado ignorando mayúsculas','INSERT INTO teams (organization_id,name,locality,code) VALUES (''a0000000-0000-0000-0000-000000000001'',''equipo NORTE'',''X'',''NRX'')');
 SELECT t.fails('nombre de misión abierta duplicado','INSERT INTO missions (organization_id,name,coordinator_id,target,target_source,created_by) VALUES (''a0000000-0000-0000-0000-000000000001'',''MISION ACTIVA'',''00000000-0000-0000-0000-0000000000c1'',''POINT Z (0 0 0)'',''map'',''00000000-0000-0000-0000-0000000000c1'')');
 ROLLBACK;
 
@@ -231,7 +231,7 @@ SELECT t.count_is('Q-14 el administrador sigue leyendo las versiones (4)','SELEC
 SELECT t.count_is('Q-14 el administrador sigue leyendo los tramos (1)','SELECT 1 FROM route_segments',1);
 SELECT t.count_is('Q-14 el administrador sigue leyendo las zonas a evitar (1)','SELECT 1 FROM avoid_zones',1);
 SELECT t.count_is('Q-14 el administrador sigue leyendo los equipos (2)','SELECT 1 FROM teams',2);
-SELECT t.works('Q-14 el administrador sigue creando equipos (Q-12)','INSERT INTO teams (organization_id,name,locality) VALUES (''a0000000-0000-0000-0000-000000000001'',''Equipo Este'',''Localidad C'')');
+SELECT t.works('Q-14 el administrador sigue creando equipos (Q-12)','INSERT INTO teams (organization_id,name,locality,code) VALUES (''a0000000-0000-0000-0000-000000000001'',''Equipo Este'',''Localidad C'',''EST'')');
 SELECT t.works('Q-14 el administrador sigue gestionando miembros de equipo (Q-12)','INSERT INTO team_members (team_id,user_id,organization_id) VALUES (''d0000000-0000-0000-0000-000000000002'',''00000000-0000-0000-0000-000000000002'',''a0000000-0000-0000-0000-000000000001'')');
 ROLLBACK;
 BEGIN; SET LOCAL ROLE onway_app;

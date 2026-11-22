@@ -85,7 +85,73 @@ export interface Messages {
   common: { more: string; export: string };
   forbidden: { title: string; body: string; goHome: string };
   notFound: { title: string; body: string; goHome: string };
-  later: { title: string; body: string };
+  /** Equipos (H5-equipos, RF-801, doc 02 §3.8): la lista, crear y editar. */
+  teams: {
+    title: string;
+    createCta: string;
+    tabsLabel: string;
+    tabs: { active: string; archived: string };
+    searchLabel: string;
+    searchSubmit: string;
+    clearSearch: string;
+    summary: string;
+    empty: { active: string; archived: string };
+    emptySearch: string;
+    row: { locality: string; members: string; edit: string; editLabel: string };
+    form: {
+      createTitle: string;
+      editTitle: string;
+      name: string;
+      locality: string;
+      code: string;
+      nameRequired: string;
+      localityRequired: string;
+      codeInvalid: string;
+      duplicateName: string;
+      duplicateCode: string;
+      saveCreate: string;
+      saveEdit: string;
+      saving: string;
+      cancel: string;
+    };
+    status: { active: string; archived: string };
+    detail: {
+      back: string;
+      loading: string;
+      notFound: string;
+      members: string;
+      addMembers: string;
+      noMembers: string;
+      archivedNote: string;
+      remove: string;
+      removeLabel: string;
+      manage: string;
+      createdAt: string;
+      archive: string;
+      reactivate: string;
+      working: string;
+      cancel: string;
+      done: { added: string; removed: string; archived: string; reactivated: string };
+      removeDialog: { title: string; description: string; confirm: string };
+      archiveDialog: { title: string; description: string; confirm: string };
+      reactivateDialog: { title: string; description: string; confirm: string };
+    };
+    add: {
+      title: string;
+      description: string;
+      searchLabel: string;
+      empty: string;
+      emptySearch: string;
+      alreadyMember: string;
+      noTeams: string;
+      selectionHint: string;
+      selectionCount: string;
+      selectionFull: string;
+      confirm: string;
+      working: string;
+      cancel: string;
+    };
+  };
   /** Alta y Mi perfil del rescatista (H5-perfil, doc 02 §3.9). */
   profile: {
     completeTitle: string;
@@ -926,6 +992,7 @@ export interface Messages {
     noTeam: string;
     notValidated: string;
     teamValue: string;
+    team: { selectLabel: string; done: string };
     columns: {
       route: string;
       version: string;

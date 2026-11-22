@@ -229,13 +229,6 @@ describe('marco y barra por rol (RF-702)', () => {
     expect(screen.getByRole('button', { name: es.nav.themeToLight })).toBeTruthy();
   });
 
-  it('las secciones futuras dicen que llegan en un hito posterior', async () => {
-    const { api } = sessionServer({ user: sessionUser() });
-    renderApp({ route: '/teams', fetch: api.fetch });
-    expect(await screen.findByRole('heading', { level: 2, name: es.later.title })).toBeTruthy();
-    expect(screen.getByText(es.later.body)).toBeTruthy();
-  });
-
   it('el rescatista que abre /admin o /home ve «sin acceso» y ningún contenido ajeno', async () => {
     for (const route of ['/admin', '/home', '/missions/new', '/routes', '/teams']) {
       // Con el perfil completo: con él incompleto, cualquier vista lleva antes a «Mi perfil» (profile.test.tsx).
@@ -244,7 +237,6 @@ describe('marco y barra por rol (RF-702)', () => {
       expect(await screen.findByRole('heading', { level: 1, name: es.forbidden.title }), route).toBeTruthy();
       expect(screen.getByText(es.forbidden.body)).toBeTruthy();
       expect(path()).toBe(route);
-      expect(screen.queryByText(es.later.title)).toBeNull();
       expect(api.calls.some((c) => c.path === '/org')).toBe(false);
       view.unmount();
     }

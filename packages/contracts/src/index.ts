@@ -5,6 +5,7 @@ export * from './validators.js';
 export * from './auth.js';
 export * from './profile.js';
 export * from './files.js';
+export * from './alias.js';
 export * from './teams.js';
 export * from './missions.js';
 export * from './participations.js';

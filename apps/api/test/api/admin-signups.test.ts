@@ -197,6 +197,17 @@ describe('decideSignupRequests: one person (RF-106, RN-25, INV-25, INV-29)', () 
     expect(session?.body.user).toMatchObject({ role: 'coordinator', nextStep: 'home' });
   });
 
+  it('Q-36: approving as coordinator fixes the alias from the visible name; approving a rescuer does not (it comes with the profile)', async () => {
+    const aliasOf = async (m: Member) => (await fixtures.query<{ alias: string | null }>(`SELECT alias FROM memberships WHERE user_id = $1`, [m.userId]))[0]!.alias;
+    const staff = await applicant(org);
+    await fixtures.query(`UPDATE users SET display_name = 'Marta Pérez de la Torre' WHERE id = $1`, [staff.userId]);
+    const rescuer = await applicant(org);
+    await decide(org.session, { action: 'approve', role: 'coordinator', selection: ids(staff) });
+    await decide(org.session, { action: 'approve', role: 'rescuer', selection: ids(rescuer) });
+    expect(await aliasOf(staff)).toBe('marpertor');
+    expect(await aliasOf(rescuer)).toBeNull();
+  });
+
   it('rejecting leaves a rejected account with no membership, and the login answers ACCOUNT_REJECTED (INV-25)', async () => {
     const person = await applicant(org);
     expect(DecideSignupResponse.parse(await (await decide(org.session, { action: 'reject', selection: ids(person) })).json())).toEqual({ affected: 1, skipped: [] });

@@ -1,6 +1,6 @@
 # OnWay — Documento 05: Modelo de datos
 
-Versión: 1.4 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
+Versión: 1.6 (borrador) · Fecha: 2026-11-22 · Depende de: documentos 01 (v1.5), 02 (v1.3), 03 (v0.9) y 04 (v1.4)
 
 Este documento traduce el modelo de dominio (documento 03) a una base de datos PostgreSQL 16 con PostGIS: tablas, tipos, claves, restricciones, índices, seguridad por filas y plan de migraciones. **El esquema está escrito como SQL ejecutable** (carpeta `db/` del proyecto) y se ha probado en PostgreSQL 16 con PostGIS real (imagen `postgis/postgis:16-3.4`) con 118 comprobaciones de invariantes y permisos. Las migraciones aplican en base vacía y las consultas espaciales de la sección 8.2 con datos reales siguen **por verificar** (sección 12).
 
@@ -101,6 +101,7 @@ erDiagram
         uuid user_id FK
         enum role
         enum status
+        text alias
     }
     signup_requests {
         uuid id PK
@@ -149,6 +150,7 @@ erDiagram
         uuid organization_id FK
         text name
         text locality
+        text code
         enum status
     }
     team_members {
@@ -362,7 +364,7 @@ Las 32 invariantes del documento 03, sección 7. "Restricción" es una restricci
 | INV-20 | Disparador | `participations_guard`: una oferta pendiente exige perfil `complete` |
 | INV-21 | Consulta + índice | Historial = participaciones con `participated` de misiones `closed`. Sin tabla propia. Índice parcial `participations_history_idx` |
 | INV-22 | Función | `delete_own_rescuer_data()` borra datos, anonimiza al usuario y conserva participaciones y auditoría |
-| INV-23 | Restricción | `teams.locality NOT NULL CHECK (...)` |
+| INV-23 | Restricción | `teams.locality NOT NULL CHECK (...)`, nombre único (`teams_org_name_uq`) y `teams.code NOT NULL CHECK (code ~ '^[A-Z0-9]{3}$')` con `UNIQUE (organization_id, code)` (0015) |
 | INV-24 | Restricción | `UNIQUE (organization_id, document_hash)` |
 | INV-25 | Restricción + función | `users.account_status` solo cambia por funciones (DB-13). Una cuenta sin membresía no pasa ninguna política |
 | INV-26 | Aplicación + auditoría | La apertura de un certificado ajeno la registra el servicio al firmar el enlace. La base solo garantiza que el archivo sea del propio rescatista (`skills_guard`). Dos límites conocidos (`test:db`, `H5-habilidades`): `skills_guard` no mira `deleted_at` del archivo y `files_insert` pide dueño y finalidad pero no el rol; ambos los comprueba el servicio |
@@ -405,14 +407,15 @@ Además del filtro de organización, que se aplica siempre. C = lectura, E = esc
 |---|---|---|---|
 | `organizations` | C, E | C | C |
 | `users` | C (miembros y solicitudes) | C (miembros) | C (la suya) |
-| `memberships` | C, E (rol) | C | C (la suya) |
+| `memberships` | C, E (solo `role`; `alias` y `status` por funciones) | C | C (la suya) |
 | `signup_requests` | C | — | — |
 | `rescuer_profiles` | C | C | C, E (la suya) |
 | `rescuer_contact` | C | C (solo con participación pendiente o aceptada) | C, E (la suya) |
 | `rescuer_sensitive` | **nada directo** (función auditada) | — | C, E (la suya) |
 | `skills` | C | C | C, E (las suyas) |
 | `files` | C | C, E (los GPX/KML de importación de rutas, migración 0012) | C, E (los suyos) |
-| `teams`, `team_members` | C, E | C, E | C (los suyos) |
+| `teams` | C, E | C, E | C (todos los de su organización, D-34; migración 0015) |
+| `team_members` | C, E | C, E | C (los suyos) |
 | `missions` | C | C, E | C (solo activas y cerradas) |
 | `mission_points` | C | C, E | C (de misiones visibles) |
 | `mission_team_assignments` | C | C, E | — |
@@ -437,6 +440,8 @@ Además del filtro de organización, que se aplica siempre. C = lectura, E = esc
 | `admin_decide_signup(user, aprobar, rol)` | Aprueba o rechaza, crea la membresía y el perfil incompleto, audita | Rol `admin`, misma organización, solicitud pendiente |
 | `admin_set_account_status(user, estado)` | Activa o desactiva una cuenta y su membresía, cierra sesiones, audita | Rol `admin`, misma organización |
 | `admin_reassign_missions(de, a)` | Pasa al coordinador `a` las misiones no cerradas de `de`, con una línea `mission_updated` por misión; devuelve sus ids. `a` debe ser un coordinador activo de la organización y distinto de `de` (0014) | Rol `admin`, misma organización |
+| `set_member_alias(persona, base, código)` | Fija el alias de la membresía: el primero libre entre `base`, `base2`… y, si llega código, `base CÓDIGO`; con alias sin código, añade ` CÓDIGO`; en cualquier otro caso no cambia nada (fijo). Devuelve el alias (0015) | La propia persona o el personal, de la misma organización |
+| `mission_coordinator_alias(misión)` | Alias del responsable de la misión, para que lo lea el rescatista (D-E3). `NULL` si la misión no es de la organización o quien llama no puede verla (0015) | Personal, o rescatista con la misión activa o cerrada |
 | `read_rescuer_sensitive(perfil)` | Devuelve documento y dirección cifrados y **audita en la misma transacción** | Rol `admin`, misma organización |
 | `delete_own_rescuer_data()` | Elimina y anonimiza los datos propios, devuelve las claves de los certificados a borrar del disco | El propio usuario |
 | `version_is_validated(version)` | Auxiliar de política, evita recursión entre políticas | — |
@@ -600,7 +605,8 @@ Las migraciones son aditivas y se ejecutan en orden. Cada entrega solo estrena l
 | 0012 | 1 (H2) | Tipo de vía `unknown` («sin clasificar») en `road_type`: las rutas importadas, dibujadas o editadas a mano no tienen clasificación hasta que exista el motor (H3, RF-503). `files_insert`: los archivos `route_import` solo los inserta el coordinador (defensa en profundidad de Q-14) | `apps/api/test/db/routes-h2-policy.test.ts` |
 | 0013 | 1 (issue #17) | `route_versions_guard` (INV-04): una versión validada se borra solo si su ruta está archivada y no figura en ninguna misión (cerradas incluidas); editarla sigue prohibido. Función `SECURITY DEFINER` con `search_path` fijo | `route-delete-guard.test.ts` (15 con `onway_app`) |
 | 0014 | 1 (H5-usuarios) | `admin_reassign_missions(p_from, p_to)` `SECURITY DEFINER` (D-U1, RN-11, INV-03, INV-11, Q-14): solo el administrador reasigna las misiones no cerradas de una persona a otro coordinador activo de su organización, con una línea `mission_updated` por misión; `onway_app` no gana permisos sobre `missions` ni `memberships` | `apps/api/test/db/admin-reassign.test.ts` |
-| 0015+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
+| 0015 | 1 (H5-equipos) | `teams.code` (tres caracteres, `UNIQUE (organization_id, code)`, relleno de los equipos que ya existen), `teams_select` abierta a todos los roles de la organización (D-34), `memberships.alias` (único por organización sin distinguir mayúsculas; la aplicación solo conserva `UPDATE (role)` sobre `memberships`), y las funciones `set_member_alias` y `mission_coordinator_alias` `SECURITY DEFINER` (Q-36, D-E1, D-E3) | `apps/api/test/db/teams-alias.test.ts` |
+| 0016+ | 2 | Lo que traiga la segunda entrega (por ejemplo, etiquetas si se acepta Q-21) | — |
 
 Orden de ejecución y responsabilidades:
 - **0001** la ejecuta un superusuario una sola vez, **en el arranque de la base** (el script de inicio `infra/db/init/10-onway-roles.sh` de la imagen de PostGIS, que además da `LOGIN` y contraseña a los roles). No pasa por el migrador. **0002–0014** las aplica el migrador de Drizzle como `onway_owner` (servicio `migrate` de `docker compose`, comando `pnpm --filter @onway/api migrate`) y quedan anotadas en el diario `db/migrations/meta/_journal.json`; aplicarlo otra vez no hace nada.
@@ -685,6 +691,10 @@ En el stack real, `infra/scripts/smoke.sh` comprueba además contra `pg_roles` q
 El **documento 06 (contratos de API)** ya está escrito (v0.1). Se apoya en las funciones de la sección 6 y en las consultas de la sección 8 de este documento, y añadió dos columnas (ver registro de cambios). El siguiente es el **documento 07: plan de implementación y `CLAUDE.md`** para Claude Code.
 
 ## 15. Registro de cambios
+
+**1.6 (2026-11-22)** Cierre de `H5-equipos` (T10): el diagrama de §3.1 (`teams.code`, `memberships.alias`), la matriz de §6.3 (`teams` legible por todos los roles de la organización; `memberships` solo `UPDATE (role)` para la aplicación), las dos funciones nuevas de §6.4 y INV-23 con el código. Sin migración nueva.
+
+**1.5 (2026-11-22)** `H5-equipos` (T2). **Migración 0015** (`0015_teams_code_alias.sql`): `teams.code` con relleno, `teams_select` por organización, `memberships.alias` y las funciones `set_member_alias` y `mission_coordinator_alias`. La descripción completa, las funciones y la matriz de permisos se actualizan al cerrar el hito.
 
 **1.4 (2026-11-22)** `H5-usuarios`. **Migración 0014** (`0014_admin_reassign_missions.sql`): función `admin_reassign_missions(p_from, p_to)`, `SECURITY DEFINER` con `search_path` fijo, `GRANT` a `onway_app` y `REVOKE` a `PUBLIC`. §3 (funciones) y la tabla de migraciones. Probada en `test/db/admin-reassign.test.ts`.
 

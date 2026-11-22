@@ -132,7 +132,7 @@ describe('INV-01 in the real context of B (connection onway_app)', () => {
 
   it('inserting a row with the organization_id of A fails, and nothing is written', async () => {
     const insertions = [
-      () => database.withContext(ctx(b, b.admin), (tx) => tx.insert(teams).values({ organizationId: a.orgId, name: 'Intruder', locality: 'X' })),
+      () => database.withContext(ctx(b, b.admin), (tx) => tx.insert(teams).values({ organizationId: a.orgId, name: 'Intruder', locality: 'X', code: 'XXX' })),
       () => database.withContext(ctx(b, b.admin), (tx) => tx.insert(teamMembers).values({ teamId: a.teamId, userId: b.rescuer.userId, organizationId: a.orgId })),
       () => database.withContext(ctx(b, b.admin), (tx) => tx.insert(rescuerProfiles).values({ organizationId: a.orgId, userId: b.coordinator.userId, fullName: 'Intruder' })),
       () => database.withContext(ctx(b, b.admin), (tx) => tx.insert(memberships).values({ organizationId: a.orgId, userId: pending.userId, role: 'admin' })),

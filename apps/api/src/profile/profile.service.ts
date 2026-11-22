@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { maskDocument, normalizeDocument, type OperationOutput } from '@onway/contracts';
+import { aliasBase, maskDocument, normalizeDocument, type OperationOutput } from '@onway/contracts';
 import { and, eq } from 'drizzle-orm';
 import { AuditWriter, type ProfileBlock } from '../audit/audit.writer.js';
 import { CLOCK, type Clock } from '../clock/clock.js';
@@ -11,6 +11,7 @@ import { rescuerContact, rescuerProfiles, rescuerSensitive, teamMembers, teams, 
 import { listSkillsOf } from './skill-rows.js';
 import { DocumentFingerprint } from '../sensitive/document-fingerprint.js';
 import { SensitiveCipher } from '../sensitive/sensitive-cipher.js';
+import { assignMemberAlias } from '../teams/member-alias.js';
 
 type MyProfile = OperationOutput<'getMyProfile'>;
 type MySensitive = OperationOutput<'getMySensitive'>;
@@ -87,6 +88,8 @@ export class ProfileService {
     const completes = profile.status === 'incomplete' && (await this.nothingMissing(tx, profile.id));
     if (completes) {
       await tx.update(rescuerProfiles).set({ status: 'complete', completedAt: this.clock.now() }).where(eq(rescuerProfiles.id, profile.id));
+      // Q-36: the alias comes from the full name of the profile the moment it is complete; it is fixed from then on (the database keeps it)
+      await assignMemberAlias(tx, profile.organizationId, principal.userId, aliasBase(changes.fullName ?? profile.fullName));
     }
     await this.audit.recordProfile({ orgId: profile.organizationId, profileId: profile.id, userId: principal.userId, action: completes ? 'profile_completed' : 'profile_updated', blocks });
     return this.describe(tx, principal);

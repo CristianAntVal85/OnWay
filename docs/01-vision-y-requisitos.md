@@ -1,6 +1,6 @@
 # OnWay — Documento 01: Visión, alcance y requisitos funcionales
 
-Versión: 1.10 (borrador) · Fecha: 2026-11-22 · Estado: pendiente de revisión por el propietario del producto
+Versión: 1.11 (borrador) · Fecha: 2026-11-22 · Estado: pendiente de revisión por el propietario del producto
 
 Los elementos marcados como *(propuesto)* los ha añadido el arquitecto como consecuencia de tus decisiones y están pendientes de confirmar. El resto sale directamente de lo que has definido. El nombre del producto es **OnWay** (antes OnCourse).
 
@@ -509,7 +509,7 @@ Los riesgos técnicos R-11 a R-16 (motor de rutas, análisis de terreno en la v2
 - ~~**Q-33** Recuperar contraseña~~ **Cerrada:** por correo transaccional (Resend tras el puerto `Mailer`), enlace de un solo uso que caduca en 1 h. Pendiente solo el dominio para enviar a terceros (Q-28)
 - **Q-34** Solicitudes de alta sin «equipo indicado» ni «datos completos»: el registro solo recoge correo, nombre, contraseña y código, y el perfil nace al aprobar **Cerrada:** confirmada (documento 06 §5)
 - ~~**Q-35** Días de validación antigua (RF-519)~~ **Cerrada:** 90, configurable por organización
-- ~~**Q-36** Alias de coordinadores y rescatistas, del estilo `criantval ALC`~~ **Decidida (2026-11-22): generado y fijo.** Tres letras del nombre y de cada apellido, más el código de tres letras de la localidad del primer equipo (sin equipo, sin código); una colisión lleva sufijo numérico. El rescatista lo ve en lugar del nombre en las listas y el personal ve ambos. Se construye en `H5-equipos`. Detalle en `docs/backlog-post-mvp.md` (B-02)
+- ~~**Q-36** Alias de coordinadores y rescatistas, del estilo `criantval ALC`~~ **Decidida (2026-11-22): generado y fijo.** Tres letras del nombre y de cada apellido, más el código de tres letras de la localidad del primer equipo (sin equipo, sin código); una colisión lleva sufijo numérico. El rescatista lo ve en lugar del nombre en las listas y el personal ve ambos. Se construye en `H5-equipos`. **Detalle (2026-11-22):** el código de localidad es un campo del equipo (`teams.code`, tres caracteres en mayúscula, obligatorio y único en la organización; la interfaz propone uno con la primera letra y las consonantes siguientes y se puede corregir); el alias sale del **nombre completo del perfil** en el rescatista (al completarlo) y del **nombre visible** en el coordinador y el administrador (al aprobar la cuenta); el código se añade una sola vez, al entrar en el primer equipo, y desde ahí no cambia; en esta entrega solo se muestra al rescatista, como alias del coordinador responsable en Mis misiones y en el detalle de la misión. Detalle en `docs/backlog-post-mvp.md` (B-02)
 
 Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 
@@ -555,6 +555,9 @@ Las preguntas técnicas Q-26 a Q-30 están en el documento 04.
 Los bocetos de baja fidelidad de las 15 vistas están en un lienzo aparte y acompañan al documento 02.
 
 ## 12. Registro de cambios
+
+**1.11 (2026-11-22)**
+- Q-36 con su detalle (`H5-equipos`): el código de localidad es un campo del equipo, de qué nombre sale el alias y dónde se ve en esta entrega (el rescatista, en el alias del coordinador responsable). D-34 se construye en `H5-equipos`.
 
 **1.10 (2026-11-22)**
 - Q-12 resuelta: crean y gestionan los equipos y sus miembros el administrador y el coordinador (`TEAM_MANAGERS`); el rescatista no. Q-36 decidida: el alias es generado y fijo (tres letras del nombre y de cada apellido y el código de la localidad del primer equipo, sin código si no tiene equipo; sufijo numérico si hay colisión); el rescatista lo ve en lugar del nombre y el personal ve ambos. Se construye en `H5-equipos`. `listRescuers` pasa de H6 a H5 (selector de miembros).

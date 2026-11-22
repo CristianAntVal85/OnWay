@@ -18,6 +18,11 @@ describe('data/seed/demo.json (D-H0-18, R-10)', () => {
     expect(new Set(demo.teams.map((t) => t.locality.toLowerCase())).size).toBe(4);
   });
 
+  it('gives every team its code, three characters and unique (D-E1, Q-36)', () => {
+    expect(demo.teams.map((t) => t.code)).toEqual(['BSC', 'BNS', 'TRL', 'SBN']);
+    expect(new Set(demo.teams.map((t) => t.code)).size).toBe(demo.teams.length);
+  });
+
   it('places rescuers in 0, 1 and 2 teams', () => {
     const perRescuer = demo.members.filter((m) => m.role === 'rescuer').map((m) => demo.teams.filter((t) => t.members.includes(m.key)).length);
     expect(new Set(perRescuer)).toEqual(new Set([0, 1, 2]));
@@ -44,7 +49,7 @@ describe('data/seed/demo.json (D-H0-18, R-10)', () => {
     const first = (raw().members as Record<string, unknown>[])[0]!;
     expect(Demo.safeParse(withMembers([{ ...first, email: 'real.person@gmail.com' }])).success).toBe(false);
     expect(Demo.safeParse(withMembers([first, first])).success).toBe(false);
-    expect(Demo.safeParse({ ...raw(), teams: [{ name: 'T', locality: 'L', members: ['admin'] }] }).success).toBe(false);
+    expect(Demo.safeParse({ ...raw(), teams: [{ name: 'T', locality: 'L', code: 'LLL', members: ['admin'] }] }).success).toBe(false);
     expect(Demo.safeParse({ ...raw(), surprise: true }).success).toBe(false);
   });
 

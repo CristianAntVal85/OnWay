@@ -329,3 +329,15 @@ describe('foco visible contra cada superficie de los dos temas', () => {
     expect(get('box-shadow')).toBe('0 0 0 2px var(--focus-inner)');
   });
 });
+
+describe('blanco táctil de los controles de H5-equipos (validación, vuelta 1)', () => {
+  const minHeightOf = (selector: string) =>
+    BASE.filter((rule) => rule.selectors.includes(selector)).flatMap((rule) =>
+      rule.declarations.filter((declaration) => declaration.property === 'min-height').map((declaration) => declaration.value),
+    );
+
+  // El selector de equipo de la ruta (RF-805) era el control nativo, de 19 px: ahora lleva el estilo de los campos y el blanco del proyecto.
+  it.each(['.mission-route-team', '.team-link', '.page-back'])('%s mide al menos el blanco táctil (var(--tap))', (selector) => {
+    expect(minHeightOf(selector)).toContain('var(--tap)');
+  });
+});

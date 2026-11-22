@@ -1,0 +1,207 @@
+# H5-equipos · Tareas
+
+Plan: `specs/H5-equipos/plan.md`. Las tareas van en orden de dependencia, con un commit por tarea: `<tipo>(H5-equipos): Tn <resumen>`.
+
+- [x] **T1. Contrato y decisiones del alias.** Cubre Q-36 (detalle), D-34 y RF-801, adelanta `listRescuers` a H5 y añade `code` y `coordinatorAlias`.
+  - **Qué se hace:**
+    - **`alias.ts`:** las funciones `normalizeWord`, `aliasBase` y `localityCode`, con sus pruebas unitarias.
+    - **Contrato:** los cambios de `teams.ts`, `missions.ts` y `milestones.ts` y las notas de `endpoints.ts`, tal como los describe el plan §3. Se regeneran el OpenAPI y el doc 06, con su registro de cambios.
+    - **Doc 01:** el detalle de Q-36 (código del equipo, de qué nombre sale el alias y dónde se ve), con su registro.
+    - **Doc 07:** la fila de `H5-equipos`, con su registro.
+    - **Pruebas del registro:** `listRescuers` pasa a H5.
+  - **Archivos:**
+    - nuevos: `packages/contracts/src/alias.ts` y `packages/contracts/test/alias.test.ts`;
+    - se tocan: `packages/contracts/src/index.ts`, `packages/contracts/src/teams.ts`, `packages/contracts/src/missions.ts`, `packages/contracts/src/milestones.ts`, `packages/contracts/src/endpoints.ts`, `packages/contracts/test/registry.test.ts`, `packages/contracts/test/schema-guards.test.ts`, `docs/06-contratos-de-api.md`, `docs/01-vision-y-requisitos.md` y `docs/07-plan-de-implementacion.md`.
+  - **Comprobación:** `pnpm --filter @onway/contracts gen:openapi && pnpm --filter @onway/contracts gen:doc gen/ && pnpm check @onway/contracts`.
+  - **Hecho cuando:**
+    - las pruebas de `alias.ts` cubren los ejemplos del plan §7;
+    - pasan `registry` y `schema-guards`;
+    - `pnpm typecheck` sigue en verde. Si la API o la web no compilan por los campos nuevos, se rellenan con `null` o un valor provisional y se anota; su lógica llega en T3 y T4.
+
+- [x] **T2. Migración 0015: código del equipo, D-34 y alias.** Cubre INV-23, D-34, D-E1 y D-E3.
+  - **Qué se hace:**
+    - **La migración**, tal como la describe el plan §3: `teams.code` (relleno de los equipos que ya existen, `NOT NULL`, `CHECK` y `UNIQUE`), la nueva `teams_select`, `memberships.alias` con su unicidad parcial, y las funciones `set_member_alias` y `mission_coordinator_alias`. Lleva su `GRANT` y su `REVOKE` y la entrada en el diario de migraciones.
+    - **Las pruebas de la base**, con SQL directo como `onway_app`:
+      - el relleno sobre equipos que ya existen, incluido un choque de códigos;
+      - la unicidad del nombre y del código;
+      - el rescatista lee los equipos de su organización y no los de otra, y sigue sin leer los `team_members` ajenos;
+      - en `set_member_alias`: la base, el sufijo, el código una sola vez, que es fijo, y quién puede llamarla;
+      - en `mission_coordinator_alias`: personal, rescatista, misión en planificación y otra organización;
+      - la aplicación no puede hacer `UPDATE` de `memberships.alias`.
+    - **Los recuentos de migraciones** en `schema.test.ts`, en los comentarios de `migrate.ts` y `fixture.ts` y donde diga «0002-0014»: doc 05 e `infra/compose.yml`.
+  - **Archivos:**
+    - nuevos: `db/migrations/0015_teams_code_alias.sql` y `apps/api/test/db/teams-alias.test.ts`;
+    - se tocan: `db/migrations/meta/_journal.json`, `apps/api/src/db/schema.ts` (columnas nuevas), `apps/api/test/db/schema.test.ts`, `apps/api/src/db/migrate.ts`, `apps/api/test/db/fixture.ts`, `infra/compose.yml` y `docs/05-modelo-de-datos.md`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:db teams-alias schema && db/tests/run-postgis.sh`.
+  - **Hecho cuando:** las pruebas pasan sobre una base vacía con PostGIS y `run-postgis.sh` sigue en verde.
+
+- [x] **T3. Las 6 operaciones de equipos.** Cubre RF-801, Q-12, INV-23, D-E4, D-E5, D-E6 y RN-21.
+  - **Qué se hace:**
+    - `TeamsService`, `TeamsController` y `TeamsModule`, tal como los describe el plan §3.
+    - `recordTeam` en la auditoría.
+    - Al añadir miembros, cada persona que entra en su primer equipo recibe el código en su alias.
+    - En `app.test.ts`, 80 operaciones montadas.
+  - **Archivos:**
+    - nuevos: `apps/api/src/teams/teams.service.ts`, `apps/api/src/teams/teams.controller.ts`, `apps/api/src/teams/teams.module.ts` y `apps/api/test/api/teams.test.ts`;
+    - se tocan: `apps/api/src/app.module.ts`, `apps/api/src/audit/audit.writer.ts` y `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api teams app`.
+  - **Hecho cuando:**
+    - **Operaciones:** crear, editar, archivar, reactivar, añadir y quitar pasan sus pruebas.
+    - **Errores:**
+      - `DUPLICATE_NAME` con `field` `name` o `code`;
+      - un equipo archivado da `INVALID_STATE_TRANSITION` al añadirle miembros;
+      - un `userId` ajeno o desactivado da `VALIDATION_FAILED`;
+      - quitar a quien no es miembro da 404.
+    - **Accesos:** el coordinador y el administrador escriben, el rescatista recibe 403 y otra organización da 404.
+    - **Contenido:** la auditoría no lleva nombres y los miembros no llevan contacto.
+    - **Alias:** el primer equipo añade el código y el segundo no lo cambia.
+
+- [x] **T4. `listRescuers`, los caminos del alias y el alias del responsable para el rescatista.** Cubre `listRescuers`, Q-36 (asignación), D-E2, D-E3 y D-34 en las rutas del rescatista.
+  - **Qué se hace:**
+    - **`RescuersService`:** la operación `listRescuers` (plan §3). Con ella se montan 81.
+    - **`set_member_alias`** se llama al completar el perfil (`profile.service.ts`), al aprobar como coordinador (`signup-requests.service.ts`) y al pasar a coordinador o administrador a alguien sin alias (`users.service.ts`).
+    - **`coordinatorAlias`** en `my-missions.service.ts`.
+    - Se revisan las pruebas que esperaban `team: null` para el rescatista que no es miembro (C3 de H4).
+  - **Archivos:**
+    - nuevos: `apps/api/src/teams/rescuers.service.ts` y `apps/api/test/api/rescuers.test.ts`;
+    - se tocan: `apps/api/src/teams/teams.controller.ts` (o un `rescuers.controller.ts`), `apps/api/src/teams/teams.module.ts`, `apps/api/src/profile/profile.service.ts`, `apps/api/src/admin/signup-requests.service.ts`, `apps/api/src/admin/users.service.ts`, `apps/api/src/missions/my-missions.service.ts`, `apps/api/test/api/profile.test.ts`, `apps/api/test/api/admin-signups.test.ts`, `apps/api/test/api/admin-users.test.ts`, `apps/api/test/api/missions.test.ts`, `apps/api/test/api/mission-routes-rescuer.test.ts` y `apps/api/test/api/app.test.ts`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api rescuers profile admin-signups admin-users missions mission-routes-rescuer app`.
+  - **Hecho cuando:**
+    - **`listRescuers`:** solo perfiles completos por defecto, con búsqueda, filtro de equipo y sin contacto; un rescatista recibe 403.
+    - **Asignación del alias:** se fija al completar el perfil y al aprobar a un coordinador.
+    - **Lo que ve el rescatista:** `listMyMissions` y `getMyMission` traen `coordinatorAlias` y no traen el nombre del responsable, y la ruta del rescatista lleva el equipo aunque no sea miembro.
+    - **En `app.test.ts`:** 81 montadas y ninguna operación de H5 sin montar.
+
+- [x] **T5. Semilla y smoke.**
+  - **Qué se hace:**
+    - **Semilla:** los equipos llevan su `code` en `demo.json` y se asignan alias a los miembros que aún no lo tienen (plan §3), de forma idempotente.
+    - **`smoke.sh`:** las comprobaciones del plan §3.
+    - **`data/seed/README.md`:** los códigos y los alias.
+  - **Archivos:** `data/seed/demo.json`, `apps/api/src/seed/demo.ts`, `apps/api/src/seed/seed.ts`, `apps/api/test/api/seed.test.ts`, `apps/api/test/unit/demo-data.test.ts`, `infra/scripts/smoke.sh` y `data/seed/README.md`.
+  - **Comprobación:** `pnpm check @onway/api && pnpm --filter @onway/api test:api seed`, y después, en una pila desechable, `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-review ONWAY_HTTP_PORT=18081 docker compose up --build --wait -d && COMPOSE_PROJECT_NAME=onway-review SMOKE_SKIP_ROUTING=1 infra/scripts/smoke.sh http://localhost:18081`. Al acabar se retira con `down -v`.
+  - **Hecho cuando:**
+    - sembrar dos veces deja los mismos alias y códigos;
+    - `rescatista2` lleva el alias del nombre de su perfil con ` BSC`, y `rescatista1`, sin equipo, lo lleva sin código;
+    - los coordinadores llevan el suyo;
+    - el smoke pasa.
+
+- [x] **T6. Web: la lista de equipos, crear y editar.** Cubre RF-801 (lista, crear, editar), el doc 02 §3.8 y D-E2 (código propuesto).
+  - **Qué se hace:**
+    - `queries.ts`, `teams-page.tsx` y `team-form-dialog.tsx`, tal como los describe el plan §3.
+    - `/teams` sustituye a la `LaterPage`.
+    - Textos en es y fr.
+  - **Archivos:**
+    - nuevos: `apps/web/src/teams/queries.ts`, `apps/web/src/teams/teams-page.tsx`, `apps/web/src/teams/team-form-dialog.tsx` y `apps/web/test/teams.test.tsx`;
+    - se tocan: `apps/web/src/app/routes.tsx`, `apps/web/src/nav/navigation.ts`, `apps/web/src/styles.css`, `apps/web/test/app.test.tsx` (si comprueba la `LaterPage`), `packages/i18n/src/es.ts`, `packages/i18n/src/fr.ts` y `packages/i18n/src/types.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:**
+    - las pruebas cubren:
+      - los estados de carga, vacío y error, las pestañas y la búsqueda en la dirección;
+      - crear con el código propuesto y corregido;
+      - el `DUPLICATE_NAME` en su campo;
+      - editar;
+      - que el rescatista no llega a la ruta;
+    - pasan `no-fixed-text`, `layout-widths` y `a11y-styles`.
+
+- [x] **T7. Web: el detalle del equipo, sus miembros y archivar.** Cubre RF-801 (miembros, archivar), RN-21 y D-E5.
+  - **Qué se hace:**
+    - `team-page.tsx` y `add-members-dialog.tsx`, tal como los describe el plan §3.
+    - Archivar y reactivar, cada uno con su confirmación.
+    - Al cerrar un diálogo, el foco vuelve al botón que lo abrió. Tras quitar a un miembro, va al título de la lista de miembros.
+  - **Archivos:**
+    - nuevos: `apps/web/src/teams/team-page.tsx` y `apps/web/src/teams/add-members-dialog.tsx`;
+    - se tocan: `apps/web/src/teams/queries.ts`, `apps/web/src/app/routes.tsx`, `apps/web/test/teams.test.tsx` y `packages/i18n/src/{es,fr,types}.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:** las pruebas cubren:
+    - el detalle con sus miembros y sin contacto;
+    - el selector, que busca, marca a los que ya son miembros y envía los `userIds`;
+    - quitar con confirmación;
+    - archivar, tras lo cual ya no se puede añadir, y reactivar;
+    - el 404;
+    - el teclado y el foco.
+
+- [x] **T8. Web: el selector de equipo de la ruta en la misión y el alias del responsable.** Cubre RF-805, D-E7 y Q-36 (lo que ve el rescatista).
+  - **Qué se hace:**
+    - **Selector:** en `mission-routes-section.tsx`, el `<select>` de equipo con los equipos activos y «Sin equipo» envía `updateMissionRoute {teamId}`. No aparece con la misión cerrada. Si falla, se avisa y se vuelve al valor anterior.
+    - **Alias:** en `my-missions-page.tsx` y `my-mission-detail-page.tsx`, `coordinatorAlias ?? coordinatorName ?? coordinatorNeutral`.
+  - **Archivos:** `apps/web/src/missions/mission-routes-section.tsx`, `apps/web/src/pages/my-missions-page.tsx`, `apps/web/src/pages/my-mission-detail-page.tsx`, `apps/web/test/mission-routes.test.tsx`, `apps/web/test/my-mission-routes.test.tsx`, `apps/web/test/missions.test.tsx` (si cubre Mis misiones), `apps/web/test/mission-fixtures.ts` y `packages/i18n/src/{es,fr,types}.ts`.
+  - **Comprobación:** `pnpm --filter @onway/i18n build && pnpm check @onway/web @onway/i18n`.
+  - **Hecho cuando:**
+    - las pruebas cubren que cambiar el equipo envía `teamId`, que «Sin equipo» envía `null`, la misión cerrada en solo lectura y el error con su vuelta atrás;
+    - el rescatista ve el alias del responsable;
+    - a 375 px no aparece desplazamiento horizontal nuevo en la tabla, que ya tenía el suyo propio.
+
+- [x] **T9. Demostración de extremo a extremo.** Sigue la historia del plan §1.
+  - **Qué se hace:**
+    - **`h5-equipos-demo.spec.ts`:**
+      - en escritorio y a 375 px, con una pasada solo con teclado y en francés;
+      - usa cuentas `e2e-…` creadas con `createApprovedAccount` (rescatistas con el perfil completado por API, para que tengan alias);
+      - crea una misión «E2E …» activa con una ruta, con los apoyos de `stack.ts`;
+      - al acabar, el equipo queda archivado, las cuentas desactivadas y las misiones cerradas.
+    - **`stack.ts`:** el apoyo para leer el alias de una cuenta (`memberAlias(email)`) y para dejar archivados los equipos «E2E …».
+    - **`h4-demo.spec.ts`** y las demás demostraciones se revisan por si esperaban un equipo `null` para el rescatista.
+    - **README del E2E:** una línea nueva.
+  - **Archivos:**
+    - nuevo: `apps/web/e2e/h5-equipos-demo.spec.ts`;
+    - se tocan: `apps/web/e2e/support/stack.ts`, `apps/web/e2e/global-teardown.ts` (si ahí se archivan los restos), `apps/web/e2e/playwright.config.ts` (proyecto `mobile`) y `apps/web/e2e/README.md`.
+  - **Comprobación:** `COMPOSE_FILE=compose.yml:infra/compose.e2e.yml COMPOSE_PROJECT_NAME=onway-e2e ONWAY_HTTP_PORT=18080 docker compose up --build --wait -d` y, con las mismas variables y `E2E_BASE_URL=http://localhost:18080`, `pnpm --filter @onway/web exec playwright test -c e2e h5-equipos-demo.spec.ts h4-demo.spec.ts`.
+  - **Hecho cuando:**
+    - las dos pasan en escritorio y en móvil;
+    - el alias del miembro termina en ` ALC`;
+    - el rescatista que no es miembro ve el equipo en la ruta y el alias del responsable.
+
+- [x] **T10. Documentos y verificación completa.**
+  - **Qué se hace:**
+    - **«Tal como se construyó (`H5-equipos`)»** en el doc 07 §3, con H5 completo y 81 montadas, y en el doc 02 §3.8.
+    - **Doc 03:** el código del equipo y el alias en la membresía.
+    - **Doc 05:** la 0015, las funciones y la matriz de permisos.
+    - **`docs/backlog-post-mvp.md`:** B-01 y B-02 construidos y el pendiente (a).
+    - **`CLAUDE.md`, `docs/estado.md` y `docs/historial.md`:** `CLAUDE.md` con `smoke.sh` y `test:db`, y `estado.md` con un máximo de 30 líneas.
+    - Cada documento lleva su línea en el registro de cambios.
+    - **La verificación completa** y el E2E entero con `CI=1` en `onway-e2e`. Después, `down -v`.
+  - **Archivos:** `docs/02-flujo-coordinador-y-vistas.md`, `docs/03-modelo-de-dominio.md`, `docs/05-modelo-de-datos.md`, `docs/07-plan-de-implementacion.md`, `docs/backlog-post-mvp.md`, `CLAUDE.md`, `docs/estado.md` y `docs/historial.md`.
+  - **Comprobación:** `pnpm lint && pnpm format:check && pnpm typecheck && pnpm build && pnpm test && pnpm --filter @onway/api test:db && pnpm --filter @onway/api test:api && db/tests/run-postgis.sh`, y el E2E con `CI=1` en `onway-e2e`.
+  - **Hecho cuando:** todo pasa y los documentos recogen lo construido y sus desviaciones.
+
+## Desviaciones y notas de la implementación
+
+- **T1.** `aliasBase` devuelve `user` si el nombre no tiene letras (el plan no lo cubría). `localityCode` rellena con `X` si la localidad tiene menos de tres letras. Las letras de relleno van detrás de las consonantes (Jaca → `JCA`). Las partículas saltadas son de, del, la, las, los, y, e.
+- **T1.** `my-missions.service.ts` lleva `coordinatorAlias: null` provisional hasta T4. Las pruebas del contrato nuevas (`registry`, `behavior`) cubren H5 = 28 y H6 = 16 operaciones. Doc 06 pasa a 1.17, doc 01 a 1.11 y doc 07 a 0.25 (la fila de `H5-equipos` ya existía desde la 0.22).
+- **T2.** `onway_app` pierde `UPDATE` de toda la tabla `memberships` y conserva `UPDATE (role)`: sin eso un `REVOKE` de columna no tenía efecto (la concesión de 0008 era de tabla). `memberships.status` ya solo lo escriben funciones `SECURITY DEFINER`; la prueba lo comprueba. `memberships.alias` lleva un `CHECK` de formato (`^[a-z]+[0-9]*( [A-Z0-9]{3})?$`) que el plan no mencionaba.
+- **T2.** Tocados por el `NOT NULL` de `teams.code`: `db/tests/seed_and_tests.sql` y `run_tests.sql` (el recuento «rescatista ve su equipo» pasa de 1 a 2 por D-34 y cambia de nombre; siguen 194 comprobaciones), `test/support/fixtures.ts`, `mission-writers-policy.test.ts`, `database.test.ts` y `organization.test.ts`. `seed.ts` usa `localityCode(locality)` de forma provisional; T5 lleva `code` a `demo.json`.
+- **T2.** La prueba de la base aplica 0002-0014 a mano, inserta los equipos con choque y luego ejecuta 0015 (relleno con `AL2`, `AL3` para los choques).
+- **T3.** `memberCount` y los miembros cuentan solo membresías activas de personas no anonimizadas (INV-22), no solo las filas de `team_members`. Archivar o reactivar con el mismo estado no es error (`updateTeam` no declara `INVALID_STATE_TRANSITION`). La auditoría de `team_updated` lleva los nombres de los campos y, si cambia, el estado nuevo; `team_members_added` lleva `userIds` y `count` solo de los que entran de verdad (sin llamada que añada a nadie no se escribe línea).
+- **T3.** `app.test.ts`: grupo `TEAMS_OPERATIONS` (7) y `TEAMS_BUILT` (6, T4 añade `listRescuers`); 80 montadas. La prueba de «hito posterior» usa `listParticipations` (H6), porque `listRescuers` ya es de H5, y la del 404 de lo no montado usa `/my/history`. Se adelantaron dos retoques de T4 que T2 había roto: `mission-routes-rescuer.test.ts` (el rescatista ve el equipo sin ser miembro, D-34) y las claves de `missions-lifecycle.test.ts` (`coordinatorAlias`); T4 sigue con la lógica.
+- **T4.** `listRescuers` va en `rescuers.controller.ts` y `rescuers.service.ts` (módulo `TeamsModule`). El nombre que busca y ordena es `users.display_name`. El helper `src/teams/member-alias.ts` calcula el código del primer equipo (por `added_at`) y llama a `set_member_alias`; lo usan perfil, aprobación y cambio de rol. Se asigna a cualquier rol que no sea rescatista al aprobar o al cambiar de rol (también `admin`, no solo coordinador). La API solo escribe `memberships.role` (`users.service.ts:166`): ninguna otra columna. `test:api` entero antes de T4: 35 ficheros, 638 pruebas, en verde. En `profile.test.ts` la unicidad es del alias entero: `zetzamrui ALC` no choca con `zetzamrui`.
+- **T5.** La semilla añade el paso `seedAliases` (`apps/api/src/seed/seed.ts`) y el campo `aliases` a `SeedResult`. Calcula el alias como el propietario, con la misma regla de `set_member_alias` (sufijo numérico si choca), porque la semilla no tiene contexto de petición. El código es el del primer equipo según el orden de `demo.json` (`rescatista4` está en Biescas y Ordesa: `BSC`). El `smoke.sh` también comprueba que `listRescuers` ofrece 5 personas (los 5 perfiles completos) y que `rescatista1` no ve el nombre del coordinador. Pila `onway-review`: smoke en verde.
+- **T6.** `LaterPage` (`apps/web/src/pages/later-page.tsx`) se borra: ya no la usa ninguna ruta, y se quita su prueba de `app.test.tsx` y su fila de `layout-widths.test.ts`. Las claves `later.*` de i18n se dejan (las usa una aserción de `app.test.tsx`; quitarlas es un retoque aparte). `layout-widths.test.ts` admite rutas con carpeta en la lista de páginas de lista y añade `teams/teams-page`. En la lista el nombre del equipo es texto, no enlace (el detalle llega en T7), y «Editar» está en cada fila, que abre el diálogo de crear con los datos. El código solo se propone al crear; al editar se trata como ya tocado. Comprobado a 375 px en la pila `onway-review` (sin desplazamiento horizontal, el diálogo propone `ALC` para Alicante). Prettier corrigió ficheros de T4 y T5 en un commit `style` aparte; `apps/web/src/admin/user-dialogs.tsx` ya no pasaba `format:check` antes de este hito y no se toca.
+- **T7.** Las pruebas del detalle van en `apps/web/test/team-detail.test.tsx` (nuevo), no en `teams.test.tsx`; en `teams.test.tsx` solo se añade la del enlace. El nombre del equipo en la lista pasa a ser un `<Link>` a `/teams/:teamId` (con `state.from` para volver con los filtros). El selector del diálogo guarda su búsqueda y página en estado local (no en la dirección), conserva la elección entre páginas y búsquedas, y tope de 200. Los textos de cantidad son frases sin plural (el proyecto no usa plurales de i18next). Se añadieron `teams.status`, `teams.detail` y `teams.add` (es y fr), y en `styles.css` `.picker-list`, `.picker-row` y `.team-link`. El detalle no repite «Editar»: sigue solo en la lista. Prettier reformateó solo las líneas nuevas de `es.ts` y `fr.ts`.
+- **T8.** El selector (`mission-routes-section.tsx`) pide `listTeams` activos de una vez (`pageSize` 200, `useActiveTeams` en `teams/queries.ts`) y solo si `canManage`; así, con la misión cerrada o sin permiso, la celda sigue siendo texto y no hay petición. Si el equipo actual de la fila ya no está entre los activos (archivado), se añade como opción para que el valor tenga dónde caer. Mientras guarda enseña lo elegido y queda desactivado; si falla, vuelve al valor anterior y el error sale en el `alert` de la fila. Las pruebas de Mis misiones están en `home.test.tsx` (no en `missions.test.tsx`), y `my-mission-routes.test.tsx` solo gana el campo `coordinatorAlias` en su fixture. Claves nuevas: `missionRoutes.team.{selectLabel,done}`. La comprobación a 375 px de la tabla la hace la demostración de T9 (móvil).
+- **T9.** Los dos formatos corren a la vez y el código del equipo es único en la organización, así que cada uno usa su localidad (`ALC`/`TRB` en escritorio, `SLL`/`LRD` en móvil), y el alias del miembro termina en el código de su formato (en escritorio, ` ALC`). Un equipo archivado conserva su código: `archiveLeftoverE2eTeams` (en `stack.ts`, en el `afterAll` de la demostración y en `global-setup` y `global-teardown`) archiva y cambia el código a `Z` más dos cifras hexadecimales para que la siguiente ejecución pueda reutilizarlo; no toca los alias fijados (D-E6). El selector de Equipo, el alias del responsable y el archivado se prueban con la ruta sembrada «Pradera a la Brecha (ficticia)» (validada) en una misión «E2E …» creada y activada por la API. La parte del administrador es de interfaz (ve el equipo en Archivados, lo reactiva) y de API (lo vuelve a archivar); el 403 del rescatista en `listTeams` y `createTeam` se comprueba en la demostración. `h4-demo.spec.ts` no esperaba ningún `team` vacío: no hizo falta tocarla (pasa en los dos formatos). Se añadió `h5-equipos-demo` a la lista del proyecto `mobile` en `playwright.config.ts`. Ejecutado: `h5-equipos-demo.spec.ts` y `h4-demo.spec.ts` en los proyectos `desktop` y `mobile` (22 pruebas, en verde), también repetida una segunda vez sobre la misma pila. Pila `onway-e2e` levantada.
+- **T10.** Los documentos 02, 03, 05 y 07, `backlog-post-mvp.md`, `CLAUDE.md`, `estado.md` e `historial.md` recogen lo construido, cada uno con su línea de registro (doc 02 1.12, doc 03 0.12, doc 05 1.6, doc 07 0.26). El doc 01 no cambia (T1 ya cerró Q-36). `user-dialogs.tsx` se formateó en un commit `style` aparte. El E2E entero encontró una regresión de T6: `ui-rediseno-demo.spec.ts` esperaba `/teams` como página de lectura (64rem) y ahora es una lista (80rem); se cambió a `list` en la demostración (3 pruebas y 7 sin correr en la primera pasada; después 11 de 11). `hgt.test.ts` y `h2-demo.spec.ts:352` no fallaron.
+
+## Validación (vuelta 1, 2026-11-22)
+
+- **Veredictos.** `reviewer`, `reviewer-security` y `reviewer-db` aprueban. `reviewer-ui` pidió un cambio medio. La verificación completa y el E2E entero con `CI=1` dieron 193 de 193 antes de la vuelta.
+
+**Corregido en la vuelta, a petición del usuario:**
+- **Medio.** El selector de equipo de la ruta (RF-805, `.mission-route-team`) era el control nativo del navegador, de 19 px. Ahora tiene el estilo de los campos y el blanco táctil (`min-height: var(--tap)`).
+- **Bajo 1.** `smoke.sh` cuenta solo los equipos activos y exige al menos los 4 de la semilla, con sus códigos. Pasa también en una pila donde ya se ha ejecutado el E2E.
+- **Bajo 4.** El enlace con el nombre del equipo (`.team-link`) y «Volver a …» (`.page-back`) llevan también el blanco táctil.
+- **Bajo 8.** Las claves `later.*` de i18n, de la antigua `LaterPage`, se quitan junto con sus dos aserciones en las pruebas.
+- **Prueba nueva.** En `a11y-styles.test.ts`, los tres selectores miden al menos `var(--tap)`.
+
+**Comprobado tras la vuelta:**
+- `pnpm check @onway/web @onway/i18n` en verde.
+- En `onway-e2e`:
+  - `h5-equipos-demo`, `ui-rediseno-demo` y `h4-demo`, en escritorio y móvil: 33 de 33;
+  - `smoke.sh` en verde, antes y después del E2E.
+
+**Bajos que siguen abiertos:**
+- **Tabla de rutas a 375 px.** El selector queda cortado en el borde de la tabla, que se desplaza en horizontal. Es un patrón anterior.
+- **`useActiveTeams`.** Pide 200 equipos como máximo y no avisa si hay más.
+- **`seedAliases`.**
+  - Asigna los alias sin el cerrojo de `set_member_alias`: si la API fija uno a la vez, la semilla falla, y al relanzarla se arregla sola.
+  - Para quien está en dos equipos usa el primero según `demo.json`, no según `added_at`.
+- **`set_member_alias`.** No comprueba que el código sea de un equipo de la persona ni que su membresía esté activa. La API sí lo hace.
+- **`mission_coordinator_alias`.** Se llama una vez por fila. No es un N+1 real, porque la página está acotada.

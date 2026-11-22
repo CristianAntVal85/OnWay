@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ListUsersQuery, OperationOutput, UpdateUserRequest } from '@onway/contracts';
+import { aliasBase, type ListUsersQuery, type OperationOutput, type UpdateUserRequest } from '@onway/contracts';
 import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { AuditWriter } from '../audit/audit.writer.js';
@@ -9,6 +9,7 @@ import { DatabaseService, type Tx } from '../db/database.service.js';
 import { pgErrorOf } from '../db/errors.js';
 import { isoUtc, viewerOf } from '../missions/mission-support.js';
 import { listSkillsOf } from '../profile/skill-rows.js';
+import { assignMemberAlias } from '../teams/member-alias.js';
 
 type Item = OperationOutput<'listUsers'>['items'][number];
 type Query = z.infer<typeof ListUsersQuery>;
@@ -75,7 +76,9 @@ export class UsersService {
       query.accountStatus ? sql`AND u.account_status = ${query.accountStatus}::account_status` : sql``,
     ];
     const where = sql.join(filters, sql` `);
-    const { rows: counted } = await this.tx.execute(sql`SELECT count(*)::int AS total FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ${orgId}::uuid AND u.anonymized_at IS NULL ${where}`);
+    const { rows: counted } = await this.tx.execute(
+      sql`SELECT count(*)::int AS total FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.organization_id = ${orgId}::uuid AND u.anonymized_at IS NULL ${where}`,
+    );
     const { rows } = await this.tx.execute(sql`
       ${SELECT_ITEM(orgId)} ${where}
        ORDER BY lower(u.display_name), u.id
@@ -164,6 +167,8 @@ export class UsersService {
     if (losesRole) {
       await this.tx.execute(sql`UPDATE memberships SET role = ${body.role}::member_role WHERE organization_id = ${orgId}::uuid AND user_id = ${userId}::uuid`);
       await this.audit.recordRoleChanged({ orgId, userId, actorUserId: actorId, from: current.role, to: body.role! });
+      // Q-36: whoever becomes staff and has no alias receives one from the visible name (an alias that exists is kept)
+      if (body.role !== 'rescuer') await assignMemberAlias(this.tx, orgId, userId, aliasBase(current.display_name));
       if (body.role === 'rescuer') {
         // D-U3: a person who was never a rescuer gets an incomplete profile; one who was keeps hers, hidden until now
         await this.tx.execute(sql`

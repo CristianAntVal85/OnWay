@@ -36,6 +36,11 @@ const PROFILE = new RegExp(`^${es.routeDetail.profile.title}`); // el nombre acc
 import { MISSION_ID, PATH, allActions, geometryOf, mission, noActions, row } from './mission-fixtures';
 
 type Handlers = Record<string, (call: Call) => Response | Promise<Response>>;
+const TEAMS = [
+  { id: 'a0000000-0000-4000-8000-000000000001', name: 'Equipo Pirineos', locality: 'Benasque', code: 'BNS', status: 'active', memberCount: 2 },
+  { id: 'a0000000-0000-4000-8000-000000000002', name: 'Equipo Ordesa', locality: 'Torla', code: 'TRL', status: 'active', memberCount: 3 },
+];
+
 function setup(rows: unknown[] | Response, options: { actions?: Record<string, boolean>; status?: string; language?: 'es' | 'fr'; user?: ReturnType<typeof sessionUser>; extra?: Handlers } = {}) {
   const language = options.language ?? 'es';
   const state = { rows: Array.isArray(rows) ? rows : [] };
@@ -46,6 +51,7 @@ function setup(rows: unknown[] | Response, options: { actions?: Record<string, b
       [`GET /missions/${MISSION_ID}/routes`]: () => (rows instanceof Response ? rows : json(200, { items: state.rows })),
       [`GET /missions/${MISSION_ID}/history`]: () => json(200, { items: [], page: 1, pageSize: 20, total: 0 }),
       [`GET /missions/${MISSION_ID}/routes/export`]: ({ query }) => new Response(`archivo ${query.get('format')}`, { status: 200, headers: { 'Content-Type': 'application/gpx+xml' } }),
+      'GET /teams': () => json(200, { items: TEAMS, page: 1, pageSize: 200, total: TEAMS.length }),
       'GET /geo/elevation': () => json(200, { lat: 42.6, lon: 0.65, elevationM: 2140 }),
       ...options.extra,
     },
@@ -77,7 +83,7 @@ beforeEach(() => {
 
 describe('tabla de rutas de la misión (RF-502, RF-504)', () => {
   it('muestra, de la versión fijada, distancia, desniveles, altitudes, pendiente, tipo de vía, validación, origen y equipo', async () => {
-    const team = { id: 't1', name: 'Equipo Pirineos', locality: 'Benasque' };
+    const team = TEAMS[0];
     setup([row(1, 'Senda del Circo', { team }), row(2, 'Pista del valle', { origin: null })]);
     const table = await tableOf();
     const headers = within(table)
@@ -110,12 +116,55 @@ describe('tabla de rutas de la misión (RF-502, RF-504)', () => {
     expect(within(first).getByText('Versión 1 · Validada')).toBeTruthy();
     expect(within(first).getByText(/2026/)).toBeTruthy();
     expect(within(first).getByText('Refugio de la Renclusa')).toBeTruthy();
-    expect(within(first).getByText('Equipo Pirineos · Benasque')).toBeTruthy();
+    expect((within(first).getByRole('combobox') as HTMLSelectElement).selectedOptions[0]!.textContent).toBe('Equipo Pirineos · Benasque');
     expect(within(first).getByRole('img', { name: /Pista/ })).toBeTruthy(); // la barra de tipo de vía, con su texto
 
     const second = await rowOf('Pista del valle');
     expect(within(second).getByText(R.noOrigin)).toBeTruthy();
-    expect(within(second).getByText(R.noTeam)).toBeTruthy();
+    expect((within(second).getByRole('combobox') as HTMLSelectElement).selectedOptions[0]!.textContent).toBe(R.noTeam);
+  });
+
+  it('el equipo de la ruta es un selector con los equipos activos y «Sin equipo»; elegir envía teamId y «Sin equipo» envía null (RF-805, D-E7)', async () => {
+    const { user, calls, state } = setup([row(1, 'Senda del Circo')], {
+      extra: {
+        [`PATCH /missions/${MISSION_ID}/routes/${row(1, 'x').id}`]: ({ body }) => json(200, { ...row(1, 'Senda del Circo'), team: (body as { teamId: string | null }).teamId ? TEAMS[1] : null }),
+      },
+    });
+    const select = (await within(await rowOf('Senda del Circo')).findByRole('combobox', { name: R.team.selectLabel.replace('{{name}}', 'Senda del Circo') })) as HTMLSelectElement;
+    expect(
+      within(select)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual([R.noTeam, 'Equipo Pirineos · Benasque', 'Equipo Ordesa · Torla']);
+    expect(select.value).toBe('');
+    state.rows = [row(1, 'Senda del Circo', { team: TEAMS[1] })];
+    await user.selectOptions(select, TEAMS[1]!.id);
+    await waitFor(() => expect(writes(calls())).toHaveLength(1));
+    expect(writes(calls())[0]).toMatchObject({ method: 'PATCH', body: { teamId: TEAMS[1]!.id } });
+    expect(await screen.findByText(R.team.done.replace('{{name}}', 'Senda del Circo'))).toBeTruthy();
+    await waitFor(() => expect((screen.getByRole('combobox', { name: /Senda del Circo/ }) as HTMLSelectElement).value).toBe(TEAMS[1]!.id));
+
+    state.rows = [row(1, 'Senda del Circo')];
+    await user.selectOptions(screen.getByRole('combobox', { name: /Senda del Circo/ }), '');
+    await waitFor(() => expect(writes(calls())).toHaveLength(2));
+    expect(writes(calls())[1]).toMatchObject({ body: { teamId: null } });
+  });
+
+  it('si el servidor rechaza el cambio de equipo lo dice y el selector vuelve al valor anterior', async () => {
+    const { user } = setup([row(1, 'Senda del Circo', { team: TEAMS[0] })], { extra: { [`PATCH /missions/${MISSION_ID}/routes/${row(1, 'x').id}`]: () => apiError(409, 'MISSION_CLOSED') } });
+    const select = (await within(await rowOf('Senda del Circo')).findByRole('combobox')) as HTMLSelectElement;
+    expect(select.value).toBe(TEAMS[0]!.id);
+    await user.selectOptions(select, TEAMS[1]!.id);
+    expect(await within(await rowOf('Senda del Circo')).findByRole('alert')).toBeTruthy();
+    await waitFor(() => expect((screen.getByRole('combobox', { name: /Senda del Circo/ }) as HTMLSelectElement).value).toBe(TEAMS[0]!.id));
+  });
+
+  it('con la misión cerrada o sin permiso de gestionar, el equipo es texto: sin selector ni petición de equipos', async () => {
+    const { calls } = setup([row(1, 'Senda del Circo', { team: TEAMS[0] })], { status: 'closed', actions: noActions });
+    const first = await rowOf('Senda del Circo');
+    expect(within(first).getByText('Equipo Pirineos · Benasque')).toBeTruthy();
+    expect(within(first).queryByRole('combobox')).toBeNull();
+    expect(calls().some((c) => c.path === '/teams')).toBe(false);
   });
 
   it('una versión fijada en borrador se dice, con el aviso de que el rescatista no la ve', async () => {

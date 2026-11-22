@@ -3,10 +3,14 @@ import { z } from 'zod';
 import { Id, PageQuery, Paged, PersonRef, QueryBool, TeamRef, Timestamp } from './common.js';
 import { TeamStatus } from './enums.js';
 
+/** Código de localidad del equipo (Q-36): tres caracteres, único en la organización. De él sale el final del alias. */
+export const TeamCode = z.string().regex(/^[A-Z0-9]{3}$/);
+
 export const TeamItem = z.strictObject({
   id: Id,
   name: z.string(),
   locality: z.string(),
+  code: TeamCode,
   status: TeamStatus,
   memberCount: z.number().int().min(0),
 });
@@ -25,11 +29,13 @@ export const TeamsPage = Paged(TeamItem);
 export const CreateTeamRequest = z.strictObject({
   name: z.string().trim().min(1).max(120),
   locality: z.string().trim().min(1).max(120), // INV-23: obligatoria
+  code: TeamCode, // la web lo propone con `localityCode`; se puede corregir
 });
 export const UpdateTeamRequest = z
   .strictObject({
     name: z.string().trim().min(1).max(120).optional(),
     locality: z.string().trim().min(1).max(120).optional(),
+    code: TeamCode.optional(), // no toca los alias ya fijados (D-E6)
     status: TeamStatus.optional(),
   })
   .refine((v) => Object.keys(v).length > 0, 'Indica al menos un campo');
